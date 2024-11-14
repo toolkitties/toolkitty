@@ -1,4 +1,4 @@
-# Festival Kitty 😺
+# Tool Kitty 🐈
 
 P2P Offline-first festival app for self-organising.
 
