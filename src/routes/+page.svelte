@@ -12,7 +12,7 @@
 </script>
 
 <main class="container space-y-4 p-8">
-  <h1 class="text-3xl">Festival Kitty 😺</h1>
+  <h1 class="text-3xl">Toolkitty 😺</h1>
 
   <form class="row" onsubmit={greet}>
     <input id="greet-input" placeholder="Enter a name..." bind:value={name} />
