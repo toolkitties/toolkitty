@@ -2,4 +2,6 @@
   import "../app.css";
 </script>
 
-<slot />
+<main class="p-8 flex flex-col gap-4 h-screen">
+  <slot />
+</main>
