@@ -24,7 +24,7 @@
   }
 </script>
 
-<h1 class="text-3xl text-center">Toolkitty 😺</h1>
+<h1 class="text-3xl text-center">Toolkitty 🐈</h1>
 
 <form class="flex flex-col gap-4 grow justify-center mx-auto" onsubmit={join}>
   <PinInput.Root
