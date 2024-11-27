@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Calendar } from "bits-ui";
-	let { canSelectMultiple } = $props();
+ 	import TimePicker from "./TimePicker.svelte";
+	let { canSelectMultiple, hasTimePicker } = $props();
 </script>
  
 <Calendar.Root 
@@ -43,3 +44,7 @@
 		</Calendar.Grid>
 	{/each}
 </Calendar.Root>
+
+{#if hasTimePicker}
+  <TimePicker />
+{/if}
