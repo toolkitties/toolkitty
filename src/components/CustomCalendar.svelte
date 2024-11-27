@@ -2,11 +2,14 @@
 	import { Calendar } from "bits-ui";
 </script>
  
-<Calendar.Root let:months let:weekdays>
+<Calendar.Root 
+	let:months 
+	let:weekdays
+>
 	<Calendar.Header>
-		<Calendar.PrevButton />
+		<Calendar.PrevButton>←</Calendar.PrevButton>
 		<Calendar.Heading />
-		<Calendar.NextButton />
+		<Calendar.NextButton>→</Calendar.NextButton>
 	</Calendar.Header>
  
 	{#each months as month}
@@ -25,7 +28,11 @@
 					<Calendar.GridRow>
 						{#each weekDates as date}
 							<Calendar.Cell {date}>
-								<Calendar.Day {date} month={month.value} />
+								<Calendar.Day 
+									{date} 
+									month={month.value}
+									class="data-[outside-month]:pointer-events-none data-[selected]:bg-black data-[selected]:text-white"
+								/>
 							</Calendar.Cell>
 						{/each}
 					</Calendar.GridRow>
