@@ -7,7 +7,6 @@
 <form>
   <input id="name" name="name" type="text" placeholder="Programme name" />
   <input id="username" name="username" type="text" placeholder="Your name" />
-  <p>Programme dates:</p>
-  <CustomCalendar />
+  <CustomCalendar canSelectMultiple={false} />
   <button class="border border-black rounded p-4" type="submit">Create</button>
 </form>

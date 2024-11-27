@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { Calendar } from "bits-ui";
+	let { canSelectMultiple } = $props();
 </script>
  
 <Calendar.Root 
 	let:months 
 	let:weekdays
+	multiple={canSelectMultiple}
 >
 	<Calendar.Header>
 		<Calendar.PrevButton>←</Calendar.PrevButton>
@@ -31,7 +33,7 @@
 								<Calendar.Day 
 									{date} 
 									month={month.value}
-									class="data-[outside-month]:pointer-events-none data-[selected]:bg-black data-[selected]:text-white"
+									class="data-[outside-month]:pointer-events-none data-[outside-month]:text-[#d3d3d3] data-[selected]:bg-black data-[selected]:text-white"
 								/>
 							</Calendar.Cell>
 						{/each}
