@@ -1,3 +1,10 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+@layer base {
+  input {
+    @apply w-full p-2.5 border border-black rounded;
+  }
+}
