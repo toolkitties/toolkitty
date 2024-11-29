@@ -13,17 +13,17 @@
   >
     <Tabs.Trigger
       value="physical"
-      class="grow {spaceType == 'physical' ? 'bg-yellow-200' : ''}"
+      class="grow text-xs {spaceType == 'physical' ? 'bg-yellow-200' : ''}"
       >physical space</Tabs.Trigger
     >
     <Tabs.Trigger
       value="gps"
-      class="grow {spaceType == 'gps' ? 'bg-pink-200' : ''}"
+      class="grow text-xs {spaceType == 'gps' ? 'bg-pink-200' : ''}"
       >GPS coordinates</Tabs.Trigger
     >
     <Tabs.Trigger
       value="virtual"
-      class="grow {spaceType == 'virtual' ? 'bg-blue-200' : ''}"
+      class="grow text-xs {spaceType == 'virtual' ? 'bg-blue-200' : ''}"
       >virtual space</Tabs.Trigger
     >
   </Tabs.List>
