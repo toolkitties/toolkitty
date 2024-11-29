@@ -14,11 +14,11 @@
   let placeholder = `Select a ${name}`;
 </script>
 
-<Select.Root {multiple} open={isOpen} {items} {name}>
+<Select.Root {multiple} open={isOpen} {items} {name} preventScroll={false}>
   <div class="border border-black rounded">
     <button
       onclick={() => (isOpen = !isOpen)}
-      class="border-0 rounded-b-none flex justify-between"
+      class="border-0 rounded-b-none flex justify-between items-center"
       aria-label={placeholder}
     >
       {#if multiple}
