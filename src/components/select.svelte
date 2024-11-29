@@ -14,17 +14,11 @@
   let placeholder = `Select a ${name}`;
 </script>
 
-<Select.Root
-  {multiple}
-  open={isOpen}
-  {items}
-  onSelectedChange={(v) => (value = v)}
-  {name}
->
+<Select.Root {multiple} open={isOpen} {items} {name}>
   <div class="border border-black rounded">
     <button
       onclick={() => (isOpen = !isOpen)}
-      class="w-full bg-black/25 p-2.5 flex justify-between"
+      class="border-0 rounded-b-none flex justify-between"
       aria-label={placeholder}
     >
       {#if multiple}
@@ -54,5 +48,5 @@
     </div>
   </div>
   <!-- </Select.Content> -->
-  <Select.Input {name} />
+  <Select.Input bind:value {name} />
 </Select.Root>
