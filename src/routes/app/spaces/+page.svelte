@@ -1,1 +1,1 @@
-<h1>Spaces</h1>
+<h1>Spaces page</h1>
