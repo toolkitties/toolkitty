@@ -1,9 +1,9 @@
 import { Dialog as DialogPrimitive } from "bits-ui";
 
-// import our custom components that we want to be styled consistently across the app.
+// import custom components to be styled consistently across the app.
 import Content from "./dialog-content.svelte";
 
-// import default components we want to remain the unchanged from bits.
+// import default components that remain the unchanged from bits ui.
 const Root = DialogPrimitive.Root;
 const Title = DialogPrimitive.Title;
 const Trigger = DialogPrimitive.Trigger;
