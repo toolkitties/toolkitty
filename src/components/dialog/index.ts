@@ -18,13 +18,14 @@ export {
   Close,
 };
 
-
-// HOW TO USE THE COMPONENT
-// <Dialog.Root>
-//   <Dialog.Trigger></Dialog.Trigger>
-//   <Dialog.Content>
-//     <Dialog.Title></Dialog.Title></Dialog.Title>
-//     <Dialog.Close></Dialog.Close>
-//     <Dialog.Close></Dialog.Close>
-//   </Dialog.Content>
-// </Dialog.Root>
+/*
+HOW TO USE THE COMPONENT
+<Dialog.Root>
+  <Dialog.Trigger></Dialog.Trigger>
+  <Dialog.Content>
+    <Dialog.Title></Dialog.Title>
+    <Dialog.Close></Dialog.Close>
+    <Dialog.Close></Dialog.Close>
+  </Dialog.Content>
+</Dialog.Root>
+*/
