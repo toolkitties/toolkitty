@@ -1,5 +1,5 @@
 <script>
-  import CustomCalendar from '../../components/CustomCalendar.svelte';
+  import CustomCalendar from '../../../components/CustomCalendar.svelte';
 </script>
 
 <h1>Welcome to ToolKitties! Start here to organise your own programme.</h1>
