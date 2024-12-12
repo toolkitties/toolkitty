@@ -1,4 +1,5 @@
 <script lang="ts">
+  import "../../app.css";
   import Back from "../../components/back.svelte";
   import Icon from "@iconify/svelte";
   import { page } from "$app/stores";
@@ -31,14 +32,14 @@
       icon: "lucide:user",
     },
     {
-      name: "Share",
-      url: "/app/share",
+      name: "Admin",
+      url: "/app/admin",
       icon: "lucide:share-2",
     },
   ];
 
   let topLevelPage = $derived(
-    menu.some((item) => item.url.includes($page.url.pathname)),
+    menu.some((item) => item.url.includes($page.url.pathname))
   );
 </script>
 
@@ -49,7 +50,9 @@
       <Back />
     {/if}
   </div>
-  <slot />
+  <div class="p-8">
+    <slot />
+  </div>
   <nav class="fixed bottom-0 right-0 w-full p-2 px-4 border-t border-black">
     <ul class="flex justify-between items-center h-full">
       {#each menu as item}

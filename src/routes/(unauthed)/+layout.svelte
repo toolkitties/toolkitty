@@ -1,6 +1,6 @@
 <script>
-  import "../app.css";
-  import Back from "../components/back.svelte";
+  import "../../app.css";
+  import Back from "../../components/back.svelte";
   import { page } from "$app/stores";
 
   let indexPage = $derived($page.url.pathname == "/");
