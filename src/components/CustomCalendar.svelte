@@ -1,9 +1,27 @@
 <script lang="ts">
 	import { Calendar } from "bits-ui";
- 	import TimePicker from "./TimePicker.svelte";
-	let { canSelectMultiple, hasTimePicker } = $props();
+	import TimePicker from "./TimePicker.svelte";
+	import type { DateValue } from "@internationalized/date";
+
+	let { isReadOnly, canSelectMultiple, hasTimePicker, festivalDates = null } = $props();
+
+	const isFestivalDate = (date: DateValue): boolean => {
+		if (!festivalDates || !Array.isArray(festivalDates)) {
+			return false;
+		}
+		return festivalDates.some(festivalDate => isSameDate(festivalDate, date));
+	};
+
+	const isSameDate = (date1: DateValue, date2: DateValue): boolean => {
+		return (
+			date1.calendar.identifier === date2.calendar.identifier &&
+			date1.year === date2.year &&
+			date1.month === date2.month &&
+			date1.day === date2.day
+		);
+	};
 </script>
- 
+
 <Calendar.Root 
 	let:months 
 	let:weekdays
@@ -34,7 +52,11 @@
 								<Calendar.Day 
 									{date} 
 									month={month.value}
-									class="data-[outside-month]:pointer-events-none data-[outside-month]:text-[#d3d3d3] data-[selected]:bg-black data-[selected]:text-white"
+									class={`data-[outside-month]:pointer-events-none 
+										data-[outside-month]:text-gray-300 
+										data-[selected]:bg-black 
+										data-[selected]:text-white
+										${isReadOnly && isFestivalDate(date) ? 'bg-black text-white font-bold' : ''}`}
 								/>
 							</Calendar.Cell>
 						{/each}
