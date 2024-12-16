@@ -1,6 +1,13 @@
-<script>
+<script lang="ts">
 import CustomCalendar from '../../../components/CustomCalendar.svelte';
+
+let festivalDates: string[] = [];
 </script>
 <h1>Home</h1>
 
-<CustomCalendar canSelectMultiple={false} hasTimePicker={false}/>
+<CustomCalendar 
+    isReadOnly={true} 
+    canSelectMultiple={false} 
+    hasTimePicker={false} 
+    festivalDates={festivalDates} 
+/>
