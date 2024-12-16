@@ -4,4 +4,9 @@
 
 <h1>Single resource page</h1>
     
-<CustomCalendar canSelectMultiple={false} hasTimePicker={true}/>
+<CustomCalendar 
+    isReadOnly={true} 
+    canSelectMultiple={true} 
+    hasTimePicker={true} 
+/>
+

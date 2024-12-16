@@ -4,4 +4,8 @@
 
 <h1>Space page</h1>
     
-<CustomCalendar canSelectMultiple={false} hasTimePicker={true}/>
+<CustomCalendar 
+    isReadOnly={true} 
+    canSelectMultiple={true} 
+    hasTimePicker={true} 
+/>
