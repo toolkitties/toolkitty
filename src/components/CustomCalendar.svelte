@@ -49,15 +49,16 @@
 					<Calendar.GridRow>
 						{#each weekDates as date}
 							<Calendar.Cell {date}>
-								<Calendar.Day 
-									{date} 
-									month={month.value}
-									class={`data-[outside-month]:pointer-events-none 
-										data-[outside-month]:text-gray-300 
-										data-[selected]:bg-black 
-										data-[selected]:text-white
-										${isReadOnly && isFestivalDate(date) ? 'bg-black text-white font-bold' : ''}`}
-								/>
+								<Calendar.Day
+								{date}
+								month={month.value}
+								class={`data-[outside-month]:pointer-events-none
+								  data-[outside-month]:text-gray-300
+								  data-[selected]:bg-black
+								  data-[selected]:text-white
+								  ${isReadOnly && !isFestivalDate(date) ? 'text-gray-400 pointer-events-none' : ''}
+								  ${isReadOnly && isFestivalDate(date) ? 'bg-black text-white font-bold' : ''}`}
+							  />
 							</Calendar.Cell>
 						{/each}
 					</Calendar.GridRow>
