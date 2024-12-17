@@ -3,6 +3,7 @@
 
   let events = [
     {
+      id: 1,
       title: "Event 1",
       date: "2025-01-01",
       location: "Location 1",
@@ -11,6 +12,7 @@
       image: "https://placecats.com/louie/300/200",
     },
     {
+      id: 2,
       title: "Event 2",
       date: "2025-01-02",
       location: "Location 2",

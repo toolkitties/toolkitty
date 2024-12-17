@@ -6,7 +6,7 @@
   // TODO: possibly need to convert date to nice format from ISO 8601. TBC.
 </script>
 
-<div class="flex border-black border event-row">
+<a href={`/app/events/${event.id}`} class="flex border-black border event-row">
   <img
     src={event.image}
     alt=""
@@ -18,7 +18,7 @@
     <span>{event.location}</span>
     <span class="line-clamp-2">{event.description}</span>
   </div>
-</div>
+</a>
 
 <style>
   .event-row:not(:last-child) {
