@@ -8,6 +8,7 @@
   <input id="name" name="name" type="text" placeholder="Programme name" />
   <input id="username" name="username" type="text" placeholder="Your name" />
   <CustomCalendar 
+    use={"festival creation"}
     isReadOnly={false} 
     canSelectMultiple={true} 
     hasTimePicker={false} 

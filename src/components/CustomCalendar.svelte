@@ -5,6 +5,7 @@
 	import type { DateValue } from "@internationalized/date";
   
 	let { 
+	  use,	// 'festival creation', 'festival overview', or 'resource management'
 	  isReadOnly, 
 	  canSelectMultiple, 
 	  hasTimePicker, 
@@ -90,15 +91,16 @@
 					{date}
 					month={month.value}
 					style={`opacity: ${getOpacity(date)}`}
-					class={`data-[outside-month]:pointer-events-none
-					  data-[outside-month]:text-gray-300
-					  data-[selected]:bg-black
-					  data-[selected]:text-white
-					  ${isReadOnly && !isFestivalDate(date) ? 'text-gray-400 pointer-events-none' : ''}
-					  ${isReadOnly && isFestivalDate(date) ? 'bg-black text-white font-bold' : ''}
-					  ${isAvailableDate(date) ? 'bg-green-300' : ''}
-					  ${!isAvailableDate(date) ? 'text-gray-300 pointer-events-none' : ''}
-					  `}
+					class={`
+						data-[outside-month]:pointer-events-none
+						data-[outside-month]:text-gray-300
+						data-[selected]:bg-black
+						data-[selected]:text-white
+						${use === "festival overview" && !isFestivalDate(date) ? 'text-gray-400 pointer-events-none' : ''}
+						${use === "festival overview" && isFestivalDate(date) ? 'bg-black text-white font-bold' : ''}
+						${use === "resource management" && isAvailableDate(date) ? 'bg-green-300' : ''}
+						${use === "resource management" && !isAvailableDate(date) ? 'text-gray-400 pointer-events-none' : ''}
+					`}
 				  />
 				</Calendar.Cell>
 			  {/each}

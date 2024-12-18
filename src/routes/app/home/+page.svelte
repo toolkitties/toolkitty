@@ -44,6 +44,7 @@ const eventsCount: Object[] = [
 <h1>My Festival</h1>
 
 <CustomCalendar 
+    use={"festival overview"}
     isReadOnly={true} 
     canSelectMultiple={false} 
     hasTimePicker={false} 

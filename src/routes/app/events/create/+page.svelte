@@ -33,6 +33,7 @@
 <h1>Create event</h1>
     
 <CustomCalendar 
+    use={"resource management"}
     isReadOnly={false} 
     canSelectMultiple={false} 
     hasTimePicker={true} 
