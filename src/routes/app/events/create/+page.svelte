@@ -18,7 +18,7 @@
     
 <CustomCalendar 
     isReadOnly={false} 
-    canSelectMultiple={true} 
+    canSelectMultiple={false} 
     hasTimePicker={true} 
     festivalDates={festivalDates} 
 />

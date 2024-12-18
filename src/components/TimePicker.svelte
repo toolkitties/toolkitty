@@ -1,4 +1,6 @@
 <script lang="ts">
+    let { selectedDate } = $props();
+
     let timeSlots: string[] = [];
     for (let i = 0; i < 24; i++) {
       let hourStart = String(i).padStart(2, '0');
@@ -6,7 +8,7 @@
       timeSlots.push(`${hourStart}:00 - ${hourEnd}:00`);
     }
   
-    let selectedTimeSlots: string[] = [];
+    let selectedTimeSlots: string[] = $state([]);
   
     function toggleSelection(timeSlot: string) {
       if (selectedTimeSlots.includes(timeSlot)) {
@@ -24,6 +26,7 @@
   </script>
   
   <p>Select time slots:</p>
+  <h2>{ selectedDate }</h2>
   <div class="w-64">
     <div class="overflow-y-auto max-h-48 border border-gray-300 rounded-lg">
       {#each timeSlots as timeSlot}
@@ -31,9 +34,9 @@
           role="button" 
           class="time-slot py-2 px-4 cursor-pointer text-left transition-colors duration-300 ease-in-out hover:bg-gray-100"
           class:selected={selectedTimeSlots.includes(timeSlot)}
-          on:click={() => toggleSelection(timeSlot)}
+          onclick={() => toggleSelection(timeSlot)}
           tabindex="0" 
-          on:keydown={(event) => handleKeydown(event, timeSlot)} 
+          onkeydown={(event) => handleKeydown(event, timeSlot)} 
         >
           {timeSlot}
         </div>
