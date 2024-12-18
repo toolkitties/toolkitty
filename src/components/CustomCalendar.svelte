@@ -3,13 +3,20 @@
 	import TimePicker from "./TimePicker.svelte";
 	import { writable } from 'svelte/store';
 	import type { DateValue } from "@internationalized/date";
-	
-	let { isReadOnly, canSelectMultiple, hasTimePicker, festivalDates = null, eventsCount = null } = $props();
+  
+	let { 
+	  isReadOnly, 
+	  canSelectMultiple, 
+	  hasTimePicker, 
+	  festivalDates = null, 
+	  eventsCount = null, 
+	  availableDates = null,
+	  availableTimes = null,
+	} = $props();
 	
 	const selectedDate = writable<DateValue[] | DateValue | undefined>(undefined);
-	
 	let multipleSelectedDates; // festival dates, send to db
-	
+  
 	const handleDateSelect = (selection: DateValue[] | undefined): void => {
 	  if (canSelectMultiple) {
 		multipleSelectedDates = selection;
@@ -17,14 +24,14 @@
 		selectedDate.set(selection);
 	  }
 	};
-	
+  
 	const isFestivalDate = (date: DateValue): boolean => {
 	  if (!festivalDates || !Array.isArray(festivalDates)) {
 		return false;
 	  }
 	  return festivalDates.some(festivalDate => isSameDate(festivalDate, date));
 	};
-	
+  
 	const isSameDate = (date1: DateValue, date2: DateValue): boolean => {
 	  return (
 		date1.calendar.identifier === date2.calendar.identifier &&
@@ -33,7 +40,7 @@
 		date1.day === date2.day
 	  );
 	};
-	
+  
 	const getOpacity = (date: DateValue): number => {
 	  if (!eventsCount || !Array.isArray(eventsCount)) {
 		return 1;
@@ -44,6 +51,11 @@
 	  }
 	  return 1; 
 	};
+  
+	const isAvailableDate = (date: DateValue): boolean => {
+	  return availableDates && availableDates.some((d: DateValue) => isSameDate(d, date));
+	};
+  
   </script>
   
   <Calendar.Root 
@@ -83,7 +95,10 @@
 					  data-[selected]:bg-black
 					  data-[selected]:text-white
 					  ${isReadOnly && !isFestivalDate(date) ? 'text-gray-400 pointer-events-none' : ''}
-					  ${isReadOnly && isFestivalDate(date) ? 'bg-black text-white font-bold' : ''}`}
+					  ${isReadOnly && isFestivalDate(date) ? 'bg-black text-white font-bold' : ''}
+					  ${isAvailableDate(date) ? 'bg-green-300' : ''}
+					  ${!isAvailableDate(date) ? 'text-gray-300 pointer-events-none' : ''}
+					  `}
 				  />
 				</Calendar.Cell>
 			  {/each}
@@ -95,6 +110,9 @@
   </Calendar.Root>
   
   {#if hasTimePicker && $selectedDate}
-	<TimePicker selectedDate={$selectedDate} />
+	<TimePicker 
+	  selectedDate={$selectedDate} 
+	  availableTimes={availableTimes}
+	/>
   {/if}
   

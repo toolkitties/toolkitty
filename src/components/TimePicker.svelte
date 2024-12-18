@@ -1,5 +1,5 @@
 <script lang="ts">
-    let { selectedDate } = $props();
+    let { selectedDate, availableTimes = null } = $props();
 
     let timeSlots: string[] = [];
     for (let i = 0; i < 24; i++) {
@@ -8,6 +8,8 @@
       timeSlots.push(`${hourStart}:00 - ${hourEnd}:00`);
     }
   
+    console.log(timeSlots);
+
     let selectedTimeSlots: string[] = $state([]);
   
     function toggleSelection(timeSlot: string) {
@@ -26,6 +28,7 @@
   </script>
   
   <p>Select time slots:</p>
+  <!-- TODO: format date -->
   <h2>{ selectedDate }</h2>
   <div class="w-64">
     <div class="overflow-y-auto max-h-48 border border-gray-300 rounded-lg">
