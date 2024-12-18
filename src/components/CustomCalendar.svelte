@@ -5,6 +5,17 @@
 
 	let { isReadOnly, canSelectMultiple, hasTimePicker, festivalDates = null, eventsCount = null } = $props();
 
+	let selectedDate;
+	let multipleSelectedDates;
+
+	const handleDateSelect = (selection: DateValue[] | undefined): void => {
+    if (canSelectMultiple) {
+        multipleSelectedDates = selection ?? [];
+    } else {
+        selectedDate = selection ? selection[0] : null;
+    }
+};
+
 	const isFestivalDate = (date: DateValue): boolean => {
 		if (!festivalDates || !Array.isArray(festivalDates)) {
 			return false;
@@ -31,12 +42,14 @@
 		}
 		return 1; 
 	};
+
 </script>
 
 <Calendar.Root 
 	let:months 
 	let:weekdays
 	multiple={canSelectMultiple}
+	onValueChange={handleDateSelect}
 >
 	<Calendar.Header>
 		<Calendar.PrevButton>←</Calendar.PrevButton>
