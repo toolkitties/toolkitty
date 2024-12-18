@@ -5,7 +5,7 @@
 	import type { DateValue } from "@internationalized/date";
   
 	let { 
-	  use,	// 'festival creation', 'festival overview', or 'resource management'
+	  use,
 	  isReadOnly, 
 	  canSelectMultiple, 
 	  hasTimePicker, 
@@ -15,16 +15,41 @@
 	  availableTimes = null,
 	} = $props();
 	
-	const selectedDate = writable<DateValue[] | DateValue | undefined>(undefined);
-	let multipleSelectedDates; // festival dates, send to db
+	const selectedDate = writable<DateValue | undefined>(undefined);
+	const multipleSelectedDates = writable<DateValue[] | DateValue | undefined>(undefined);
   
-	const handleDateSelect = (selection: DateValue[] | undefined): void => {
-	  if (canSelectMultiple) {
-		multipleSelectedDates = selection;
+	interface TimeEntry {
+	  date: DateValue;
+	  times: string[];
+	}
+  
+	let availableTimesForSelectedDate = writable<string[]>([]);
+  
+	const handleDateSelect = (selection: DateValue[] | DateValue | undefined): void => {
+	  if (Array.isArray(selection)) {
+		multipleSelectedDates.set(selection);
 	  } else {
 		selectedDate.set(selection);
+		if (selection && availableTimes) {
+		  findAvailableTimesForSelectedDate(selection, availableTimes);
+		} else {
+		  availableTimesForSelectedDate.set([]); // Clear times if no valid date is selected
+		}
 	  }
 	};
+  
+	function findAvailableTimesForSelectedDate(date: DateValue, times: TimeEntry[]) {
+	  const matchingEntry = times.find(entry => 
+		date.year === entry.date.year && 
+		date.month === entry.date.month && 
+		date.day === entry.date.day
+	  );
+	  if (matchingEntry) {
+		availableTimesForSelectedDate.set(matchingEntry.times);
+	  } else {
+		availableTimesForSelectedDate.set([]); // No times available for the selected date
+	  }
+	}
   
 	const isFestivalDate = (date: DateValue): boolean => {
 	  if (!festivalDates || !Array.isArray(festivalDates)) {
@@ -56,8 +81,7 @@
 	const isAvailableDate = (date: DateValue): boolean => {
 	  return availableDates && availableDates.some((d: DateValue) => isSameDate(d, date));
 	};
-  
-  </script>
+  </script>  
   
   <Calendar.Root 
 	let:months 
@@ -91,16 +115,16 @@
 					{date}
 					month={month.value}
 					style={`opacity: ${getOpacity(date)}`}
-					class={`
-						data-[outside-month]:pointer-events-none
+					class={
+						`data-[outside-month]:pointer-events-none
 						data-[outside-month]:text-gray-300
 						data-[selected]:bg-black
 						data-[selected]:text-white
 						${use === "festival overview" && !isFestivalDate(date) ? 'text-gray-400 pointer-events-none' : ''}
 						${use === "festival overview" && isFestivalDate(date) ? 'bg-black text-white font-bold' : ''}
 						${use === "resource management" && isAvailableDate(date) ? 'bg-green-300' : ''}
-						${use === "resource management" && !isAvailableDate(date) ? 'text-gray-400 pointer-events-none' : ''}
-					`}
+						${use === "resource management" && !isAvailableDate(date) ? 'text-gray-400 pointer-events-none' : ''}`
+					}
 				  />
 				</Calendar.Cell>
 			  {/each}
@@ -112,9 +136,8 @@
   </Calendar.Root>
   
   {#if hasTimePicker && $selectedDate}
-	<TimePicker 
-	  selectedDate={$selectedDate} 
-	  availableTimes={availableTimes}
-	/>
-  {/if}
-  
+  <TimePicker 
+    selectedDate={$selectedDate} 
+    availableTimes={$availableTimesForSelectedDate}
+  />
+{/if}
