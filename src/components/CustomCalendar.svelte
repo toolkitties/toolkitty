@@ -3,7 +3,7 @@
 	import TimePicker from "./TimePicker.svelte";
 	import type { DateValue } from "@internationalized/date";
 
-	let { isReadOnly, canSelectMultiple, hasTimePicker, festivalDates = null } = $props();
+	let { isReadOnly, canSelectMultiple, hasTimePicker, festivalDates = null, eventsCount = null } = $props();
 
 	const isFestivalDate = (date: DateValue): boolean => {
 		if (!festivalDates || !Array.isArray(festivalDates)) {
@@ -19,6 +19,17 @@
 			date1.month === date2.month &&
 			date1.day === date2.day
 		);
+	};
+
+	const getOpacity = (date: DateValue): number => {
+		if (!eventsCount || !Array.isArray(eventsCount)) {
+			return 1;
+		}
+		const eventForDate = eventsCount.find(event => isSameDate(event.date, date));
+		if (eventForDate) {
+			return Math.min(0.2 + eventForDate.numberOfEvents * 0.2, 1);
+		}
+		return 1; 
 	};
 </script>
 
@@ -52,6 +63,7 @@
 								<Calendar.Day
 								{date}
 								month={month.value}
+								style={`opacity: ${getOpacity(date)}`}
 								class={`data-[outside-month]:pointer-events-none
 								  data-[outside-month]:text-gray-300
 								  data-[selected]:bg-black
