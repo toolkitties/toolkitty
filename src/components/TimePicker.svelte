@@ -32,8 +32,7 @@
 <div class="w-64">
   <div class="overflow-y-auto max-h-48 border border-gray-300 rounded-lg">
     {#each timeSlots as timeSlot}
-      <div
-        role="button" 
+      <button
         class={
           `time-slot py-2 px-4 cursor-pointer text-left
           ${!availableTimes.includes(timeSlot) ? 'text-gray-400 pointer-events-none' : ''}
@@ -45,7 +44,7 @@
         onkeydown={(event) => handleKeydown(event, timeSlot)} 
       >
         {timeSlot}
-      </div>
+      </button>
     {/each}
   </div>
 </div>
