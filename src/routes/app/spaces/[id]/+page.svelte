@@ -5,7 +5,7 @@
 <h1>Space page</h1>
     
 <CustomCalendar 
-    isReadOnly={true} 
+    use={"resource management"}
     canSelectMultiple={true} 
     hasTimePicker={true} 
 />

@@ -17,7 +17,7 @@
 <h1>Create space</h1>
     
 <CustomCalendar 
-    isReadOnly={false} 
+    use={"resource management"}
     canSelectMultiple={true} 
     hasTimePicker={true} 
     festivalDates={festivalDates} 

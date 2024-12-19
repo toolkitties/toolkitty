@@ -34,7 +34,6 @@
     
 <CustomCalendar 
     use={"resource management"}
-    isReadOnly={false} 
     canSelectMultiple={false} 
     hasTimePicker={true} 
     festivalDates={festivalDates} 

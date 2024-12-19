@@ -45,7 +45,6 @@ const eventsCount: Object[] = [
 
 <CustomCalendar 
     use={"festival overview"}
-    isReadOnly={true} 
     canSelectMultiple={false} 
     hasTimePicker={false} 
     festivalDates={festivalDates} 

@@ -6,7 +6,6 @@
   
 	let { 
 	  use,
-	  isReadOnly, 
 	  canSelectMultiple, 
 	  hasTimePicker, 
 	  festivalDates = null, 
@@ -33,7 +32,7 @@
 		if (selection && availableTimes) {
 		  findAvailableTimesForSelectedDate(selection, availableTimes);
 		} else {
-		  availableTimesForSelectedDate.set([]); // Clear times if no valid date is selected
+		  availableTimesForSelectedDate.set([]); 
 		}
 	  }
 	};
@@ -47,7 +46,7 @@
 	  if (matchingEntry) {
 		availableTimesForSelectedDate.set(matchingEntry.times);
 	  } else {
-		availableTimesForSelectedDate.set([]); // No times available for the selected date
+		availableTimesForSelectedDate.set([]); 
 	  }
 	}
   
