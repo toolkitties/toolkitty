@@ -14,15 +14,15 @@
 	  availableTimes = null,
 	} = $props();
 	
-	const selectedDate = writable<DateValue | undefined>(undefined);
-	const multipleSelectedDates = writable<DateValue[] | DateValue | undefined>(undefined);
+	const selectedDate = writable<DateValue | undefined>(undefined); // pass to time picker, emit to home page
+	const multipleSelectedDates = writable<DateValue[] | DateValue | undefined>(undefined); // festival dates, send to db
   
 	interface TimeEntry {
 	  date: DateValue;
 	  times: string[];
 	}
   
-	let availableTimesForSelectedDate = writable<string[]>([]);
+	let availableTimesForSelectedDate = writable<string[]>([]); // pass to time picker
   
 	const handleDateSelect = (selection: DateValue[] | DateValue | undefined): void => {
 	  if (Array.isArray(selection)) {
