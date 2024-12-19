@@ -10,13 +10,18 @@
   <img
     src={event.image}
     alt=""
-    class="aspect-square object-cover w-[30%] min-w-32"
+    class="aspect-square object-cover w-[30%] min-w-32 grow"
   />
-  <div class="flex flex-col gap-1 p-1">
+  <div class="flex flex-col gap-1 p-2">
     <h3>{event.title}</h3>
-    <span>{event.date}</span>
-    <span>{event.location}</span>
-    <span class="line-clamp-2">{event.description}</span>
+    <span>🗓️ {event.date}</span>
+    <span>🕣 {event.time}</span>
+    <span>📍 {event.location}</span>
+    <div class="flex flex-wrap gap-1">
+      {#each event.tags as tag}
+        <div class="tag">{tag}</div>
+      {/each}
+    </div>
   </div>
 </a>
 
