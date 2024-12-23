@@ -1,6 +1,5 @@
 <script lang="ts">
   import "../../app.css";
-  import Back from "../../components/back.svelte";
   import Icon from "@iconify/svelte";
   import { page } from "$app/stores";
 
