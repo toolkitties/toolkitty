@@ -2,13 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
-
 @layer base {
   input {
     @apply w-full p-2.5 border border-black rounded;
   }
 
   button {
-    @apply border border-black bg-black/20 rounded px-2 py-1.5 w-full;
+    @apply border border-black bg-black/20 rounded px-2 py-1.5;
   }
 }

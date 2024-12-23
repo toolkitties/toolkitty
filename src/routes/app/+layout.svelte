@@ -44,12 +44,6 @@
 </script>
 
 <main class="h-dvh">
-  <!-- to do: move into header component with page title -->
-  <div class="fixed top-2 left-2">
-    {#if !topLevelPage}
-      <Back />
-    {/if}
-  </div>
   <div class="p-8">
     <slot />
   </div>

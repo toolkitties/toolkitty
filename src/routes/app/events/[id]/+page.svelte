@@ -1,1 +1,5 @@
-<h1>Event page</h1>
+<script>
+  import Header from "../../../../components/header.svelte";
+</script>
+
+<Header title="Event title" />
