@@ -15,7 +15,7 @@
 	} = $props();
 	
 	const selectedDate = writable<DateValue | undefined>(undefined); // pass to time picker, emit to home page
-	const multipleSelectedDates = writable<DateValue[] | DateValue | undefined>(undefined); // festival dates, send to db
+	let multipleSelectedDates = []; // festival dates, send to db
   
 	interface TimeEntry {
 	  date: DateValue;
@@ -28,7 +28,7 @@
 	// check if selected date has associated available times to pass to time picker
 	const handleDateSelect = (selection: DateValue[] | DateValue | undefined): void => {
 	  if (Array.isArray(selection)) {
-		multipleSelectedDates.set(selection);
+		multipleSelectedDates = selection;
 	  } else {
 		selectedDate.set(selection);
 		if (selection && availableTimes) {
@@ -92,10 +92,10 @@
 	multiple={canSelectMultiple}
 	onValueChange={handleDateSelect}
   >
-	<Calendar.Header>
-	  <Calendar.PrevButton>←</Calendar.PrevButton>
+	<Calendar.Header class='flex flex-row'>
+	  <Calendar.PrevButton class='w-8 mr-2'>←</Calendar.PrevButton>
 	  <Calendar.Heading />
-	  <Calendar.NextButton>→</Calendar.NextButton>
+	  <Calendar.NextButton class='w-8 ml-2'>→</Calendar.NextButton>
 	</Calendar.Header>
   
 	{#each months as month}

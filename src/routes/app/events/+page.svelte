@@ -1,8 +1,10 @@
 <script lang="ts">
   import type { DateValue } from "@internationalized/date";
   import { CalendarDate } from "@internationalized/date";
+  import { goto } from '$app/navigation';
   import CustomCalendar from '../../../components/CustomCalendar.svelte';
   import EventRow from "../../../components/event-row.svelte";
+  import { event } from "@tauri-apps/api";
 
   const festivalDates: DateValue[] = [
       new CalendarDate(2024, 12, 11),
@@ -60,9 +62,21 @@
       tags: ["tag 1", "tag 2", "tag 3"],
     },
   ];
+
+  function handleNavigation(event: Event): void {
+    const target = event.target as HTMLSelectElement;
+    const selectedRoute = target.value;
+    goto(selectedRoute);
+  }
 </script>
 
-<h1>My Festival</h1>
+<!-- move to header or layout file?  -->
+<select name="unauth-nav" id="festival-select" on:change={handleNavigation}>
+  <option value="/app/events">My Festival</option>
+  <option value="/">My Other Festival</option> <!-- would this take you back to the join page? do you need to enter the code every time? -->
+  <option value="/">Join Festival</option>
+  <option value="/create">Create New Festival</option>
+</select>
 
 <CustomCalendar 
     use={"festival overview"}
@@ -72,7 +86,6 @@
     eventsCount={eventsCount}
 />
 
-<a href="/app/events/1">Event link </a>
 <a href="/app/events/create">Create event</a>
 
 {#each events as event}
