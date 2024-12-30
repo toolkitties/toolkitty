@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Calendar } from "bits-ui";
-	import TimePicker from "./TimePicker.svelte";
+	import TimePicker from "../components/TimePicker.svelte";
 	import { writable } from 'svelte/store';
 	import type { DateValue } from "@internationalized/date";
   
@@ -22,8 +22,10 @@
 	  times: string[];
 	}
   
-	let availableTimesForSelectedDate = writable<string[]>([]); // pass to time picker
+	let availableTimesForSelectedDate = writable<string[]>([]);
   
+	// pass date selections to writable store
+	// check if selected date has associated available times to pass to time picker
 	const handleDateSelect = (selection: DateValue[] | DateValue | undefined): void => {
 	  if (Array.isArray(selection)) {
 		multipleSelectedDates.set(selection);
@@ -37,6 +39,7 @@
 	  }
 	};
   
+	// Pull available times array for selected date
 	function findAvailableTimesForSelectedDate(date: DateValue, times: TimeEntry[]) {
 	  const matchingEntry = times.find(entry => 
 		date.year === entry.date.year && 
@@ -50,6 +53,7 @@
 	  }
 	}
   
+	// Functions to handle how day cells are styled and interacted with
 	const isFestivalDate = (date: DateValue): boolean => {
 	  if (!festivalDates || !Array.isArray(festivalDates)) {
 		return false;
