@@ -4,7 +4,6 @@
   import { goto } from '$app/navigation';
   import CustomCalendar from '../../../components/CustomCalendar.svelte';
   import EventRow from "../../../components/event-row.svelte";
-  import { event } from "@tauri-apps/api";
 
   const festivalDates: DateValue[] = [
       new CalendarDate(2024, 12, 11),
@@ -63,17 +62,19 @@
     },
   ];
 
-  function handleNavigation(event: Event): void {
+  function handleUnauthNav(event: Event): void {
     const target = event.target as HTMLSelectElement;
     const selectedRoute = target.value;
     goto(selectedRoute);
   }
+
+  let showCreateLinks = false;
 </script>
 
 <!-- move to header or layout file?  -->
-<select name="unauth-nav" id="festival-select" on:change={handleNavigation}>
+<select name="unauth-nav" id="festival-select" on:change={handleUnauthNav}>
   <option value="/app/events">My Festival</option>
-  <option value="/">My Other Festival</option> <!-- would this take you back to the join page? do you need to enter the code every time? -->
+  <option value="/">My Other Festival</option> <!-- would this take you back to the enter code page? do you need to enter the code every time? -->
   <option value="/">Join Festival</option>
   <option value="/create">Create New Festival</option>
 </select>
@@ -86,8 +87,27 @@
     eventsCount={eventsCount}
 />
 
-<a href="/app/events/create">Create event</a>
-
 {#each events as event}
   <EventRow {event} />
 {/each}
+
+<div class="relative">
+  <div class="fixed bottom-12 right-4 z-1 flex flex-col items-end space-y-2">
+    {#if showCreateLinks}
+      <div class="flex flex-col items-end space-y-2">
+        <a href="/app/events/create" class="bg-white p-2 rounded shadow">Space</a>
+        <a href="/app/events/create" class="bg-white p-2 rounded shadow">Resource</a>
+        <a href="/app/events/create" class="bg-white p-2 rounded shadow">Event</a>
+      </div>
+    {/if}
+
+    <!-- Button -->
+    <button 
+      on:click={() => (showCreateLinks = !showCreateLinks)} 
+      class="bg-black text-white px-4 py-2 rounded shadow">
+      Contribute
+    </button>
+  </div>
+</div>
+
+
