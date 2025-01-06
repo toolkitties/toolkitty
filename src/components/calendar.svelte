@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Calendar } from "bits-ui";
-	import TimePicker from "../components/TimePicker.svelte";
+	import TimePicker from "./time-picker.svelte";
 	import { writable } from 'svelte/store';
 	import type { DateValue } from "@internationalized/date";
   

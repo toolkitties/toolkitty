@@ -2,7 +2,7 @@
   import type { DateValue } from "@internationalized/date";
   import { CalendarDate } from "@internationalized/date";
   import { goto } from '$app/navigation';
-  import CustomCalendar from '../../../components/CustomCalendar.svelte';
+  import Calendar from '../../../components/calendar.svelte';
   import EventRow from "../../../components/event-row.svelte";
 
   const festivalDates: DateValue[] = [
@@ -71,15 +71,14 @@
   let showCreateLinks = false;
 </script>
 
-<!-- move to header or layout file?  -->
 <select name="unauth-nav" id="festival-select" on:change={handleUnauthNav}>
   <option value="/app/events">My Festival</option>
-  <option value="/">My Other Festival</option> <!-- would this take you back to the enter code page? do you need to enter the code every time? -->
+  <option value="/">My Other Festival</option> <!-- takes you back to join page for time being, until we know hw switching festivals will be handled -->
   <option value="/">Join Festival</option>
   <option value="/create">Create New Festival</option>
 </select>
 
-<CustomCalendar 
+<Calendar 
     use={"festival overview"}
     canSelectMultiple={false} 
     hasTimePicker={false} 
