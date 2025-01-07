@@ -16,6 +16,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+anyhow = "1.0.95"
 p2panda-core = "0.1.0"
 p2panda-net = "0.1.0"
 p2panda-store = "0.1.0"

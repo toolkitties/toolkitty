@@ -1,6 +1,7 @@
 use p2panda_core::{Body, Hash, Header};
 use p2panda_store::MemoryStore;
 use p2panda_stream::IngestExt;
+use serde::Serialize;
 use thiserror::Error;
 use tokio::sync::mpsc;
 use tokio::task::{self, JoinHandle};
@@ -9,9 +10,10 @@ use tokio_stream::StreamExt;
 
 use crate::node::operation::{Extensions, LogId};
 
+#[derive(Clone, Serialize)]
 pub struct StreamEvent {
-    meta: EventMeta,
-    data: EventData,
+    pub meta: EventMeta,
+    pub data: EventData,
 }
 
 impl StreamEvent {
@@ -30,19 +32,27 @@ impl StreamEvent {
     }
 }
 
+#[derive(Clone, Serialize)]
 pub struct EventMeta {
-    header: Header<Extensions>,
+    pub header: Header<Extensions>,
 }
 
+#[derive(Clone, Serialize)]
 pub enum EventData {
     Application(Body),
     Error(StreamError),
 }
 
-#[derive(Debug, Error)]
+#[derive(Clone, Debug, Error, Serialize)]
 pub enum StreamError {
-    #[error(transparent)]
-    IngestError(p2panda_stream::operation::IngestError),
+    // @TODO: p2panda_stream::operation::IngestError doesn't implement Serialize which is a
+    // requirement for all messages being sent over the event stream to the frontend. We could add
+    // Serialize to it's derive block, or manually impl Serialize ourselves on StreamError.
+    //
+    // #[error(transparent)]
+    // IngestError(p2panda_stream::operation::IngestError),
+    #[error("ingest error")]
+    IngestError,
 }
 
 pub struct StreamController {
@@ -60,7 +70,8 @@ impl StreamController {
         let processor_handle = {
             let store = store.clone();
 
-            task::spawn(async move {
+            let rt = tokio::runtime::Handle::current();
+            rt.spawn(async move {
                 let mut processor =
                     processor_rx
                         .ingest(store, 512)
