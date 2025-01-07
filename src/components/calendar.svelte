@@ -3,6 +3,8 @@
 	import TimePicker from "./time-picker.svelte";
 	import { writable } from 'svelte/store';
 	import type { DateValue } from "@internationalized/date";
+	import { CalendarDate  } from "@internationalized/date";
+
   
 	let { 
 	  use,
@@ -10,8 +12,7 @@
 	  hasTimePicker, 
 	  festivalDates = null, 
 	  eventsCount = null, 
-	  availableDates = null,
-	  availableTimes = null,
+	  availability = null,
 	} = $props();
 	
 	const selectedDate = writable<DateValue | undefined>(undefined); // pass to time picker, emit to home page
@@ -21,7 +22,16 @@
 	  date: DateValue;
 	  times: string[];
 	}
-  
+
+	let availableDatesStrings: string[] = [];
+	for (const entry of availability){
+		availableDatesStrings.push(entry.date);
+	}
+	let availableDates = availableDatesStrings.map(dateString => {
+		let date = new Date(dateString);
+		return new CalendarDate(date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate());
+	})
+
 	let availableTimesForSelectedDate = writable<string[]>([]);
   
 	// pass date selections to writable store
@@ -31,8 +41,8 @@
 		multipleSelectedDates = selection;
 	  } else {
 		selectedDate.set(selection);
-		if (selection && availableTimes) {
-		  findAvailableTimesForSelectedDate(selection, availableTimes);
+		if (selection && availability) {
+		  findAvailableTimesForSelectedDate(selection, availability);
 		} else {
 		  availableTimesForSelectedDate.set([]); 
 		}
