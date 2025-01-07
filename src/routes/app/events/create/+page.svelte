@@ -3,40 +3,39 @@
     import { CalendarDate } from "@internationalized/date";
     import Calendar from "../../../../components/calendar.svelte";
 
-    // placeholder data
-    const festivalDates: DateValue[] = [
-        new CalendarDate(2024, 12, 11),
-        new CalendarDate(2024, 12, 12),
-        new CalendarDate(2024, 12, 13),
-        new CalendarDate(2024, 12, 14),
-        new CalendarDate(2024, 12, 15),
-        new CalendarDate(2024, 12, 16),
-    ];
-
-    const availableDates: DateValue[] = [
-        new CalendarDate(2024, 12, 14),
-        new CalendarDate(2024, 12, 15),
-    ]
-
-    const availableTimes: Object[] = [
-        {
-            date: new CalendarDate(2024, 12, 14),
-            times: ["12:00 - 13:00", "17:00 - 18:00", "18:00 - 19:00"]
-        },
-        {
-            date: new CalendarDate(2024, 12, 15),
-            times: ["10:00 - 11:00", "1:00 - 12:00", "12:00 - 13:00", "20:00 - 21:00", "21:00 - 22:00"]
-        },
-    ]
 </script>
 
-<h1>Create event</h1>
-    
-<Calendar 
-    use={"resource management"}
-    canSelectMultiple={false} 
-    hasTimePicker={true} 
-    festivalDates={festivalDates} 
-    availableDates={availableDates}
-    availableTimes={availableTimes}
-/>
+<h1>Create event</h1> <!-- TODO: replace with header component import -->
+
+<p>Hello organisers! Fill this form to upload your event to the program.</p>
+<p>YOU NEED A SPACE BEFORE YOU CREATE AN EVENT</p>
+
+<form>
+    <label for="event-name">Event Name *</label>
+    <input name="event-name" type="text" required>
+
+    <label for="event-description">Description *</label>
+    <textarea name="event-description" required ></textarea>
+
+    <label for="event-start-time">Start time *</label>
+    <input name="event-start-time" type="time" required>
+
+    <label for="event-end-time">End time</label>
+    <input name="event-end-time" type="time">
+
+    <label for="select-space">Select Space</label>
+    <select name="select-space">
+        <option value="space-1">Space 1</option>
+        <option value="space-1">Space 2</option>
+        <option value="space-1">Space 3</option>
+    </select>
+    <!-- calendar of availability tied to each space goes here -->
+    <select name="select-resources">
+        <option value="space-1">Space 1</option>
+        <option value="space-1">Space 2</option>
+        <option value="space-1">Space 3</option>
+    </select>
+    <!-- calendar of availability tied to each resource goes here -->
+    <!-- image upload component here-->
+    <!-- tag selector -->
+</form>

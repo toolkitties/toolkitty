@@ -13,6 +13,8 @@
 	  availableDates = null,
 	  availableTimes = null,
 	} = $props();
+
+	console.log(festivalDates);
 	
 	const selectedDate = writable<DateValue | undefined>(undefined); // pass to time picker, emit to home page
 	let multipleSelectedDates = []; // festival dates, send to db
