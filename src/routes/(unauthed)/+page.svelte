@@ -1,5 +1,4 @@
 <script lang="ts">
-  // import { invoke } from "@tauri-apps/api/core";
   import { PinInput, Toggle } from "bits-ui";
   import { goto } from "$app/navigation";
 
@@ -8,15 +7,6 @@
   let unlocked = true;
   let pinInputType: "text" | "password" = "password";
   $: pinInputType = unlocked ? "text" : "password";
-
-  // let name = $state("");
-  // let greetMsg = $state("");
-
-  // async function greet(event: Event) {
-  //   event.preventDefault();
-  //   // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-  //   greetMsg = await invoke("greet", { name });
-  // }
 
   async function join(event: Event) {
     event.preventDefault();
@@ -65,6 +55,3 @@
   class="border border-black rounded p-4 text-center"
   type="submit">Create</a
 >
-
-<style>
-</style>
