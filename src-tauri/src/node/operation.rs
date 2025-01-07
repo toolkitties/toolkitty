@@ -3,7 +3,9 @@ use std::time::SystemTime;
 
 use p2panda_core::{Body, Extension, Header, PrivateKey, PruneFlag};
 use p2panda_store::{LocalLogStore, MemoryStore};
+use p2panda_stream::operation::ingest_operation;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, StdHash)]
 pub enum LogId {
@@ -35,13 +37,13 @@ impl Extension<PruneFlag> for Extensions {
     }
 }
 
-pub async fn create_operation(
+pub async fn publish_operation(
     store: &mut MemoryStore<LogId, Extensions>,
     log_id: &LogId,
     private_key: &PrivateKey,
     body: Option<&[u8]>,
     prune_flag: bool,
-) -> (Header<Extensions>, Option<Body>) {
+) -> Result<(Header<Extensions>, Option<Body>, Vec<u8>), PublishError> {
     let body = body.map(Body::new);
     let public_key = private_key.public_key();
 
@@ -77,5 +79,23 @@ pub async fn create_operation(
     };
     header.sign(private_key);
 
-    (header, body)
+    let header_bytes = header.to_bytes();
+
+    ingest_operation(
+        store,
+        header.clone(),
+        body.clone(),
+        header_bytes.clone(),
+        &log_id,
+        prune_flag,
+    )
+    .await?;
+
+    Ok((header, body, header_bytes))
+}
+
+#[derive(Debug, Error)]
+pub enum PublishError {
+    #[error(transparent)]
+    IngestError(#[from] p2panda_stream::operation::IngestError),
 }

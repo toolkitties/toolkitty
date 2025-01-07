@@ -46,24 +46,27 @@ pub enum StreamError {
 }
 
 pub struct StreamController {
-    store: MemoryStore<LogId, Extensions>,
+    stream_store: StreamStore,
+    operation_store: MemoryStore<LogId, Extensions>,
     processor_tx: mpsc::Sender<(Header<Extensions>, Option<Body>, Vec<u8>)>,
     processor_handle: JoinHandle<()>,
 }
 
 impl StreamController {
-    pub fn new(store: MemoryStore<LogId, Extensions>) -> (Self, mpsc::Receiver<StreamEvent>) {
+    pub fn new(
+        operation_store: MemoryStore<LogId, Extensions>,
+    ) -> (Self, mpsc::Receiver<StreamEvent>) {
         let (app_tx, app_rx) = mpsc::channel(1024);
         let (processor_tx, processor_rx) = mpsc::channel(1024);
         let processor_rx = ReceiverStream::new(processor_rx);
 
         let processor_handle = {
-            let store = store.clone();
+            let operation_store = operation_store.clone();
 
             task::spawn(async move {
                 let mut processor =
                     processor_rx
-                        .ingest(store, 512)
+                        .ingest(operation_store, 512)
                         .filter_map(|result| match result {
                             Ok(operation) => Some(operation),
                             Err(_err) => {
@@ -104,9 +107,12 @@ impl StreamController {
             })
         };
 
+        let stream_store = StreamStore::new();
+
         (
             Self {
-                store,
+                stream_store,
+                operation_store,
                 processor_tx,
                 processor_handle,
             },
@@ -126,8 +132,8 @@ impl StreamController {
             .expect("processor_tx send");
     }
 
-    pub async fn ack(&mut self, _operation_hash: Hash) -> Result<(), AckError> {
-        // @TODO: Inform controller that we've acked this operation.
+    pub async fn ack(&mut self, operation_hash: Hash) -> Result<(), AckError> {
+        self.stream_store.ack(operation_hash).await?;
         Ok(())
     }
 
@@ -140,3 +146,15 @@ impl StreamController {
 
 #[derive(Debug, Error)]
 pub enum AckError {}
+
+struct StreamStore {}
+
+impl StreamStore {
+    pub fn new() -> Self {
+        Self {}
+    }
+
+    pub async fn ack(&mut self, operation_hash: Hash) -> Result<(), AckError> {
+        Ok(())
+    }
+}
