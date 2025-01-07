@@ -26,8 +26,8 @@ pub struct Extensions {
 
 impl Extension<LogId> for Extensions {
     fn extract(&self) -> Option<LogId> {
-        // @TODO
-        todo!()
+        // @TODO: replace this hard-coded log id with the correct logic.
+        Some(LogId::Calendar)
     }
 }
 

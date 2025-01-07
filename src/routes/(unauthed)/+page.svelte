@@ -1,7 +1,8 @@
 <script lang="ts">
-  // import { invoke } from "@tauri-apps/api/core";
+  import { invoke, Channel } from "@tauri-apps/api/core";
   import { PinInput, Toggle } from "bits-ui";
   import { goto } from "$app/navigation";
+  import { stringify } from "postcss";
 
   let value: string[] | undefined = [];
 
@@ -12,14 +13,36 @@
   // let name = $state("");
   // let greetMsg = $state("");
 
-  // async function greet(event: Event) {
-  //   event.preventDefault();
-  //   // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-  //   greetMsg = await invoke("greet", { name });
-  // }
+  type ToolkittyEvent =
+    | {
+        event: "application";
+        data: { operationId: string; payload: string };
+      }
+    | {
+        event: "application";
+        data: { operationId: string; error: string };
+      };
 
   async function join(event: Event) {
     event.preventDefault();
+
+    // @TODO: Just calling this command here for testing purposes, move somewhere sensible later,
+    // of course.
+    const streamChannel = new Channel<ToolkittyEvent>();
+    streamChannel.onmessage = (event) => {
+      console.log(`got stream event with id ${event.data.operationId}`);
+    };
+
+    await invoke("start", { streamChannel: streamChannel });
+
+    const jsonPayload = {
+      type: "EventCreated",
+      data: { title: "My Cool Event" },
+    };
+
+    console.log(`publish application data: `, jsonPayload);
+    await invoke("publish", { payload: JSON.stringify(jsonPayload) });
+
     goto(`/join?code=${value}`);
   }
 </script>
