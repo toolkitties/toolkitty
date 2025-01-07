@@ -23,11 +23,13 @@
     return new CalendarDate(date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate());
   })
 
-  let events =  [
+ let events = [
     {
       "id": 1,
       "title": "Really Cool Event",
       "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "location": "Cool Venue",
+      "date": "2025-01-06T14:40:02.536Z",
       "start_time": "19:00",
       "end_time": "21:30",
       "space": {
@@ -54,6 +56,8 @@
       "id": 2,
       "title": "Another Event",
       "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "location": "Another Venue",
+      "date": "2025-01-10T14:40:02.536Z",
       "start_time": "19:00",
       "end_time": "21:30",
       "space": {
