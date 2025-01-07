@@ -10,4 +10,9 @@
   button {
     @apply border border-black bg-black/20 rounded px-2 py-1.5;
   }
+
+  .tag {
+    @apply border border-black rounded-full px-2.5 py-[3px];
+  }
+
 }
