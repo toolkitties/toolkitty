@@ -6,7 +6,7 @@ use tauri::{Builder, Manager, State};
 use tokio::sync::{mpsc, oneshot, Mutex};
 use tokio::task::{self, JoinHandle};
 
-use node::{EventData, Node, PublishError, StreamEvent};
+use node::{AckError, EventData, Node, PublishError, StreamEvent};
 
 /// Enum of all possible event types which will be sent on the application stream.
 #[derive(Clone, serde::Serialize)]
@@ -23,6 +23,9 @@ pub enum ToolkittyEvent {
 enum ToolkittyError {
     #[error(transparent)]
     PublishError(#[from] PublishError),
+
+    #[error(transparent)]
+    AckError(#[from] AckError),
 
     #[error(transparent)]
     TauriError(#[from] tauri::Error),
@@ -98,10 +101,23 @@ async fn start(
 }
 
 #[tauri::command]
-async fn publish(state: State<'_, Mutex<AppContext>>, payload: &str) -> Result<Hash, ToolkittyError> {
+async fn publish(
+    state: State<'_, Mutex<AppContext>>,
+    payload: &str,
+) -> Result<Hash, ToolkittyError> {
     let mut state = state.lock().await;
     let operation_id = state.node.publish(&payload.as_bytes()).await?;
     Ok(operation_id)
+}
+
+#[tauri::command]
+async fn acknowledge(
+    state: State<'_, Mutex<AppContext>>,
+    operation_id: Hash,
+) -> Result<(), ToolkittyError> {
+    let mut state = state.lock().await;
+    state.node.ack(operation_id).await?;
+    Ok(())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -120,13 +136,15 @@ pub fn run() {
                     channel_oneshot_tx: Some(oneshot_tx),
                 }));
 
-                let _result = node_rx_task(node_rx, oneshot_rx).await;
+                if let Err(err) = node_rx_task(node_rx, oneshot_rx).await {
+                    panic!("Failed to start node receiver task: {err}")
+                };
             });
 
             Ok(())
         })
         .plugin(tauri_plugin_shell::init())
-        .invoke_handler(tauri::generate_handler![publish, start])
+        .invoke_handler(tauri::generate_handler![acknowledge, publish, start])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

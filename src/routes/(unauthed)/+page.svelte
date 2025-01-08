@@ -32,8 +32,11 @@
     // Create the stream channel to be passed to backend and add an `onMessage` callback method to
     // handle any events which are later sent from the backend.
     const streamChannel = new Channel<ToolkittyEvent>();
-    streamChannel.onmessage = (event) => {
+    streamChannel.onmessage = async (event) => {
       console.log(`got stream event with id ${event.data.operationId}`);
+
+      // Acknowledge that we have received and processed this operation.
+      await invoke("acknowledge", { operationId: event.data.operationId });
     };
 
     // The start command must be called on app startup otherwise running the node on the backend

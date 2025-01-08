@@ -8,8 +8,8 @@ use p2panda_store::MemoryStore;
 use tokio::sync::mpsc;
 
 use crate::node::operation::{publish_operation, Extensions, LogId, PublishError};
-use crate::node::stream::{AckError, StreamController};
-pub use crate::node::stream::{EventData, StreamEvent};
+use crate::node::stream::StreamController;
+pub use crate::node::stream::{AckError, EventData, StreamEvent};
 
 pub struct Node {
     private_key: PrivateKey,
