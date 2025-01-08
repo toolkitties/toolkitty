@@ -19,7 +19,7 @@
         data: { operationId: string; payload: string };
       }
     | {
-        event: "application";
+        event: "error";
         data: { operationId: string; error: string };
       };
 
