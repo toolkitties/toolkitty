@@ -10,7 +10,6 @@ use tokio_stream::StreamExt;
 
 use crate::node::operation::{Extensions, LogId};
 
-#[derive(Clone, Serialize)]
 pub struct StreamEvent {
     pub meta: EventMeta,
     pub data: EventData,
@@ -32,27 +31,19 @@ impl StreamEvent {
     }
 }
 
-#[derive(Clone, Serialize)]
 pub struct EventMeta {
     pub header: Header<Extensions>,
 }
 
-#[derive(Clone, Serialize)]
 pub enum EventData {
     Application(Body),
     Error(StreamError),
 }
 
-#[derive(Clone, Debug, Error, Serialize)]
+#[derive(Debug, Error)]
 pub enum StreamError {
-    // @TODO: p2panda_stream::operation::IngestError doesn't implement Serialize which is a
-    // requirement for all messages being sent over the event stream to the frontend. We could add
-    // Serialize to it's derive block, or manually impl Serialize ourselves on StreamError.
-    //
-    // #[error(transparent)]
-    // IngestError(p2panda_stream::operation::IngestError),
-    #[error("ingest error")]
-    IngestError,
+    #[error(transparent)]
+    IngestError(p2panda_stream::operation::IngestError),
 }
 
 pub struct StreamController {
