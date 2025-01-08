@@ -7,10 +7,8 @@ use p2panda_core::{Body, Extension, Header, PrivateKey, PruneFlag};
 use p2panda_store::{LocalLogStore, MemoryStore};
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, StdHash)]
+#[derive(Clone, Debug, PartialEq, Eq, StdHash)]
 pub enum LogId {
-    // @TODO: `Default` requirement will be removed in future versions of p2panda-core.
-    #[default]
     Calendar,
 }
 
@@ -82,7 +80,7 @@ pub async fn create_operation(
     (header, body)
 }
 
-pub fn encode_gossip_operation(header: Header<Extensions>, body: Option<Body>) -> Result<Vec<u8>> {
+pub fn encode_gossip_message(header: Header<Extensions>, body: Option<Body>) -> Result<Vec<u8>> {
     let bytes = encode_cbor(&(header.to_bytes(), body.map(|body| body.to_bytes())))?;
     Ok(bytes)
 }

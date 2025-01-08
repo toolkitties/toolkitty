@@ -1,15 +1,16 @@
 use p2panda_core::{Body, Hash, Header};
 use p2panda_store::MemoryStore;
 use p2panda_stream::IngestExt;
-use serde::Serialize;
+use serde::{ser::SerializeStruct, Serialize};
 use thiserror::Error;
 use tokio::sync::mpsc;
-use tokio::task::{self, JoinHandle};
+use tokio::task::JoinHandle;
 use tokio_stream::wrappers::ReceiverStream;
 use tokio_stream::StreamExt;
 
 use crate::node::operation::{Extensions, LogId};
 
+#[derive(Clone, Debug)]
 pub struct StreamEvent {
     pub meta: EventMeta,
     pub data: EventData,
@@ -18,32 +19,73 @@ pub struct StreamEvent {
 impl StreamEvent {
     pub fn new(header: Header<Extensions>, body: Body) -> Self {
         Self {
-            meta: EventMeta { header },
+            meta: EventMeta {
+                hash: header.hash(),
+                header,
+            },
             data: EventData::Application(body),
         }
     }
 
     pub fn from_error(error: StreamError, header: Header<Extensions>) -> Self {
         Self {
-            meta: EventMeta { header },
+            meta: EventMeta {
+                hash: header.hash(),
+                header,
+            },
             data: EventData::Error(error),
         }
     }
 }
 
-pub struct EventMeta {
-    pub header: Header<Extensions>,
+impl Serialize for StreamEvent {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let mut state = serializer.serialize_struct("StreamEvent", 3)?;
+        state.serialize_field("event", &self.data.tag())?;
+        state.serialize_field("meta", &self.meta)?;
+        state.serialize_field("data", &self.data)?;
+        state.end()
+    }
 }
 
+#[derive(Clone, Debug, Serialize)]
+pub struct EventMeta {
+    pub header: Header<Extensions>,
+    pub hash: Hash,
+}
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(untagged)]
 pub enum EventData {
     Application(Body),
     Error(StreamError),
 }
 
-#[derive(Debug, Error)]
+impl EventData {
+    fn tag(&self) -> &'static str {
+        match self {
+            EventData::Application(_) => "application",
+            EventData::Error(_) => "error",
+        }
+    }
+}
+
+#[derive(Clone, Debug, Error)]
 pub enum StreamError {
     #[error(transparent)]
     IngestError(p2panda_stream::operation::IngestError),
+}
+
+impl Serialize for StreamError {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::ser::Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
 }
 
 pub struct StreamController {
@@ -128,7 +170,7 @@ impl StreamController {
             .expect("processor_tx send");
     }
 
-    pub async fn ack(&mut self, _operation_hash: Hash) -> Result<(), AckError> {
+    pub async fn ack(&mut self, _operation_id: Hash) -> Result<(), AckError> {
         // @TODO: Inform controller that we've acked this operation.
         Ok(())
     }

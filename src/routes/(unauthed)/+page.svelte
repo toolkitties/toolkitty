@@ -36,13 +36,13 @@
       console.log(`got stream event with id ${event.data.operationId}`);
 
       // Acknowledge that we have received and processed this operation.
-      await invoke("acknowledge", { operationId: event.data.operationId });
+      await invoke("ack", { operationId: event.data.operationId });
     };
 
     // The start command must be called on app startup otherwise running the node on the backend
     // is blocked. This is because we need the stream channel to be provided and passed into the
     // node stream receiver task.
-    await invoke("start", { streamChannel: streamChannel });
+    await invoke("init_stream", { streamChannel: streamChannel });
 
     // Just some app data.
     const jsonPayload = {

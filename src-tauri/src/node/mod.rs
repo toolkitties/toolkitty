@@ -16,10 +16,8 @@ use crate::node::operation::{create_operation, Extensions, LogId};
 use crate::node::stream::StreamController;
 pub use crate::node::stream::{AckError, EventData, StreamEvent};
 
-static NETWORK_ID: &str = "toolkitties";
-
 fn network_id() -> [u8; 32] {
-    Hash::new(NETWORK_ID).as_bytes().to_owned()
+    Hash::new(b"toolkitty").into()
 }
 
 pub struct Node<T> {
@@ -59,8 +57,8 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
         ))
     }
 
-    pub async fn ack(&mut self, operation_hash: Hash) -> Result<(), AckError> {
-        self.stream.ack(operation_hash).await
+    pub async fn ack(&mut self, operation_id: Hash) -> Result<(), AckError> {
+        self.stream.ack(operation_id).await
     }
 
     pub async fn publish(&mut self, payload: &[u8]) -> Result<Hash, PublishError> {
@@ -79,11 +77,11 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
         )
         .await;
         let header_bytes = header.to_bytes();
-        let operation_hash = header.hash();
+        let operation_id = header.hash();
 
         self.stream.ingest(header, body, header_bytes).await;
 
-        Ok(operation_hash)
+        Ok(operation_id)
     }
 
     pub async fn subscribe_stream(
