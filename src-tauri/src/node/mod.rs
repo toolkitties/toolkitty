@@ -3,16 +3,16 @@ mod message;
 mod operation;
 mod stream;
 
-use actor::{NodeActor, ToNodeActor};
 use anyhow::Result;
 use p2panda_core::{Hash, PrivateKey};
-use p2panda_net::{FromNetwork, Network, NetworkBuilder, ToNetwork, TopicId};
+use p2panda_net::{FromNetwork, NetworkBuilder, ToNetwork, TopicId};
 use p2panda_store::MemoryStore;
 use p2panda_sync::TopicQuery;
-use thiserror::Error;
 use tokio::sync::{mpsc, oneshot};
 
-use crate::node::operation::{publish_operation, Extensions, LogId, PublishError};
+use crate::node::actor::{NodeActor, ToNodeActor};
+pub use crate::node::operation::PublishError;
+use crate::node::operation::{publish_operation, Extensions, LogId};
 use crate::node::stream::StreamController;
 pub use crate::node::stream::{AckError, EventData, StreamEvent};
 
