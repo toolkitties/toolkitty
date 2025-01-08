@@ -9,9 +9,9 @@ use thiserror::Error;
 use tokio::sync::mpsc;
 
 use crate::node::operation::{create_operation, Extensions, LogId};
-use crate::node::stream::{AckError, StreamController};
+use crate::node::stream::StreamController;
 
-pub use crate::node::stream::{StreamEvent, EventData};
+pub use crate::node::stream::{AckError, EventData, StreamEvent};
 
 pub struct Node {
     private_key: PrivateKey,
