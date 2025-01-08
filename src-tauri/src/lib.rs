@@ -1,12 +1,26 @@
 mod node;
 
 use p2panda_core::{Hash, PrivateKey};
+use p2panda_net::TopicId;
+use p2panda_sync::TopicQuery;
+use serde::{Deserialize, Serialize};
 use tauri::ipc::Channel;
 use tauri::{Builder, Manager, State};
 use tokio::sync::{mpsc, oneshot, Mutex};
 use tokio::task::{self, JoinHandle};
 
 use node::{AckError, EventData, Node, PublishError, StreamEvent};
+
+#[derive(Clone, Debug, PartialEq, Eq, std::hash::Hash, Serialize, Deserialize)]
+struct ToolkittyTopic(String);
+
+impl TopicQuery for ToolkittyTopic {}
+
+impl TopicId for ToolkittyTopic {
+    fn id(&self) -> [u8; 32] {
+        Hash::new(&self.0).as_bytes().to_owned()
+    }
+}
 
 /// Enum of all possible event types which will be sent on the application stream.
 #[derive(Clone, serde::Serialize)]
@@ -76,7 +90,7 @@ async fn node_rx_task(
 }
 
 struct AppContext {
-    node: Node,
+    node: Node<ToolkittyTopic>,
     private_key: PrivateKey,
     channel_oneshot_tx: Option<oneshot::Sender<Channel<ToolkittyEvent>>>,
 }
@@ -127,7 +141,9 @@ pub fn run() {
             let app_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 let private_key = PrivateKey::new();
-                let (node, node_rx) = Node::new(private_key.clone());
+                let (node, node_rx) = Node::<ToolkittyTopic>::run(private_key.clone())
+                    .await
+                    .expect("node successfully starts");
                 let (oneshot_tx, oneshot_rx) = oneshot::channel();
 
                 app_handle.manage(Mutex::new(AppContext {
