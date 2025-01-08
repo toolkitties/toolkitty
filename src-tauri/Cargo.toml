@@ -29,3 +29,4 @@ tauri-plugin-shell = "2"
 thiserror = "2.0.9"
 tokio = { version = "1.42.0", features = ["sync"] }
 tokio-stream = { version = "0.1.17", features = ["sync"] }
+tracing = "0.1.41"
