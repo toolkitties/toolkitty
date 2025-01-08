@@ -1,7 +1,8 @@
 <script lang="ts">
-  // import { invoke } from "@tauri-apps/api/core";
+  import { invoke, Channel } from "@tauri-apps/api/core";
   import { PinInput, Toggle } from "bits-ui";
   import { goto } from "$app/navigation";
+  import { stringify } from "postcss";
 
   let value: string[] | undefined = [];
 
@@ -12,14 +13,47 @@
   // let name = $state("");
   // let greetMsg = $state("");
 
-  // async function greet(event: Event) {
-  //   event.preventDefault();
-  //   // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-  //   greetMsg = await invoke("greet", { name });
-  // }
+  type ToolkittyEvent =
+    | {
+        event: "application";
+        data: { operationId: string; payload: string };
+      }
+    | {
+        event: "error";
+        data: { operationId: string; error: string };
+      };
 
   async function join(event: Event) {
     event.preventDefault();
+
+    // @TODO: Just doing all this here for testing purposes, move somewhere sensible later,
+    // of course.
+
+    // Create the stream channel to be passed to backend and add an `onMessage` callback method to
+    // handle any events which are later sent from the backend.
+    const streamChannel = new Channel<ToolkittyEvent>();
+    streamChannel.onmessage = async (event) => {
+      console.log(`got stream event with id ${event.data.operationId}`);
+
+      // Acknowledge that we have received and processed this operation.
+      await invoke("acknowledge", { operationId: event.data.operationId });
+    };
+
+    // The start command must be called on app startup otherwise running the node on the backend
+    // is blocked. This is because we need the stream channel to be provided and passed into the
+    // node stream receiver task.
+    await invoke("start", { streamChannel: streamChannel });
+
+    // Just some app data.
+    const jsonPayload = {
+      type: "EventCreated",
+      data: { title: "My Cool Event" },
+    };
+
+    // Publish the app event via the publish command.
+    console.log(`publish application data: `, jsonPayload);
+    await invoke("publish", { payload: JSON.stringify(jsonPayload) });
+
     goto(`/join?code=${value}`);
   }
 </script>
