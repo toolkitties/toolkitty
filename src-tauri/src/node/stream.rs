@@ -1,7 +1,8 @@
-use p2panda_core::{Body, Hash, Header};
+use p2panda_core::{Body, Hash, Header, PublicKey};
 use p2panda_store::MemoryStore;
 use p2panda_stream::IngestExt;
-use serde::{ser::SerializeStruct, Serialize};
+use serde::ser::SerializeStruct;
+use serde::Serialize;
 use thiserror::Error;
 use tokio::sync::mpsc;
 use tokio::task::JoinHandle;
@@ -19,20 +20,14 @@ pub struct StreamEvent {
 impl StreamEvent {
     pub fn new(header: Header<Extensions>, body: Body) -> Self {
         Self {
-            meta: EventMeta {
-                hash: header.hash(),
-                header,
-            },
+            meta: header.into(),
             data: EventData::Application(body),
         }
     }
 
     pub fn from_error(error: StreamError, header: Header<Extensions>) -> Self {
         Self {
-            meta: EventMeta {
-                hash: header.hash(),
-                header,
-            },
+            meta: header.into(),
             data: EventData::Error(error),
         }
     }
@@ -53,8 +48,17 @@ impl Serialize for StreamEvent {
 
 #[derive(Clone, Debug, Serialize)]
 pub struct EventMeta {
-    pub header: Header<Extensions>,
-    pub hash: Hash,
+    pub operation_id: Hash,
+    pub public_key: PublicKey,
+}
+
+impl From<Header<Extensions>> for EventMeta {
+    fn from(header: Header<Extensions>) -> Self {
+        Self {
+            operation_id: header.hash(),
+            public_key: header.public_key,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize)]

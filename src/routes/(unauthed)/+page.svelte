@@ -10,39 +10,44 @@
   let pinInputType: "text" | "password" = "password";
   $: pinInputType = unlocked ? "text" : "password";
 
-  // let name = $state("");
-  // let greetMsg = $state("");
+  type EventMeta = {
+    operationId: string;
+    publicKey: string;
+  }
 
-  type ToolkittyEvent =
+  type StreamEvent =
     | {
+        meta: EventMeta;
         event: "application";
-        data: { operationId: string; payload: string };
+        data: string;
       }
     | {
+        meta: EventMeta;
         event: "error";
-        data: { operationId: string; error: string };
+        data: string;
       };
 
   async function join(event: Event) {
     event.preventDefault();
 
-    // @TODO: Just doing all this here for testing purposes, move somewhere sensible later,
-    // of course.
+    // @TODO: Just doing all this here for testing purposes, move somewhere
+    // sensible later, of course.
 
-    // Create the stream channel to be passed to backend and add an `onMessage` callback method to
-    // handle any events which are later sent from the backend.
-    const streamChannel = new Channel<ToolkittyEvent>();
+    // Create the stream channel to be passed to backend and add an `onMessage`
+    // callback method to handle any events which are later sent from the
+    // backend.
+    const streamChannel = new Channel<StreamEvent>();
     streamChannel.onmessage = async (event) => {
-      console.log(`got stream event with id ${event.data.operationId}`);
+      console.log(`got stream event with id ${event.meta.operationId}`);
 
       // Acknowledge that we have received and processed this operation.
-      await invoke("ack", { operationId: event.data.operationId });
+      await invoke("ack", { operationId: event.meta.operationId });
     };
 
-    // The start command must be called on app startup otherwise running the node on the backend
-    // is blocked. This is because we need the stream channel to be provided and passed into the
-    // node stream receiver task.
-    await invoke("init_stream", { streamChannel: streamChannel });
+    // The start command must be called on app startup otherwise running the
+    // node on the backend is blocked. This is because we need the stream
+    // channel to be provided and passed into the node stream receiver task.
+    await invoke("init_stream", { streamChannel });
 
     // Just some app data.
     const jsonPayload = {
