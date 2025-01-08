@@ -8,6 +8,7 @@ use tokio::task::{self, JoinHandle};
 
 use node::{EventData, Node, PublishError, StreamEvent};
 
+/// Enum of all possible event types which will be sent on the application stream.
 #[derive(Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase", tag = "event", content = "data")]
 pub enum ToolkittyEvent {
@@ -17,9 +18,9 @@ pub enum ToolkittyEvent {
     Error { operation_id: Hash, error: String },
 }
 
-// create the error type that represents all errors possible in our program
+/// Top level error type used in RPC interface methods.
 #[derive(Debug, thiserror::Error)]
-enum Error {
+enum ToolkittyError {
     #[error(transparent)]
     PublishError(#[from] PublishError),
 
@@ -33,8 +34,7 @@ enum Error {
     SetStreamChannelError,
 }
 
-// we must manually implement serde::Serialize
-impl serde::Serialize for Error {
+impl serde::Serialize for ToolkittyError {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::ser::Serializer,
@@ -43,6 +43,7 @@ impl serde::Serialize for Error {
     }
 }
 
+/// Task for receiving events sent from the node and forwarding them up to the app layer.
 async fn node_rx_task(
     mut node_rx: mpsc::Receiver<StreamEvent>,
     channel_oneshot_rx: oneshot::Receiver<Channel<ToolkittyEvent>>,
@@ -81,23 +82,23 @@ struct AppContext {
 async fn start(
     state: State<'_, Mutex<AppContext>>,
     stream_channel: Channel<ToolkittyEvent>,
-) -> Result<(), Error> {
+) -> Result<(), ToolkittyError> {
     let mut state = state.lock().await;
 
     match state.channel_oneshot_tx.take() {
         Some(tx) => {
             if let Err(_) = tx.send(stream_channel) {
-                return Err(Error::OneshotChannelError);
+                return Err(ToolkittyError::OneshotChannelError);
             }
         }
-        None => return Err(Error::SetStreamChannelError),
+        None => return Err(ToolkittyError::SetStreamChannelError),
     };
 
     Ok(())
 }
 
 #[tauri::command]
-async fn publish(state: State<'_, Mutex<AppContext>>, payload: &str) -> Result<Hash, Error> {
+async fn publish(state: State<'_, Mutex<AppContext>>, payload: &str) -> Result<Hash, ToolkittyError> {
     let mut state = state.lock().await;
     let operation_id = state.node.publish(&payload.as_bytes()).await?;
     Ok(operation_id)
