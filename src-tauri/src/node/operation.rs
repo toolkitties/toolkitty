@@ -1,6 +1,8 @@
 use std::hash::Hash as StdHash;
 use std::time::SystemTime;
 
+use anyhow::Result;
+use p2panda_core::cbor::{decode_cbor, encode_cbor};
 use p2panda_core::{Body, Extension, Header, PrivateKey, PruneFlag};
 use p2panda_store::{LocalLogStore, MemoryStore};
 use serde::{Deserialize, Serialize};
@@ -78,4 +80,14 @@ pub async fn create_operation(
     header.sign(private_key);
 
     (header, body)
+}
+
+pub fn encode_gossip_operation(header: Header<Extensions>, body: Option<Body>) -> Result<Vec<u8>> {
+    let bytes = encode_cbor(&(header.to_bytes(), body.map(|body| body.to_bytes())))?;
+    Ok(bytes)
+}
+
+pub fn decode_gossip_message(bytes: &[u8]) -> Result<(Vec<u8>, Option<Vec<u8>>)> {
+    let raw_operation = decode_cbor(bytes)?;
+    Ok(raw_operation)
 }
