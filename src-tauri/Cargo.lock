@@ -6488,6 +6488,7 @@ dependencies = [
  "p2panda-net",
  "p2panda-store",
  "p2panda-stream",
+ "p2panda-sync",
  "serde",
  "serde_json",
  "tauri",
