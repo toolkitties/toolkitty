@@ -33,6 +33,8 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
     pub async fn run(private_key: PrivateKey) -> Result<(Self, mpsc::Receiver<StreamEvent>)> {
         let store = MemoryStore::new();
         let (stream, app_rx) = StreamController::new(store.clone());
+
+        // @TODO: add discovery and sync to network.
         let network = NetworkBuilder::new(network_id())
             .private_key(private_key.clone())
             .build()
