@@ -10,9 +10,17 @@ use tracing::{error, trace};
 use crate::node::operation::decode_gossip_message;
 
 pub enum ToNodeActor<T> {
-    Subscribe {
+    SubscribeStream {
         topic: T,
         reply: oneshot::Sender<(mpsc::Sender<ToNetwork>, oneshot::Receiver<()>)>,
+    },
+    SubscribeGossipOverlay {
+        topic: T,
+        reply: oneshot::Sender<(
+            mpsc::Sender<ToNetwork>,
+            mpsc::Receiver<FromNetwork>,
+            oneshot::Receiver<()>,
+        )>,
     },
     Shutdown {
         reply: oneshot::Sender<()>,
@@ -90,10 +98,14 @@ impl<T: TopicId + TopicQuery + 'static> NodeActor<T> {
 
     async fn on_actor_message(&mut self, msg: ToNodeActor<T>) -> Result<()> {
         match msg {
-            ToNodeActor::Subscribe { topic, reply } => {
+            ToNodeActor::SubscribeStream { topic, reply } => {
                 let (topic_tx, topic_rx, ready) = self.network.subscribe(topic).await?;
                 self.topic_rx.push(ReceiverStream::new(topic_rx));
                 reply.send((topic_tx, ready)).ok();
+            }
+            ToNodeActor::SubscribeGossipOverlay { topic, reply } => {
+                let (topic_tx, topic_rx, ready) = self.network.subscribe(topic).await?;
+                reply.send((topic_tx, topic_rx, ready)).ok();
             }
             ToNodeActor::Shutdown { .. } => {
                 unreachable!("handled in run_inner");
@@ -104,7 +116,7 @@ impl<T: TopicId + TopicQuery + 'static> NodeActor<T> {
     }
 
     async fn on_network_event(&mut self, event: FromNetwork) -> Result<()> {
-        let (header, payload, delivered_from, is_gossip) = match event {
+        let (header, payload) = match event {
             FromNetwork::GossipMessage {
                 bytes,
                 delivered_from,
@@ -115,7 +127,7 @@ impl<T: TopicId + TopicQuery + 'static> NodeActor<T> {
                     "received network message"
                 );
                 let (header, payload) = decode_gossip_message(&bytes)?;
-                (bytes, payload, delivered_from, true)
+                (header, payload)
             }
             FromNetwork::SyncMessage {
                 header,
@@ -127,7 +139,7 @@ impl<T: TopicId + TopicQuery + 'static> NodeActor<T> {
                     bytes = header.len(),
                     "received network message"
                 );
-                (header, payload, delivered_from, false)
+                (header, payload)
             }
         };
 
