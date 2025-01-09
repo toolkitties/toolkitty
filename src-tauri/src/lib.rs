@@ -16,6 +16,7 @@ use crate::topic::{NetworkTopic, TopicMap};
 
 struct AppContext {
     node: Node<NetworkTopic>,
+    #[allow(dead_code)]
     topic_map: TopicMap,
     channel_oneshot_tx: Option<oneshot::Sender<Channel<ChannelEvent>>>,
 }
@@ -98,6 +99,7 @@ pub fn run() {
         .setup(|app| {
             let app_handle = app.handle().clone();
 
+            // @TODO(adz): All of this could be refactored to an own struct.
             tauri::async_runtime::spawn(async move {
                 let private_key = PrivateKey::new();
                 let topic_map = TopicMap::new();
@@ -112,12 +114,13 @@ pub fn run() {
 
                 app_handle.manage(Mutex::new(AppContext {
                     node,
-                    topic_map,
+                    topic_map: topic_map.clone(),
                     channel_oneshot_tx: Some(channel_oneshot_tx),
                 }));
 
                 if let Err(err) = forward_to_app_layer(
                     stream_rx,
+                    topic_map,
                     invite_codes_rx,
                     invite_codes_ready,
                     channel_oneshot_rx,
@@ -145,6 +148,7 @@ pub fn run() {
 /// Task for receiving data from network and forwarding them up to the app layer.
 async fn forward_to_app_layer(
     mut stream_rx: mpsc::Receiver<StreamEvent>,
+    topic_map: TopicMap,
     mut invite_codes_rx: mpsc::Receiver<FromNetwork>,
     invite_codes_ready: oneshot::Receiver<()>,
     channel_oneshot_rx: oneshot::Receiver<Channel<ChannelEvent>>,
@@ -166,6 +170,19 @@ async fn forward_to_app_layer(
         loop {
             tokio::select! {
                 Some(event) = stream_rx.recv() => {
+                    // Register author as contributor to this calendar in our database.
+                    //
+                    // @NOTE(adz): At this point we are in the middle of processing this event and
+                    // haven't ack-ed it yet. The data itself might be invalid, but we already
+                    // inserted it here into the topic map, which will allow other peers to sync it
+                    // from us.
+                    //
+                    // There is probably a better place to do this, but it needs more thought. For
+                    // now I'll leave it here as a POC.
+                    let StreamEvent { meta, .. } = &event;
+                    topic_map.add_author(meta.public_key, meta.log_id.calendar_id).await;
+
+                    // Send event further up to application layer.
                     channel.send(ChannelEvent::Stream(event)).unwrap();
                 },
                 Some(event) = invite_codes_rx.recv() => {
