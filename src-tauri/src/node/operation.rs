@@ -2,17 +2,20 @@ use std::hash::Hash as StdHash;
 use std::time::SystemTime;
 
 use p2panda_core::cbor::{decode_cbor, encode_cbor, DecodeError, EncodeError};
-use p2panda_core::{Body, Extension, Header, PrivateKey, PruneFlag};
+use p2panda_core::{Body, Extension, Hash, Header, PrivateKey, PruneFlag};
 use p2panda_store::{LocalLogStore, MemoryStore};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
-pub enum LogId {
-    Calendar,
+pub struct LogId {
+    pub calendar_id: Hash,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Extensions {
+    #[serde(rename = "l")]
+    log_id: LogId,
+
     #[serde(
         rename = "p",
         skip_serializing_if = "PruneFlag::is_not_set",
@@ -23,8 +26,7 @@ pub struct Extensions {
 
 impl Extension<LogId> for Extensions {
     fn extract(&self) -> Option<LogId> {
-        // @TODO: replace this hard-coded log id with the correct logic.
-        Some(LogId::Calendar)
+        Some(self.log_id.clone())
     }
 }
 
@@ -36,7 +38,7 @@ impl Extension<PruneFlag> for Extensions {
 
 pub async fn create_operation(
     store: &mut MemoryStore<LogId, Extensions>,
-    log_id: &LogId,
+    log_id: LogId,
     private_key: &PrivateKey,
     body: Option<&[u8]>,
     prune_flag: bool,
@@ -59,6 +61,7 @@ pub async fn create_operation(
         .as_secs();
 
     let extensions = Extensions {
+        log_id,
         prune_flag: PruneFlag::new(prune_flag),
     };
 
