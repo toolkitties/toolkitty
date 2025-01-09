@@ -1,4 +1,4 @@
-use p2panda_core::{Body, Hash, Header, PublicKey};
+use p2panda_core::{Body, Extension, Hash, Header, PublicKey};
 use p2panda_store::MemoryStore;
 use p2panda_stream::IngestExt;
 use serde::ser::SerializeStruct;
@@ -52,6 +52,7 @@ impl Serialize for StreamEvent {
 #[serde(rename_all = "camelCase")]
 pub struct EventMeta {
     pub operation_id: Hash,
+    pub log_id: LogId,
     pub public_key: PublicKey,
 }
 
@@ -59,6 +60,7 @@ impl From<Header<Extensions>> for EventMeta {
     fn from(header: Header<Extensions>) -> Self {
         Self {
             operation_id: header.hash(),
+            log_id: header.extract().expect("log id in header extensions"),
             public_key: header.public_key,
         }
     }

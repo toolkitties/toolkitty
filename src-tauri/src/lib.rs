@@ -16,6 +16,7 @@ use crate::topic::{NetworkTopic, TopicMap};
 
 struct AppContext {
     node: Node<NetworkTopic>,
+    topic_map: TopicMap,
     channel_oneshot_tx: Option<oneshot::Sender<Channel<ChannelEvent>>>,
 }
 
@@ -66,6 +67,7 @@ async fn publish(
     calendar_id: Hash,
 ) -> Result<Hash, PublishError> {
     let mut state = state.lock().await;
+    // @TODO: Handle error.
     let payload = serde_json::to_vec(&payload).unwrap();
     let log_id = LogId { calendar_id };
     let operation_id = state
@@ -81,6 +83,7 @@ async fn respond_to_invite_code(
     payload: serde_json::Value,
 ) -> Result<(), PublishError> {
     let mut state = state.lock().await;
+    // @TODO: Handle error.
     let payload = serde_json::to_vec(&payload).unwrap();
     state
         .node
@@ -99,7 +102,7 @@ pub fn run() {
                 let private_key = PrivateKey::new();
                 let topic_map = TopicMap::new();
 
-                let (node, stream_rx) = Node::<NetworkTopic>::new(private_key, topic_map)
+                let (node, stream_rx) = Node::<NetworkTopic>::new(private_key, topic_map.clone())
                     .await
                     .expect("node successfully starts");
                 let (channel_oneshot_tx, channel_oneshot_rx) = oneshot::channel();
@@ -109,6 +112,7 @@ pub fn run() {
 
                 app_handle.manage(Mutex::new(AppContext {
                     node,
+                    topic_map,
                     channel_oneshot_tx: Some(channel_oneshot_tx),
                 }));
 
