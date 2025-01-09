@@ -144,33 +144,37 @@ async fn forward_to_app_layer(
     invite_codes_ready: oneshot::Receiver<()>,
     channel_oneshot_rx: oneshot::Receiver<Channel<ChannelEvent>>,
 ) -> anyhow::Result<()> {
-    let join_handle: JoinHandle<anyhow::Result<()>> = task::spawn(async move {
-        let channel = channel_oneshot_rx.await?;
+    // @TODO: Handle errors in this method.
+    let channel = channel_oneshot_rx.await?;
 
-        tokio::select! {
-            Some(event) = stream_rx.recv() => {
-                channel.send(ChannelEvent::Stream(event))?;
-            },
-            _ = invite_codes_ready => {
-                channel.send(ChannelEvent::InviteCodesReady)?;
-            }
-            Some(event) = invite_codes_rx.recv() => {
-                let json = match event {
-                    FromNetwork::GossipMessage { bytes, .. } => {
-                        // @TODO: Handle error.
-                        serde_json::from_slice(&bytes).unwrap()
-                    },
-                    FromNetwork::SyncMessage { .. } => unreachable!(),
-                };
-                channel.send(ChannelEvent::InviteCodes(json))?;
+    {
+        let channel = channel.clone();
+        task::spawn(async move {
+            let _ = invite_codes_ready.await;
+            channel.send(ChannelEvent::InviteCodesReady).unwrap();
+        });
+    }
+
+    task::spawn(async move {
+        loop {
+            tokio::select! {
+                Some(event) = stream_rx.recv() => {
+                    channel.send(ChannelEvent::Stream(event)).unwrap();
+                },
+                Some(event) = invite_codes_rx.recv() => {
+                    let json = match event {
+                        FromNetwork::GossipMessage { bytes, .. } => {
+                            serde_json::from_slice(&bytes).unwrap()
+                        },
+                        FromNetwork::SyncMessage { .. } => unreachable!(),
+                    };
+                    channel.send(ChannelEvent::InviteCodes(json)).unwrap();
+                }
             }
         }
-
-        Ok(())
     });
 
-    let result = join_handle.await?;
-    result
+    Ok(())
 }
 
 #[derive(Clone, Debug)]
