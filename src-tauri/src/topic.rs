@@ -11,13 +11,22 @@ use serde::{Deserialize, Serialize};
 use crate::node::operation::LogId;
 
 #[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
-pub struct NetworkTopic(String);
+#[serde(tag = "t", content = "c", rename_all = "snake_case")]
+pub enum NetworkTopic {
+    InviteCodes,
+    Calendar { calendar_id: Hash },
+}
 
 impl TopicQuery for NetworkTopic {}
 
 impl TopicId for NetworkTopic {
     fn id(&self) -> [u8; 32] {
-        Hash::new(&self.0).as_bytes().to_owned()
+        match self {
+            NetworkTopic::InviteCodes => Hash::new(b"invite-codes").into(),
+            NetworkTopic::Calendar { calendar_id } => {
+                Hash::new(format!("data-{calendar_id}").as_bytes()).into()
+            }
+        }
     }
 }
 
@@ -33,6 +42,10 @@ impl TopicMap {
 #[async_trait]
 impl TopicLogMap<NetworkTopic, LogId> for TopicMap {
     async fn get(&self, topic: &NetworkTopic) -> Option<HashMap<PublicKey, Vec<LogId>>> {
-        todo!()
+        match topic {
+            // We don't want to sync over invite codes.
+            NetworkTopic::InviteCodes => None,
+            NetworkTopic::Calendar { calendar_id } => todo!(),
+        }
     }
 }

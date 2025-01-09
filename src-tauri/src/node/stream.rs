@@ -207,3 +207,12 @@ impl StreamController {
 
 #[derive(Debug, Error)]
 pub enum AckError {}
+
+impl Serialize for AckError {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::ser::Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
+}

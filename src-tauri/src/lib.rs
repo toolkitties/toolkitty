@@ -21,16 +21,16 @@ struct AppContext {
 async fn init_stream(
     state: State<'_, Mutex<AppContext>>,
     stream_channel: Channel<StreamEvent>,
-) -> Result<(), ToolkittyError> {
+) -> Result<(), InitError> {
     let mut state = state.lock().await;
 
     match state.channel_oneshot_tx.take() {
         Some(tx) => {
             if let Err(_) = tx.send(stream_channel) {
-                return Err(ToolkittyError::OneshotChannelError);
+                return Err(InitError::OneshotChannelError);
             }
         }
-        None => return Err(ToolkittyError::SetStreamChannelError),
+        None => return Err(InitError::SetStreamChannelError),
     };
 
     Ok(())
@@ -40,17 +40,31 @@ async fn init_stream(
 async fn publish(
     state: State<'_, Mutex<AppContext>>,
     payload: &str,
-) -> Result<Hash, ToolkittyError> {
+    calendar_id: Hash,
+) -> Result<Hash, PublishError> {
     let mut state = state.lock().await;
-    let operation_id = state.node.publish(&payload.as_bytes()).await?;
+    let operation_id = state
+        .node
+        .publish_to_stream(&NetworkTopic::Calendar { calendar_id }, payload.as_bytes())
+        .await?;
     Ok(operation_id)
 }
 
 #[tauri::command]
-async fn ack(
+async fn respond_to_invite_code(
     state: State<'_, Mutex<AppContext>>,
-    operation_id: Hash,
-) -> Result<(), ToolkittyError> {
+    payload: &str,
+) -> Result<(), PublishError> {
+    let mut state = state.lock().await;
+    state
+        .node
+        .publish_ephemeral(&NetworkTopic::InviteCodes, payload.as_bytes())
+        .await?;
+    Ok(())
+}
+
+#[tauri::command]
+async fn ack(state: State<'_, Mutex<AppContext>>, operation_id: Hash) -> Result<(), AckError> {
     let mut state = state.lock().await;
     state.node.ack(operation_id).await?;
     Ok(())
@@ -107,15 +121,8 @@ async fn node_rx_task(
     result
 }
 
-/// Top level error type used in RPC interface methods.
 #[derive(Debug, Error)]
-enum ToolkittyError {
-    #[error(transparent)]
-    PublishError(#[from] PublishError),
-
-    #[error(transparent)]
-    AckError(#[from] AckError),
-
+enum InitError {
     #[error(transparent)]
     TauriError(#[from] tauri::Error),
 
@@ -126,7 +133,7 @@ enum ToolkittyError {
     SetStreamChannelError,
 }
 
-impl Serialize for ToolkittyError {
+impl Serialize for InitError {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::ser::Serializer,

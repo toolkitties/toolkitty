@@ -6,12 +6,14 @@ mod stream;
 use anyhow::Result;
 use futures_util::future::{MapErr, Shared};
 use futures_util::{FutureExt, TryFutureExt};
+use operation::encode_gossip_message;
 use p2panda_core::{Hash, PrivateKey};
 use p2panda_discovery::mdns::LocalDiscovery;
 use p2panda_net::{FromNetwork, NetworkBuilder, SyncConfiguration, ToNetwork, TopicId};
 use p2panda_store::MemoryStore;
 use p2panda_sync::log_sync::{LogSyncProtocol, TopicLogMap};
 use p2panda_sync::TopicQuery;
+use serde::Serialize;
 use thiserror::Error;
 use tokio::sync::{mpsc, oneshot};
 use tokio::task::JoinError;
@@ -67,7 +69,8 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
 
         let mdns = LocalDiscovery::new()?;
 
-        let sync_config = SyncConfiguration::new(LogSyncProtocol::new(topic_map, store.clone()));
+        let sync_protocol = LogSyncProtocol::new(topic_map, store.clone());
+        let sync_config = SyncConfiguration::new(sync_protocol);
 
         let network = NetworkBuilder::new(network_id())
             .discovery(mdns)
@@ -102,7 +105,7 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
         ))
     }
 
-    pub async fn ack(&mut self, operation_id: Hash) -> Result<(), AckError> {
+    pub async fn ack(&mut self, _operation_id: Hash) -> Result<(), AckError> {
         self.stream_tx
             .send(ToStreamController::Ack {})
             .await
@@ -111,7 +114,27 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
         Ok(())
     }
 
-    pub async fn publish(&mut self, payload: &[u8]) -> Result<Hash, PublishError> {
+    pub async fn publish_ephemeral(
+        &mut self,
+        topic: &T,
+        payload: &[u8],
+    ) -> Result<(), PublishError> {
+        self.network_actor_tx
+            .send(ToNodeActor::Broadcast {
+                topic_id: topic.id(),
+                bytes: payload.to_vec(),
+            })
+            .await
+            // @TODO: Handle error.
+            .unwrap();
+        Ok(())
+    }
+
+    pub async fn publish_to_stream(
+        &mut self,
+        topic: &T,
+        payload: &[u8],
+    ) -> Result<Hash, PublishError> {
         // @TODO(adz): Currently all operations are written to the same log and of course we don't
         // want this, but this needs more thought.
         let log_id = LogId::Calendar;
@@ -129,6 +152,16 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
         let header_bytes = header.to_bytes();
         let operation_id = header.hash();
 
+        let bytes = encode_gossip_message(&header, body.as_ref())?;
+        self.network_actor_tx
+            .send(ToNodeActor::Broadcast {
+                topic_id: topic.id(),
+                bytes,
+            })
+            .await
+            // @TODO: Handle error.
+            .unwrap();
+
         self.stream_tx
             .send(ToStreamController::Ingest {
                 header,
@@ -142,22 +175,16 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
         Ok(operation_id)
     }
 
-    pub async fn subscribe_stream(
-        &self,
-        topic: &T,
-    ) -> Result<(mpsc::Sender<ToNetwork>, oneshot::Receiver<()>)> {
-        let (reply_tx, reply_rx) = oneshot::channel();
+    pub async fn subscribe_processed(&self, topic: &T) -> Result<()> {
         self.network_actor_tx
-            .send(ToNodeActor::SubscribeStream {
+            .send(ToNodeActor::SubscribeProcessed {
                 topic: topic.clone(),
-                reply: reply_tx,
             })
             .await?;
-        let result = reply_rx.await?;
-        Ok(result)
+        Ok(())
     }
 
-    pub async fn subscribe_gossip_overlay(
+    pub async fn subscribe(
         &self,
         topic: T,
     ) -> Result<(
@@ -167,7 +194,7 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
     )> {
         let (reply_tx, reply_rx) = oneshot::channel();
         self.network_actor_tx
-            .send(ToNodeActor::SubscribeGossipOverlay {
+            .send(ToNodeActor::Subscribe {
                 topic: topic.clone(),
                 reply: reply_tx,
             })
@@ -178,7 +205,19 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
 }
 
 #[derive(Debug, Error)]
-pub enum PublishError {}
+pub enum PublishError {
+    #[error(transparent)]
+    EncodeError(#[from] p2panda_core::cbor::EncodeError),
+}
+
+impl Serialize for PublishError {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::ser::Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
+}
 
 /// Helper to construct shared `AbortOnDropHandle` coming from tokio crate.
 type JoinErrToStr = Box<dyn Fn(tokio::task::JoinError) -> String + Send + Sync + 'static>;

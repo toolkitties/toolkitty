@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use anyhow::{anyhow, Result};
 use futures_util::stream::SelectAll;
 use p2panda_core::{cbor::decode_cbor, Body, Header};
@@ -11,17 +13,20 @@ use tracing::{error, trace, warn};
 use crate::node::operation::{decode_gossip_message, Extensions};
 
 pub enum ToNodeActor<T> {
-    SubscribeStream {
+    SubscribeProcessed {
         topic: T,
-        reply: oneshot::Sender<(mpsc::Sender<ToNetwork>, oneshot::Receiver<()>)>,
     },
-    SubscribeGossipOverlay {
+    Subscribe {
         topic: T,
         reply: oneshot::Sender<(
             mpsc::Sender<ToNetwork>,
             mpsc::Receiver<FromNetwork>,
             oneshot::Receiver<()>,
         )>,
+    },
+    Broadcast {
+        topic_id: [u8; 32],
+        bytes: Vec<u8>,
     },
     Shutdown {
         reply: oneshot::Sender<()>,
@@ -32,6 +37,7 @@ pub struct NodeActor<T> {
     network: Network<T>,
     inbox: mpsc::Receiver<ToNodeActor<T>>,
     topic_rx: SelectAll<ReceiverStream<FromNetwork>>,
+    topic_tx: HashMap<[u8; 32], mpsc::Sender<ToNetwork>>,
     stream_processor_tx: mpsc::Sender<(Header<Extensions>, Option<Body>, Vec<u8>)>,
 }
 
@@ -45,6 +51,7 @@ impl<T: TopicId + TopicQuery + 'static> NodeActor<T> {
             network,
             inbox,
             topic_rx: SelectAll::new(),
+            topic_tx: HashMap::new(),
             stream_processor_tx,
         }
     }
@@ -98,15 +105,28 @@ impl<T: TopicId + TopicQuery + 'static> NodeActor<T> {
 
     async fn on_actor_message(&mut self, msg: ToNodeActor<T>) -> Result<()> {
         match msg {
-            ToNodeActor::SubscribeStream { topic, reply } => {
-                let (topic_tx, topic_rx, ready) = self.network.subscribe(topic).await?;
+            ToNodeActor::SubscribeProcessed { topic } => {
+                let topic_id = topic.id();
+                let (topic_tx, topic_rx, _ready) = self.network.subscribe(topic).await?;
+                self.topic_tx.insert(topic_id, topic_tx);
                 self.topic_rx.push(ReceiverStream::new(topic_rx));
-                reply.send((topic_tx, ready)).ok();
             }
-            ToNodeActor::SubscribeGossipOverlay { topic, reply } => {
+            ToNodeActor::Subscribe { topic, reply } => {
+                let topic_id = topic.id();
                 let (topic_tx, topic_rx, ready) = self.network.subscribe(topic).await?;
+                self.topic_tx.insert(topic_id, topic_tx.clone());
                 reply.send((topic_tx, topic_rx, ready)).ok();
             }
+            ToNodeActor::Broadcast { topic_id, bytes } => match self.topic_tx.get(&topic_id) {
+                Some(tx) => {
+                    if let Err(_err) = tx.send(ToNetwork::Message { bytes }).await {
+                        // @TODO: Handle error
+                    }
+                }
+                None => {
+                    // @TODO: Can we ignore this?
+                }
+            },
             ToNodeActor::Shutdown { .. } => {
                 unreachable!("handled in run_inner");
             }
