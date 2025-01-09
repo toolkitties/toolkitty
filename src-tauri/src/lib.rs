@@ -74,6 +74,7 @@ pub fn run() {
     Builder::default()
         .setup(|app| {
             let app_handle = app.handle().clone();
+
             tauri::async_runtime::spawn(async move {
                 let private_key = PrivateKey::new();
                 let (node, node_rx) = Node::<ToolkittyTopic>::new(private_key)

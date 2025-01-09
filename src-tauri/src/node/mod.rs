@@ -5,14 +5,16 @@ mod stream;
 
 use anyhow::Result;
 use futures_util::future::{MapErr, Shared};
-use futures_util::{FutureExt, TryFutureExt};
+use futures_util::{FutureExt, StreamExt, TryFutureExt};
 use p2panda_core::{Hash, PrivateKey};
 use p2panda_net::{FromNetwork, NetworkBuilder, ToNetwork, TopicId};
 use p2panda_store::MemoryStore;
 use p2panda_sync::TopicQuery;
+use stream::ToStreamController;
 use thiserror::Error;
 use tokio::sync::{mpsc, oneshot};
 use tokio::task::{self, JoinError};
+use tokio_stream::wrappers::ReceiverStream;
 use tokio_util::task::AbortOnDropHandle;
 use tracing::error;
 
@@ -29,6 +31,7 @@ pub struct Node<T> {
     private_key: PrivateKey,
     store: MemoryStore<LogId, Extensions>,
     stream: StreamController,
+    stream_tx: mpsc::Sender<ToStreamController>,
     actor_inbox_tx: mpsc::Sender<ToNodeActor<T>>,
     #[allow(dead_code)]
     actor_handle: Shared<MapErr<AbortOnDropHandle<()>, JoinErrToStr>>,
@@ -36,8 +39,10 @@ pub struct Node<T> {
 
 impl<T: TopicId + TopicQuery + 'static> Node<T> {
     pub async fn new(private_key: PrivateKey) -> Result<(Self, mpsc::Receiver<StreamEvent>)> {
+        let rt = tokio::runtime::Handle::current();
+
         let store = MemoryStore::new();
-        let (stream, app_rx) = StreamController::new(store.clone());
+        let (stream, to_stream_tx, from_stream_rx) = StreamController::new(store.clone());
 
         // @TODO: add discovery and sync to network.
         let network = NetworkBuilder::new(network_id())
@@ -45,14 +50,19 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
             .build()
             .await?;
 
-        // @TODO: need to connect the stream_rx coming from the unified network event stream to the
-        // stream processor.
-        let (stream_tx, _stream_rx) = mpsc::channel(128);
-        let (actor_inbox_tx, actor_inbox_rx) = mpsc::channel(128);
+        // @TODO: Improve all of this tx, rx naming.
+        let (stream_tx, stream_rx) = mpsc::channel(1024);
+        let stream_rx = ReceiverStream::new(stream_rx);
+        stream_rx.map(|(header, body, header_bytes)| ToStreamController::Ingest {
+            header,
+            body,
+            header_bytes,
+        });
 
+        let (actor_inbox_tx, actor_inbox_rx) = mpsc::channel(64);
         let actor = NodeActor::new(network, stream_tx, actor_inbox_rx);
 
-        let actor_handle = task::spawn(async {
+        let actor_handle = rt.spawn(async {
             if let Err(err) = actor.run().await {
                 error!("node actor failed: {err:?}");
             }
@@ -67,15 +77,21 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
                 private_key,
                 store,
                 stream,
+                stream_tx: to_stream_tx,
                 actor_inbox_tx,
                 actor_handle: actor_drop_handle,
             },
-            app_rx,
+            from_stream_rx,
         ))
     }
 
     pub async fn ack(&mut self, operation_id: Hash) -> Result<(), AckError> {
-        self.stream.ack(operation_id).await
+        self.stream_tx
+            .send(ToStreamController::Ack {})
+            .await
+            // @TODO: Handle error.
+            .unwrap();
+        Ok(())
     }
 
     pub async fn publish(&mut self, payload: &[u8]) -> Result<Hash, PublishError> {
@@ -96,7 +112,15 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
         let header_bytes = header.to_bytes();
         let operation_id = header.hash();
 
-        self.stream.ingest(header, body, header_bytes).await;
+        self.stream_tx
+            .send(ToStreamController::Ingest {
+                header,
+                body,
+                header_bytes,
+            })
+            .await
+            // @TODO: Handle error.
+            .unwrap();
 
         Ok(operation_id)
     }

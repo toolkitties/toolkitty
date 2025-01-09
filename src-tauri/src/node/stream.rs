@@ -92,22 +92,58 @@ impl Serialize for StreamError {
     }
 }
 
+pub enum ToStreamController {
+    Ingest {
+        header: Header<Extensions>,
+        body: Option<Body>,
+        header_bytes: Vec<u8>,
+    },
+    Ack {},
+    Replay {},
+}
+
 pub struct StreamController {
     store: MemoryStore<LogId, Extensions>,
-    processor_tx: mpsc::Sender<(Header<Extensions>, Option<Body>, Vec<u8>)>,
     processor_handle: JoinHandle<()>,
 }
 
 impl StreamController {
-    pub fn new(store: MemoryStore<LogId, Extensions>) -> (Self, mpsc::Receiver<StreamEvent>) {
+    pub fn new(
+        store: MemoryStore<LogId, Extensions>,
+    ) -> (
+        Self,
+        mpsc::Sender<ToStreamController>,
+        mpsc::Receiver<StreamEvent>,
+    ) {
+        let rt = tokio::runtime::Handle::current();
+
         let (app_tx, app_rx) = mpsc::channel(1024);
         let (processor_tx, processor_rx) = mpsc::channel(1024);
+        let (stream_tx, mut stream_rx) = mpsc::channel(1024);
         let processor_rx = ReceiverStream::new(processor_rx);
+
+        rt.spawn(async move {
+            loop {
+                match stream_rx.recv().await {
+                    Some(ToStreamController::Ingest {
+                        header,
+                        body,
+                        header_bytes,
+                    }) => {
+                        if let Err(err) = processor_tx.send((header, body, header_bytes)).await {
+                            // @TODO: Handle error
+                        }
+                    }
+                    Some(ToStreamController::Ack {}) => todo!(),
+                    Some(ToStreamController::Replay {}) => todo!(),
+                    None => break,
+                }
+            }
+        });
 
         let processor_handle = {
             let store = store.clone();
 
-            let rt = tokio::runtime::Handle::current();
             rt.spawn(async move {
                 let mut processor =
                     processor_rx
@@ -155,34 +191,11 @@ impl StreamController {
         (
             Self {
                 store,
-                processor_tx,
                 processor_handle,
             },
+            stream_tx,
             app_rx,
         )
-    }
-
-    pub async fn ingest(
-        &mut self,
-        header: Header<Extensions>,
-        body: Option<Body>,
-        raw_header: Vec<u8>,
-    ) {
-        self.processor_tx
-            .send((header, body, raw_header))
-            .await
-            .expect("processor_tx send");
-    }
-
-    pub async fn ack(&mut self, _operation_id: Hash) -> Result<(), AckError> {
-        // @TODO: Inform controller that we've acked this operation.
-        Ok(())
-    }
-
-    /// Returns true if there's been un-acked operations which will be replayed for the stream
-    /// processors. Returns false if there's no work to do.
-    pub async fn replay(&mut self) -> bool {
-        false
     }
 }
 

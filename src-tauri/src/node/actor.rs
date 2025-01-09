@@ -1,13 +1,14 @@
 use anyhow::{anyhow, Result};
 use futures_util::stream::SelectAll;
+use p2panda_core::{cbor::decode_cbor, Body, Header};
 use p2panda_net::{FromNetwork, Network, ToNetwork, TopicId};
 use p2panda_sync::TopicQuery;
 use tokio::sync::{mpsc, oneshot};
 use tokio_stream::wrappers::ReceiverStream;
 use tokio_stream::StreamExt;
-use tracing::{error, trace};
+use tracing::{error, trace, warn};
 
-use crate::node::operation::decode_gossip_message;
+use crate::node::operation::{decode_gossip_message, Extensions};
 
 pub enum ToNodeActor<T> {
     SubscribeStream {
@@ -31,13 +32,13 @@ pub struct NodeActor<T> {
     network: Network<T>,
     inbox: mpsc::Receiver<ToNodeActor<T>>,
     topic_rx: SelectAll<ReceiverStream<FromNetwork>>,
-    stream_processor_tx: mpsc::Sender<(Vec<u8>, Option<Vec<u8>>)>,
+    stream_processor_tx: mpsc::Sender<(Header<Extensions>, Option<Body>, Vec<u8>)>,
 }
 
 impl<T: TopicId + TopicQuery + 'static> NodeActor<T> {
     pub fn new(
         network: Network<T>,
-        stream_processor_tx: mpsc::Sender<(Vec<u8>, Option<Vec<u8>>)>,
+        stream_processor_tx: mpsc::Sender<(Header<Extensions>, Option<Body>, Vec<u8>)>,
         inbox: mpsc::Receiver<ToNodeActor<T>>,
     ) -> Self {
         Self {
@@ -52,11 +53,10 @@ impl<T: TopicId + TopicQuery + 'static> NodeActor<T> {
         // Take oneshot sender from external API awaited by `shutdown` call and fire it as soon as
         // shutdown completed to signal.
         let shutdown_completed_signal = self.run_inner().await;
+
         if let Err(err) = self.shutdown().await {
             error!(?err, "error during shutdown");
         }
-
-        drop(self);
 
         match shutdown_completed_signal {
             Ok(reply_tx) => {
@@ -116,39 +116,54 @@ impl<T: TopicId + TopicQuery + 'static> NodeActor<T> {
     }
 
     async fn on_network_event(&mut self, event: FromNetwork) -> Result<()> {
-        let (header, payload) = match event {
-            FromNetwork::GossipMessage {
-                bytes,
-                delivered_from,
-            } => {
+        let (header_bytes, body_bytes) = match event {
+            FromNetwork::GossipMessage { bytes, .. } => {
                 trace!(
                     source = "gossip",
                     bytes = bytes.len(),
                     "received network message"
                 );
-                let (header, payload) = decode_gossip_message(&bytes)?;
-                (header, payload)
+                match decode_gossip_message(&bytes) {
+                    Ok(result) => result,
+                    Err(err) => {
+                        warn!("failed decoding gossip message: {err}");
+                        return Ok(());
+                    }
+                }
             }
             FromNetwork::SyncMessage {
-                header,
-                payload,
-                delivered_from,
+                header: header_bytes,
+                payload: body_bytes,
+                ..
             } => {
                 trace!(
                     source = "sync",
-                    bytes = header.len(),
+                    bytes = header_bytes.len() + body_bytes.as_ref().map_or(0, |b| b.len()),
                     "received network message"
                 );
-                (header, payload)
+                (header_bytes, body_bytes)
             }
         };
 
-        self.stream_processor_tx.send((header, payload)).await?;
+        let header = match decode_cbor(&header_bytes[..]) {
+            Ok(header) => header,
+            Err(err) => {
+                warn!("failed decoding operation header: {err}");
+                return Ok(());
+            }
+        };
+
+        let body = body_bytes.map(Body::from);
+        self.stream_processor_tx
+            .send((header, body, header_bytes))
+            .await?;
+
         Ok(())
     }
 
-    async fn shutdown(&self) -> Result<()> {
-        self.network.clone().shutdown().await?;
+    // @TODO: Send shutdown command.
+    async fn shutdown(self) -> Result<()> {
+        self.network.shutdown().await?;
         Ok(())
     }
 }
