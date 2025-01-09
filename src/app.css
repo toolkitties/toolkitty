@@ -3,7 +3,8 @@
 @tailwind utilities;
 
 @layer base {
-  input {
+  input,
+  textarea {
     @apply w-full p-2.5 border border-black rounded;
   }
 
