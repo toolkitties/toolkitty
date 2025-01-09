@@ -5,7 +5,7 @@ mod stream;
 
 use anyhow::Result;
 use futures_util::future::{MapErr, Shared};
-use futures_util::{FutureExt, StreamExt, TryFutureExt};
+use futures_util::{FutureExt, TryFutureExt};
 use p2panda_core::{Hash, PrivateKey};
 use p2panda_net::{FromNetwork, NetworkBuilder, ToNetwork, TopicId};
 use p2panda_store::MemoryStore;
@@ -13,8 +13,7 @@ use p2panda_sync::TopicQuery;
 use stream::ToStreamController;
 use thiserror::Error;
 use tokio::sync::{mpsc, oneshot};
-use tokio::task::{self, JoinError};
-use tokio_stream::wrappers::ReceiverStream;
+use tokio::task::JoinError;
 use tokio_util::task::AbortOnDropHandle;
 use tracing::error;
 
@@ -30,6 +29,7 @@ fn network_id() -> [u8; 32] {
 pub struct Node<T> {
     private_key: PrivateKey,
     store: MemoryStore<LogId, Extensions>,
+    #[allow(dead_code)]
     stream: StreamController,
     stream_tx: mpsc::Sender<ToStreamController>,
     actor_inbox_tx: mpsc::Sender<ToNodeActor<T>>,
@@ -51,13 +51,22 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
             .await?;
 
         // @TODO: Improve all of this tx, rx naming.
-        let (stream_tx, stream_rx) = mpsc::channel(1024);
-        let stream_rx = ReceiverStream::new(stream_rx);
-        stream_rx.map(|(header, body, header_bytes)| ToStreamController::Ingest {
-            header,
-            body,
-            header_bytes,
-        });
+        let (stream_tx, mut stream_rx) = mpsc::channel(1024);
+        {
+            let to_stream_tx = to_stream_tx.clone();
+            rt.spawn(async move {
+                while let Some((header, body, header_bytes)) = stream_rx.recv().await {
+                    to_stream_tx
+                        .send(ToStreamController::Ingest {
+                            header,
+                            body,
+                            header_bytes,
+                        })
+                        .await
+                        .unwrap();
+                }
+            });
+        }
 
         let (actor_inbox_tx, actor_inbox_rx) = mpsc::channel(64);
         let actor = NodeActor::new(network, stream_tx, actor_inbox_rx);
