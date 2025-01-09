@@ -76,7 +76,7 @@ pub fn run() {
             let app_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 let private_key = PrivateKey::new();
-                let (node, node_rx) = Node::<ToolkittyTopic>::run(private_key)
+                let (node, node_rx) = Node::<ToolkittyTopic>::new(private_key)
                     .await
                     .expect("node successfully starts");
                 let (channel_oneshot_tx, channel_oneshot_rx) = oneshot::channel();

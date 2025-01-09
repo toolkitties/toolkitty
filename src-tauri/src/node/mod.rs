@@ -4,17 +4,22 @@ mod operation;
 mod stream;
 
 use anyhow::Result;
+use futures_util::future::{MapErr, Shared};
+use futures_util::{FutureExt, TryFutureExt};
 use p2panda_core::{Hash, PrivateKey};
 use p2panda_net::{FromNetwork, NetworkBuilder, ToNetwork, TopicId};
 use p2panda_store::MemoryStore;
 use p2panda_sync::TopicQuery;
 use thiserror::Error;
 use tokio::sync::{mpsc, oneshot};
+use tokio::task::{self, JoinError};
+use tokio_util::task::AbortOnDropHandle;
+use tracing::error;
 
 use crate::node::actor::{NodeActor, ToNodeActor};
 use crate::node::operation::{create_operation, Extensions, LogId};
 use crate::node::stream::StreamController;
-pub use crate::node::stream::{AckError, EventData, StreamEvent};
+pub use crate::node::stream::{AckError, StreamEvent};
 
 fn network_id() -> [u8; 32] {
     Hash::new(b"toolkitty").into()
@@ -25,10 +30,12 @@ pub struct Node<T> {
     store: MemoryStore<LogId, Extensions>,
     stream: StreamController,
     actor_inbox_tx: mpsc::Sender<ToNodeActor<T>>,
+    #[allow(dead_code)]
+    actor_handle: Shared<MapErr<AbortOnDropHandle<()>, JoinErrToStr>>,
 }
 
 impl<T: TopicId + TopicQuery + 'static> Node<T> {
-    pub async fn run(private_key: PrivateKey) -> Result<(Self, mpsc::Receiver<StreamEvent>)> {
+    pub async fn new(private_key: PrivateKey) -> Result<(Self, mpsc::Receiver<StreamEvent>)> {
         let store = MemoryStore::new();
         let (stream, app_rx) = StreamController::new(store.clone());
 
@@ -44,7 +51,16 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
         let (actor_inbox_tx, actor_inbox_rx) = mpsc::channel(128);
 
         let actor = NodeActor::new(network, stream_tx, actor_inbox_rx);
-        actor.run().await?;
+
+        let actor_handle = task::spawn(async {
+            if let Err(err) = actor.run().await {
+                error!("node actor failed: {err:?}");
+            }
+        });
+
+        let actor_drop_handle = AbortOnDropHandle::new(actor_handle)
+            .map_err(Box::new(|err: JoinError| err.to_string()) as JoinErrToStr)
+            .shared();
 
         Ok((
             Self {
@@ -52,6 +68,7 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
                 store,
                 stream,
                 actor_inbox_tx,
+                actor_handle: actor_drop_handle,
             },
             app_rx,
         ))
@@ -121,3 +138,6 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
 
 #[derive(Debug, Error)]
 pub enum PublishError {}
+
+/// Helper to construct shared `AbortOnDropHandle` coming from tokio crate.
+type JoinErrToStr = Box<dyn Fn(tokio::task::JoinError) -> String + Send + Sync + 'static>;
