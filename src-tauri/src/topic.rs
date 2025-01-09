@@ -45,7 +45,8 @@ impl TopicLogMap<NetworkTopic, LogId> for TopicMap {
         match topic {
             // We don't want to sync over invite codes.
             NetworkTopic::InviteCodes => None,
-            NetworkTopic::Calendar { calendar_id } => todo!(),
+            // @TODO: Implement calendar id -> logs mapping for sync
+            NetworkTopic::Calendar { calendar_id } => None,
         }
     }
 }
