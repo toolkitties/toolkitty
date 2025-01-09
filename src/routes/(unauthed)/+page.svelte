@@ -32,12 +32,14 @@
 
     // @TODO: Just doing all this here for testing purposes, move somewhere
     // sensible later, of course.
+    const calendarId = "5a7bc8522433759260bdcb77648890b5da10297ed477776611c3c5f83342b025";
 
     // Create the stream channel to be passed to backend and add an `onMessage`
     // callback method to handle any events which are later sent from the
     // backend.
     const streamChannel = new Channel<StreamEvent>();
     streamChannel.onmessage = async (event) => {
+      console.log(event);
       console.log(`got stream event with id ${event.meta.operationId}`);
 
       // Acknowledge that we have received and processed this operation.
@@ -47,17 +49,19 @@
     // The start command must be called on app startup otherwise running the
     // node on the backend is blocked. This is because we need the stream
     // channel to be provided and passed into the node stream receiver task.
-    await invoke("init_stream", { streamChannel });
+    await invoke("init", { streamChannel });
+
+    await invoke("select_calendar", { calendarId });
 
     // Just some app data.
-    const jsonPayload = {
+    const payload = {
       type: "EventCreated",
       data: { title: "My Cool Event" },
     };
 
     // Publish the app event via the publish command.
-    console.log(`publish application data: `, jsonPayload);
-    await invoke("publish", { payload: JSON.stringify(jsonPayload) });
+    console.log(`publish application data: `, payload);
+    await invoke("publish", { payload, calendarId });
 
     goto(`/join?code=${value}`);
   }

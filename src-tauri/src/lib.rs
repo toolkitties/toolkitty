@@ -18,11 +18,17 @@ struct AppContext {
 }
 
 #[tauri::command]
-async fn init_stream(
+async fn init(
     state: State<'_, Mutex<AppContext>>,
     stream_channel: Channel<StreamEvent>,
 ) -> Result<(), InitError> {
     let mut state = state.lock().await;
+
+    let (invite_codes_rx, _ready) = state
+        .node
+        .subscribe(NetworkTopic::InviteCodes)
+        .await
+        .unwrap();
 
     match state.channel_oneshot_tx.take() {
         Some(tx) => {
@@ -37,15 +43,37 @@ async fn init_stream(
 }
 
 #[tauri::command]
+async fn ack(state: State<'_, Mutex<AppContext>>, operation_id: Hash) -> Result<(), AckError> {
+    let mut state = state.lock().await;
+    state.node.ack(operation_id).await?;
+    Ok(())
+}
+
+#[tauri::command]
+async fn select_calendar(
+    state: State<'_, Mutex<AppContext>>,
+    calendar_id: Hash,
+) -> Result<(), PublishError> {
+    let state = state.lock().await;
+    state
+        .node
+        .subscribe_processed(&NetworkTopic::Calendar { calendar_id })
+        .await
+        .unwrap();
+    Ok(())
+}
+
+#[tauri::command]
 async fn publish(
     state: State<'_, Mutex<AppContext>>,
-    payload: &str,
+    payload: serde_json::Value,
     calendar_id: Hash,
 ) -> Result<Hash, PublishError> {
     let mut state = state.lock().await;
+    let payload = serde_json::to_vec(&payload).unwrap();
     let operation_id = state
         .node
-        .publish_to_stream(&NetworkTopic::Calendar { calendar_id }, payload.as_bytes())
+        .publish_to_stream(&NetworkTopic::Calendar { calendar_id }, &payload)
         .await?;
     Ok(operation_id)
 }
@@ -53,20 +81,14 @@ async fn publish(
 #[tauri::command]
 async fn respond_to_invite_code(
     state: State<'_, Mutex<AppContext>>,
-    payload: &str,
+    payload: serde_json::Value,
 ) -> Result<(), PublishError> {
     let mut state = state.lock().await;
+    let payload = serde_json::to_vec(&payload).unwrap();
     state
         .node
-        .publish_ephemeral(&NetworkTopic::InviteCodes, payload.as_bytes())
+        .publish_ephemeral(&NetworkTopic::InviteCodes, &payload)
         .await?;
-    Ok(())
-}
-
-#[tauri::command]
-async fn ack(state: State<'_, Mutex<AppContext>>, operation_id: Hash) -> Result<(), AckError> {
-    let mut state = state.lock().await;
-    state.node.ack(operation_id).await?;
     Ok(())
 }
 
@@ -98,7 +120,13 @@ pub fn run() {
             Ok(())
         })
         .plugin(tauri_plugin_shell::init())
-        .invoke_handler(tauri::generate_handler![ack, publish, init_stream])
+        .invoke_handler(tauri::generate_handler![
+            init,
+            ack,
+            publish,
+            respond_to_invite_code,
+            select_calendar,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

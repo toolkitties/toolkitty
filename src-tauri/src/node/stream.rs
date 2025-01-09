@@ -19,9 +19,11 @@ pub struct StreamEvent {
 
 impl StreamEvent {
     pub fn new(header: Header<Extensions>, body: Body) -> Self {
+        let json = serde_json::from_slice(&body.to_bytes()).unwrap();
+
         Self {
             meta: header.into(),
-            data: EventData::Application(body),
+            data: EventData::Application(json),
         }
     }
 
@@ -47,6 +49,7 @@ impl Serialize for StreamEvent {
 }
 
 #[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct EventMeta {
     pub operation_id: Hash,
     pub public_key: PublicKey,
@@ -64,7 +67,7 @@ impl From<Header<Extensions>> for EventMeta {
 #[derive(Clone, Debug, Serialize)]
 #[serde(untagged)]
 pub enum EventData {
-    Application(Body),
+    Application(serde_json::Value),
     Error(StreamError),
 }
 

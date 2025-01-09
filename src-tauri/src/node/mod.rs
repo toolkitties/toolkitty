@@ -9,7 +9,7 @@ use futures_util::{FutureExt, TryFutureExt};
 use operation::encode_gossip_message;
 use p2panda_core::{Hash, PrivateKey};
 use p2panda_discovery::mdns::LocalDiscovery;
-use p2panda_net::{FromNetwork, NetworkBuilder, SyncConfiguration, ToNetwork, TopicId};
+use p2panda_net::{FromNetwork, NetworkBuilder, SyncConfiguration, TopicId};
 use p2panda_store::MemoryStore;
 use p2panda_sync::log_sync::{LogSyncProtocol, TopicLogMap};
 use p2panda_sync::TopicQuery;
@@ -187,11 +187,7 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
     pub async fn subscribe(
         &self,
         topic: T,
-    ) -> Result<(
-        mpsc::Sender<ToNetwork>,
-        mpsc::Receiver<FromNetwork>,
-        oneshot::Receiver<()>,
-    )> {
+    ) -> Result<(mpsc::Receiver<FromNetwork>, oneshot::Receiver<()>)> {
         let (reply_tx, reply_rx) = oneshot::channel();
         self.network_actor_tx
             .send(ToNodeActor::Subscribe {
@@ -199,8 +195,8 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
                 reply: reply_tx,
             })
             .await?;
-        let result = reply_rx.await?;
-        Ok(result)
+        let (_tx, rx, ready) = reply_rx.await?;
+        Ok((rx, ready))
     }
 }
 
