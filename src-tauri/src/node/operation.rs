@@ -1,14 +1,13 @@
 use std::hash::Hash as StdHash;
 use std::time::SystemTime;
 
+use p2panda_core::cbor::{decode_cbor, encode_cbor, DecodeError, EncodeError};
 use p2panda_core::{Body, Extension, Header, PrivateKey, PruneFlag};
 use p2panda_store::{LocalLogStore, MemoryStore};
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, StdHash)]
+#[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
 pub enum LogId {
-    // @TODO: `Default` requirement will be removed in future versions of p2panda-core.
-    #[default]
     Calendar,
 }
 
@@ -78,4 +77,17 @@ pub async fn create_operation(
     header.sign(private_key);
 
     (header, body)
+}
+
+pub fn encode_gossip_message(
+    header: &Header<Extensions>,
+    body: Option<&Body>,
+) -> Result<Vec<u8>, EncodeError> {
+    let bytes = encode_cbor(&(header.to_bytes(), body.map(|body| body.to_bytes())))?;
+    Ok(bytes)
+}
+
+pub fn decode_gossip_message(bytes: &[u8]) -> Result<(Vec<u8>, Option<Vec<u8>>), DecodeError> {
+    let raw_operation = decode_cbor(bytes)?;
+    Ok(raw_operation)
 }

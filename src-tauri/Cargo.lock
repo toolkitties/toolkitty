@@ -148,6 +148,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "async-stdin"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b1ff8b5d9b5ec29e0f49583ba71847b8c8888b67a8510133048a380903aa6822"
+dependencies = [
+ "tokio",
+]
+
+[[package]]
+name = "async-throttle"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1c99532de164435a0b91279e715bff4fa0d164643b409a67761907ffc210ee8f"
+dependencies = [
+ "backoff",
+ "dashmap",
+ "tokio",
+]
+
+[[package]]
 name = "async-trait"
 version = "0.1.85"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -204,9 +224,12 @@ version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b62ddb9cb1ec0a098ad4bbf9344d0713fa193ae1a80af55febcff2627b6a00c1"
 dependencies = [
+ "futures-core",
  "getrandom 0.2.15",
  "instant",
+ "pin-project-lite",
  "rand 0.8.5",
+ "tokio",
 ]
 
 [[package]]
@@ -712,6 +735,15 @@ name = "crossbeam-channel"
 version = "0.5.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "33480d6946193aa8033910124896ca395333cae7e2d1113d1fef6c3272217df2"
+dependencies = [
+ "crossbeam-utils",
+]
+
+[[package]]
+name = "crossbeam-queue"
+version = "0.3.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0f58bbc28f91df819d0aa2a2c00cd19754769c2fad90579b3592b1c9ba7a3115"
 dependencies = [
  "crossbeam-utils",
 ]
@@ -3821,8 +3853,7 @@ dependencies = [
 [[package]]
 name = "p2panda-core"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "809197be4bf25f649a55bd7fc7869c87b0c6666809cc5b57d113ca46e247db50"
+source = "git+https://github.com/p2panda/p2panda?rev=915939e9cebc2ed737a24d20c1663e5e1c5a1dde#915939e9cebc2ed737a24d20c1663e5e1c5a1dde"
 dependencies = [
  "blake3",
  "ciborium",
@@ -3837,8 +3868,7 @@ dependencies = [
 [[package]]
 name = "p2panda-discovery"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "be07d6a579c5efea99ead1467f3418e9157bb1b7ae17bde3163eae52f87e11b7"
+source = "git+https://github.com/p2panda/p2panda?rev=915939e9cebc2ed737a24d20c1663e5e1c5a1dde#915939e9cebc2ed737a24d20c1663e5e1c5a1dde"
 dependencies = [
  "anyhow",
  "flume",
@@ -3856,8 +3886,7 @@ dependencies = [
 [[package]]
 name = "p2panda-net"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9990043aa9e8204cd86759274e0de5c41ba9562ac52fbb96d52099a026111b02"
+source = "git+https://github.com/p2panda/p2panda?rev=915939e9cebc2ed737a24d20c1663e5e1c5a1dde#915939e9cebc2ed737a24d20c1663e5e1c5a1dde"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3883,8 +3912,7 @@ dependencies = [
 [[package]]
 name = "p2panda-store"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7e7459eb3358d00a51fc461574af5894cc7d6b7ceb420ddae9c2b56c15cefc96"
+source = "git+https://github.com/p2panda/p2panda?rev=915939e9cebc2ed737a24d20c1663e5e1c5a1dde#915939e9cebc2ed737a24d20c1663e5e1c5a1dde"
 dependencies = [
  "p2panda-core",
  "trait-variant",
@@ -3893,8 +3921,7 @@ dependencies = [
 [[package]]
 name = "p2panda-stream"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b43ec2718a6a4d75982f91aa110eaba7ccec70490c14959cd7ea0402d33845b5"
+source = "git+https://github.com/p2panda/p2panda?rev=915939e9cebc2ed737a24d20c1663e5e1c5a1dde#915939e9cebc2ed737a24d20c1663e5e1c5a1dde"
 dependencies = [
  "ciborium",
  "futures-channel",
@@ -3909,8 +3936,7 @@ dependencies = [
 [[package]]
 name = "p2panda-sync"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b1cd7c785c2981e4dae2432747a2479f300219e701f2a37456f9a7950f5597b2"
+source = "git+https://github.com/p2panda/p2panda?rev=915939e9cebc2ed737a24d20c1663e5e1c5a1dde#915939e9cebc2ed737a24d20c1663e5e1c5a1dde"
 dependencies = [
  "async-trait",
  "futures",
@@ -5486,6 +5512,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 
 [[package]]
+name = "shutdown-async"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e2799e69bde7e68bedd86c6d94bffa783219114f1f31435ddda61f4aeba348ff"
+dependencies = [
+ "tokio",
+]
+
+[[package]]
 name = "signal-hook-registry"
 version = "1.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6405,9 +6440,9 @@ dependencies = [
 
 [[package]]
 name = "tokio-util"
-version = "0.7.12"
+version = "0.7.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "61e7c3654c13bcd040d4a03abee2c75b1d14a37b423cf5a813ceae1cc903ec6a"
+checksum = "d7fcaa8d55a2bdd6b83ace262b016eca0d79ee02818c5c1bcdf0305114081078"
 dependencies = [
  "bytes",
  "futures-core",
@@ -6417,6 +6452,18 @@ dependencies = [
  "hashbrown 0.14.5",
  "pin-project-lite",
  "tokio",
+]
+
+[[package]]
+name = "tokio-utils"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "de75f75f464153a50fe48b9675360e3cf2ae1d7d81f9751363bd2ee4888f5ce8"
+dependencies = [
+ "async-stdin",
+ "async-throttle",
+ "shutdown-async",
+ "tub",
 ]
 
 [[package]]
@@ -6483,10 +6530,14 @@ name = "toolkitty"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-trait",
+ "futures-util",
  "p2panda-core",
+ "p2panda-discovery",
  "p2panda-net",
  "p2panda-store",
  "p2panda-stream",
+ "p2panda-sync",
  "serde",
  "serde_json",
  "tauri",
@@ -6495,6 +6546,9 @@ dependencies = [
  "thiserror 2.0.9",
  "tokio",
  "tokio-stream",
+ "tokio-util",
+ "tokio-utils",
+ "tracing",
 ]
 
 [[package]]
@@ -6505,9 +6559,9 @@ checksum = "8df9b6e13f2d32c91b9bd719c00d1958837bc7dec474d94952798cc8e69eeec3"
 
 [[package]]
 name = "tracing"
-version = "0.1.40"
+version = "0.1.41"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c3523ab5a71916ccf420eebdf5521fcef02141234bbc0b8a49f2fdc4544364ef"
+checksum = "784e0ac535deb450455cbfa28a6f0df145ea1bb7ae51b821cf5e7927fdcfbdd0"
 dependencies = [
  "log",
  "pin-project-lite",
@@ -6528,9 +6582,9 @@ dependencies = [
 
 [[package]]
 name = "tracing-core"
-version = "0.1.32"
+version = "0.1.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c06d3da6113f116aaee68e4d601191614c9053067f9ab7f6edbcb161237daa54"
+checksum = "e672c95779cf947c5311f83787af4fa8fffd12fb27e4993211a84bdfd9610f9c"
 dependencies = [
  "once_cell",
  "valuable",
@@ -6610,6 +6664,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4189890526f0168710b6ee65ceaedf1460c48a14318ceec933cb26baa492096a"
 dependencies = [
  "linked-hash-map",
+]
+
+[[package]]
+name = "tub"
+version = "0.3.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6bca43faba247bc76eb1d6c1b8b561e4a1c5bdd427cc3d7a007faabea75c683a"
+dependencies = [
+ "crossbeam-queue",
+ "tokio",
 ]
 
 [[package]]
