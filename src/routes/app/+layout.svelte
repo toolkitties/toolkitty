@@ -1,6 +1,5 @@
 <script lang="ts">
   import "../../app.css";
-  import Back from "../../components/back.svelte";
   import Icon from "@iconify/svelte";
   import { page } from "$app/stores";
 
@@ -44,12 +43,6 @@
 </script>
 
 <main class="h-dvh">
-  <!-- to do: move into header component with page title -->
-  <div class="fixed top-2 left-2">
-    {#if !topLevelPage}
-      <Back />
-    {/if}
-  </div>
   <div class="p-8">
     <slot />
   </div>
