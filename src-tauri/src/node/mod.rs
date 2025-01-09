@@ -133,17 +133,14 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
     pub async fn publish_to_stream(
         &mut self,
         topic: &T,
+        log_id: LogId,
         payload: &[u8],
     ) -> Result<Hash, PublishError> {
-        // @TODO(adz): Currently all operations are written to the same log and of course we don't
-        // want this, but this needs more thought.
-        let log_id = LogId::Calendar;
-
         // @TODO(adz): Memory stores are infallible right now but we'll switch to a SQLite-based
         // one soon and then we need to handle this error here:
         let (header, body) = create_operation(
             &mut self.store,
-            &log_id,
+            log_id,
             &self.private_key,
             Some(payload),
             false,

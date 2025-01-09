@@ -9,8 +9,8 @@ use tauri::ipc::Channel;
 use tauri::{Builder, Manager, State};
 use thiserror::Error;
 use tokio::sync::{mpsc, oneshot, Mutex};
-use tokio::task::{self, JoinHandle};
 
+use crate::node::operation::LogId;
 use crate::node::{AckError, Node, PublishError, StreamEvent};
 use crate::topic::{NetworkTopic, TopicMap};
 
@@ -67,9 +67,10 @@ async fn publish(
 ) -> Result<Hash, PublishError> {
     let mut state = state.lock().await;
     let payload = serde_json::to_vec(&payload).unwrap();
+    let log_id = LogId { calendar_id };
     let operation_id = state
         .node
-        .publish_to_stream(&NetworkTopic::Calendar { calendar_id }, &payload)
+        .publish_to_stream(&NetworkTopic::Calendar { calendar_id }, log_id, &payload)
         .await?;
     Ok(operation_id)
 }
@@ -144,18 +145,20 @@ async fn forward_to_app_layer(
     invite_codes_ready: oneshot::Receiver<()>,
     channel_oneshot_rx: oneshot::Receiver<Channel<ChannelEvent>>,
 ) -> anyhow::Result<()> {
+    let rt = tokio::runtime::Handle::current();
+
     // @TODO: Handle errors in this method.
     let channel = channel_oneshot_rx.await?;
 
     {
         let channel = channel.clone();
-        task::spawn(async move {
+        rt.spawn(async move {
             let _ = invite_codes_ready.await;
             channel.send(ChannelEvent::InviteCodesReady).unwrap();
         });
     }
 
-    task::spawn(async move {
+    rt.spawn(async move {
         loop {
             tokio::select! {
                 Some(event) = stream_rx.recv() => {
