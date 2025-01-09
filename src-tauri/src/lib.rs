@@ -1,11 +1,8 @@
 mod node;
-
-use std::hash::Hash as StdHash;
+mod topic;
 
 use p2panda_core::{Hash, PrivateKey};
-use p2panda_net::TopicId;
-use p2panda_sync::TopicQuery;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use tauri::ipc::Channel;
 use tauri::{Builder, Manager, State};
 use thiserror::Error;
@@ -13,20 +10,10 @@ use tokio::sync::{mpsc, oneshot, Mutex};
 use tokio::task::{self, JoinHandle};
 
 use crate::node::{AckError, Node, PublishError, StreamEvent};
-
-#[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
-struct ToolkittyTopic(String);
-
-impl TopicQuery for ToolkittyTopic {}
-
-impl TopicId for ToolkittyTopic {
-    fn id(&self) -> [u8; 32] {
-        Hash::new(&self.0).as_bytes().to_owned()
-    }
-}
+use crate::topic::{NetworkTopic, TopicMap};
 
 struct AppContext {
-    node: Node<ToolkittyTopic>,
+    node: Node<NetworkTopic>,
     channel_oneshot_tx: Option<oneshot::Sender<Channel<StreamEvent>>>,
 }
 
@@ -77,7 +64,9 @@ pub fn run() {
 
             tauri::async_runtime::spawn(async move {
                 let private_key = PrivateKey::new();
-                let (node, node_rx) = Node::<ToolkittyTopic>::new(private_key)
+                let topic_map = TopicMap::new();
+
+                let (node, node_rx) = Node::<NetworkTopic>::new(private_key, topic_map)
                     .await
                     .expect("node successfully starts");
                 let (channel_oneshot_tx, channel_oneshot_rx) = oneshot::channel();

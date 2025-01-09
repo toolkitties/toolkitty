@@ -7,7 +7,7 @@ use p2panda_core::{Body, Extension, Header, PrivateKey, PruneFlag};
 use p2panda_store::{LocalLogStore, MemoryStore};
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, PartialEq, Eq, StdHash)]
+#[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
 pub enum LogId {
     Calendar,
 }

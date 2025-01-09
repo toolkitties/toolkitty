@@ -6530,8 +6530,10 @@ name = "toolkitty"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-trait",
  "futures-util",
  "p2panda-core",
+ "p2panda-discovery",
  "p2panda-net",
  "p2panda-store",
  "p2panda-stream",

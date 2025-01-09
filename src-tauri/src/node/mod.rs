@@ -1,16 +1,17 @@
 mod actor;
 mod message;
-mod operation;
+pub mod operation;
 mod stream;
 
 use anyhow::Result;
 use futures_util::future::{MapErr, Shared};
 use futures_util::{FutureExt, TryFutureExt};
 use p2panda_core::{Hash, PrivateKey};
-use p2panda_net::{FromNetwork, NetworkBuilder, ToNetwork, TopicId};
+use p2panda_discovery::mdns::LocalDiscovery;
+use p2panda_net::{FromNetwork, NetworkBuilder, SyncConfiguration, ToNetwork, TopicId};
 use p2panda_store::MemoryStore;
+use p2panda_sync::log_sync::{LogSyncProtocol, TopicLogMap};
 use p2panda_sync::TopicQuery;
-use stream::ToStreamController;
 use thiserror::Error;
 use tokio::sync::{mpsc, oneshot};
 use tokio::task::JoinError;
@@ -19,8 +20,8 @@ use tracing::error;
 
 use crate::node::actor::{NodeActor, ToNodeActor};
 use crate::node::operation::{create_operation, Extensions, LogId};
-use crate::node::stream::StreamController;
 pub use crate::node::stream::{AckError, StreamEvent};
+use crate::node::stream::{StreamController, ToStreamController};
 
 fn network_id() -> [u8; 32] {
     Hash::new(b"toolkitty").into()
@@ -38,7 +39,10 @@ pub struct Node<T> {
 }
 
 impl<T: TopicId + TopicQuery + 'static> Node<T> {
-    pub async fn new(private_key: PrivateKey) -> Result<(Self, mpsc::Receiver<StreamEvent>)> {
+    pub async fn new<TM: TopicLogMap<T, LogId> + 'static>(
+        private_key: PrivateKey,
+        topic_map: TM,
+    ) -> Result<(Self, mpsc::Receiver<StreamEvent>)> {
         let rt = tokio::runtime::Handle::current();
 
         let store = MemoryStore::new();
@@ -61,7 +65,13 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
             });
         }
 
+        let mdns = LocalDiscovery::new()?;
+
+        let sync_config = SyncConfiguration::new(LogSyncProtocol::new(topic_map, store.clone()));
+
         let network = NetworkBuilder::new(network_id())
+            .discovery(mdns)
+            .sync(sync_config)
             .private_key(private_key.clone())
             .build()
             .await?;
