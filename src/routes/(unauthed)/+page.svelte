@@ -19,13 +19,31 @@
     | {
         meta: EventMeta;
         event: "application";
-        data: string;
+        data: ApplicationEvent;
       }
     | {
         meta: EventMeta;
         event: "error";
         data: string;
       };
+
+  type InviteCodeReadyEvent = {
+    event: "invite_code_ready";
+  };
+
+  type InviteCodeEvent = {
+    event: "invite_code";
+    data: any; // @TODO
+  };
+
+  type ChannelEvent = StreamEvent | InviteCodeReadyEvent | InviteCodeEvent;
+
+  type ApplicationEvent = {
+    type: "EventCreated";
+    data: {
+      title: string;
+    };
+  };
 
   async function join(event: Event) {
     event.preventDefault();
@@ -38,12 +56,19 @@
     // callback method to handle any events which are later sent from the
     // backend.
     const streamChannel = new Channel<StreamEvent>();
-    streamChannel.onmessage = async (event) => {
-      console.log(event);
-      console.log(`got stream event with id ${event.meta.operationId}`);
+    streamChannel.onmessage = async (message) => {
+      console.log(message);
 
-      // Acknowledge that we have received and processed this operation.
-      await invoke("ack", { operationId: event.meta.operationId });
+      if (message.event == "application") {
+        console.log(`got stream event with id ${message.meta.operationId}`);
+
+        // Acknowledge that we have received and processed this operation.
+        await invoke("ack", { operationId: message.meta.operationId });
+      } else if (message.event == "invite_codes_ready") {
+        console.log("invite codes ready");
+      } else if (message.event == "invite_codes") {
+        console.log("invite codes")
+      }
     };
 
     // The start command must be called on app startup otherwise running the
@@ -108,6 +133,3 @@
   class="border border-black rounded p-4 text-center"
   type="submit">Create</a
 >
-
-<style>
-</style>

@@ -135,7 +135,7 @@ impl StreamController {
                         body,
                         header_bytes,
                     }) => {
-                        if let Err(err) = processor_tx.send((header, body, header_bytes)).await {
+                        if let Err(_err) = processor_tx.send((header, body, header_bytes)).await {
                             // @TODO: Handle error
                         }
                     }

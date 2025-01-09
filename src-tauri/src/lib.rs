@@ -2,6 +2,8 @@ mod node;
 mod topic;
 
 use p2panda_core::{Hash, PrivateKey};
+use p2panda_net::FromNetwork;
+use serde::ser::SerializeStruct;
 use serde::Serialize;
 use tauri::ipc::Channel;
 use tauri::{Builder, Manager, State};
@@ -14,21 +16,15 @@ use crate::topic::{NetworkTopic, TopicMap};
 
 struct AppContext {
     node: Node<NetworkTopic>,
-    channel_oneshot_tx: Option<oneshot::Sender<Channel<StreamEvent>>>,
+    channel_oneshot_tx: Option<oneshot::Sender<Channel<ChannelEvent>>>,
 }
 
 #[tauri::command]
 async fn init(
     state: State<'_, Mutex<AppContext>>,
-    stream_channel: Channel<StreamEvent>,
+    stream_channel: Channel<ChannelEvent>,
 ) -> Result<(), InitError> {
     let mut state = state.lock().await;
-
-    let (invite_codes_rx, _ready) = state
-        .node
-        .subscribe(NetworkTopic::InviteCodes)
-        .await
-        .unwrap();
 
     match state.channel_oneshot_tx.take() {
         Some(tx) => {
@@ -102,17 +98,27 @@ pub fn run() {
                 let private_key = PrivateKey::new();
                 let topic_map = TopicMap::new();
 
-                let (node, node_rx) = Node::<NetworkTopic>::new(private_key, topic_map)
+                let (node, stream_rx) = Node::<NetworkTopic>::new(private_key, topic_map)
                     .await
                     .expect("node successfully starts");
                 let (channel_oneshot_tx, channel_oneshot_rx) = oneshot::channel();
+
+                let (invite_codes_rx, invite_codes_ready) =
+                    node.subscribe(NetworkTopic::InviteCodes).await.unwrap();
 
                 app_handle.manage(Mutex::new(AppContext {
                     node,
                     channel_oneshot_tx: Some(channel_oneshot_tx),
                 }));
 
-                if let Err(err) = node_rx_task(node_rx, channel_oneshot_rx).await {
+                if let Err(err) = forward_to_app_layer(
+                    stream_rx,
+                    invite_codes_rx,
+                    invite_codes_ready,
+                    channel_oneshot_rx,
+                )
+                .await
+                {
                     panic!("failed to start node receiver task: {err}")
                 };
             });
@@ -131,15 +137,33 @@ pub fn run() {
         .expect("error while running tauri application");
 }
 
-/// Task for receiving events sent from the node and forwarding them up to the app layer.
-async fn node_rx_task(
-    mut node_rx: mpsc::Receiver<StreamEvent>,
-    channel_oneshot_rx: oneshot::Receiver<Channel<StreamEvent>>,
+/// Task for receiving data from network and forwarding them up to the app layer.
+async fn forward_to_app_layer(
+    mut stream_rx: mpsc::Receiver<StreamEvent>,
+    mut invite_codes_rx: mpsc::Receiver<FromNetwork>,
+    invite_codes_ready: oneshot::Receiver<()>,
+    channel_oneshot_rx: oneshot::Receiver<Channel<ChannelEvent>>,
 ) -> anyhow::Result<()> {
     let join_handle: JoinHandle<anyhow::Result<()>> = task::spawn(async move {
         let channel = channel_oneshot_rx.await?;
-        while let Some(event) = node_rx.recv().await {
-            channel.send(event)?;
+
+        tokio::select! {
+            Some(event) = stream_rx.recv() => {
+                channel.send(ChannelEvent::Stream(event))?;
+            },
+            _ = invite_codes_ready => {
+                channel.send(ChannelEvent::InviteCodesReady)?;
+            }
+            Some(event) = invite_codes_rx.recv() => {
+                let json = match event {
+                    FromNetwork::GossipMessage { bytes, .. } => {
+                        // @TODO: Handle error.
+                        serde_json::from_slice(&bytes).unwrap()
+                    },
+                    FromNetwork::SyncMessage { .. } => unreachable!(),
+                };
+                channel.send(ChannelEvent::InviteCodes(json))?;
+            }
         }
 
         Ok(())
@@ -149,11 +173,37 @@ async fn node_rx_task(
     result
 }
 
+#[derive(Clone, Debug)]
+enum ChannelEvent {
+    Stream(StreamEvent),
+    InviteCodesReady,
+    InviteCodes(serde_json::Value),
+}
+
+impl Serialize for ChannelEvent {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self {
+            ChannelEvent::Stream(stream_event) => stream_event.serialize(serializer),
+            ChannelEvent::InviteCodesReady => {
+                let mut state = serializer.serialize_struct("StreamEvent", 1)?;
+                state.serialize_field("event", "invite_codes_ready")?;
+                state.end()
+            }
+            ChannelEvent::InviteCodes(payload) => {
+                let mut state = serializer.serialize_struct("StreamEvent", 2)?;
+                state.serialize_field("event", "invite_codes")?;
+                state.serialize_field("data", &payload)?;
+                state.end()
+            }
+        }
+    }
+}
+
 #[derive(Debug, Error)]
 enum InitError {
-    #[error(transparent)]
-    TauriError(#[from] tauri::Error),
-
     #[error("oneshot channel receiver closed")]
     OneshotChannelError,
 
