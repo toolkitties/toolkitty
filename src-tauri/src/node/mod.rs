@@ -32,7 +32,7 @@ pub struct Node<T> {
     #[allow(dead_code)]
     stream: StreamController,
     stream_tx: mpsc::Sender<ToStreamController>,
-    actor_inbox_tx: mpsc::Sender<ToNodeActor<T>>,
+    network_actor_tx: mpsc::Sender<ToNodeActor<T>>,
     #[allow(dead_code)]
     actor_handle: Shared<MapErr<AbortOnDropHandle<()>, JoinErrToStr>>,
 }
@@ -42,34 +42,32 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
         let rt = tokio::runtime::Handle::current();
 
         let store = MemoryStore::new();
-        let (stream, to_stream_tx, from_stream_rx) = StreamController::new(store.clone());
+        let (stream, stream_tx, stream_rx) = StreamController::new(store.clone());
+        let (network_tx, mut network_rx) = mpsc::channel(1024);
 
-        // @TODO: add discovery and sync to network.
-        let network = NetworkBuilder::new(network_id())
-            .private_key(private_key.clone())
-            .build()
-            .await?;
-
-        // @TODO: Improve all of this tx, rx naming.
-        let (stream_tx, mut stream_rx) = mpsc::channel(1024);
         {
-            let to_stream_tx = to_stream_tx.clone();
+            let stream_tx = stream_tx.clone();
             rt.spawn(async move {
-                while let Some((header, body, header_bytes)) = stream_rx.recv().await {
-                    to_stream_tx
+                while let Some((header, body, header_bytes)) = network_rx.recv().await {
+                    stream_tx
                         .send(ToStreamController::Ingest {
                             header,
                             body,
                             header_bytes,
                         })
                         .await
-                        .unwrap();
+                        .expect("send stream_tx");
                 }
             });
         }
 
-        let (actor_inbox_tx, actor_inbox_rx) = mpsc::channel(64);
-        let actor = NodeActor::new(network, stream_tx, actor_inbox_rx);
+        let network = NetworkBuilder::new(network_id())
+            .private_key(private_key.clone())
+            .build()
+            .await?;
+
+        let (network_actor_tx, network_actor_rx) = mpsc::channel(64);
+        let actor = NodeActor::new(network, network_tx, network_actor_rx);
 
         let actor_handle = rt.spawn(async {
             if let Err(err) = actor.run().await {
@@ -86,11 +84,11 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
                 private_key,
                 store,
                 stream,
-                stream_tx: to_stream_tx,
-                actor_inbox_tx,
+                stream_tx,
+                network_actor_tx,
                 actor_handle: actor_drop_handle,
             },
-            from_stream_rx,
+            stream_rx,
         ))
     }
 
@@ -139,7 +137,7 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
         topic: &T,
     ) -> Result<(mpsc::Sender<ToNetwork>, oneshot::Receiver<()>)> {
         let (reply_tx, reply_rx) = oneshot::channel();
-        self.actor_inbox_tx
+        self.network_actor_tx
             .send(ToNodeActor::SubscribeStream {
                 topic: topic.clone(),
                 reply: reply_tx,
@@ -158,7 +156,7 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
         oneshot::Receiver<()>,
     )> {
         let (reply_tx, reply_rx) = oneshot::channel();
-        self.actor_inbox_tx
+        self.network_actor_tx
             .send(ToNodeActor::SubscribeGossipOverlay {
                 topic: topic.clone(),
                 reply: reply_tx,

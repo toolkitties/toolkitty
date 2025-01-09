@@ -118,9 +118,11 @@ impl StreamController {
         let rt = tokio::runtime::Handle::current();
 
         let (app_tx, app_rx) = mpsc::channel(1024);
+
         let (processor_tx, processor_rx) = mpsc::channel(1024);
-        let (stream_tx, mut stream_rx) = mpsc::channel(1024);
         let processor_rx = ReceiverStream::new(processor_rx);
+
+        let (stream_tx, mut stream_rx) = mpsc::channel(1024);
 
         rt.spawn(async move {
             loop {
@@ -134,8 +136,12 @@ impl StreamController {
                             // @TODO: Handle error
                         }
                     }
-                    Some(ToStreamController::Ack {}) => todo!(),
-                    Some(ToStreamController::Replay {}) => todo!(),
+                    Some(ToStreamController::Ack {}) => {
+                        // @TODO: Implement ack logic
+                    }
+                    Some(ToStreamController::Replay {}) => {
+                        // @TODO: Implement replay logic
+                    }
                     None => break,
                 }
             }
