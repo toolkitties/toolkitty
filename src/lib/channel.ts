@@ -1,4 +1,5 @@
 import { invoke, Channel } from "@tauri-apps/api/core";
+import { respondInviteCodeRequest, sendResolveInviteCodeRequest } from "./api";
 
 export async function init() {
   // Create the stream channel to be passed to backend and add an `onMessage`
@@ -7,17 +8,23 @@ export async function init() {
   const streamChannel = new Channel<ChannelMessage>();
   streamChannel.onmessage = async (message) => {
     console.log(message);
-    //
-    //   if (message.event == "application") {
-    //     console.log(`got stream event with id ${message.meta.operationId}`);
-    //
-    //     // Acknowledge that we have received and processed this operation.
-    //     await invoke("ack", { operationId: message.meta.operationId });
-    //   } else if (message.event == "invite_code_ready") {
-    //     console.log("invite codes ready");
-    //   } else if (message.event == "invite_code") {
-    //     console.log("invite codes");
-    //   }
+
+    if (message.event == "application") {
+      console.log(`got stream event with id ${message.meta.operationId}`);
+
+      // Acknowledge that we have received and processed this operation.
+      await invoke("ack", { operationId: message.meta.operationId });
+    } else if (message.event == "invite_code_ready") {
+      console.log("invite codes ready");
+    } else if (message.event == "invite_code") {
+      console.log("invite codes");
+      if (message.data.messageType === "request") {
+        respondInviteCodeRequest(message.data.inviteCode);
+      }
+      if (message.data.messageType === "response") {
+        // handle res
+      }
+    }
   };
 
   // The start command must be called on app startup otherwise running the
