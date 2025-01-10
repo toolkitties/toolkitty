@@ -20,7 +20,7 @@ export async function resolveInviteCode(inviteCode: string): Promise<string> {
     const timeout = setTimeout(() => {
       pendingInviteCode.inviteCode = null;
       pendingInviteCode.callbackFn = null;
-      reject();
+      reject("couldn't resolve invite code within given time");
     }, RESOLVE_INVITE_CODE_TIMEOUT);
 
     // Prepare callback for awaiting a response coming from the channel.
