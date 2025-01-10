@@ -19,11 +19,11 @@ type StreamMessage =
     };
 
 type InviteCodeReadyMessage = {
-  event: "invite_code_ready";
+  event: "invite_codes_ready";
 };
 
 type InviteCodeMessage = {
-  event: "invite_code";
+  event: "invite_codes";
   data: ResolveInviteCodeRequest | ResolveInviteCodeResponse;
 };
 

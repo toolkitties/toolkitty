@@ -14,9 +14,9 @@ export async function init() {
 
       // Acknowledge that we have received and processed this operation.
       await invoke("ack", { operationId: message.meta.operationId });
-    } else if (message.event == "invite_code_ready") {
+    } else if (message.event == "invite_codes_ready") {
       console.log("invite codes ready");
-    } else if (message.event == "invite_code") {
+    } else if (message.event == "invite_codes") {
       console.log("invite codes");
       if (message.data.messageType === "request") {
         respondInviteCodeRequest(message.data.inviteCode);
