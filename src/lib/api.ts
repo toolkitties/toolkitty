@@ -8,7 +8,7 @@ export async function sendResolveInviteCodeRequest(inviteCode: string) {
     messageType: "request",
   };
 
-  await invoke("respond_to_invite_code", { payload });
+  await invoke("publish_to_invite_code_overlay", { payload });
 }
 
 export async function respondInviteCodeRequest(inviteCode: string) {
@@ -20,6 +20,6 @@ export async function respondInviteCodeRequest(inviteCode: string) {
       timestamp: Date.now(),
       messageType: "response",
     };
-    await invoke("respond_to_invite_code", { payload });
+    await invoke("publish_to_invite_code_overlay", { payload });
   }
 }

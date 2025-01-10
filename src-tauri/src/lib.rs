@@ -79,7 +79,7 @@ async fn publish(
 }
 
 #[tauri::command]
-async fn respond_to_invite_code(
+async fn publish_to_invite_code_overlay(
     state: State<'_, Mutex<AppContext>>,
     payload: serde_json::Value,
 ) -> Result<(), PublishError> {
@@ -138,7 +138,7 @@ pub fn run() {
             init,
             ack,
             publish,
-            respond_to_invite_code,
+            publish_to_invite_code_overlay,
             select_calendar,
         ])
         .run(tauri::generate_context!())
