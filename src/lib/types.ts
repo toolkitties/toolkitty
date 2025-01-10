@@ -24,14 +24,30 @@ type InviteCodeReadyMessage = {
 
 type InviteCodeMessage = {
   event: "invite_code";
-  data: any; // @TODO
+  data: ResolveInviteCodeRequest | ResolveInviteCodeResponse;
 };
 
-type ChannelMessage = StreamMessage | InviteCodeReadyMessage | InviteCodeMessage;
+type ChannelMessage =
+  | StreamMessage
+  | InviteCodeReadyMessage
+  | InviteCodeMessage;
 
 type ApplicationMessage = {
   type: "EventCreated";
   data: {
     title: string;
   };
+};
+
+type ResolveInviteCodeRequest = {
+  inviteCode: string;
+  timestamp: number;
+  messageType: "request";
+};
+
+type ResolveInviteCodeResponse = {
+  calendarId: string;
+  inviteCode: string;
+  timestamp: number;
+  messageType: "response";
 };
