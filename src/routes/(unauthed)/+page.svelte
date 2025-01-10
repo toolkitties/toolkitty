@@ -12,6 +12,7 @@
 
   type EventMeta = {
     operationId: string;
+    calendarId: string;
     publicKey: string;
   }
 
@@ -55,7 +56,7 @@
     // Create the stream channel to be passed to backend and add an `onMessage`
     // callback method to handle any events which are later sent from the
     // backend.
-    const streamChannel = new Channel<StreamEvent>();
+    const streamChannel = new Channel<ChannelEvent>();
     streamChannel.onmessage = async (message) => {
       console.log(message);
 
