@@ -1,6 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
 import { calendars } from "$lib/state.svelte";
 
+const RESOLVE_INVITE_CODE_TIMEOUT = 1000 * 30;
+const SEND_INVITE_CODE_FREQUENCY = 1000 * 5;
+
 type InviteCodeState = {
   inviteCode: string | null;
   callbackFn: null | ((calendarId: string) => void);
@@ -11,23 +14,26 @@ const pendingInviteCode: InviteCodeState = {
   callbackFn: null,
 };
 
-const RESOLVE_INVITE_CODE_TIMEOUT = 1000 * 30;
-
 export async function resolveInviteCode(inviteCode: string): Promise<string> {
-  return new Promise(async (resolve, reject) => {
+  return new Promise((resolve, reject) => {
+    // Clear up state and throw an error if we've waited for too long without any answer.
     const timeout = setTimeout(() => {
       pendingInviteCode.inviteCode = null;
       pendingInviteCode.callbackFn = null;
       reject();
     }, RESOLVE_INVITE_CODE_TIMEOUT);
 
+    // Prepare callback for awaiting a response coming from the channel.
     pendingInviteCode.inviteCode = inviteCode;
     pendingInviteCode.callbackFn = (calendarId: string) => {
       clearTimeout(timeout);
       resolve(calendarId);
     };
 
-    await sendResolveInviteCodeRequest(inviteCode);
+    // Broadcast request every x seconds into the network, hopefully someone will answer ..
+    setInterval(() => {
+      sendResolveInviteCodeRequest(inviteCode);
+    }, SEND_INVITE_CODE_FREQUENCY);
   });
 }
 
@@ -43,15 +49,18 @@ export async function sendResolveInviteCodeRequest(inviteCode: string) {
 
 export async function respondInviteCodeRequest(inviteCode: string) {
   const calendar = calendars.findCalendarByInviteCode(inviteCode);
-  if (calendar) {
-    const payload: ResolveInviteCodeResponse = {
-      calendarId: calendar.id,
-      inviteCode,
-      timestamp: Date.now(),
-      messageType: "response",
-    };
-    await invoke("publish_to_invite_code_overlay", { payload });
+  if (!calendar) {
+    // We can't answer this request, ignore it.
+    return;
   }
+
+  const payload: ResolveInviteCodeResponse = {
+    calendarId: calendar.id,
+    inviteCode,
+    timestamp: Date.now(),
+    messageType: "response",
+  };
+  await invoke("publish_to_invite_code_overlay", { payload });
 }
 
 export async function handleInviteCodeResponse(response: ResolveInviteCodeResponse) {
