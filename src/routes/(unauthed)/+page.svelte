@@ -1,35 +1,46 @@
 <script lang="ts">
-  import { invoke, Channel } from "@tauri-apps/api/core";
   import { PinInput, Toggle } from "bits-ui";
   import { goto } from "$app/navigation";
-  import { stringify } from "postcss";
+  import { resolveInviteCode } from "$lib/api";
 
   let value: string[] | undefined = [];
 
   let unlocked = true;
+  let progress : "dormant" | "pending" | "timeout" = "dormant";
   let pinInputType: "text" | "password" = "password";
   $: pinInputType = unlocked ? "text" : "password";
 
   async function join(event: Event) {
     event.preventDefault();
 
-    // @TODO: Just doing all this here for testing purposes, move somewhere
-    // sensible later, of course.
-    const calendarId = "5a7bc8522433759260bdcb77648890b5da10297ed477776611c3c5f83342b025";
+    let calendarId;
 
-    await invoke("select_calendar", { calendarId });
+    try {
+      progress = "pending";
+      calendarId = await resolveInviteCode("5a7b");
+    } catch (err) {
+      progress = "timeout";
+      console.error(err);
+      return;
+    }
 
-    // Just some app data.
-    const payload = {
-      type: "EventCreated",
-      data: { title: "My Cool Event" },
-    };
+    //     // @TODO: Just doing all this here for testing purposes, move somewhere
+    //     // sensible later, of course.
+    //     const calendarId = "5a7bc8522433759260bdcb77648890b5da10297ed477776611c3c5f83342b025";
+    //
+    //     await invoke("select_calendar", { calendarId });
+    //
+    //     // Just some app data.
+    //     const payload = {
+    //       type: "EventCreated",
+    //       data: { title: "My Cool Event" },
+    //     };
+    //
+    //     // Publish the app event via the publish command.
+    //     console.log(`publish application data: `, payload);
+    //     await invoke("publish", { payload, calendarId });
 
-    // Publish the app event via the publish command.
-    console.log(`publish application data: `, payload);
-    await invoke("publish", { payload, calendarId });
-
-    goto(`/join?code=${value}`);
+    goto(`/join?code=${calendarId}`);
   }
 </script>
 
