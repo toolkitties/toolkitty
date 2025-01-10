@@ -7,6 +7,7 @@ use p2panda_store::{LocalLogStore, MemoryStore};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct LogId {
     pub calendar_id: Hash,
 }

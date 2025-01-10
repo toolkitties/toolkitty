@@ -11,8 +11,10 @@
   $: pinInputType = unlocked ? "text" : "password";
 
   type EventMeta = {
+    logId: {
+      calendarId: string;
+    };
     operationId: string;
-    calendarId: string;
     publicKey: string;
   }
 
