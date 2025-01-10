@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { calendar } from "$lib/state.svelte";
   import { goto } from "$app/navigation";
 
   function join(event: Event) {
@@ -32,3 +33,11 @@
     >
   </form>
 {/if}
+
+{calendar.members}
+
+<button onclick={() => calendar.addMember(Math.random().toString())}
+  >Add member</button
+>
+
+<button onclick={() => (calendar.members = [])}>Clear members</button>
