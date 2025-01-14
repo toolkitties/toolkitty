@@ -1,6 +1,8 @@
 <script lang="ts">
   const { selectedDate, timeSlots } = $props();
 
+  console.log(timeSlots);
+
   let selectedTimeSlots = $state<string[]>([]);
 
   function toggleSelection(timeSlot: string) {

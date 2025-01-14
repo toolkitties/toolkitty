@@ -22,8 +22,8 @@
         return new CalendarDate(date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate());
     });
 
-    let selectedDate: DateValue | null = null;
-    let timeslots: string[] = [];
+    let selectedDate: DateValue | null = $state(null);
+    let timeslots: string[] = $state([]);
 
     const handleDateSelect = (value: DateValue | DateValue[] | undefined) => {
         if (Array.isArray(value)) {
@@ -32,7 +32,6 @@
             selectedDate = value || null;
         }
 
-        // Update the timeslots based on the selected date
         if (selectedDate) {
             const calendarDate = new CalendarDate(selectedDate.year, selectedDate.month, selectedDate.day);
             timeslots = getTimeSlotsForSelectedDate(calendarDate);
@@ -55,25 +54,21 @@
     };
 
     const getTimeSlotsForSelectedDate = (date: CalendarDate) => {
-        // Find the entry in `availableDatesAndTimes` corresponding to the selected date
         const selectedDateEntry = availableDatesAndTimes.find((entry: AvailableDateEntry) => {
             const availableDate = new Date(entry.date);
             return (
                 availableDate.getUTCFullYear() === date.year &&
-                availableDate.getUTCMonth() === date.month - 1 && // Month in `CalendarDate` is 1-based
+                availableDate.getUTCMonth() === date.month - 1 && 
                 availableDate.getUTCDate() === date.day
             );
         });
 
-        // If the date has time slots available, return them
         if (selectedDateEntry) {
             return selectedDateEntry.timeslots;
         }
 
-        // Return an empty array if no time slots are found
         return [];
     };
-
 </script>
 
 <Calendar.Root 
@@ -124,7 +119,9 @@
     {/each}
 </Calendar.Root>
 
-<TimePicker 
-    selectedDate={selectedDate}
-    timeSlots={timeslots} 
-/>
+{#if selectedDate}
+    <TimePicker 
+        selectedDate={selectedDate}
+        timeSlots={timeslots} 
+    />
+{/if}
