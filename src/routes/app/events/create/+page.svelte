@@ -176,4 +176,6 @@
     {#each tags as tag, index}
       <div class={`tag ${tagColours[index]}`}>{tag}</div>
     {/each}
+
+    <button type="submit">Create</button>
 </form>

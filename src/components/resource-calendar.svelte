@@ -122,6 +122,6 @@
 {#if selectedDate}
     <TimePicker 
         selectedDate={selectedDate}
-        timeSlots={timeslots} 
+        availableTimeSlots={timeslots} 
     />
 {/if}

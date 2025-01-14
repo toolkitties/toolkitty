@@ -1,11 +1,19 @@
 <script lang="ts">
-  const { selectedDate, timeSlots } = $props();
+  const { selectedDate, availableTimeSlots } = $props();
 
-  console.log(timeSlots);
+  // create time slots array
+  let timeSlots: string[] = [];
+  for (let i = 0; i < 24; i++) {
+    let hourStart = String(i).padStart(2, '0');
+    let hourEnd = String((i + 1) % 24).padStart(2, '0');
+    timeSlots.push(`${hourStart}:00 - ${hourEnd}:00`);
+  }
 
   let selectedTimeSlots = $state<string[]>([]);
 
-  function toggleSelection(timeSlot: string) {
+  function toggleSelection(timeSlot: string, event: Event) {
+    event.preventDefault();
+    
     if (selectedTimeSlots.includes(timeSlot)) {
       selectedTimeSlots = selectedTimeSlots.filter(item => item !== timeSlot);
     } else {
@@ -15,7 +23,7 @@
 
   function handleKeydown(event: KeyboardEvent, timeSlot: string) {
     if (event.key === 'Enter' || event.key === ' ') {
-      toggleSelection(timeSlot);
+      toggleSelection(timeSlot, event);  
     }
   }
 </script>
@@ -26,13 +34,15 @@
   <div class="overflow-y-auto max-h-48 border border-gray-300 rounded-lg">
     {#each timeSlots as timeSlot}
       <button
+        type="button"
         class={
-          `time-slot py-2 px-4 cursor-pointer text-left
-          ${!timeSlots.includes(timeSlot) ? 'text-gray-400 pointer-events-none' : ''}
-          ${timeSlots.includes(timeSlot) ? 'bg-green-400' : ''}
-          ${selectedTimeSlots.includes(timeSlot) ? 'border border-black' : ''}`
+          `time-slot py-2 px-4 cursor-pointer text-left border-none
+          ${!availableTimeSlots.includes(timeSlot) ? 'text-gray-400 pointer-events-none' : ''}
+          ${availableTimeSlots.includes(timeSlot) ? 'bg-green-400' : ''}
+          ${selectedTimeSlots.includes(timeSlot) ? 'border-2 border-black' : ''}
+          `
         }
-        onclick={() => toggleSelection(timeSlot)}
+        onclick={(event) => toggleSelection(timeSlot, event)} 
         tabindex="0" 
         onkeydown={(event) => handleKeydown(event, timeSlot)} 
       >
@@ -41,4 +51,3 @@
     {/each}
   </div>
 </div>
-
