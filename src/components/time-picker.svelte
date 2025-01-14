@@ -1,15 +1,6 @@
 <script lang="ts">
-  const { selectedDate, availableTimes } = $props();
+  const { selectedDate, timeSlots } = $props();
 
-  // create time slots array
-  let timeSlots: string[] = [];
-  for (let i = 0; i < 24; i++) {
-    let hourStart = String(i).padStart(2, '0');
-    let hourEnd = String((i + 1) % 24).padStart(2, '0');
-    timeSlots.push(`${hourStart}:00 - ${hourEnd}:00`);
-  }
-
-  // select / unselect
   let selectedTimeSlots = $state<string[]>([]);
 
   function toggleSelection(timeSlot: string) {
@@ -35,8 +26,8 @@
       <button
         class={
           `time-slot py-2 px-4 cursor-pointer text-left
-          ${!availableTimes.includes(timeSlot) ? 'text-gray-400 pointer-events-none' : ''}
-          ${availableTimes.includes(timeSlot) ? 'bg-green-400' : ''}
+          ${!timeSlots.includes(timeSlot) ? 'text-gray-400 pointer-events-none' : ''}
+          ${timeSlots.includes(timeSlot) ? 'bg-green-400' : ''}
           ${selectedTimeSlots.includes(timeSlot) ? 'border border-black' : ''}`
         }
         onclick={() => toggleSelection(timeSlot)}

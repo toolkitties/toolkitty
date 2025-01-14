@@ -1,16 +1,7 @@
 <script lang="ts">
     import type { DateValue } from "@internationalized/date";
     import { CalendarDate } from "@internationalized/date";
-    import Calendar from "../../../../components/calendar.svelte";
-
-    let festivalDates = [
-        "2025-01-06T14:40:02.536Z", 
-        "2025-01-07T14:40:02.536Z", 
-        "2025-01-08T14:40:02.536Z", 
-        "2025-01-09T14:40:02.536Z", 
-        "2025-01-10T14:40:02.536Z",
-        "2025-01-11T14:40:02.536Z"
-    ]
+    import ResourceCalendar from "../../../../components/resource-calendar.svelte";
 
     let spaces =  [
       {
@@ -149,11 +140,9 @@
     </select>    
     <div class="space-availability">
       <p>Select from available dates for {currentlySelectedSpace.name}</p>
-      <Calendar 
-        use={"resource management"}
-        canSelectMultiple={false} 
-        hasTimePicker={true} 
-        availability={currentlySelectedSpace.availability} 
+      <ResourceCalendar 
+        resources={spaces}
+        currentlySelectedId={currentlySelectedSpace.id}
       />
     </div>
 
@@ -177,6 +166,10 @@
     </select>  
     <div class="resource-availability">
       <p>Select from available dates for {currentlySelectedResource.title}</p>
+      <ResourceCalendar 
+        resources={resources}
+        currentlySelectedId={currentlySelectedResource.id}
+      />
     </div>
 
     <!-- image upload component here-->

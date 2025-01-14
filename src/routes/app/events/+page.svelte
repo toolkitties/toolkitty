@@ -1,8 +1,13 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { CalendarDate  } from "@internationalized/date";
-  import Calendar from '../../../components/calendar.svelte';
+  import FestivalCalendar from '../../../components/festival-calendar.svelte';
   import EventRow from "../../../components/event-row.svelte";
+
+  function convertDateStringToCalendarDate(dateString: string){
+    let date = new Date(dateString);
+    return new CalendarDate(date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate());
+  }
 
   /* Festival dates will either be fetched via the 'festival_dates' property -
     an array of non-consectutive dates OR via start_date and end_date. If the 
@@ -18,10 +23,10 @@
   ]
 
   // convert festival dates to CalendarDate values so calendar component can work with them
-  let festivalDateValues = festivalDates.map(dateString => {
+  let festivalCalendarDates = festivalDates.map((dateString) => {
     let date = new Date(dateString);
     return new CalendarDate(date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate());
-  })
+  });
 
  let events = [
     {
@@ -72,6 +77,17 @@
     }
   ]
 
+  let eventsCount: Object[] = [
+    {
+      "date": convertDateStringToCalendarDate("2025-01-06T14:40:02.536Z"),
+      "numberOfEvents": 1
+    },
+    {
+      "date": convertDateStringToCalendarDate("2025-01-10T14:40:02.536Z"),
+      "numberOfEvents": 3
+    },
+  ]
+
   function handleUnauthNav(event: Event): void {
     const target = event.target as HTMLSelectElement;
     const selectedRoute = target.value;
@@ -88,11 +104,10 @@
   <option value="/create">Create New Festival</option>
 </select>
 
-<Calendar 
-    use={"festival overview"}
-    canSelectMultiple={false} 
-    hasTimePicker={false} 
-    festivalDates={festivalDateValues} 
+<FestivalCalendar 
+    canSelectMultiple={false}
+    festivalDates={festivalCalendarDates}
+    eventsCount={eventsCount}
 />
 
 {#each events as event}
