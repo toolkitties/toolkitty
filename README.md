@@ -45,3 +45,11 @@ For Android development, run:
 
 For iOS development, run:
   `npm run tauri ios dev`
+
+To launch multiple instances of the app, run: 
+
+  `npm run dev`
+
+  `npm run headless`
+
+  `npm run headless`
