@@ -128,6 +128,10 @@
     <label for="event-description">Description *</label>
     <textarea name="event-description" required ></textarea>
 
+    <!-- @TODO - different kind of input - list? - remaims to be decided -->
+    <label for="event-links">Links</label>
+    <input name="event-links" type="text">
+
     <label for="select-space">Select Space</label>
     <select name="select-space" bind:value={currentlySelectedSpaceId}>
       {#each spaces as space}
@@ -147,6 +151,7 @@
       {/key}
     </div>
 
+    <!-- @TODO - validation to ensure isn't outside of festival dates and isn't on an unavailable date for the space -->
     <label for="event-name">Event Date *</label>
     <input name="event-name" type="date" required>
 
@@ -177,9 +182,11 @@
     </div>
 
     <!-- image upload component here-->
+
     {#each tags as tag, index}
       <div class={`tag ${tagColours[index]}`}>{tag}</div>
     {/each}
 
-    <button type="submit">Create</button>
+    <button>Discard</button>
+    <button type="submit">Publish</button>
 </form>

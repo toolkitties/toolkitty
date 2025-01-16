@@ -35,11 +35,11 @@
     {#each timeSlots as timeSlot}
       <button
         type="button"
+        style={selectedTimeSlots.includes(timeSlot) ? 'border: 1px solid black;' : ''}
         class={
           `time-slot py-2 px-4 cursor-pointer text-left border-none
           ${!availableTimeSlots.includes(timeSlot) ? 'text-gray-400 pointer-events-none' : ''}
           ${availableTimeSlots.includes(timeSlot) ? 'bg-green-400' : ''}
-          ${selectedTimeSlots.includes(timeSlot) ? 'border-2 border-black' : ''}
           `
         }
         onclick={(event) => toggleSelection(timeSlot, event)} 
