@@ -1,6 +1,4 @@
 <script lang="ts">
-    import type { DateValue } from "@internationalized/date";
-    import { CalendarDate } from "@internationalized/date";
     import ResourceCalendar from "../../../../components/resource-calendar.svelte";
 
     let spaces =  [
@@ -102,7 +100,7 @@
       "message": "Call me to confirm pick up",
       "availability": [
         {
-          "date": "2025-01-06T14:40:02.536Z",
+          "date": "2025-01-09T12:40:02.536Z",
           "timeslots": [ "19:00 - 20:00", "20:00 - 21:00", "22:00 - 23:00"]
         }
       ],
@@ -114,8 +112,8 @@
   let tags = ["tag 1", "tag 2", "tag 3"]
   let tagColours = ["bg-yellow-light", "bg-fluro-green-light", "bg-red-light"];
 
-  let currentlySelectedSpace = spaces[0];
-  let currentlySelectedResource = resources[0];
+  let currentlySelectedSpaceId = $state(1);
+  let currentlySelectedResourceId = $state(1);
 </script>
 
 <h1>Create event</h1> <!-- TODO: replace with header component import -->
@@ -131,19 +129,22 @@
     <textarea name="event-description" required ></textarea>
 
     <label for="select-space">Select Space</label>
-    <select name="select-space">
-        {#each spaces as space}
-            <option value="{space.id}" selected={space.id === currentlySelectedSpace.id}>
-                {space.name}
-            </option>
-        {/each}
-    </select>    
+    <select name="select-space" bind:value={currentlySelectedSpaceId}>
+      {#each spaces as space}
+        <option value={space.id} selected={space.id === currentlySelectedSpaceId}>
+          {space.name}
+        </option>
+      {/each}
+    </select>
+    
     <div class="space-availability">
-      <p>Select from available dates for {currentlySelectedSpace.name}</p>
-      <ResourceCalendar 
+      <p>Select from available dates for {spaces.find(space => space.id === currentlySelectedSpaceId)?.name}</p>
+      {#key currentlySelectedSpaceId}
+      <ResourceCalendar
         resources={spaces}
-        currentlySelectedId={currentlySelectedSpace.id}
+        currentlySelectedId={currentlySelectedSpaceId}
       />
+      {/key}
     </div>
 
     <label for="event-name">Event Date *</label>
@@ -157,19 +158,22 @@
      
 
     <label for="select-resource">Select Resource</label>
-    <select name="select-resource">
-        {#each resources as resource}
-            <option value="{resource.id}" selected={resource.id === currentlySelectedResource.id}>
-                {resource.title}
-            </option>
-        {/each}
-    </select>  
+    <select name="select-resource" bind:value={currentlySelectedResourceId}>
+      {#each resources as resource}
+        <option value={resource.id} selected={resource.id === currentlySelectedResourceId}>
+          {resource.title}
+        </option>
+      {/each}
+    </select>
+
     <div class="resource-availability">
-      <p>Select from available dates for {currentlySelectedResource.title}</p>
-      <ResourceCalendar 
+      <p>Select from available dates for {resources.find(resource => resource.id === currentlySelectedResourceId)?.title}</p>
+      {#key currentlySelectedResourceId}
+      <ResourceCalendar
         resources={resources}
-        currentlySelectedId={currentlySelectedResource.id}
+        currentlySelectedId={currentlySelectedResourceId}
       />
+      {/key}
     </div>
 
     <!-- image upload component here-->
