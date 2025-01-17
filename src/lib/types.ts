@@ -64,4 +64,6 @@ type Calendars = Calendar[]
 type ProgrammeEvent = {
   id: string;
   name: string;
+  start: string;
+  end: string;
 }

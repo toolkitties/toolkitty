@@ -12,8 +12,6 @@
   let pinInputType: "text" | "password" = "password";
   $: pinInputType = unlocked ? "text" : "password";
 
-  // db.delete({ disableAutoOpen: false });
-
   async function join(event: Event) {
     event.preventDefault();
 

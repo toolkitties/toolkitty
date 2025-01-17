@@ -17,7 +17,7 @@ const db = new Dexie('CalendarDatabase') as Dexie & {
 // Schema declaration:
 db.version(1).stores({
   calendars: '++id, name', // primary key "id" (for the runtime!)
-  events: 'id, name, date, calendarId'
+  events: 'id, name, [start+end], calendarId'
 });
 
 export { db };

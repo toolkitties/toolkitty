@@ -63,6 +63,7 @@ export async function sendResolveInviteCodeRequest(inviteCode: string) {
 
 export async function respondInviteCodeRequest(inviteCode: string) {
   const calendar = await findCalendarByInviteCode(inviteCode);
+  console.log(calendar);
   if (!calendar) {
     // We can't answer this request, ignore it.
     return;
@@ -101,6 +102,7 @@ export async function getCalendars(): Promise<Calendar[]> {
 
 export async function findCalendarByInviteCode(inviteCode: string): Promise<undefined | Calendar> {
   const calendars = await getCalendars();
+  console.log(calendars);
   return calendars.find((calendar) => {
     return getInviteCode(calendar) === inviteCode;
   });
