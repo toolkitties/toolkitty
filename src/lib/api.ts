@@ -22,6 +22,7 @@ export async function resolveInviteCode(inviteCode: string): Promise<string> {
     const timeout = setTimeout(() => {
       pendingInviteCode.inviteCode = null;
       pendingInviteCode.callbackFn = null;
+      clearInterval(interval);
       reject("couldn't resolve invite code within given time");
     }, RESOLVE_INVITE_CODE_TIMEOUT);
 
@@ -29,11 +30,12 @@ export async function resolveInviteCode(inviteCode: string): Promise<string> {
     pendingInviteCode.inviteCode = inviteCode;
     pendingInviteCode.callbackFn = (calendarId: string) => {
       clearTimeout(timeout);
+      clearInterval(interval);
       resolve(calendarId);
     };
 
     // Broadcast request every x seconds into the network, hopefully someone will answer ..
-    setInterval(() => {
+    const interval = setInterval(() => {
       sendResolveInviteCodeRequest(inviteCode);
     }, SEND_INVITE_CODE_FREQUENCY);
   });
@@ -96,4 +98,9 @@ export async function findCalendarByInviteCode(calendars: Calendars, inviteCode:
 
 export async function addCalendar(calendar: Calendar) {
   await db.calendars.add(calendar);
+}
+
+
+export async function addEvent(calEvent: ProgrammeEvent) {
+  await db.events.add(calEvent);
 }
