@@ -17,6 +17,14 @@ const pendingInviteCode: InviteCodeState = {
 };
 
 export async function resolveInviteCode(inviteCode: string): Promise<string> {
+  // Get local calendars
+  const calendar = await findCalendarByInviteCode(inviteCode);
+
+  // Check if we already have calendar locally and return before broadcasting
+  if (calendar) {
+    return calendar.id;
+  }
+
   return new Promise((resolve, reject) => {
     // Clear up state and throw an error if we've waited for too long without any answer.
     const timeout = setTimeout(() => {
@@ -34,6 +42,8 @@ export async function resolveInviteCode(inviteCode: string): Promise<string> {
       resolve(calendarId);
     };
 
+    // Initial request to network
+    sendResolveInviteCodeRequest(inviteCode);
     // Broadcast request every x seconds into the network, hopefully someone will answer ..
     const interval = setInterval(() => {
       sendResolveInviteCodeRequest(inviteCode);
@@ -52,8 +62,7 @@ export async function sendResolveInviteCodeRequest(inviteCode: string) {
 }
 
 export async function respondInviteCodeRequest(inviteCode: string) {
-  const calendars = await getCalendars();
-  const calendar = await findCalendarByInviteCode(calendars, inviteCode);
+  const calendar = await findCalendarByInviteCode(inviteCode);
   if (!calendar) {
     // We can't answer this request, ignore it.
     return;
@@ -90,7 +99,8 @@ export async function getCalendars(): Promise<Calendar[]> {
   return await db.calendars.toArray();
 }
 
-export async function findCalendarByInviteCode(calendars: Calendars, inviteCode: string): Promise<undefined | Calendar> {
+export async function findCalendarByInviteCode(inviteCode: string): Promise<undefined | Calendar> {
+  const calendars = await getCalendars();
   return calendars.find((calendar) => {
     return getInviteCode(calendar) === inviteCode;
   });

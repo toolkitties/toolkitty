@@ -3,10 +3,6 @@
   import { goto } from "$app/navigation";
   import { resolveInviteCode } from "$lib/api";
   import { db } from "$lib/db";
-  import { liveQuery } from "dexie";
-  import { getCalendars } from "$lib/api";
-
-  let calendars = liveQuery(() => db.calendars.toArray());
 
   let value: string[] | undefined = [];
 
@@ -15,6 +11,8 @@
   let timedOut: boolean = false;
   let pinInputType: "text" | "password" = "password";
   $: pinInputType = unlocked ? "text" : "password";
+
+  // db.delete({ disableAutoOpen: false });
 
   async function join(event: Event) {
     event.preventDefault();
