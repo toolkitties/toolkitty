@@ -1,5 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { calendars } from "$lib/state.svelte";
+import { db } from "$lib/db";
+import { get } from "svelte/store";
 
 const RESOLVE_INVITE_CODE_TIMEOUT = 1000 * 30;
 const SEND_INVITE_CODE_FREQUENCY = 1000 * 5;
@@ -48,7 +50,8 @@ export async function sendResolveInviteCodeRequest(inviteCode: string) {
 }
 
 export async function respondInviteCodeRequest(inviteCode: string) {
-  const calendar = calendars.findCalendarByInviteCode(inviteCode);
+  const calendars = await getCalendars();
+  const calendar = await findCalendarByInviteCode(calendars, inviteCode);
   if (!calendar) {
     // We can't answer this request, ignore it.
     return;
@@ -74,4 +77,23 @@ export async function handleInviteCodeResponse(response: ResolveInviteCodeRespon
   }
 
   pendingInviteCode.callbackFn(response.calendarId);
+}
+
+
+function getInviteCode(calendar: Calendar) {
+  return calendar.id.slice(0, 4);
+}
+
+export async function getCalendars(): Promise<Calendar[]> {
+  return await db.calendars.toArray();
+}
+
+export async function findCalendarByInviteCode(calendars: Calendars, inviteCode: string): Promise<undefined | Calendar> {
+  return calendars.find((calendar) => {
+    return getInviteCode(calendar) === inviteCode;
+  });
+}
+
+export async function addCalendar(calendar: Calendar) {
+  await db.calendars.add(calendar);
 }

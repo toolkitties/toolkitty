@@ -2,6 +2,11 @@
   import { PinInput, Toggle } from "bits-ui";
   import { goto } from "$app/navigation";
   import { resolveInviteCode } from "$lib/api";
+  import { db } from "$lib/db";
+  import { liveQuery } from "dexie";
+  import { getCalendars } from "$lib/api";
+
+  let calendars = liveQuery(() => db.calendars.toArray());
 
   let value: string[] | undefined = [];
 
@@ -76,6 +81,7 @@
 {#if timedOut}
   <p>Calendar not found</p>
 {/if}
+
 <a
   href="/create"
   class="border border-black rounded p-4 text-center"
