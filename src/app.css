@@ -16,4 +16,7 @@
     @apply border border-black rounded-full px-2.5 py-[3px];
   }
 
+  .section {
+    @apply border border-black rounded p-2.5;
+  }
 }
