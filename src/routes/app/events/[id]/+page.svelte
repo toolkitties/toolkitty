@@ -29,12 +29,12 @@
     ];
     let secondaryImages: Image[] = [
         {
-            url: "https://placecats.com/neo_banana/300/200",
+            url: "https://placecats.com/bella/300/200",
             altText: "A very cute cat"
         },
         {
-            url: "https://placecats.com/bob/300/200",
-            altText: "Another cute cate"
+            url: "https://placecats.com/g/300/200",
+            altText: "Another cute cat"
         },
     ]
     let tags = ["tag 1", "tag 2", "tag 3"]
@@ -55,11 +55,9 @@
     {/each}
 {/if}
 <!-- @TODO - decide how we are handling map embeds -->
-{#if secondaryImages}
-    {#each secondaryImages as image}
-        <a href="{image.url}">{image.altText}</a>
-    {/each}
-{/if}
+{#each secondaryImages as image}
+    <img src="{image.url}" alt="{image.altText}" />
+{/each}
 {#each tags as tag, index}
     <div class={`tag ${tagColours[index]}`}>{tag}</div>
 {/each}

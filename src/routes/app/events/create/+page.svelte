@@ -116,7 +116,6 @@
   let currentlySelectedResourceId = $state(1);
 </script>
 
-<h1>Create event</h1> <!-- TODO: replace with header component import -->
 
 <p>Hello organisers! Fill this form to upload your event to the program.</p>
 <p>YOU NEED A SPACE BEFORE YOU CREATE AN EVENT</p>
@@ -128,10 +127,20 @@
     <label for="event-description">Description *</label>
     <textarea name="event-description" required ></textarea>
 
-    <!-- @TODO - different kind of input - list? - remaims to be decided -->
-    <label for="event-links">Links</label>
-    <input name="event-links" type="text">
+    <p>Ticket link</p>
+    <label for="ticket-link-text">Link Text</label>
+    <input name="ticket-link-text" type="text">
+    <label for="ticket-link-url">Url</label>
+    <input name="ticket-link-url" type="text">
 
+    <p>Other link (website, social media)</p>
+    <label for="ticket-link-text">Link Text</label>
+    <input name="ticket-link-text" type="text">
+    <label for="ticket-link-url">Url</label>
+    <input name="ticket-link-url" type="text">
+
+
+    <!-- @TODO - validation to ensure space selection, resource selection, event date and time overlap -->
     <label for="select-space">Select Space</label>
     <select name="select-space" bind:value={currentlySelectedSpaceId}>
       {#each spaces as space}
@@ -151,17 +160,6 @@
       {/key}
     </div>
 
-    <!-- @TODO - validation to ensure isn't outside of festival dates and isn't on an unavailable date for the space -->
-    <label for="event-name">Event Date *</label>
-    <input name="event-name" type="date" required>
-
-    <label for="event-start-time">Start time *</label>
-    <input name="event-start-time" type="time" required>
-
-    <label for="event-end-time">End time</label>
-    <input name="event-end-time" type="time">
-     
-
     <label for="select-resource">Select Resource</label>
     <select name="select-resource" bind:value={currentlySelectedResourceId}>
       {#each resources as resource}
@@ -180,6 +178,18 @@
       />
       {/key}
     </div>
+
+    <p>Event start</p>
+    <label for="event-name">Date *</label>
+    <input name="event-name" type="date" required>
+    <label for="event-start-time">Time *</label>
+    <input name="event-start-time" type="time" required>
+
+    <p>Event end</p>
+    <label for="event-name">Date *</label>
+    <input name="event-name" type="date" required>
+    <label for="event-start-time">Time *</label>
+    <input name="event-start-time" type="time" required>
 
     <!-- image upload component here-->
 
