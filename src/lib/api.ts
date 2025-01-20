@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { calendars } from "$lib/state.svelte";
+import { Calendar, calendars } from "$lib/state.svelte";
 
 const RESOLVE_INVITE_CODE_TIMEOUT = 1000 * 30;
 const SEND_INVITE_CODE_FREQUENCY = 1000 * 5;
@@ -63,7 +63,9 @@ export async function respondInviteCodeRequest(inviteCode: string) {
   await invoke("publish_to_invite_code_overlay", { payload });
 }
 
-export async function handleInviteCodeResponse(response: ResolveInviteCodeResponse) {
+export async function handleInviteCodeResponse(
+  response: ResolveInviteCodeResponse
+) {
   if (pendingInviteCode.inviteCode !== response.inviteCode) {
     // Ignore this invite code response, it's not for us.
     return;
@@ -74,4 +76,18 @@ export async function handleInviteCodeResponse(response: ResolveInviteCodeRespon
   }
 
   pendingInviteCode.callbackFn(response.calendarId);
+}
+
+export async function createCalendar(payload: any): Promise<Calendar> {
+  let hash: string, calendar: Calendar;
+  [hash, calendar] = await invoke("create_calendar", { payload });
+
+  // @TODO: If I don't construct the calendar here then it's class methods are undefined, I
+  // thought just inferring the type above would be enough for that.... Is there a better way to
+  // do this?
+  calendar = new Calendar(calendar.id, calendar.owner, calendar.created_at);
+  console.log("calendar created: ", calendar);
+
+  calendars.addCalendar(calendar);
+  return calendar;
 }

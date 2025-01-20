@@ -61,10 +61,8 @@ pub struct EventMeta {
 
 impl From<Header<Extensions>> for EventMeta {
     fn from(header: Header<Extensions>) -> Self {
-        let stream_meta: StreamMeta = header
-            .extract()
-            .expect("stream meta in header extensions");
-        
+        let stream_meta: StreamMeta = header.extract().expect("stream meta in header extensions");
+
         let calendar_id: Hash = match Extension::<CalendarId>::extract(&header) {
             Some(id) => id.0,
             None => header.hash(),
@@ -72,7 +70,8 @@ impl From<Header<Extensions>> for EventMeta {
 
         let calendar = Calendar {
             id: calendar_id,
-            stream_meta: stream_meta,
+            owner: stream_meta.owner,
+            created_at: stream_meta.created_at,
         };
 
         Self {

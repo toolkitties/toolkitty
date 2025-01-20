@@ -10,13 +10,14 @@ use p2panda_sync::TopicQuery;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 
-use crate::node::operation::{LogId, StreamMeta};
+use crate::node::operation::{LogId, MessageType};
 
 #[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub struct Calendar {
     pub id: Hash,
-    pub stream_meta: StreamMeta,
+    pub owner: PublicKey,
+    pub created_at: u64,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
@@ -66,7 +67,9 @@ impl TopicMap {
             .entry(calendar.id)
             .and_modify(|public_keys| public_keys.push(public_key))
             .or_insert(vec![public_key]);
-        lock.logs.insert(calendar.id, calendar.stream_meta.log_id());
+
+        let log_id = LogId::new(calendar.owner, MessageType::Calendar, calendar.created_at);
+        lock.logs.insert(calendar.id, log_id);
     }
 }
 

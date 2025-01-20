@@ -1,7 +1,7 @@
 <script lang="ts">
   import { PinInput, Toggle } from "bits-ui";
   import { goto } from "$app/navigation";
-  import { resolveInviteCode } from "$lib/api";
+  import { resolveInviteCode, createCalendar } from "$lib/api";
 
   let value: string[] | undefined = [];
 
@@ -29,6 +29,19 @@
     }
 
     goto(`/join?code=${calendarId}`);
+  }
+
+  async function create(event: Event) {
+    event.preventDefault();
+
+    // Payload for "CalendarCreated" event.
+    const payload = {
+      type: "CalendarCreated",
+      data: { title: "My Cool Calendar" },
+    };
+
+    let calendar = await createCalendar(payload);
+    goto(`/join?code=${calendar.id}`);
   }
 </script>
 
@@ -79,5 +92,6 @@
 <a
   href="/create"
   class="border border-black rounded p-4 text-center"
-  type="submit">Create</a
+  type="submit"
+  onclick={create}>Create</a
 >

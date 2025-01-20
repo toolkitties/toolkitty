@@ -109,7 +109,8 @@ async fn create_calendar(
 
     let calendar = Calendar {
         id: calendar_id,
-        stream_meta,
+        owner: stream_meta.owner,
+        created_at: stream_meta.created_at,
     };
 
     Ok((calendar_id, calendar))
@@ -127,11 +128,13 @@ async fn publish_calendar_event(
     // @TODO: Handle error.
     let payload = serde_json::to_vec(&payload).unwrap();
 
-    let extensions = Extensions::new(
-        Some(calendar.id),
-        calendar.stream_meta.clone(),
-        PruneFlag::new(false),
-    );
+    let stream_meta = StreamMeta {
+        owner: calendar.owner,
+        message_type: MessageType::Calendar,
+        created_at: calendar.created_at,
+    };
+
+    let extensions = Extensions::new(Some(calendar.id), stream_meta, PruneFlag::new(false));
 
     let (header, body) =
         create_operation(&mut state.store, &private_key, extensions, Some(&payload)).await;
