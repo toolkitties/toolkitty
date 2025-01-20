@@ -1,5 +1,7 @@
 import { invoke, Channel } from "@tauri-apps/api/core";
 import { handleInviteCodeResponse, respondInviteCodeRequest } from "./api";
+import { Calendar, calendars } from "./state.svelte";
+import { resolvePromise } from "./promise_map";
 
 export async function init() {
   // Create the stream channel to be passed to backend and add an `onMessage`
@@ -11,6 +13,18 @@ export async function init() {
 
     if (message.event == "application") {
       console.log(`got stream event with id ${message.meta.operationId}`);
+      if (message.data.type === "calendar_created") {
+        let calendar = new Calendar(
+          message.meta.calendar.id,
+          message.meta.calendar.owner,
+          message.meta.calendar.created_at
+        );
+
+        calendars.addCalendar(calendar);
+        console.log("Calendar created: ", calendar);
+
+        resolvePromise(message.meta.operationId);
+      }
 
       // Acknowledge that we have received and processed this operation.
       await invoke("ack", { operationId: message.meta.operationId });
