@@ -1,6 +1,7 @@
 <script lang="ts">
   import { init } from "$lib/channel";
   import { onMount } from "svelte";
+  import Toasts from "../components/toasts.svelte";
 
   console.log("yo");
   onMount(() => {
@@ -11,4 +12,5 @@
   });
 </script>
 
+<Toasts />
 <slot />
