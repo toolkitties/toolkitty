@@ -1,7 +1,11 @@
+type Calendar = {
+  id: string;
+  owner: string;
+  created_at: number;
+}
+
 type OperationMeta = {
-  logId: {
-    calendarId: string;
-  };
+  calendar: Calendar;
   operationId: string;
   publicKey: string;
 };
@@ -33,7 +37,7 @@ type ChannelMessage =
   | InviteCodeMessage;
 
 type ApplicationMessage = {
-  type: "EventCreated";
+  type: "calendar_created";
   data: {
     title: string;
   };
