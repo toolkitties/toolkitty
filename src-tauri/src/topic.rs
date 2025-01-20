@@ -10,7 +10,14 @@ use p2panda_sync::TopicQuery;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 
-use crate::node::operation::LogId;
+use crate::node::operation::{LogId, StreamMeta};
+
+#[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct Calendar {
+    pub id: Hash,
+    pub stream_meta: StreamMeta,
+}
 
 #[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
 #[serde(tag = "t", content = "c", rename_all = "snake_case")]
@@ -34,29 +41,32 @@ impl TopicId for NetworkTopic {
 
 #[derive(Clone, Debug)]
 pub struct TopicMap {
-    inner: InnerTopicMap,
+    inner: Arc<RwLock<InnerTopicMap>>,
 }
 
 #[derive(Clone, Debug)]
 struct InnerTopicMap {
-    authors: Arc<RwLock<HashMap<Hash, Vec<PublicKey>>>>,
+    authors: HashMap<Hash, Vec<PublicKey>>,
+    logs: HashMap<Hash, LogId>,
 }
 
 impl TopicMap {
     pub fn new() -> Self {
         Self {
-            inner: InnerTopicMap {
-                authors: Arc::new(RwLock::new(HashMap::new())),
-            },
+            inner: Arc::new(RwLock::new(InnerTopicMap {
+                authors: HashMap::new(),
+                logs: HashMap::new(),
+            })),
         }
     }
 
-    pub async fn add_author(&self, public_key: PublicKey, calendar_id: Hash) {
-        let mut authors = self.inner.authors.write().await;
-        authors
-            .entry(calendar_id)
+    pub async fn add_author(&self, public_key: PublicKey, calendar: Calendar) {
+        let mut lock = self.inner.write().await;
+        lock.authors
+            .entry(calendar.id)
             .and_modify(|public_keys| public_keys.push(public_key))
             .or_insert(vec![public_key]);
+        lock.logs.insert(calendar.id, calendar.stream_meta.log_id());
     }
 }
 
@@ -67,8 +77,10 @@ impl TopicLogMap<NetworkTopic, LogId> for TopicMap {
             // We don't want to sync over invite codes.
             NetworkTopic::InviteCodes => None,
             NetworkTopic::Calendar { calendar_id } => {
-                let authors = self.inner.authors.read().await;
-                authors.get(calendar_id).map(|public_keys| {
+                let inner = self.inner.read().await;
+                let log_id = inner.logs.get(calendar_id);
+                inner.authors.get(calendar_id).map(|public_keys| {
+                    let log_id = log_id.unwrap();
                     let mut result = HashMap::with_capacity(public_keys.len());
                     for public_key in public_keys {
                         result.insert(
@@ -76,9 +88,7 @@ impl TopicLogMap<NetworkTopic, LogId> for TopicMap {
                             // @NOTE(adz): Currently we store everything in one log per calendar,
                             // later we want to list all possible "log types" here, for example for
                             // all events, resources, messages etc.
-                            vec![LogId {
-                                calendar_id: *calendar_id,
-                            }],
+                            vec![log_id.to_owned()],
                         );
                     }
                     result

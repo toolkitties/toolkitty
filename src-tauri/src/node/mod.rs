@@ -7,7 +7,7 @@ use anyhow::Result;
 use futures_util::future::{MapErr, Shared};
 use futures_util::{FutureExt, TryFutureExt};
 use operation::encode_gossip_message;
-use p2panda_core::{Hash, PrivateKey};
+use p2panda_core::{Body, Hash, Header, PrivateKey};
 use p2panda_discovery::mdns::LocalDiscovery;
 use p2panda_net::{FromNetwork, NetworkBuilder, SyncConfiguration, TopicId};
 use p2panda_store::MemoryStore;
@@ -21,7 +21,7 @@ use tokio_util::task::AbortOnDropHandle;
 use tracing::error;
 
 use crate::node::actor::{NodeActor, ToNodeActor};
-use crate::node::operation::{create_operation, Extensions, LogId};
+use crate::node::operation::{ Extensions, LogId};
 pub use crate::node::stream::{AckError, StreamEvent};
 use crate::node::stream::{StreamController, ToStreamController};
 
@@ -43,11 +43,11 @@ pub struct Node<T> {
 impl<T: TopicId + TopicQuery + 'static> Node<T> {
     pub async fn new<TM: TopicLogMap<T, LogId> + 'static>(
         private_key: PrivateKey,
+        store: MemoryStore<LogId, Extensions>,
         topic_map: TM,
     ) -> Result<(Self, mpsc::Receiver<StreamEvent>)> {
         let rt = tokio::runtime::Handle::current();
 
-        let store = MemoryStore::new();
         let (stream, stream_tx, stream_rx) = StreamController::new(store.clone());
         let (network_tx, mut network_rx) = mpsc::channel(1024);
 
@@ -133,23 +133,13 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
     pub async fn publish_to_stream(
         &mut self,
         topic: &T,
-        log_id: LogId,
-        payload: &[u8],
+        header: &Header<Extensions>,
+        body: Option<&Body>,
     ) -> Result<Hash, PublishError> {
-        // @TODO(adz): Memory stores are infallible right now but we'll switch to a SQLite-based
-        // one soon and then we need to handle this error here:
-        let (header, body) = create_operation(
-            &mut self.store,
-            log_id,
-            &self.private_key,
-            Some(payload),
-            false,
-        )
-        .await;
         let header_bytes = header.to_bytes();
         let operation_id = header.hash();
 
-        let bytes = encode_gossip_message(&header, body.as_ref())?;
+        let bytes = encode_gossip_message(&header, body)?;
         self.network_actor_tx
             .send(ToNodeActor::Broadcast {
                 topic_id: topic.id(),
@@ -161,8 +151,8 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
 
         self.stream_tx
             .send(ToStreamController::Ingest {
-                header,
-                body,
+                header: header.to_owned(),
+                body: body.cloned(),
                 header_bytes,
             })
             .await
