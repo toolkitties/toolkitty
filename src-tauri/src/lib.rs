@@ -70,7 +70,7 @@ async fn select_calendar(
 async fn create_calendar(
     state: State<'_, Mutex<AppContext>>,
     payload: serde_json::Value,
-) -> Result<(Hash, Calendar), PublishError> {
+) -> Result<Hash, PublishError> {
     let mut state = state.lock().await;
     let private_key = state.private_key.clone();
 
@@ -95,8 +95,8 @@ async fn create_calendar(
     let (header, body) =
         create_operation(&mut state.store, &private_key, extensions, Some(&payload)).await;
 
-    let calendar_id = header.hash();
-    let topic = NetworkTopic::Calendar { calendar_id };
+    let hash = header.hash();
+    let topic = NetworkTopic::Calendar { calendar_id: hash };
 
     // This is a new calendar and so we have never subscribed to it's topic yet. Do this before
     // actually publishing the create event.
@@ -107,13 +107,7 @@ async fn create_calendar(
         .publish_to_stream(&topic, &header, body.as_ref())
         .await?;
 
-    let calendar = Calendar {
-        id: calendar_id,
-        owner: stream_meta.owner,
-        created_at: stream_meta.created_at,
-    };
-
-    Ok((calendar_id, calendar))
+    Ok(hash)
 }
 
 #[tauri::command]

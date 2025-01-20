@@ -40,8 +40,11 @@
       data: { title: "My Cool Calendar" },
     };
 
-    let calendar = await createCalendar(payload);
-    goto(`/join?code=${calendar.id}`);
+    let hash = await createCalendar(payload);
+
+    // TODO: We need to wait until the calendar is processed by the event sourcing state machine
+    // before navigating to the new page. This is a job for our "hash based future resolver".
+    goto(`/join?code=${hash}`);
   }
 </script>
 
