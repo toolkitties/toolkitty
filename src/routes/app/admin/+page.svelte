@@ -1,4 +1,6 @@
 <script lang="ts">
+  import * as Dialog from "../../../components/dialog/index";
+
   // TODO: fetch users and their permissions
   const users = [
     { name: "Boo Boo", role: "pending" },
@@ -46,11 +48,19 @@
     them in!
   </p>
   {#if users}
-    {#each users as user}
-      <div class="button">
-        <span>{user.name}</span>
-        <span>{user.role}</span>
-      </div>
+    {#each users as u}
+      <Dialog.Root>
+        <Dialog.Trigger class="button">
+          <span>{u.name}</span>
+          <span>{u.role}</span>
+        </Dialog.Trigger>
+        <Dialog.Content>
+          <Dialog.Title>Update permissions for {u.name}</Dialog.Title>
+          <Dialog.Close>admin</Dialog.Close>
+          <Dialog.Close>organiser</Dialog.Close>
+          <Dialog.Close>reject</Dialog.Close>
+        </Dialog.Content>
+      </Dialog.Root>
     {/each}
   {/if}
 </section>
