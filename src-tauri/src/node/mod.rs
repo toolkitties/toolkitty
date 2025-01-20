@@ -21,7 +21,7 @@ use tokio_util::task::AbortOnDropHandle;
 use tracing::error;
 
 use crate::node::actor::{NodeActor, ToNodeActor};
-use crate::node::operation::{ Extensions, LogId};
+use crate::node::operation::{Extensions, LogId};
 pub use crate::node::stream::{AckError, StreamEvent};
 use crate::node::stream::{StreamController, ToStreamController};
 
