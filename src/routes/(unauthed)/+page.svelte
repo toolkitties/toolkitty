@@ -34,9 +34,9 @@
   async function create(event: Event) {
     event.preventDefault();
 
-    // Payload for "CalendarCreated" event.
+    // Payload for "calendar_created" event.
     const payload = {
-      type: "CalendarCreated",
+      type: "calendar_created",
       data: { title: "My Cool Calendar" },
     };
 

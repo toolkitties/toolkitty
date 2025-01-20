@@ -82,12 +82,5 @@ export async function createCalendar(payload: any): Promise<Calendar> {
   let hash: string, calendar: Calendar;
   [hash, calendar] = await invoke("create_calendar", { payload });
 
-  // @TODO: If I don't construct the calendar here then it's class methods are undefined, I
-  // thought just inferring the type above would be enough for that.... Is there a better way to
-  // do this?
-  calendar = new Calendar(calendar.id, calendar.owner, calendar.created_at);
-  console.log("calendar created: ", calendar);
-
-  calendars.addCalendar(calendar);
   return calendar;
 }
