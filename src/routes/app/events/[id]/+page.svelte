@@ -1,5 +1,4 @@
 <script lang="ts">
-
     interface Image {
         url: string;
         altText: string | " "; // should we allow users to not set this? Image could be decorative only, but also could enable skipping of alt text out of laziness.
@@ -21,10 +20,16 @@
     let spacePageId: string = "1";
     let space = "Main Stage";
     let description = "The colours of the construction paper constitute a symbolic alphabet  which allows an ephemeral materialisation of the spirit of epistemological and mystical anarchism. My paper collages are dwelling  beyond the art market and other capitalist systems. Creation is a  magical practice, the action is meaningful here and now. The paper will  wither someday and new people will speak new languages and will create  new senses. So let’s talk about what is important for us today, discover the eternal freedom and light up our own senses."
-    let links: Link[] = [
+    let ticketLinks: Link[] = [
         {
-            url: "www.example.com",
-            text: "Organiser website"
+            url: "example.com",
+            text: "Tickets ↗"
+        }
+    ];
+    let additionalLinks: Link[] = [
+        {
+            url: "example.com",
+            text: "Promoter website"
         }
     ];
     let secondaryImages: Image[] = [
@@ -48,9 +53,11 @@
 <p>{eventStartTime} - {eventEndTime}</p>
 <p><a href="app/spaces/{spacePageId}">{space}</a></p>
 <p>{description}</p>
-{#if links}
-    <h2>Useful Links:</h2>
-    {#each links as link}
+{#each ticketLinks as link}
+    <a href="{link.url}">{link.text}</a>
+{/each}
+{#if additionalLinks}
+    {#each additionalLinks as link}
         <a href="{link.url}">{link.text}</a>
     {/each}
 {/if}
