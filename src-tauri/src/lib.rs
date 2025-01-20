@@ -1,21 +1,26 @@
 mod node;
 mod topic;
 
-use p2panda_core::{Hash, PrivateKey};
+use std::time::SystemTime;
+
+use node::operation::{create_operation, Extensions, LogId, MessageType, StreamMeta};
+use p2panda_core::{Hash, PrivateKey, PruneFlag};
 use p2panda_net::FromNetwork;
+use p2panda_store::MemoryStore;
 use serde::ser::SerializeStruct;
 use serde::Serialize;
 use tauri::ipc::Channel;
 use tauri::{Builder, Manager, State};
 use thiserror::Error;
 use tokio::sync::{mpsc, oneshot, Mutex};
+use topic::Calendar;
 
-use crate::node::operation::LogId;
 use crate::node::{AckError, Node, PublishError, StreamEvent};
 use crate::topic::{NetworkTopic, TopicMap};
-
 struct AppContext {
     node: Node<NetworkTopic>,
+    store: MemoryStore<LogId, Extensions>,
+    private_key: PrivateKey,
     #[allow(dead_code)]
     topic_map: TopicMap,
     channel_oneshot_tx: Option<oneshot::Sender<Channel<ChannelEvent>>>,
@@ -62,20 +67,85 @@ async fn select_calendar(
 }
 
 #[tauri::command]
-async fn publish(
+async fn create_calendar(
     state: State<'_, Mutex<AppContext>>,
     payload: serde_json::Value,
-    calendar_id: Hash,
-) -> Result<Hash, PublishError> {
+) -> Result<(Hash, Calendar), PublishError> {
     let mut state = state.lock().await;
+    let private_key = state.private_key.clone();
+
     // @TODO: Handle error.
     let payload = serde_json::to_vec(&payload).unwrap();
-    let log_id = LogId { calendar_id };
-    let operation_id = state
+
+    let timestamp = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .expect("time from operation system")
+        .as_secs();
+
+    let stream_meta = StreamMeta {
+        owner: private_key.public_key(),
+        message_type: MessageType::Calendar,
+        created_at: timestamp,
+    };
+
+    let extensions = Extensions::new(None, stream_meta.clone(), PruneFlag::new(false));
+
+    // @TODO(adz): Memory stores are infallible right now but we'll switch to a SQLite-based
+    // one soon and then we need to handle this error here:
+    let (header, body) =
+        create_operation(&mut state.store, &private_key, extensions, Some(&payload)).await;
+
+    let calendar_id = header.hash();
+    let topic = NetworkTopic::Calendar { calendar_id };
+
+    // This is a new calendar and so we have never subscribed to it's topic yet. Do this before
+    // actually publishing the create event.
+    state.node.subscribe_processed(&topic).await.unwrap();
+
+    state
         .node
-        .publish_to_stream(&NetworkTopic::Calendar { calendar_id }, log_id, &payload)
+        .publish_to_stream(&topic, &header, body.as_ref())
         .await?;
-    Ok(operation_id)
+
+    let calendar = Calendar {
+        id: calendar_id,
+        stream_meta,
+    };
+
+    Ok((calendar_id, calendar))
+}
+
+#[tauri::command]
+async fn publish_calendar_event(
+    state: State<'_, Mutex<AppContext>>,
+    payload: serde_json::Value,
+    calendar: Calendar,
+) -> Result<Hash, PublishError> {
+    let mut state = state.lock().await;
+    let private_key = state.private_key.clone();
+
+    // @TODO: Handle error.
+    let payload = serde_json::to_vec(&payload).unwrap();
+
+    let extensions = Extensions::new(
+        Some(calendar.id),
+        calendar.stream_meta.clone(),
+        PruneFlag::new(false),
+    );
+
+    let (header, body) =
+        create_operation(&mut state.store, &private_key, extensions, Some(&payload)).await;
+
+    let topic = NetworkTopic::Calendar {
+        calendar_id: calendar.id,
+    };
+
+    state
+        .node
+        .publish_to_stream(&topic, &header, body.as_ref())
+        .await?;
+
+    Ok(header.hash())
 }
 
 #[tauri::command]
@@ -102,11 +172,16 @@ pub fn run() {
             // @TODO(adz): All of this could be refactored to an own struct.
             tauri::async_runtime::spawn(async move {
                 let private_key = PrivateKey::new();
+                let store = MemoryStore::new();
                 let topic_map = TopicMap::new();
 
-                let (node, stream_rx) = Node::<NetworkTopic>::new(private_key, topic_map.clone())
-                    .await
-                    .expect("node successfully starts");
+                let (node, stream_rx) = Node::<NetworkTopic>::new(
+                    private_key.clone(),
+                    store.clone(),
+                    topic_map.clone(),
+                )
+                .await
+                .expect("node successfully starts");
                 let (channel_oneshot_tx, channel_oneshot_rx) = oneshot::channel();
 
                 let (invite_codes_rx, invite_codes_ready) =
@@ -114,6 +189,8 @@ pub fn run() {
 
                 app_handle.manage(Mutex::new(AppContext {
                     node,
+                    store,
+                    private_key,
                     topic_map: topic_map.clone(),
                     channel_oneshot_tx: Some(channel_oneshot_tx),
                 }));
@@ -137,7 +214,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             init,
             ack,
-            publish,
+            create_calendar,
+            publish_calendar_event,
             publish_to_invite_code_overlay,
             select_calendar,
         ])
@@ -180,7 +258,7 @@ async fn forward_to_app_layer(
                     // There is probably a better place to do this, but it needs more thought. For
                     // now I'll leave it here as a POC.
                     let StreamEvent { meta, .. } = &event;
-                    topic_map.add_author(meta.public_key, meta.log_id.calendar_id).await;
+                    topic_map.add_author(meta.public_key, meta.calendar.clone()).await;
 
                     // Send event further up to application layer.
                     channel.send(ChannelEvent::Stream(event)).unwrap();
