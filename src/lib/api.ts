@@ -98,9 +98,6 @@ export async function createCalendar(payload: any): Promise<string> {
   // https://github.com/toolkitties/toolkitty/issues/69 is implemented.
   let hash: string = await invoke("create_calendar", { payload });
 
-  // We don't know the name yet, this should be updated when we receive a "calendar_created" event.
-  addCalendar({ id: hash, name: "" });
-
   // Register this operation in the promise map.
   let ready = addPromise(hash);
 
@@ -113,9 +110,10 @@ export async function createCalendar(payload: any): Promise<string> {
 export async function subscribeToCalendar(calendarId: string): Promise<void> {
   await invoke("subscribe_to_calendar", { calendarId });
 
-  if (!findCalendar(calendarId)) {
-    addCalendar({ id: calendarId, name: "" });
-  }
+
+  // @TODO: might be nice for consistency to handle adding a newly subscribed calendar in the
+  // event stream, we'd add a "subscribed_to_calendar" in order to do that.
+  addCalendar({ id: calendarId, name: "" });
 }
 
 export async function selectCalendar(calendarId: string): Promise<void> {
@@ -149,7 +147,9 @@ export async function findCalendar(
 }
 
 export async function addCalendar(calendar: Calendar) {
-  await db.calendars.add(calendar);
+  if (!findCalendar(calendar.id)) {
+    await db.calendars.add(calendar);
+  }
 }
 
 export async function addEvent(calEvent: CalendarEvent) {
