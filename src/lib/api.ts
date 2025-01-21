@@ -1,7 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { calendars } from "$lib/state.svelte";
 import { db } from "$lib/db";
-import { get } from "svelte/store";
 
 const RESOLVE_INVITE_CODE_TIMEOUT = 1000 * 30;
 const SEND_INVITE_CODE_FREQUENCY = 1000 * 5;
