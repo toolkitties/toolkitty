@@ -97,6 +97,7 @@ export async function createCalendar(payload: any): Promise<string> {
   // happen on the frontend with follow-up IPC calls. This can be refactored when
   // https://github.com/toolkitties/toolkitty/issues/69 is implemented.
   let hash: string = await invoke("create_calendar", { payload });
+  addCalendar({ id: hash, name: null });
 
   // Register this operation in the promise map.
   let ready = addPromise(hash);
@@ -109,11 +110,7 @@ export async function createCalendar(payload: any): Promise<string> {
 
 export async function subscribeToCalendar(calendarId: string): Promise<void> {
   await invoke("subscribe_to_calendar", { calendarId });
-
-
-  // @TODO: might be nice for consistency to handle adding a newly subscribed calendar in the
-  // event stream, we'd add a "subscribed_to_calendar" in order to do that.
-  addCalendar({ id: calendarId, name: "" });
+  addCalendar({ id: calendarId, name: null });
 }
 
 export async function selectCalendar(calendarId: string): Promise<void> {
@@ -150,6 +147,10 @@ export async function addCalendar(calendar: Calendar) {
   if (!findCalendar(calendar.id)) {
     await db.calendars.add(calendar);
   }
+}
+
+export async function updateCalendar(calendar: Calendar) {
+    // @TODO: Update calendar.
 }
 
 export async function addEvent(calEvent: CalendarEvent) {

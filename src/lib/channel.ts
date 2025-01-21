@@ -1,9 +1,9 @@
 import { invoke, Channel } from "@tauri-apps/api/core";
 import {
-  addCalendar,
   handleInviteCodeResponse,
   respondInviteCodeRequest,
   setSelectedCalendar,
+  updateCalendar,
 } from "./api";
 import { resolvePromise } from "./promiseMap";
 
@@ -23,10 +23,7 @@ export async function init() {
           name: message.data.data.title,
         };
 
-        addCalendar(calendar);
-
-        console.log("Calendar created: ", calendar);
-
+        updateCalendar(calendar);
         resolvePromise(message.meta.operationId);
       }
 
@@ -44,7 +41,7 @@ export async function init() {
       }
     } else if (message.event === "calendar_selected") {
       await setSelectedCalendar(message.calendarId);
-      console.log("calendar_selected: ", message.calendarId)
+      console.log("calendar_selected: ", message.calendarId);
     }
   };
 
