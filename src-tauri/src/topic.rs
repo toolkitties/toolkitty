@@ -24,7 +24,7 @@ pub struct Calendar {
 #[serde(tag = "t", content = "c", rename_all = "snake_case")]
 pub enum NetworkTopic {
     InviteCodes,
-    Calendar { calendar_id: Hash },
+    Calendar { calendar_id: CalendarId },
 }
 
 impl TopicQuery for NetworkTopic {}

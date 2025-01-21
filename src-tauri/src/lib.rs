@@ -52,9 +52,9 @@ async fn ack(state: State<'_, Mutex<AppContext>>, operation_id: Hash) -> Result<
 }
 
 #[tauri::command]
-async fn select_calendar(
+async fn subscribe_to_calendar(
     state: State<'_, Mutex<AppContext>>,
-    calendar_id: Hash,
+    calendar_id: CalendarId,
 ) -> Result<(), PublishError> {
     let state = state.lock().await;
     state
@@ -62,6 +62,16 @@ async fn select_calendar(
         .subscribe_processed(&NetworkTopic::Calendar { calendar_id })
         .await
         .unwrap();
+    Ok(())
+}
+
+#[tauri::command]
+async fn select_calendar(
+    state: State<'_, Mutex<AppContext>>,
+    calendar_id: CalendarId,
+) -> Result<(), PublishError> {
+    let mut state = state.lock().await;
+    state.selected_calendar = Some(calendar_id);
     Ok(())
 }
 
@@ -84,7 +94,9 @@ async fn create_calendar(
         create_operation(&mut state.store, &private_key, extensions, Some(&payload)).await;
 
     let hash = header.hash();
-    let topic = NetworkTopic::Calendar { calendar_id: hash };
+    let topic = NetworkTopic::Calendar {
+        calendar_id: hash.into(),
+    };
 
     // This is a new calendar and so we have never subscribed to it's topic yet. Do this before
     // actually publishing the create event.
@@ -202,6 +214,7 @@ pub fn run() {
             publish_calendar_event,
             publish_to_invite_code_overlay,
             select_calendar,
+            subscribe_to_calendar,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
