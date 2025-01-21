@@ -6,10 +6,12 @@ export async function getAll(): Promise<Calendar[]> {
   return await db.calendars.toArray();
 }
 
-export async function create(payload: CreateCalendarPayload): Promise<Hash> {
+export async function create(calendar: CreateCalendarPayload): Promise<Hash> {
   let hash: Hash = await invoke("create_calendar", {
-    type: "calendar_created",
-    payload,
+    payload: {
+      type: "calendar_created",
+      ...calendar,
+    },
   });
 
   // Register this operation in the promise map and wait until it's resolved.
