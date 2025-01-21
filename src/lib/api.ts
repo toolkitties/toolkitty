@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { addPromise } from "./promiseMap";
 import { db } from "$lib/db";
 
 const RESOLVE_INVITE_CODE_TIMEOUT = 1000 * 30;
@@ -75,7 +76,9 @@ export async function respondInviteCodeRequest(inviteCode: string) {
   await invoke("publish_to_invite_code_overlay", { payload });
 }
 
-export async function handleInviteCodeResponse(response: ResolveInviteCodeResponse) {
+export async function handleInviteCodeResponse(
+  response: ResolveInviteCodeResponse
+) {
   if (pendingInviteCode.inviteCode !== response.inviteCode) {
     // Ignore this invite code response, it's not for us.
     return;
@@ -88,6 +91,17 @@ export async function handleInviteCodeResponse(response: ResolveInviteCodeRespon
   pendingInviteCode.callbackFn(response.calendarId);
 }
 
+export async function createCalendar(payload: any): Promise<string> {
+  let hash: string = await invoke("create_calendar", { payload });
+
+  // Register this operation in the promise map.
+  let ready = addPromise(hash);
+
+  // Wait for the promise to be resolved.
+  await ready;
+
+  return hash;
+}
 
 function getInviteCode(calendar: Calendar) {
   return calendar.id.slice(0, 4);

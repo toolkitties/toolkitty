@@ -2,7 +2,6 @@
   import { PinInput, Toggle } from "bits-ui";
   import { goto } from "$app/navigation";
   import { resolveInviteCode } from "$lib/api";
-  import { db } from "$lib/db";
 
   let value: string[] | undefined = [];
 

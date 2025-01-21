@@ -11,6 +11,8 @@ use tokio_stream::StreamExt;
 
 use crate::node::operation::{Extensions, LogId};
 
+use super::operation::CalendarId;
+
 #[derive(Clone, Debug)]
 pub struct StreamEvent {
     pub meta: EventMeta,
@@ -52,15 +54,19 @@ impl Serialize for StreamEvent {
 #[serde(rename_all = "camelCase")]
 pub struct EventMeta {
     pub operation_id: Hash,
-    pub log_id: LogId,
+    pub calendar_id: CalendarId,
     pub public_key: PublicKey,
 }
 
 impl From<Header<Extensions>> for EventMeta {
     fn from(header: Header<Extensions>) -> Self {
+        let calendar_id: CalendarId = header
+            .extract()
+            .expect("header to have calendar id extension");
+
         Self {
             operation_id: header.hash(),
-            log_id: header.extract().expect("log id in header extensions"),
+            calendar_id,
             public_key: header.public_key,
         }
     }
