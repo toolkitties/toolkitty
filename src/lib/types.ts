@@ -22,16 +22,17 @@ type Image = string; // url to where images/blobs are stored locally
   *
   (ﾉ^ヮ^)ﾉ*:・ﾟ✧ */
 
+type ChannelMessage =
+  | StreamMessage
+  | InviteCodeReadyMessage
+  | InviteCodeMessage;
+
+
 type OperationMeta = {
   calendarId: Hash;
   operationId: Hash;
   publicKey: PublicKey;
 };
-
-type ChannelMessage =
-  | StreamMessage
-  | InviteCodeReadyMessage
-  | InviteCodeMessage;
 
 type StreamMessage =
   | {
@@ -45,11 +46,21 @@ type StreamMessage =
     data: string;
   };
 
+/* ヾ( ˃ᴗ˂ )◞ • *✰
+  *
+  * Our Protocol!!
+  *
+  (ﾉ^ヮ^)ﾉ*:・ﾟ✧ */
+
 type ApplicationMessage = {
   type: "calendar_created";
-  data: {
-    title: string;
-  };
+  data: CreateCalendarPayload;
+};
+
+type CreateCalendarPayload = {
+  name: string;
+  startDate?: string;
+  endDate?: string;
 };
 
 /* ( 'з｀)ﾉ⌒♥*:･。.
@@ -88,17 +99,17 @@ type ResolveInviteCodeResponse = {
 
 type Calendar = {
   id: Hash;
-  owner: User;
+  ownerId: PublicKey;
   name: string;
-  startDate: Date | null;
-  endDate: Date | null;
+  startDate?: Date;
+  endDate?: Date;
 }
 
 type Calendars = Calendar[]
 
 type CalendarEvent = {
   id: Hash;
-  owner: User;
+  ownerId: PublicKey;
   name: string;
   description: string;
   location: SpaceRequest | null;
@@ -120,7 +131,7 @@ type Link = {
 type Space = {
   id: Hash;
   type: "physical" | "gps" | "virtual";
-  owner: User;
+  ownerId: PublicKey;
   name: string;
   location: PhysicalLocation | GPSLocation | VirtualLocation; // TODO: change to proper address structure
   capacity: number;
@@ -167,7 +178,7 @@ type SpaceResponse = {
 type Resource = {
   id: Hash;
   name: string;
-  owner: User;
+  ownerId: PublicKey;
   description: string;
   contact: string;
   link: Link;

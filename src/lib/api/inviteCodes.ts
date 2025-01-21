@@ -59,7 +59,21 @@ export async function send(inviteCode: string) {
   await invoke("publish_to_invite_code_overlay", { payload });
 }
 
-export async function respond(inviteCode: string) {
+export async function process(message: ChannelMessage) {
+  if (message.event === "invite_codes_ready") {
+    // Do nothing for now
+  } else if (message.event === "invite_codes") {
+    if (message.data.messageType === "request") {
+      respond(message.data.inviteCode);
+    }
+
+    if (message.data.messageType === "response") {
+      handleResponse(message.data);
+    }
+  }
+}
+
+async function respond(inviteCode: string) {
   const calendar = await calendars.findByInviteCode(inviteCode);
   if (!calendar) {
     // We can't answer this request, ignore it.
@@ -75,7 +89,7 @@ export async function respond(inviteCode: string) {
   await invoke("publish_to_invite_code_overlay", { payload });
 }
 
-export async function handleResponse(response: ResolveInviteCodeResponse) {
+async function handleResponse(response: ResolveInviteCodeResponse) {
   if (pendingInviteCode.inviteCode !== response.inviteCode) {
     // Ignore this invite code response, it's not for us.
     return;

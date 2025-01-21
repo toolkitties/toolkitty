@@ -6,20 +6,13 @@ export async function getAll(): Promise<Calendar[]> {
   return await db.calendars.toArray();
 }
 
-export async function create(payload: any): Promise<string> {
-  let hash: string = await invoke("create_calendar", { payload });
+export async function create(payload: CreateCalendarPayload): Promise<Hash> {
+  let hash: Hash = await invoke("create_calendar", { payload });
 
-  // Register this operation in the promise map.
-  let ready = addPromise(hash);
-
-  // Wait for the promise to be resolved.
-  await ready;
+  // Register this operation in the promise map and wait until it's resolved.
+  await addPromise(hash);
 
   return hash;
-}
-
-export async function add(calendar: Calendar): Promise<void> {
-  await db.calendars.add(calendar);
 }
 
 export async function findByInviteCode(code: string): Promise<undefined | Calendar> {
@@ -31,4 +24,20 @@ export async function findByInviteCode(code: string): Promise<undefined | Calend
 
 export function inviteCode(calendar: Calendar): string {
   return calendar.id.slice(0, 4);
+}
+
+export async function process(message: ChannelMessage) {
+  if (message.event !== "application") {
+    return;
+  }
+
+  switch (message.data.type) {
+    case "calendar_created":
+      await db.calendars.add({
+        id: message.meta.calendarId,
+        ownerId: message.meta.publicKey,
+        name: message.data.data.name,
+      });
+      break;
+  }
 }

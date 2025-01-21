@@ -13,13 +13,13 @@
   async function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
 
-    // Payload for "calendar_created" event.
-    const payload = {
-      type: "calendar_created",
-      data: { title: "Kitty Fest 2025" },
-    };
-
-    await createCalendar(payload);
+    try {
+      await calendars.create({
+        name: "Kitty Fest, 2025",
+      });
+    } catch (err) {
+      // Toasty!
+    }
 
     goto(`/app/events`);
   }
