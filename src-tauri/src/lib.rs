@@ -8,7 +8,7 @@ use p2panda_store::MemoryStore;
 use serde::ser::SerializeStruct;
 use serde::Serialize;
 use tauri::ipc::Channel;
-use tauri::{Builder, Manager, State};
+use tauri::{AppHandle, Builder, Manager, State};
 use thiserror::Error;
 use tokio::sync::{mpsc, oneshot, Mutex};
 
@@ -18,6 +18,7 @@ struct AppContext {
     node: Node<NetworkTopic>,
     store: MemoryStore<LogId, Extensions>,
     private_key: PrivateKey,
+    selected_calendar: Option<CalendarId>,
     #[allow(dead_code)]
     topic_map: TopicMap,
     channel_oneshot_tx: Option<oneshot::Sender<Channel<ChannelEvent>>>,
@@ -171,11 +172,13 @@ pub fn run() {
                     node,
                     store,
                     private_key,
+                    selected_calendar: None,
                     topic_map: topic_map.clone(),
                     channel_oneshot_tx: Some(channel_oneshot_tx),
                 }));
 
                 if let Err(err) = forward_to_app_layer(
+                    app_handle,
                     stream_rx,
                     topic_map,
                     invite_codes_rx,
@@ -205,6 +208,7 @@ pub fn run() {
 
 /// Task for receiving data from network and forwarding them up to the app layer.
 async fn forward_to_app_layer(
+    app: AppHandle,
     mut stream_rx: mpsc::Receiver<StreamEvent>,
     topic_map: TopicMap,
     mut invite_codes_rx: mpsc::Receiver<FromNetwork>,
@@ -240,8 +244,16 @@ async fn forward_to_app_layer(
                     let StreamEvent { meta, .. } = &event;
                     topic_map.add_author(meta.public_key, meta.calendar_id).await;
 
-                    // Send event further up to application layer.
-                    channel.send(ChannelEvent::Stream(event)).unwrap();
+                    // Check if the event is associated with the currently selected calendar. We
+                    // only forward it up to the application if it is.
+                    let state = app.state::<Mutex<AppContext>>();
+                    let state = state.lock().await;
+                    if let Some(selected_calendar) = state.selected_calendar {
+                        if selected_calendar != meta.calendar_id {
+                            return;
+                        };
+                        channel.send(ChannelEvent::Stream(event)).unwrap();
+                    }
                 },
                 Some(event) = invite_codes_rx.recv() => {
                     let json = match event {
