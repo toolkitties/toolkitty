@@ -9,7 +9,8 @@
     "dev": "vite dev",
     "preview": "vite preview",
     "tauri": "tauri",
-    "headless": "tauri dev --no-watch --config '{\"build\": {\"beforeDevCommand\": \"\"}}'"
+    "peer-a": "TAURI_CLI_PORT=1420 tauri dev --no-watch --config '{\"build\": {\"devUrl\": \"http://localhost:1420\", \"beforeDevCommand\": \"npm run dev -- --port 1420\"}}'",
+    "peer-b": "TAURI_CLI_PORT=1430 tauri dev --no-watch --config '{\"build\": {\"devUrl\": \"http://localhost:1430\", \"beforeDevCommand\": \"npm run dev -- --port 1430\"}}'"
   },
   "license": "MIT",
   "dependencies": {
