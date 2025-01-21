@@ -1,7 +1,7 @@
 <script lang="ts">
   import { PinInput, Toggle } from "bits-ui";
   import { goto } from "$app/navigation";
-  import { resolveInviteCode, createCalendar } from "$lib/api";
+  import { resolveInviteCode } from "$lib/api";
 
   let value: string[] | undefined = [];
 
@@ -10,6 +10,8 @@
   let timedOut: boolean = false;
   let pinInputType: "text" | "password" = "password";
   $: pinInputType = unlocked ? "text" : "password";
+
+  // db.delete({ disableAutoOpen: false });
 
   async function join(event: Event) {
     event.preventDefault();
@@ -29,22 +31,6 @@
     }
 
     goto(`/join?code=${calendarId}`);
-  }
-
-  async function create(event: Event) {
-    event.preventDefault();
-
-    // Payload for "calendar_created" event.
-    const payload = {
-      type: "calendar_created",
-      data: { title: "My Cool Calendar" },
-    };
-
-    let hash = await createCalendar(payload);
-
-    // TODO: We need to wait until the calendar is processed by the event sourcing state machine
-    // before navigating to the new page. This is a job for our "hash based future resolver".
-    goto(`/join?code=${hash}`);
   }
 </script>
 
@@ -92,9 +78,9 @@
 {#if timedOut}
   <p>Calendar not found</p>
 {/if}
+
 <a
   href="/create"
   class="border border-black rounded p-4 text-center"
-  type="submit"
-  onclick={create}>Create</a
+  type="submit">Create</a
 >

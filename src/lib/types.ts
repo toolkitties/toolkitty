@@ -6,15 +6,15 @@ type OperationMeta = {
 
 type StreamMessage =
   | {
-      meta: OperationMeta;
-      event: "application";
-      data: ApplicationMessage;
-    }
+    meta: OperationMeta;
+    event: "application";
+    data: ApplicationMessage;
+  }
   | {
-      meta: OperationMeta;
-      event: "error";
-      data: string;
-    };
+    meta: OperationMeta;
+    event: "error";
+    data: string;
+  };
 
 type InviteCodeReadyMessage = {
   event: "invite_codes_ready";
@@ -49,3 +49,17 @@ type ResolveInviteCodeResponse = {
   timestamp: number;
   messageType: "response";
 };
+
+
+// TODO: Finish calendar type
+type Calendar = {
+  id: string;
+  name: string;
+}
+
+type Calendars = Calendar[]
+
+type CalendarEvent = {
+  id: string;
+  name: string;
+}

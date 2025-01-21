@@ -1,6 +1,9 @@
 import { invoke, Channel } from "@tauri-apps/api/core";
-import { handleInviteCodeResponse, respondInviteCodeRequest } from "./api";
-import { Calendar, calendars } from "./state.svelte";
+import {
+  addCalendar,
+  handleInviteCodeResponse,
+  respondInviteCodeRequest,
+} from "./api";
 import { resolvePromise } from "./promiseMap";
 
 export async function init() {
@@ -14,11 +17,13 @@ export async function init() {
     if (message.event == "application") {
       console.log(`got stream event with id ${message.meta.operationId}`);
       if (message.data.type === "calendar_created") {
-        let calendar = new Calendar(
-          message.meta.calendarId,
-        );
+        let calendar = {
+          id: message.meta.calendarId,
+          name: message.data.data.title,
+        };
 
-        calendars.addCalendar(calendar);
+        addCalendar(calendar);
+
         console.log("Calendar created: ", calendar);
 
         resolvePromise(message.meta.operationId);

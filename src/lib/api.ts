@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
-import { calendars } from "$lib/state.svelte";
 import { addPromise } from "./promiseMap";
+import { db } from "$lib/db";
 
 const RESOLVE_INVITE_CODE_TIMEOUT = 1000 * 30;
 const SEND_INVITE_CODE_FREQUENCY = 1000 * 5;
@@ -16,11 +16,20 @@ const pendingInviteCode: InviteCodeState = {
 };
 
 export async function resolveInviteCode(inviteCode: string): Promise<string> {
+  // Get local calendars
+  const calendar = await findCalendarByInviteCode(inviteCode);
+
+  // Check if we already have calendar locally and return before broadcasting
+  if (calendar) {
+    return calendar.id;
+  }
+
   return new Promise((resolve, reject) => {
     // Clear up state and throw an error if we've waited for too long without any answer.
     const timeout = setTimeout(() => {
       pendingInviteCode.inviteCode = null;
       pendingInviteCode.callbackFn = null;
+      clearInterval(interval);
       reject("couldn't resolve invite code within given time");
     }, RESOLVE_INVITE_CODE_TIMEOUT);
 
@@ -28,11 +37,14 @@ export async function resolveInviteCode(inviteCode: string): Promise<string> {
     pendingInviteCode.inviteCode = inviteCode;
     pendingInviteCode.callbackFn = (calendarId: string) => {
       clearTimeout(timeout);
+      clearInterval(interval);
       resolve(calendarId);
     };
 
+    // Initial request to network
+    sendResolveInviteCodeRequest(inviteCode);
     // Broadcast request every x seconds into the network, hopefully someone will answer ..
-    setInterval(() => {
+    const interval = setInterval(() => {
       sendResolveInviteCodeRequest(inviteCode);
     }, SEND_INVITE_CODE_FREQUENCY);
   });
@@ -49,7 +61,7 @@ export async function sendResolveInviteCodeRequest(inviteCode: string) {
 }
 
 export async function respondInviteCodeRequest(inviteCode: string) {
-  const calendar = calendars.findCalendarByInviteCode(inviteCode);
+  const calendar = await findCalendarByInviteCode(inviteCode);
   if (!calendar) {
     // We can't answer this request, ignore it.
     return;
@@ -89,4 +101,28 @@ export async function createCalendar(payload: any): Promise<string> {
   await ready;
 
   return hash;
+}
+
+function getInviteCode(calendar: Calendar) {
+  return calendar.id.slice(0, 4);
+}
+
+export async function getCalendars(): Promise<Calendar[]> {
+  return await db.calendars.toArray();
+}
+
+export async function findCalendarByInviteCode(inviteCode: string): Promise<undefined | Calendar> {
+  const calendars = await getCalendars();
+  return calendars.find((calendar) => {
+    return getInviteCode(calendar) === inviteCode;
+  });
+}
+
+export async function addCalendar(calendar: Calendar) {
+  await db.calendars.add(calendar);
+}
+
+
+export async function addEvent(calEvent: CalendarEvent) {
+  await db.events.add(calEvent);
 }
