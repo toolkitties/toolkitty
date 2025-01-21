@@ -2,9 +2,34 @@ import { invoke } from "@tauri-apps/api/core";
 import { db } from "$lib/db";
 import { addPromise } from "$lib/promiseMap";
 
+/* (´ヮ´)八(*ﾟ▽ﾟ*)
+  *
+  * Queries
+  * (Read only)
+  *
+  (ﾉ^ヮ^)ﾉ*:・ﾟ✧ */
+
 export async function getAll(): Promise<Calendar[]> {
   return await db.calendars.toArray();
 }
+
+export async function findByInviteCode(code: string): Promise<undefined | Calendar> {
+  const calendars = await getAll();
+  return calendars.find((calendar) => {
+    return inviteCode(calendar) === code;
+  });
+}
+
+export function inviteCode(calendar: Calendar): string {
+  return calendar.id.slice(0, 4);
+}
+
+/* ( 'з｀)ﾉ⌒♥*:･。.
+  *
+  * Commands
+  * (Writes / mutates state)
+  *
+  (ﾉ^ヮ^)ﾉ*:・ﾟ✧ */
 
 export async function create(data: CreateCalendarPayload): Promise<Hash> {
   let hash: Hash = await invoke("create_calendar", {
@@ -18,17 +43,6 @@ export async function create(data: CreateCalendarPayload): Promise<Hash> {
   await addPromise(hash);
 
   return hash;
-}
-
-export async function findByInviteCode(code: string): Promise<undefined | Calendar> {
-  const calendars = await getAll();
-  return calendars.find((calendar) => {
-    return inviteCode(calendar) === code;
-  });
-}
-
-export function inviteCode(calendar: Calendar): string {
-  return calendar.id.slice(0, 4);
 }
 
 export async function process(message: ChannelMessage) {
