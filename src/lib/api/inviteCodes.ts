@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { db } from "$lib/db";
+import { calendars } from "$lib/api";
 
 const RESOLVE_INVITE_CODE_TIMEOUT = 1000 * 30;
 const SEND_INVITE_CODE_FREQUENCY = 1000 * 5;
@@ -14,9 +14,9 @@ const pendingInviteCode: InviteCodeState = {
   callbackFn: null,
 };
 
-export async function resolveInviteCode(inviteCode: string): Promise<string> {
+export async function resolve(inviteCode: string): Promise<string> {
   // Get local calendars
-  const calendar = await findCalendarByInviteCode(inviteCode);
+  const calendar = await calendars.findByInviteCode(inviteCode);
 
   // Check if we already have calendar locally and return before broadcasting
   if (calendar) {
@@ -41,15 +41,15 @@ export async function resolveInviteCode(inviteCode: string): Promise<string> {
     };
 
     // Initial request to network
-    sendResolveInviteCodeRequest(inviteCode);
+    send(inviteCode);
     // Broadcast request every x seconds into the network, hopefully someone will answer ..
     const interval = setInterval(() => {
-      sendResolveInviteCodeRequest(inviteCode);
+      send(inviteCode);
     }, SEND_INVITE_CODE_FREQUENCY);
   });
 }
 
-export async function sendResolveInviteCodeRequest(inviteCode: string) {
+export async function send(inviteCode: string) {
   const payload: ResolveInviteCodeRequest = {
     inviteCode,
     timestamp: Date.now(),
@@ -59,8 +59,8 @@ export async function sendResolveInviteCodeRequest(inviteCode: string) {
   await invoke("publish_to_invite_code_overlay", { payload });
 }
 
-export async function respondInviteCodeRequest(inviteCode: string) {
-  const calendar = await findCalendarByInviteCode(inviteCode);
+export async function respond(inviteCode: string) {
+  const calendar = await calendars.findByInviteCode(inviteCode);
   if (!calendar) {
     // We can't answer this request, ignore it.
     return;
@@ -75,7 +75,7 @@ export async function respondInviteCodeRequest(inviteCode: string) {
   await invoke("publish_to_invite_code_overlay", { payload });
 }
 
-export async function handleInviteCodeResponse(response: ResolveInviteCodeResponse) {
+export async function handleResponse(response: ResolveInviteCodeResponse) {
   if (pendingInviteCode.inviteCode !== response.inviteCode) {
     // Ignore this invite code response, it's not for us.
     return;
@@ -86,29 +86,4 @@ export async function handleInviteCodeResponse(response: ResolveInviteCodeRespon
   }
 
   pendingInviteCode.callbackFn(response.calendarId);
-}
-
-
-function getInviteCode(calendar: Calendar) {
-  return calendar.id.slice(0, 4);
-}
-
-export async function getCalendars(): Promise<Calendar[]> {
-  return await db.calendars.toArray();
-}
-
-export async function findCalendarByInviteCode(inviteCode: string): Promise<undefined | Calendar> {
-  const calendars = await getCalendars();
-  return calendars.find((calendar) => {
-    return getInviteCode(calendar) === inviteCode;
-  });
-}
-
-export async function addCalendar(calendar: Calendar) {
-  await db.calendars.add(calendar);
-}
-
-
-export async function addEvent(calEvent: CalendarEvent) {
-  await db.events.add(calEvent);
 }

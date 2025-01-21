@@ -1,7 +1,7 @@
 <script lang="ts">
   import { PinInput, Toggle } from "bits-ui";
   import { goto } from "$app/navigation";
-  import { resolveInviteCode } from "$lib/api";
+  import { inviteCodes } from "$lib/api";
   import { db } from "$lib/db";
 
   let value: string[] | undefined = [];
@@ -23,7 +23,7 @@
 
     try {
       progress = "pending";
-      calendarId = await resolveInviteCode(value.join(""));
+      calendarId = await inviteCodes.resolve(value.join(""));
     } catch (err) {
       timedOut = true;
       progress = "dormant";

@@ -1,5 +1,5 @@
 import { invoke, Channel } from "@tauri-apps/api/core";
-import { handleInviteCodeResponse, respondInviteCodeRequest } from "./api";
+import { inviteCodes } from "$lib/api";
 
 export async function init() {
   // Create the stream channel to be passed to backend and add an `onMessage`
@@ -18,11 +18,11 @@ export async function init() {
       console.log("invite codes ready");
     } else if (message.event == "invite_codes") {
       if (message.data.messageType === "request") {
-        respondInviteCodeRequest(message.data.inviteCode);
+        inviteCodes.respond(message.data.inviteCode);
       }
 
       if (message.data.messageType === "response") {
-        handleInviteCodeResponse(message.data);
+        inviteCodes.handleResponse(message.data);
       }
     }
   };

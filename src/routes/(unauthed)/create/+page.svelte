@@ -1,7 +1,7 @@
 <script lang="ts">
   import CustomCalendar from "../../../components/CustomCalendar.svelte";
   import Select from "../../../components/select.svelte";
-  import { addCalendar } from "$lib/api";
+  import { calendars } from "$lib/api";
   import { goto } from "$app/navigation";
 
   let themes = [
@@ -13,7 +13,7 @@
   async function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
 
-    addCalendar({
+    calendars.add({
       id: "5a7bc8522433759260bdcb77648890b5da10297ed477776611c3c5f83342b025",
       name: "Kitty Fest 2025",
     });
