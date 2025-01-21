@@ -6,7 +6,12 @@ const SEND_INVITE_CODE_FREQUENCY = 1000 * 5;
 
 type InviteCodeState = {
   inviteCode: string | null;
-  callbackFn: null | ((calendarId: string) => void);
+  callbackFn: null | ((resolved: ResolvedCalendar) => void);
+};
+
+type ResolvedCalendar = {
+  id: Hash;
+  name: string;
 };
 
 const pendingInviteCode: InviteCodeState = {
@@ -14,13 +19,16 @@ const pendingInviteCode: InviteCodeState = {
   callbackFn: null,
 };
 
-export async function resolve(inviteCode: string): Promise<string> {
+export async function resolve(inviteCode: string): Promise<ResolvedCalendar> {
   // Get local calendars
   const calendar = await calendars.findByInviteCode(inviteCode);
 
   // Check if we already have calendar locally and return before broadcasting
   if (calendar) {
-    return calendar.id;
+    return {
+      id: calendar.id,
+      name: calendar.name,
+    };
   }
 
   return new Promise((resolve, reject) => {
@@ -34,10 +42,10 @@ export async function resolve(inviteCode: string): Promise<string> {
 
     // Prepare callback for awaiting a response coming from the channel.
     pendingInviteCode.inviteCode = inviteCode;
-    pendingInviteCode.callbackFn = (calendarId: string) => {
+    pendingInviteCode.callbackFn = (calendar) => {
       clearTimeout(timeout);
       clearInterval(interval);
-      resolve(calendarId);
+      resolve(calendar);
     };
 
     // Initial request to network
@@ -82,6 +90,7 @@ async function respond(inviteCode: string) {
 
   const payload: ResolveInviteCodeResponse = {
     calendarId: calendar.id,
+    calendarName: calendar.name,
     inviteCode,
     timestamp: Date.now(),
     messageType: "response",
@@ -99,5 +108,8 @@ async function handleResponse(response: ResolveInviteCodeResponse) {
     return;
   }
 
-  pendingInviteCode.callbackFn(response.calendarId);
+  pendingInviteCode.callbackFn({
+    id: response.calendarId,
+    name: response.calendarName,
+  });
 }

@@ -19,11 +19,14 @@
 
     if (!value) return;
 
-    let calendarId;
-
+    let calendar;
     try {
       progress = "pending";
-      calendarId = await inviteCodes.resolve(value.join(""));
+      // @TODO: We probably want a "higher-level" API method here which handles
+      // the whole "joinExistingCalendar" onboarding flow by 1. resolve invite
+      // code 2. add resolved calendar to database & set it to "active" 3.
+      // maybe more ..
+      calendar = await inviteCodes.resolve(value.join(""));
     } catch (err) {
       timedOut = true;
       progress = "dormant";
@@ -31,7 +34,7 @@
       return;
     }
 
-    goto(`/join?code=${calendarId}`);
+    goto(`/join?code=${calendar.id}`);
   }
 </script>
 

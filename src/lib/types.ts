@@ -86,6 +86,7 @@ type ResolveInviteCodeRequest = {
 
 type ResolveInviteCodeResponse = {
   calendarId: Hash;
+  calendarName: string;
   inviteCode: string;
   timestamp: number;
   messageType: "response";
