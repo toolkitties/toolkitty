@@ -1,7 +1,7 @@
 <script lang="ts">
   import CustomCalendar from "../../../components/CustomCalendar.svelte";
   import Select from "../../../components/select.svelte";
-  import { createCalendar } from "$lib/api";
+  import { calendars } from "$lib/api";
   import { goto } from "$app/navigation";
 
   let themes = [
@@ -13,13 +13,13 @@
   async function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
 
-    // Payload for "calendar_created" event.
-    const payload = {
-      type: "calendar_created",
-      data: { title: "Kitty Fest 2025" },
-    };
-
-    await createCalendar(payload);
+    try {
+      await calendars.create({
+        name: "Kitty Fest, 2025",
+      });
+    } catch (err) {
+      // Toasty!
+    }
 
     goto(`/app/events`);
   }

@@ -1,13 +1,17 @@
 import { invoke } from "@tauri-apps/api/core";
-import { addPromise } from "./promiseMap";
-import { db } from "$lib/db";
+import { calendars } from "$lib/api";
 
 const RESOLVE_INVITE_CODE_TIMEOUT = 1000 * 30;
 const SEND_INVITE_CODE_FREQUENCY = 1000 * 5;
 
 type InviteCodeState = {
   inviteCode: string | null;
-  callbackFn: null | ((calendarId: string) => void);
+  callbackFn: null | ((resolved: ResolvedCalendar) => void);
+};
+
+type ResolvedCalendar = {
+  id: Hash;
+  name: string;
 };
 
 const pendingInviteCode: InviteCodeState = {
@@ -15,13 +19,16 @@ const pendingInviteCode: InviteCodeState = {
   callbackFn: null,
 };
 
-export async function resolveInviteCode(inviteCode: string): Promise<string> {
+export async function resolve(inviteCode: string): Promise<ResolvedCalendar> {
   // Get local calendars
-  const calendar = await findCalendarByInviteCode(inviteCode);
+  const calendar = await calendars.findByInviteCode(inviteCode);
 
   // Check if we already have calendar locally and return before broadcasting
   if (calendar) {
-    return calendar.id;
+    return {
+      id: calendar.id,
+      name: calendar.name,
+    };
   }
 
   return new Promise((resolve, reject) => {
@@ -35,22 +42,36 @@ export async function resolveInviteCode(inviteCode: string): Promise<string> {
 
     // Prepare callback for awaiting a response coming from the channel.
     pendingInviteCode.inviteCode = inviteCode;
-    pendingInviteCode.callbackFn = (calendarId: string) => {
+    pendingInviteCode.callbackFn = (calendar) => {
       clearTimeout(timeout);
       clearInterval(interval);
-      resolve(calendarId);
+      resolve(calendar);
     };
 
     // Initial request to network
-    sendResolveInviteCodeRequest(inviteCode);
+    send(inviteCode);
     // Broadcast request every x seconds into the network, hopefully someone will answer ..
     const interval = setInterval(() => {
-      sendResolveInviteCodeRequest(inviteCode);
+      send(inviteCode);
     }, SEND_INVITE_CODE_FREQUENCY);
   });
 }
 
-export async function sendResolveInviteCodeRequest(inviteCode: string) {
+export async function process(message: ChannelMessage) {
+  if (message.event === "invite_codes_ready") {
+    // Do nothing for now
+  } else if (message.event === "invite_codes") {
+    if (message.data.messageType === "request") {
+      respond(message.data.inviteCode);
+    }
+
+    if (message.data.messageType === "response") {
+      handleResponse(message.data);
+    }
+  }
+}
+
+async function send(inviteCode: string) {
   const payload: ResolveInviteCodeRequest = {
     inviteCode,
     timestamp: Date.now(),
@@ -60,8 +81,8 @@ export async function sendResolveInviteCodeRequest(inviteCode: string) {
   await invoke("publish_to_invite_code_overlay", { payload });
 }
 
-export async function respondInviteCodeRequest(inviteCode: string) {
-  const calendar = await findCalendarByInviteCode(inviteCode);
+async function respond(inviteCode: string) {
+  const calendar = await calendars.findByInviteCode(inviteCode);
   if (!calendar) {
     // We can't answer this request, ignore it.
     return;
@@ -69,6 +90,7 @@ export async function respondInviteCodeRequest(inviteCode: string) {
 
   const payload: ResolveInviteCodeResponse = {
     calendarId: calendar.id,
+    calendarName: calendar.name,
     inviteCode,
     timestamp: Date.now(),
     messageType: "response",
@@ -76,9 +98,7 @@ export async function respondInviteCodeRequest(inviteCode: string) {
   await invoke("publish_to_invite_code_overlay", { payload });
 }
 
-export async function handleInviteCodeResponse(
-  response: ResolveInviteCodeResponse
-) {
+async function handleResponse(response: ResolveInviteCodeResponse) {
   if (pendingInviteCode.inviteCode !== response.inviteCode) {
     // Ignore this invite code response, it's not for us.
     return;
@@ -88,41 +108,8 @@ export async function handleInviteCodeResponse(
     return;
   }
 
-  pendingInviteCode.callbackFn(response.calendarId);
-}
-
-export async function createCalendar(payload: any): Promise<string> {
-  let hash: string = await invoke("create_calendar", { payload });
-
-  // Register this operation in the promise map.
-  let ready = addPromise(hash);
-
-  // Wait for the promise to be resolved.
-  await ready;
-
-  return hash;
-}
-
-function getInviteCode(calendar: Calendar) {
-  return calendar.id.slice(0, 4);
-}
-
-export async function getCalendars(): Promise<Calendar[]> {
-  return await db.calendars.toArray();
-}
-
-export async function findCalendarByInviteCode(inviteCode: string): Promise<undefined | Calendar> {
-  const calendars = await getCalendars();
-  return calendars.find((calendar) => {
-    return getInviteCode(calendar) === inviteCode;
+  pendingInviteCode.callbackFn({
+    id: response.calendarId,
+    name: response.calendarName,
   });
-}
-
-export async function addCalendar(calendar: Calendar) {
-  await db.calendars.add(calendar);
-}
-
-
-export async function addEvent(calEvent: CalendarEvent) {
-  await db.events.add(calEvent);
 }

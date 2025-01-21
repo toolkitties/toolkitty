@@ -1,7 +1,8 @@
 <script lang="ts">
   import { PinInput, Toggle } from "bits-ui";
   import { goto } from "$app/navigation";
-  import { resolveInviteCode } from "$lib/api";
+  import { inviteCodes } from "$lib/api";
+  import { db } from "$lib/db";
 
   let value: string[] | undefined = [];
 
@@ -18,11 +19,14 @@
 
     if (!value) return;
 
-    let calendarId;
-
+    let calendar;
     try {
       progress = "pending";
-      calendarId = await resolveInviteCode(value.join(""));
+      // @TODO: We probably want a "higher-level" API method here which handles
+      // the whole "joinExistingCalendar" onboarding flow by 1. resolve invite
+      // code 2. add resolved calendar to database & set it to "active" 3.
+      // maybe more ..
+      calendar = await inviteCodes.resolve(value.join(""));
     } catch (err) {
       timedOut = true;
       progress = "dormant";
@@ -30,7 +34,7 @@
       return;
     }
 
-    goto(`/join?code=${calendarId}`);
+    goto(`/join?code=${calendar.id}`);
   }
 </script>
 

@@ -1,51 +1,38 @@
 import { invoke, Channel } from "@tauri-apps/api/core";
-import {
-  addCalendar,
-  handleInviteCodeResponse,
-  respondInviteCodeRequest,
-} from "./api";
-import { resolvePromise } from "./promiseMap";
+import { calendars, inviteCodes } from "$lib/api";
+import { rejectPromise, resolvePromise } from "$lib/promiseMap";
 
 export async function init() {
   // Create the stream channel to be passed to backend and add an `onMessage`
   // callback method to handle any events which are later sent from the
   // backend.
-<<<<<<< Updated upstream
-  const streamChannel = new Channel<ChannelMessage>();
-  streamChannel.onmessage = async (message) => {
-    console.log(message);
-=======
   const channel = new Channel<ChannelMessage>();
   channel.onmessage = async (message) => {
     console.log("Received message on channel", message);
->>>>>>> Stashed changes
 
     if (message.event == "application") {
-      console.log(`got stream event with id ${message.meta.operationId}`);
-      if (message.data.type === "calendar_created") {
-        let calendar = {
-          id: message.meta.calendarId,
-          name: message.data.data.title,
-        };
+      try {
+        await calendars.process(message);
 
-        addCalendar(calendar);
-
-        console.log("Calendar created: ", calendar);
-
+        // Mark this operation as "processed", this can be used as a signal
+        // for the frontend to change the UI now, for example change the state
+        // of a spinner or redirect to another screen, etc.
         resolvePromise(message.meta.operationId);
-      }
 
-      // Acknowledge that we have received and processed this operation.
-      await invoke("ack", { operationId: message.meta.operationId });
-    } else if (message.event == "invite_codes_ready") {
-      console.log("invite codes ready");
-    } else if (message.event == "invite_codes") {
-      if (message.data.messageType === "request") {
-        respondInviteCodeRequest(message.data.inviteCode);
+        // Acknowledge that we have received and processed this operation.
+        await invoke("ack", { operationId: message.meta.operationId });
+      } catch (err) {
+        console.error(`Failed processing application event: ${err}`, message);
+        rejectPromise(message.meta.operationId, err);
       }
-
-      if (message.data.messageType === "response") {
-        handleInviteCodeResponse(message.data);
+    } else if (
+      message.event == "invite_codes_ready" ||
+      message.event == "invite_codes"
+    ) {
+      try {
+        await inviteCodes.process(message);
+      } catch (err) {
+        console.error(`Failed processing invite codes message: ${err}`, message);
       }
     }
   };
