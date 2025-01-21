@@ -116,7 +116,9 @@ async fn publish_calendar_event(
     let (header, body) =
         create_operation(&mut state.store, &private_key, extensions, Some(&payload)).await;
 
-    let topic = NetworkTopic::Calendar { calendar_id: calendar_id.into() };
+    let topic = NetworkTopic::Calendar {
+        calendar_id: calendar_id.into(),
+    };
 
     state
         .node

@@ -60,7 +60,9 @@ pub struct EventMeta {
 
 impl From<Header<Extensions>> for EventMeta {
     fn from(header: Header<Extensions>) -> Self {
-        let calendar_id: CalendarId = header.extract().expect("header to have calendar id extension");
+        let calendar_id: CalendarId = header
+            .extract()
+            .expect("header to have calendar id extension");
 
         Self {
             operation_id: header.hash(),
