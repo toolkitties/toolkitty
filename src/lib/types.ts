@@ -39,7 +39,8 @@ type Image = string;
 type ChannelMessage =
   | StreamMessage
   | InviteCodesReadyMessage
-  | InviteCodesMessage;
+  | InviteCodesMessage
+  | CalendarSelected;
 
 /**
  * ଘ(˵╹-╹)━☆•.,¸.•*
@@ -104,6 +105,22 @@ type StreamMessageMeta = {
   calendarId: Hash;
   operationId: Hash;
   publicKey: PublicKey;
+};
+
+/**
+ * o( ❛ᴗ❛ )o	
+ * System Events
+ */
+
+/**
+ * System events occur when an action or event occurred on our own node, they don't represent
+ * messages passed around the network. They can be the result of a command being called or some
+ * backend state change.
+ */
+
+type CalendarSelected = {
+  event: "calendar_selected";
+  calendarId: string;
 };
 
 /**
