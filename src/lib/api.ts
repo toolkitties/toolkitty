@@ -97,24 +97,27 @@ export async function createCalendar(payload: any): Promise<string> {
   // happen on the frontend with follow-up IPC calls. This can be refactored when
   // https://github.com/toolkitties/toolkitty/issues/69 is implemented.
   let hash: string = await invoke("create_calendar", { payload });
-  addCalendar({ id: hash, name: null });
 
   // Register this operation in the promise map.
   let ready = addPromise(hash);
 
-  // Wait for the promise to be resolved.
+  addCalendar({ id: hash, name: "" });
+
+  // Wait for the operation promise to be resolved.
   await ready;
 
   return hash;
 }
 
-export async function subscribeToCalendar(calendarId: string): Promise<void> {
+export async function subscribeToCalendar(
+  calendarId: string
+): Promise<unknown> {
   await invoke("subscribe_to_calendar", { calendarId });
-  addCalendar({ id: calendarId, name: null });
+  return await addCalendar({ id: calendarId, name: "" });
 }
 
-export async function selectCalendar(calendarId: string): Promise<void> {
-  await invoke("select_calendar", { calendarId });
+export async function selectCalendar(calendarId: string): Promise<unknown> {
+  return await invoke("select_calendar", { calendarId });
 }
 
 function getInviteCode(calendar: Calendar) {
@@ -144,13 +147,15 @@ export async function findCalendar(
 }
 
 export async function addCalendar(calendar: Calendar) {
-  if (!findCalendar(calendar.id)) {
+  if ((await findCalendar(calendar.id)) === undefined) {
     await db.calendars.add(calendar);
   }
+
+  return;
 }
 
 export async function updateCalendar(calendar: Calendar) {
-    // @TODO: Update calendar.
+  // @TODO: Update calendar.
 }
 
 export async function addEvent(calEvent: CalendarEvent) {
@@ -159,5 +164,4 @@ export async function addEvent(calEvent: CalendarEvent) {
 
 export async function setSelectedCalendar(calendarId: string) {
   // @TODO: Set selected calendar.
-  return;
 }

@@ -59,7 +59,7 @@ type ResolveInviteCodeResponse = {
 // TODO: Finish calendar type
 type Calendar = {
   id: string;
-  name: string | null;
+  name: string;
 };
 
 type Calendars = Calendar[];
