@@ -6,8 +6,8 @@ export async function init() {
   // Create the stream channel to be passed to backend and add an `onMessage`
   // callback method to handle any events which are later sent from the
   // backend.
-  const streamChannel = new Channel<ChannelMessage>();
-  streamChannel.onmessage = async (message) => {
+  const channel = new Channel<ChannelMessage>();
+  channel.onmessage = async (message) => {
     console.log("Received message on channel", message);
 
     if (message.event == "application") {
@@ -40,5 +40,5 @@ export async function init() {
   // The start command must be called on app startup otherwise running the
   // node on the backend is blocked. This is because we need the stream
   // channel to be provided and passed into the node stream receiver task.
-  await invoke("init", { streamChannel });
+  await invoke("init", { channel });
 }
