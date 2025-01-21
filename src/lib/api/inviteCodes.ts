@@ -49,16 +49,6 @@ export async function resolve(inviteCode: string): Promise<string> {
   });
 }
 
-export async function send(inviteCode: string) {
-  const payload: ResolveInviteCodeRequest = {
-    inviteCode,
-    timestamp: Date.now(),
-    messageType: "request",
-  };
-
-  await invoke("publish_to_invite_code_overlay", { payload });
-}
-
 export async function process(message: ChannelMessage) {
   if (message.event === "invite_codes_ready") {
     // Do nothing for now
@@ -71,6 +61,16 @@ export async function process(message: ChannelMessage) {
       handleResponse(message.data);
     }
   }
+}
+
+async function send(inviteCode: string) {
+  const payload: ResolveInviteCodeRequest = {
+    inviteCode,
+    timestamp: Date.now(),
+    messageType: "request",
+  };
+
+  await invoke("publish_to_invite_code_overlay", { payload });
 }
 
 async function respond(inviteCode: string) {
