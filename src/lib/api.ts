@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
-import { Calendar, calendars } from "$lib/state.svelte";
-import { addPromise } from "./promise_map";
+import { calendars } from "$lib/state.svelte";
+import { addPromise } from "./promiseMap";
 
 const RESOLVE_INVITE_CODE_TIMEOUT = 1000 * 30;
 const SEND_INVITE_CODE_FREQUENCY = 1000 * 5;
@@ -87,6 +87,6 @@ export async function createCalendar(payload: any): Promise<string> {
 
   // Wait for the promise to be resolved.
   await ready;
-  
+
   return hash;
 }

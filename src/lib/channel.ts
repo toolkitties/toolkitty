@@ -1,7 +1,7 @@
 import { invoke, Channel } from "@tauri-apps/api/core";
 import { handleInviteCodeResponse, respondInviteCodeRequest } from "./api";
 import { Calendar, calendars } from "./state.svelte";
-import { resolvePromise } from "./promise_map";
+import { resolvePromise } from "./promiseMap";
 
 export async function init() {
   // Create the stream channel to be passed to backend and add an `onMessage`
