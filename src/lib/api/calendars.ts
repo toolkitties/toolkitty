@@ -7,7 +7,10 @@ export async function getAll(): Promise<Calendar[]> {
 }
 
 export async function create(payload: CreateCalendarPayload): Promise<Hash> {
-  let hash: Hash = await invoke("create_calendar", { payload });
+  let hash: Hash = await invoke("create_calendar", {
+    type: "calendar_created",
+    payload,
+  });
 
   // Register this operation in the promise map and wait until it's resolved.
   await addPromise(hash);
