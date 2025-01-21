@@ -13,10 +13,13 @@
   async function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
 
-    calendars.add({
-      id: "5a7bc8522433759260bdcb77648890b5da10297ed477776611c3c5f83342b025",
-      name: "Kitty Fest 2025",
-    });
+    // Payload for "calendar_created" event.
+    const payload = {
+      type: "calendar_created",
+      data: { title: "Kitty Fest 2025" },
+    };
+
+    await createCalendar(payload);
 
     goto(`/app/events`);
   }

@@ -23,9 +23,7 @@ type Image = string; // url to where images/blobs are stored locally
   (ﾉ^ヮ^)ﾉ*:・ﾟ✧ */
 
 type OperationMeta = {
-  logId: {
-    calendarId: Hash;
-  };
+  calendarId: Hash;
   operationId: Hash;
   publicKey: PublicKey;
 };
@@ -48,7 +46,7 @@ type StreamMessage =
   };
 
 type ApplicationMessage = {
-  type: "EventCreated";
+  type: "calendar_created";
   data: {
     title: string;
   };

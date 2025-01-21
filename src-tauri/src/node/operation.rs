@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use std::hash::Hash as StdHash;
 use std::time::SystemTime;
 
@@ -6,28 +7,101 @@ use p2panda_core::{Body, Extension, Hash, Header, PrivateKey, PruneFlag};
 use p2panda_store::{LocalLogStore, MemoryStore};
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct LogId {
-    pub calendar_id: Hash,
+#[derive(Clone, Copy, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
+pub enum MessageType {
+    Calendar,
+    Event,
+    Resource,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+impl Display for MessageType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
+            MessageType::Calendar => "calendar",
+            MessageType::Event => "event",
+            MessageType::Resource => "resource",
+        };
+
+        write!(f, "{str}")
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CalendarId(pub Hash);
+
+impl Display for CalendarId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl From<Hash> for CalendarId {
+    fn from(value: Hash) -> Self {
+        CalendarId(value)
+    }
+}
+
+impl Into<Hash> for CalendarId {
+    fn into(self) -> Hash {
+        self.0
+    }
+}
+
+impl Into<LogId> for CalendarId {
+    fn into(self) -> LogId {
+        LogId(self.0)
+    }
+}
+
+impl From<Hash> for LogId {
+    fn from(value: Hash) -> Self {
+        LogId(value)
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LogId(Hash);
+
+#[derive(Clone, Default, Debug, Serialize, Deserialize)]
 pub struct Extensions {
-    #[serde(rename = "l")]
-    log_id: LogId,
+    #[serde(rename = "c")]
+    pub calendar_id: Option<CalendarId>,
 
     #[serde(
         rename = "p",
         skip_serializing_if = "PruneFlag::is_not_set",
         default = "PruneFlag::default"
     )]
-    prune_flag: PruneFlag,
+    pub prune_flag: PruneFlag,
 }
 
 impl Extension<LogId> for Extensions {
+    fn with_header(header: &Header<Self>) -> Option<LogId> {
+        Extension::<CalendarId>::with_header(header).map(Into::into)
+    }
+
     fn extract(&self) -> Option<LogId> {
-        Some(self.log_id.clone())
+        Extension::<CalendarId>::extract(self).map(Into::into)
+    }
+}
+
+impl Extension<CalendarId> for Extensions {
+    fn with_header(header: &Header<Self>) -> Option<CalendarId> {
+        let calendar_id: Option<CalendarId> = match &header.extensions {
+            Some(extensions) => extensions.extract(),
+            None => None,
+        };
+
+        match calendar_id {
+            Some(id) => Some(id),
+            None => Some(header.hash().into()),
+        }
+    }
+
+    fn extract(&self) -> Option<CalendarId> {
+        self.calendar_id.clone()
     }
 }
 
@@ -39,31 +113,33 @@ impl Extension<PruneFlag> for Extensions {
 
 pub async fn create_operation(
     store: &mut MemoryStore<LogId, Extensions>,
-    log_id: LogId,
     private_key: &PrivateKey,
+    extensions: Extensions,
     body: Option<&[u8]>,
-    prune_flag: bool,
 ) -> (Header<Extensions>, Option<Body>) {
     let body = body.map(Body::new);
     let public_key = private_key.public_key();
-
-    // @TODO(adz): Memory stores are infallible right now but we'll switch to a SQLite-based one
-    // soon and then we need to handle this error here:
-    let Ok(latest_operation) = store.latest_operation(&public_key, &log_id).await;
-
-    let (seq_num, backlink) = match latest_operation {
-        Some((header, _)) => (header.seq_num + 1, Some(header.hash())),
-        None => (0, None),
-    };
 
     let timestamp = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .expect("time from operation system")
         .as_secs();
 
-    let extensions = Extensions {
-        log_id,
-        prune_flag: PruneFlag::new(prune_flag),
+    let latest_operation = match extensions.extract() {
+        Some(log_id) => {
+            // @TODO(adz): Memory stores are infallible right now but we'll switch to a SQLite-based one
+            // soon and then we need to handle this error here:
+            let Ok(latest_operation) = store.latest_operation(&public_key, &log_id).await;
+            latest_operation
+        }
+        // If no LogId was present on the extensions we can assume this is the first operation in
+        // a new log.
+        None => None,
+    };
+
+    let (seq_num, backlink) = match latest_operation {
+        Some((header, _)) => (header.seq_num + 1, Some(header.hash())),
+        None => (0, None),
     };
 
     let mut header = Header {

@@ -1,5 +1,6 @@
 import { invoke, Channel } from "@tauri-apps/api/core";
-import { inviteCodes } from "$lib/api";
+import { calendars, inviteCodes } from "$lib/api";
+import { resolvePromise } from "$lib/promiseMap";
 
 export async function init() {
   // Create the stream channel to be passed to backend and add an `onMessage`
@@ -11,6 +12,18 @@ export async function init() {
 
     if (message.event == "application") {
       console.log(`got stream event with id ${message.meta.operationId}`);
+      if (message.data.type === "calendar_created") {
+        let calendar = {
+          id: message.meta.calendarId,
+          name: message.data.data.title,
+        };
+
+        calendars.add(calendar);
+
+        console.log("Calendar created: ", calendar);
+
+        resolvePromise(message.meta.operationId);
+      }
 
       // Acknowledge that we have received and processed this operation.
       await invoke("ack", { operationId: message.meta.operationId });
