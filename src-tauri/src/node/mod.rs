@@ -67,7 +67,7 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
             });
         }
 
-        let mdns = LocalDiscovery::new()?;
+        let mdns = LocalDiscovery::new();
 
         let sync_protocol = LogSyncProtocol::new(topic_map, store.clone());
         let sync_config = SyncConfiguration::new(sync_protocol);
