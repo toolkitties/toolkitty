@@ -111,6 +111,6 @@ export async function addCalendar(calendar: Calendar) {
 }
 
 
-export async function addEvent(calEvent: ProgrammeEvent) {
+export async function addEvent(calEvent: CalendarEvent) {
   await db.events.add(calEvent);
 }

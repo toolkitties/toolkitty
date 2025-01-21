@@ -61,7 +61,7 @@ type Calendar = {
 
 type Calendars = Calendar[]
 
-type ProgrammeEvent = {
+type CalendarEvent = {
   id: string;
   name: string;
 }
