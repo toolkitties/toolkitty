@@ -15,9 +15,7 @@ export async function init() {
       console.log(`got stream event with id ${message.meta.operationId}`);
       if (message.data.type === "calendar_created") {
         let calendar = new Calendar(
-          message.meta.calendar.id,
-          message.meta.calendar.owner,
-          message.meta.calendar.created_at
+          message.meta.calendarId,
         );
 
         calendars.addCalendar(calendar);

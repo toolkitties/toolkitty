@@ -1,8 +1,6 @@
 export class Calendar {
-  constructor(id: string, owner: string, created_at: number) {
+  constructor(id: string) {
     this.id = id;
-    this.owner = owner;
-    this.created_at = created_at;
   }
 
   inviteCode() {
@@ -10,8 +8,6 @@ export class Calendar {
   }
 
   public id: string = "";
-  public owner: string = "";
-  public created_at: number = 0;
 }
 
 class Calendars {

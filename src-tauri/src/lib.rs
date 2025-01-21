@@ -1,10 +1,8 @@
 mod node;
 mod topic;
 
-use std::time::SystemTime;
-
-use node::operation::{create_operation, Extensions, LogId, MessageType, StreamMeta};
-use p2panda_core::{Hash, PrivateKey, PruneFlag};
+use node::operation::{create_operation, CalendarId, Extensions, LogId};
+use p2panda_core::{Hash, PrivateKey};
 use p2panda_net::FromNetwork;
 use p2panda_store::MemoryStore;
 use serde::ser::SerializeStruct;
@@ -13,7 +11,6 @@ use tauri::ipc::Channel;
 use tauri::{Builder, Manager, State};
 use thiserror::Error;
 use tokio::sync::{mpsc, oneshot, Mutex};
-use topic::Calendar;
 
 use crate::node::{AckError, Node, PublishError, StreamEvent};
 use crate::topic::{NetworkTopic, TopicMap};
@@ -77,18 +74,7 @@ async fn create_calendar(
     // @TODO: Handle error.
     let payload = serde_json::to_vec(&payload).unwrap();
 
-    let timestamp = SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .expect("time from operation system")
-        .as_secs();
-
-    let stream_meta = StreamMeta {
-        owner: private_key.public_key(),
-        message_type: MessageType::Calendar,
-        created_at: timestamp,
-    };
-
-    let extensions = Extensions::new(None, stream_meta.clone(), PruneFlag::new(false));
+    let extensions = Extensions::default();
 
     // @TODO(adz): Memory stores are infallible right now but we'll switch to a SQLite-based
     // one soon and then we need to handle this error here:
@@ -114,7 +100,7 @@ async fn create_calendar(
 async fn publish_calendar_event(
     state: State<'_, Mutex<AppContext>>,
     payload: serde_json::Value,
-    calendar: Calendar,
+    calendar_id: CalendarId,
 ) -> Result<Hash, PublishError> {
     let mut state = state.lock().await;
     let private_key = state.private_key.clone();
@@ -122,20 +108,15 @@ async fn publish_calendar_event(
     // @TODO: Handle error.
     let payload = serde_json::to_vec(&payload).unwrap();
 
-    let stream_meta = StreamMeta {
-        owner: calendar.owner,
-        message_type: MessageType::Calendar,
-        created_at: calendar.created_at,
+    let extensions = Extensions {
+        calendar_id: Some(calendar_id),
+        ..Default::default()
     };
-
-    let extensions = Extensions::new(Some(calendar.id), stream_meta, PruneFlag::new(false));
 
     let (header, body) =
         create_operation(&mut state.store, &private_key, extensions, Some(&payload)).await;
 
-    let topic = NetworkTopic::Calendar {
-        calendar_id: calendar.id,
-    };
+    let topic = NetworkTopic::Calendar { calendar_id: calendar_id.into() };
 
     state
         .node
@@ -255,7 +236,7 @@ async fn forward_to_app_layer(
                     // There is probably a better place to do this, but it needs more thought. For
                     // now I'll leave it here as a POC.
                     let StreamEvent { meta, .. } = &event;
-                    topic_map.add_author(meta.public_key, meta.calendar.clone()).await;
+                    topic_map.add_author(meta.public_key, meta.calendar_id.clone()).await;
 
                     // Send event further up to application layer.
                     channel.send(ChannelEvent::Stream(event)).unwrap();

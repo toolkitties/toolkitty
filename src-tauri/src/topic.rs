@@ -10,7 +10,7 @@ use p2panda_sync::TopicQuery;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 
-use crate::node::operation::{LogId, MessageType};
+use crate::node::operation::{CalendarId, LogId};
 
 #[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -47,8 +47,7 @@ pub struct TopicMap {
 
 #[derive(Clone, Debug)]
 struct InnerTopicMap {
-    authors: HashMap<Hash, Vec<PublicKey>>,
-    logs: HashMap<Hash, LogId>,
+    authors: HashMap<CalendarId, Vec<PublicKey>>,
 }
 
 impl TopicMap {
@@ -56,20 +55,16 @@ impl TopicMap {
         Self {
             inner: Arc::new(RwLock::new(InnerTopicMap {
                 authors: HashMap::new(),
-                logs: HashMap::new(),
             })),
         }
     }
 
-    pub async fn add_author(&self, public_key: PublicKey, calendar: Calendar) {
+    pub async fn add_author(&self, public_key: PublicKey, calendar_id: CalendarId) {
         let mut lock = self.inner.write().await;
         lock.authors
-            .entry(calendar.id)
+            .entry(calendar_id)
             .and_modify(|public_keys| public_keys.push(public_key))
             .or_insert(vec![public_key]);
-
-        let log_id = LogId::new(calendar.owner, MessageType::Calendar, calendar.created_at);
-        lock.logs.insert(calendar.id, log_id);
     }
 }
 
@@ -81,9 +76,8 @@ impl TopicLogMap<NetworkTopic, LogId> for TopicMap {
             NetworkTopic::InviteCodes => None,
             NetworkTopic::Calendar { calendar_id } => {
                 let inner = self.inner.read().await;
-                let log_id = inner.logs.get(calendar_id);
-                inner.authors.get(calendar_id).map(|public_keys| {
-                    let log_id = log_id.unwrap();
+                let calendar_id: CalendarId = calendar_id.clone().into();
+                inner.authors.get(&calendar_id).map(|public_keys| {
                     let mut result = HashMap::with_capacity(public_keys.len());
                     for public_key in public_keys {
                         result.insert(
@@ -91,7 +85,7 @@ impl TopicLogMap<NetworkTopic, LogId> for TopicMap {
                             // @NOTE(adz): Currently we store everything in one log per calendar,
                             // later we want to list all possible "log types" here, for example for
                             // all events, resources, messages etc.
-                            vec![log_id.to_owned()],
+                            vec![calendar_id.into()],
                         );
                     }
                     result

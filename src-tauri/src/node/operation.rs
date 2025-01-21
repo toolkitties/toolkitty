@@ -3,7 +3,7 @@ use std::hash::Hash as StdHash;
 use std::time::SystemTime;
 
 use p2panda_core::cbor::{decode_cbor, encode_cbor, DecodeError, EncodeError};
-use p2panda_core::{Body, Extension, Hash, Header, PrivateKey, PruneFlag, PublicKey};
+use p2panda_core::{Body, Extension, Hash, Header, PrivateKey, PruneFlag};
 use p2panda_store::{LocalLogStore, MemoryStore};
 use serde::{Deserialize, Serialize};
 
@@ -26,88 +26,76 @@ impl Display for MessageType {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CalendarId(pub Hash);
 
-/// Metadata giving information about the stream this operation is associated with.
-#[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct StreamMeta {
-    /// The owner of this stream (the peer who published the first message).
-    pub owner: PublicKey,
-
-    /// Message types expected on this stream.
-    pub message_type: MessageType,
-
-    /// UNIX timestamp when the stream was created.
-    pub created_at: u64,
-}
-
-impl StreamMeta {
-    pub fn log_id(&self) -> LogId {
-        LogId::new(self.owner, self.message_type, self.created_at)
+impl Display for CalendarId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
-/// A locally unique identifier for a log.
-/// 
-/// A log id must be derived _before_ an operation is constructed, for this reason it can't be the
-/// the hash of the operation itself. We derive the log id string from metadata attached to the
-/// stream is part of: `<OWNER_PUBLIC_KEY>/<MESSAGE_TYPE>/<CREATED_AT_TIMESTAMP>`.
-/// 
-/// This introduces enough uniqueness that no two log ids should be the same.
-#[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct LogId(String);
-
-impl LogId {
-    pub fn new(public_key: PublicKey, message_type: MessageType, timestamp: u64) -> Self {
-        Self(format!("{}/{}/{}", public_key, message_type, timestamp))
+impl From<Hash> for CalendarId {
+    fn from(value: Hash) -> Self {
+        CalendarId(value)
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+impl Into<Hash> for CalendarId {
+    fn into(self) -> Hash {
+        self.0
+    }
+}
+
+impl Into<LogId> for CalendarId {
+    fn into(self) -> LogId {
+        LogId(self.0)
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LogId(Hash);
+
+#[derive(Clone, Default, Debug, Serialize, Deserialize)]
 pub struct Extensions {
     #[serde(rename = "c")]
-    calendar_id: Option<CalendarId>,
-
-    #[serde(rename = "s")]
-    stream_meta: StreamMeta,
+    pub calendar_id: Option<CalendarId>,
 
     #[serde(
         rename = "p",
         skip_serializing_if = "PruneFlag::is_not_set",
         default = "PruneFlag::default"
     )]
-    prune_flag: PruneFlag,
-}
-
-impl Extensions {
-    pub fn new(calendar_id: Option<Hash>, stream_meta: StreamMeta, prune_flag: PruneFlag) -> Self {
-        Self {
-            calendar_id: calendar_id.map(|hash| CalendarId(hash)),
-            stream_meta,
-            prune_flag,
-        }
-    }
+    pub prune_flag: PruneFlag,
 }
 
 impl Extension<LogId> for Extensions {
+    fn with_header(header: &Header<Self>) -> Option<LogId> {
+        Extension::<CalendarId>::with_header(header).map(Into::into)
+    }
+
     fn extract(&self) -> Option<LogId> {
-        Some(self.stream_meta.log_id())
+        Extension::<CalendarId>::extract(self).map(Into::into)
     }
 }
 
 impl Extension<CalendarId> for Extensions {
+    fn with_header(header: &Header<Self>) -> Option<CalendarId> {
+        let calendar_id: Option<CalendarId> = match &header.extensions {
+            Some(extensions) => extensions.extract(),
+            None => None,
+        };
+
+        match calendar_id {
+            Some(id) => Some(id),
+            None => Some(header.hash().into()),
+        }
+    }
+
     fn extract(&self) -> Option<CalendarId> {
         self.calendar_id.clone()
-    }
-}
-
-impl Extension<StreamMeta> for Extensions {
-    fn extract(&self) -> Option<StreamMeta> {
-        Some(self.stream_meta.clone())
     }
 }
 
@@ -131,13 +119,17 @@ pub async fn create_operation(
         .expect("time from operation system")
         .as_secs();
 
-    let log_id = extensions
-        .extract()
-        .expect("log id is present on extensions");
-
-    // @TODO(adz): Memory stores are infallible right now but we'll switch to a SQLite-based one
-    // soon and then we need to handle this error here:
-    let Ok(latest_operation) = store.latest_operation(&public_key, &log_id).await;
+    let latest_operation = match extensions.extract() {
+        Some(log_id) => {
+            // @TODO(adz): Memory stores are infallible right now but we'll switch to a SQLite-based one
+            // soon and then we need to handle this error here:
+            let Ok(latest_operation) = store.latest_operation(&public_key, &log_id).await;
+            latest_operation
+        }
+        // If no LogId was present on the extensions we can assume this is the first operation in
+        // a new log.
+        None => None,
+    };
 
     let (seq_num, backlink) = match latest_operation {
         Some((header, _)) => (header.seq_num + 1, Some(header.hash())),

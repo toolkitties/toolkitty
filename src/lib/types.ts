@@ -1,11 +1,5 @@
-type Calendar = {
-  id: string;
-  owner: string;
-  created_at: number;
-}
-
 type OperationMeta = {
-  calendar: Calendar;
+  calendarId: string;
   operationId: string;
   publicKey: string;
 };
