@@ -26,8 +26,8 @@ export function inviteCode(calendar: Calendar): string {
 
 /* ( 'з｀)ﾉ⌒♥*:･。.
   *
-  * Commands
-  * (Writes / mutates state)
+  * Commands (called from UI)
+  * Issues Events which get processed (see below)
   *
   (ﾉ^ヮ^)ﾉ*:・ﾟ✧ */
 
@@ -44,6 +44,14 @@ export async function create(data: CreateCalendarPayload): Promise<Hash> {
 
   return hash;
 }
+
+/* ｡ ₊°༺❤︎༻°₊ ｡
+  *
+  * Processor (called from Channel)
+  * Processing Events we've issued ourselves or received from other peers
+  * (Writes / mutates state)
+  *
+  <( ⸝⸝•̀ - •́⸝⸝)> */
 
 export async function process(message: ChannelMessage) {
   if (message.event !== "application") {
