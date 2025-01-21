@@ -1,3 +1,27 @@
+/* ദ്ദി(˵ •̀ ᴗ - ˵ ) ✧
+  *
+  * Core Types
+  *
+  ପ(๑•ᴗ•๑)ଓ ♡ */
+
+type Hash = string;
+
+type PublicKey = string;
+
+type User = {
+  id: PublicKey;
+  name: string;
+}
+
+type Image = string; // url to where images/blobs are stored locally
+
+/* ヾ( ˃ᴗ˂ )◞ • *✰
+  *
+  * Channel Events
+  * (Backend <-> Frontend)
+  *
+  (ﾉ^ヮ^)ﾉ*:・ﾟ✧ */
+
 type OperationMeta = {
   logId: {
     calendarId: Hash;
@@ -5,6 +29,11 @@ type OperationMeta = {
   operationId: Hash;
   publicKey: PublicKey;
 };
+
+type ChannelMessage =
+  | StreamMessage
+  | InviteCodeReadyMessage
+  | InviteCodeMessage;
 
 type StreamMessage =
   | {
@@ -18,6 +47,19 @@ type StreamMessage =
     data: string;
   };
 
+type ApplicationMessage = {
+  type: "EventCreated";
+  data: {
+    title: string;
+  };
+};
+
+/* ( 'з｀)ﾉ⌒♥*:･。.
+  *
+  * Invite Codes
+  *
+  ଘ(˵╹-╹)━☆•.,¸.•* */
+
 type InviteCodeReadyMessage = {
   event: "invite_codes_ready";
 };
@@ -25,18 +67,6 @@ type InviteCodeReadyMessage = {
 type InviteCodeMessage = {
   event: "invite_codes";
   data: ResolveInviteCodeRequest | ResolveInviteCodeResponse;
-};
-
-type ChannelMessage =
-  | StreamMessage
-  | InviteCodeReadyMessage
-  | InviteCodeMessage;
-
-type ApplicationMessage = {
-  type: "EventCreated";
-  data: {
-    title: string;
-  };
 };
 
 type ResolveInviteCodeRequest = {
@@ -52,11 +82,18 @@ type ResolveInviteCodeResponse = {
   messageType: "response";
 };
 
+/* (´ヮ´)八(*ﾟ▽ﾟ*)
+  *
+  * Calendar
+  *
+  *:･ﾟ✧(=✪ ᆺ ✪=)*:･ﾟ✧ */
 
-// TODO: Finish calendar type
 type Calendar = {
   id: Hash;
+  owner: User;
   name: string;
+  startDate: Date | null;
+  endDate: Date | null;
 }
 
 type Calendars = Calendar[]
@@ -156,18 +193,7 @@ type ResourceResponse = {
   answer: Answer;
 }
 
-type User = {
-  id: PublicKey;
-  name: string;
-}
-
 type Answer = "approve" | "reject"
-
-type Hash = string;
-
-type PublicKey = string;
-
-type Image = string; // url to where images/blobs are stored locally
 
 type TimeSpan = {
   start: Date;
