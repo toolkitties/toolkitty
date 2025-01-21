@@ -97,15 +97,15 @@ async fn create_calendar(
     let calendar_id = hash.into();
     let topic = NetworkTopic::Calendar { calendar_id };
 
-    // This is a new calendar and so we have never subscribed to it's topic yet. Do this before
-    // actually publishing the create event.
-    state.node.subscribe_processed(&topic).await.unwrap();
-
     // @TODO: It would be clearer if this "selecting" of the calendar was handled by calling the
     // IPC method from the front end. This is not possible until we have re-play of un-acked
     // operations though, as currently there is the chance that operations are missed (and not
     // re-played) if we don't select here.
     state.selected_calendar = Some(calendar_id);
+
+    // This is a new calendar and so we have never subscribed to it's topic yet. Do this before
+    // actually publishing the create event.
+    state.node.subscribe_processed(&topic).await.unwrap();
 
     state
         .node
