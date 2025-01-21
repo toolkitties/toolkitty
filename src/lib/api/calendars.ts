@@ -102,3 +102,13 @@ async function onCalendarCreated(
     name: data.name,
   });
 }
+
+// @TODO: move to own module and add doc string
+export async function select(calendarId: Hash) {
+  await invoke("select_calendar", { calendarId });
+}
+
+// @TODO: move to own module and add doc string
+export async function subscribe(calendarId: Hash) {
+  await invoke("subscribe_to_calendar", { calendarId });
+}
