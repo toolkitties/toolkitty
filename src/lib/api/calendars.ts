@@ -47,6 +47,11 @@ export async function create(
   data: CalendarCreatedEvent["data"],
 ): Promise<Hash> {
   // Define the "calendar created" application event.
+  //
+  // @TODO: Currently subscribing and selecting the calendar occurs on the backend when this
+  // method is called. It would be more transparent, avoiding hidden side-effects, if this could
+  // happen on the frontend with follow-up IPC calls. This can be refactored when
+  // https://github.com/toolkitties/toolkitty/issues/69 is implemented.
   const payload: CalendarCreatedEvent = {
     type: "calendar_created",
     data,
