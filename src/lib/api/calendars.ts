@@ -6,11 +6,11 @@ export async function getAll(): Promise<Calendar[]> {
   return await db.calendars.toArray();
 }
 
-export async function create(calendar: CreateCalendarPayload): Promise<Hash> {
+export async function create(data: CreateCalendarPayload): Promise<Hash> {
   let hash: Hash = await invoke("create_calendar", {
     payload: {
       type: "calendar_created",
-      ...calendar,
+      data,
     },
   });
 
