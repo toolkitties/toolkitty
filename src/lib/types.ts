@@ -94,7 +94,8 @@ type Space = {
   contact: string;
   link: Link;
   images: Image[];
-  availability: TimeSpan[];
+  availability: TimeSpan[] | 'always';
+  multiBookable: boolean; // resource can be booked more than once in the same time span
   booked: BookedTimeSpan[];
 }
 
@@ -132,7 +133,13 @@ type Resource = {
   id: Hash;
   name: string;
   owner: User;
-  booked: TimeSpan[];
+  description: string;
+  contact: string;
+  link: Link;
+  images: Image[];
+  availability: TimeSpan[] | 'always';
+  multiBookable: boolean; // resource can be booked more than once in the same time span
+  booked: BookedTimeSpan[];
 }
 
 type ResourceRequest = {
