@@ -54,6 +54,12 @@ impl Into<LogId> for CalendarId {
     }
 }
 
+impl From<Hash> for LogId {
+    fn from(value: Hash) -> Self {
+        LogId(value)
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LogId(Hash);

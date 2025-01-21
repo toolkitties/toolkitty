@@ -238,7 +238,7 @@ async fn forward_to_app_layer(
                     // There is probably a better place to do this, but it needs more thought. For
                     // now I'll leave it here as a POC.
                     let StreamEvent { meta, .. } = &event;
-                    topic_map.add_author(meta.public_key, meta.calendar_id.clone()).await;
+                    topic_map.add_author(meta.public_key, meta.calendar_id).await;
 
                     // Send event further up to application layer.
                     channel.send(ChannelEvent::Stream(event)).unwrap();

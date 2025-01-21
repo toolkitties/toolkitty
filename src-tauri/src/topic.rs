@@ -76,8 +76,8 @@ impl TopicLogMap<NetworkTopic, LogId> for TopicMap {
             NetworkTopic::InviteCodes => None,
             NetworkTopic::Calendar { calendar_id } => {
                 let inner = self.inner.read().await;
-                let calendar_id: CalendarId = calendar_id.clone().into();
-                inner.authors.get(&calendar_id).map(|public_keys| {
+                let calendar_id = *calendar_id;
+                inner.authors.get(&calendar_id.into()).map(|public_keys| {
                     let mut result = HashMap::with_capacity(public_keys.len());
                     for public_key in public_keys {
                         result.insert(
