@@ -2,6 +2,7 @@
   import { PinInput, Toggle } from "bits-ui";
   import { goto } from "$app/navigation";
   import { resolveInviteCode } from "$lib/api";
+  import { db } from "$lib/db";
 
   let value: string[] | undefined = [];
 
@@ -10,6 +11,8 @@
   let timedOut: boolean = false;
   let pinInputType: "text" | "password" = "password";
   $: pinInputType = unlocked ? "text" : "password";
+
+  // db.delete({ disableAutoOpen: false });
 
   async function join(event: Event) {
     event.preventDefault();
@@ -76,6 +79,7 @@
 {#if timedOut}
   <p>Calendar not found</p>
 {/if}
+
 <a
   href="/create"
   class="border border-black rounded p-4 text-center"
