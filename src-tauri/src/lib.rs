@@ -1,7 +1,6 @@
 mod node;
 mod topic;
 
-use node::operation::{create_operation, CalendarId, Extensions, LogId};
 use p2panda_core::{Hash, PrivateKey};
 use p2panda_net::FromNetwork;
 use p2panda_store::MemoryStore;
@@ -12,8 +11,10 @@ use tauri::{Builder, Manager, State};
 use thiserror::Error;
 use tokio::sync::{mpsc, oneshot, Mutex};
 
+use crate::node::operation::{create_operation, CalendarId, Extensions, LogId};
 use crate::node::{AckError, Node, PublishError, StreamEvent};
 use crate::topic::{NetworkTopic, TopicMap};
+
 struct AppContext {
     node: Node<NetworkTopic>,
     store: MemoryStore<LogId, Extensions>,
@@ -26,13 +27,13 @@ struct AppContext {
 #[tauri::command]
 async fn init(
     state: State<'_, Mutex<AppContext>>,
-    stream_channel: Channel<ChannelEvent>,
+    channel: Channel<ChannelEvent>,
 ) -> Result<(), InitError> {
     let mut state = state.lock().await;
 
     match state.channel_oneshot_tx.take() {
         Some(tx) => {
-            if let Err(_) = tx.send(stream_channel) {
+            if let Err(_) = tx.send(channel) {
                 return Err(InitError::OneshotChannelError);
             }
         }
