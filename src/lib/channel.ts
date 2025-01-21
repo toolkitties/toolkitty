@@ -31,6 +31,7 @@ async function onChannelMessage(message: ChannelMessage) {
     await onInviteCodesMessage(message);
   } else if (message.event === "calendar_selected") {
     // @TODO: set selected calendar.
+    console.log("calendar selected: ", message.calendarId);
   }
 }
 
