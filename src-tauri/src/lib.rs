@@ -93,13 +93,18 @@ async fn create_calendar(
         create_operation(&mut state.store, &private_key, extensions, Some(&payload)).await;
 
     let hash = header.hash();
-    let topic = NetworkTopic::Calendar {
-        calendar_id: hash.into(),
-    };
+    let calendar_id = hash.into();
+    let topic = NetworkTopic::Calendar { calendar_id };
 
     // This is a new calendar and so we have never subscribed to it's topic yet. Do this before
     // actually publishing the create event.
     state.node.subscribe_processed(&topic).await.unwrap();
+
+    // @TODO: It would be clearer if this "selecting" of the calendar was handled by calling the
+    // IPC method from the front end. This is not possible until we have re-play of un-acked
+    // operations though, as currently there is the chance that operations are missed (and not
+    // re-played) if we don't select here.
+    state.selected_calendar = Some(calendar_id);
 
     state
         .node
@@ -242,6 +247,7 @@ async fn forward_to_app_layer(
     }
 
     rt.spawn(async move {
+        let mut selected_calendar = None;
         loop {
             tokio::select! {
                 Some(event) = stream_rx.recv() => {
@@ -257,11 +263,21 @@ async fn forward_to_app_layer(
                     let StreamEvent { meta, .. } = &event;
                     topic_map.add_author(meta.public_key, meta.calendar_id).await;
 
-                    // Check if the event is associated with the currently selected calendar. We
-                    // only forward it up to the application if it is.
                     let state = app.state::<Mutex<AppContext>>();
                     let state = state.lock().await;
-                    if let Some(selected_calendar) = state.selected_calendar {
+
+                    // Check if the event is associated with the currently selected calendar. We
+                    // only forward it up to the application if it is.
+                    if state.selected_calendar != selected_calendar {
+                        selected_calendar = state.selected_calendar;
+
+                        let calendar_id = selected_calendar.unwrap();
+                        channel.send(ChannelEvent::CalendarSelected(calendar_id)).unwrap();
+
+                        // @TODO: replay all un-acked operations here.
+                    }
+
+                    if let Some(selected_calendar) = selected_calendar {
                         if selected_calendar != meta.calendar_id {
                             return;
                         };
@@ -289,6 +305,7 @@ enum ChannelEvent {
     Stream(StreamEvent),
     InviteCodesReady,
     InviteCodes(serde_json::Value),
+    CalendarSelected(CalendarId),
 }
 
 impl Serialize for ChannelEvent {
@@ -307,6 +324,12 @@ impl Serialize for ChannelEvent {
                 let mut state = serializer.serialize_struct("StreamEvent", 2)?;
                 state.serialize_field("event", "invite_codes")?;
                 state.serialize_field("data", &payload)?;
+                state.end()
+            }
+            ChannelEvent::CalendarSelected(calendar_id) => {
+                let mut state = serializer.serialize_struct("StreamEvent", 2)?;
+                state.serialize_field("event", "calendar_selected")?;
+                state.serialize_field("calendarId", &calendar_id)?;
                 state.end()
             }
         }

@@ -92,7 +92,14 @@ export async function handleInviteCodeResponse(
 }
 
 export async function createCalendar(payload: any): Promise<string> {
+  // @TODO: Currently subscribing and selecting the calendar occurs on the backend when this
+  // method is called. It would be more transparent, avoiding hidden side-effects, if this could
+  // happen on the frontend with follow-up IPC calls. This can be refactored when
+  // https://github.com/toolkitties/toolkitty/issues/69 is implemented.
   let hash: string = await invoke("create_calendar", { payload });
+
+  // We don't know the name yet, this should be updated when we receive a "calendar_created" event.
+  addCalendar({ id: hash, name: "" });
 
   // Register this operation in the promise map.
   let ready = addPromise(hash);
@@ -103,6 +110,18 @@ export async function createCalendar(payload: any): Promise<string> {
   return hash;
 }
 
+export async function subscribeToCalendar(calendarId: string): Promise<void> {
+  await invoke("subscribe_to_calendar", { calendarId });
+
+  if (!findCalendar(calendarId)) {
+    addCalendar({ id: calendarId, name: "" });
+  }
+}
+
+export async function selectCalendar(calendarId: string): Promise<void> {
+  await invoke("select_calendar", { calendarId });
+}
+
 function getInviteCode(calendar: Calendar) {
   return calendar.id.slice(0, 4);
 }
@@ -111,10 +130,21 @@ export async function getCalendars(): Promise<Calendar[]> {
   return await db.calendars.toArray();
 }
 
-export async function findCalendarByInviteCode(inviteCode: string): Promise<undefined | Calendar> {
+export async function findCalendarByInviteCode(
+  inviteCode: string
+): Promise<undefined | Calendar> {
   const calendars = await getCalendars();
   return calendars.find((calendar) => {
     return getInviteCode(calendar) === inviteCode;
+  });
+}
+
+export async function findCalendar(
+  calendarId: string
+): Promise<undefined | Calendar> {
+  const calendars = await getCalendars();
+  return calendars.find((calendar) => {
+    return calendar.id === calendarId;
   });
 }
 
@@ -122,7 +152,11 @@ export async function addCalendar(calendar: Calendar) {
   await db.calendars.add(calendar);
 }
 
-
 export async function addEvent(calEvent: CalendarEvent) {
   await db.events.add(calEvent);
+}
+
+export async function setSelectedCalendar(calendarId: string) {
+  // @TODO: Set selected calendar.
+  return;
 }

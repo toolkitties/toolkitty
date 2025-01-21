@@ -6,15 +6,15 @@ type OperationMeta = {
 
 type StreamMessage =
   | {
-    meta: OperationMeta;
-    event: "application";
-    data: ApplicationMessage;
-  }
+      meta: OperationMeta;
+      event: "application";
+      data: ApplicationMessage;
+    }
   | {
-    meta: OperationMeta;
-    event: "error";
-    data: string;
-  };
+      meta: OperationMeta;
+      event: "error";
+      data: string;
+    };
 
 type InviteCodeReadyMessage = {
   event: "invite_codes_ready";
@@ -25,10 +25,16 @@ type InviteCodeMessage = {
   data: ResolveInviteCodeRequest | ResolveInviteCodeResponse;
 };
 
+type CalendarSelected = {
+  event: "calendar_selected";
+  calendarId: string;
+};
+
 type ChannelMessage =
   | StreamMessage
   | InviteCodeReadyMessage
-  | InviteCodeMessage;
+  | InviteCodeMessage
+  | CalendarSelected;
 
 type ApplicationMessage = {
   type: "calendar_created";
@@ -50,16 +56,15 @@ type ResolveInviteCodeResponse = {
   messageType: "response";
 };
 
-
 // TODO: Finish calendar type
 type Calendar = {
   id: string;
   name: string;
-}
+};
 
-type Calendars = Calendar[]
+type Calendars = Calendar[];
 
 type CalendarEvent = {
   id: string;
   name: string;
-}
+};

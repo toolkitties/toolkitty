@@ -1,7 +1,7 @@
 <script lang="ts">
   import { PinInput, Toggle } from "bits-ui";
   import { goto } from "$app/navigation";
-  import { resolveInviteCode } from "$lib/api";
+  import { resolveInviteCode, selectCalendar, subscribeToCalendar } from "$lib/api";
 
   let value: string[] | undefined = [];
 
@@ -29,6 +29,9 @@
       console.error(err);
       return;
     }
+
+    await selectCalendar(calendarId);
+    await subscribeToCalendar(calendarId);
 
     goto(`/join?code=${calendarId}`);
   }

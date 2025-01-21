@@ -3,6 +3,7 @@ import {
   addCalendar,
   handleInviteCodeResponse,
   respondInviteCodeRequest,
+  setSelectedCalendar,
 } from "./api";
 import { resolvePromise } from "./promiseMap";
 
@@ -41,6 +42,9 @@ export async function init() {
       if (message.data.messageType === "response") {
         handleInviteCodeResponse(message.data);
       }
+    } else if (message.event === "calendar_selected") {
+      await setSelectedCalendar(message.calendarId);
+      console.log("calendar_selected: ", message.calendarId)
     }
   };
 
