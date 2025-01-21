@@ -267,8 +267,8 @@ async fn forward_to_app_layer(
                     let state = app.state::<Mutex<AppContext>>();
                     let state = state.lock().await;
 
-                    // Check if the event is associated with the currently selected calendar. We
-                    // only forward it up to the application if it is.
+                    // Only send the selected_calendar event to the frontend if we _changed_
+                    // calendar.
                     if state.selected_calendar != selected_calendar {
                         selected_calendar = state.selected_calendar;
 
@@ -278,6 +278,8 @@ async fn forward_to_app_layer(
                         // @TODO: replay all un-acked operations here.
                     }
 
+                    // Check if the event is associated with the currently selected calendar. We
+                    // only forward it up to the application if it is.
                     if let Some(selected_calendar) = selected_calendar {
                         if selected_calendar != meta.calendar_id {
                             return;
