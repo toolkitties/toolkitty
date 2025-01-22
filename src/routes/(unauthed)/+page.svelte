@@ -1,8 +1,9 @@
 <script lang="ts">
   import { PinInput, Toggle } from "bits-ui";
   import { goto } from "$app/navigation";
-  import { inviteCodes } from "$lib/api";
+  import { inviteCodes, calendars } from "$lib/api";
   import { db } from "$lib/db";
+  import { appConfigDir } from "@tauri-apps/api/path";
 
   let value: string[] | undefined = [];
 
@@ -33,6 +34,9 @@
       console.error(err);
       return;
     }
+
+    await calendars.select(calendar.id);
+    await calendars.subscribe(calendar.id);
 
     goto(`/join?code=${calendar.id}`);
   }

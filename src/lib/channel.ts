@@ -32,6 +32,12 @@ async function onChannelMessage(message: ChannelMessage) {
   } else if (message.event === "calendar_selected") {
     // @TODO: set selected calendar.
     console.log("calendar selected: ", message.calendarId);
+  } else if (message.event === "subscribed_to_calendar") {
+    // @TODO: handle subscribed_to_calendar event.
+    console.log("subscribed to calendar: ", message.calendarId);
+  } else if (message.event === "calendar_gossip_joined") {
+    // @TODO: handle calendar_gossip_joined event.
+    console.log("joined calendar gossip: ", message.calendarId);
   }
 }
 

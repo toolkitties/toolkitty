@@ -40,7 +40,9 @@ type ChannelMessage =
   | StreamMessage
   | InviteCodesReadyMessage
   | InviteCodesMessage
-  | CalendarSelected;
+  | CalendarSelected
+  | SubscribedToCalendar
+  | CalendarGossipJoined;
 
 /**
  * ଘ(˵╹-╹)━☆•.,¸.•*
@@ -120,6 +122,16 @@ type StreamMessageMeta = {
 
 type CalendarSelected = {
   event: "calendar_selected";
+  calendarId: string;
+};
+
+type SubscribedToCalendar = {
+  event: "subscribed_to_calendar";
+  calendarId: string;
+};
+
+type CalendarGossipJoined = {
+  event: "calendar_gossip_joined";
   calendarId: string;
 };
 
