@@ -28,6 +28,7 @@ pub enum ToNodeActor<T> {
         topic_id: [u8; 32],
         bytes: Vec<u8>,
     },
+    #[allow(dead_code)]
     Shutdown {
         reply: oneshot::Sender<()>,
     },

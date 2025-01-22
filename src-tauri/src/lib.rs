@@ -33,7 +33,7 @@ async fn init(
 
     match state.channel_oneshot_tx.take() {
         Some(tx) => {
-            if let Err(_) = tx.send(channel) {
+            if tx.send(channel).is_err() {
                 return Err(InitError::OneshotChannelError);
             }
         }

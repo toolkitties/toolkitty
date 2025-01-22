@@ -42,15 +42,15 @@ impl From<Hash> for CalendarId {
     }
 }
 
-impl Into<Hash> for CalendarId {
-    fn into(self) -> Hash {
-        self.0
+impl From<CalendarId> for Hash {
+    fn from(id: CalendarId) -> Self {
+        id.0
     }
 }
 
-impl Into<LogId> for CalendarId {
-    fn into(self) -> LogId {
-        LogId(self.0)
+impl From<CalendarId> for LogId {
+    fn from(id: CalendarId) -> Self {
+        LogId(id.0)
     }
 }
 
@@ -101,7 +101,7 @@ impl Extension<CalendarId> for Extensions {
     }
 
     fn extract(&self) -> Option<CalendarId> {
-        self.calendar_id.clone()
+        self.calendar_id
     }
 }
 

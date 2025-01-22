@@ -29,6 +29,7 @@ impl StreamEvent {
         }
     }
 
+    #[allow(dead_code)]
     pub fn from_error(error: StreamError, header: Header<Extensions>) -> Self {
         Self {
             meta: header.into(),
@@ -72,6 +73,7 @@ impl From<Header<Extensions>> for EventMeta {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Clone, Debug, Serialize)]
 #[serde(untagged)]
 pub enum EventData {
@@ -88,6 +90,7 @@ impl EventData {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Clone, Debug, Error)]
 pub enum StreamError {
     #[error(transparent)]
@@ -103,6 +106,7 @@ impl Serialize for StreamError {
     }
 }
 
+#[allow(clippy::large_enum_variant, dead_code)]
 pub enum ToStreamController {
     Ingest {
         header: Header<Extensions>,
@@ -113,6 +117,7 @@ pub enum ToStreamController {
     Replay {},
 }
 
+#[allow(dead_code)]
 pub struct StreamController {
     store: MemoryStore<LogId, Extensions>,
     processor_handle: JoinHandle<()>,

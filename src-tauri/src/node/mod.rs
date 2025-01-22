@@ -1,12 +1,10 @@
 mod actor;
-mod message;
 pub mod operation;
 mod stream;
 
 use anyhow::Result;
 use futures_util::future::{MapErr, Shared};
 use futures_util::{FutureExt, TryFutureExt};
-use operation::encode_gossip_message;
 use p2panda_core::{Body, Hash, Header, PrivateKey};
 use p2panda_discovery::mdns::LocalDiscovery;
 use p2panda_net::{FromNetwork, NetworkBuilder, SyncConfiguration, TopicId};
@@ -21,7 +19,7 @@ use tokio_util::task::AbortOnDropHandle;
 use tracing::error;
 
 use crate::node::actor::{NodeActor, ToNodeActor};
-use crate::node::operation::{Extensions, LogId};
+use crate::node::operation::{encode_gossip_message, Extensions, LogId};
 pub use crate::node::stream::{AckError, StreamEvent};
 use crate::node::stream::{StreamController, ToStreamController};
 
@@ -141,7 +139,7 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
         let header_bytes = header.to_bytes();
         let operation_id = header.hash();
 
-        let bytes = encode_gossip_message(&header, body)?;
+        let bytes = encode_gossip_message(header, body)?;
         self.network_actor_tx
             .send(ToNodeActor::Broadcast {
                 topic_id: topic.id(),
