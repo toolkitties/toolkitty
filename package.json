@@ -11,7 +11,7 @@
     "preview": "vite preview",
     "tauri": "tauri"
   },
-  "license": "MIT",
+  "license": "GPL-3.0",
   "dependencies": {
     "@internationalized/date": "^3.6.0",
     "@tauri-apps/api": "^2",
