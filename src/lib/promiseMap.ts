@@ -1,32 +1,56 @@
-// Create a Map to store promises and their resolve functions
-const promiseMap: Map<string, { promise: Promise<void>; resolve: () => void, reject: (err: any) => void }> =
-  new Map();
+type ResolveFn = () => void;
+type RejectFn = (err: any) => void;
 
-export function addPromise(taskId: string): Promise<void> {
-  // Create a new promise and store its resolve function
-  let resolveFunction: () => void;
-  let rejectFunction: (err: any) => void;
+// Map to store promises and their resolve and reject functions.
+const promiseMap: Map<
+  string,
+  { promise: Promise<void>; resolve: ResolveFn; reject: RejectFn }
+> = new Map();
+
+/**
+ * Create and return a promise which is assigned an id and returns a result
+ * when another method calls the "resolvePromise" or "rejectPromise" methods
+ * with the same identifier.
+ *
+ * This helper method can be used to await the result in one part of the
+ * application which might be finished somewhere else.
+ */
+export function promiseResult(id: string): Promise<void> {
+  let resolveFn: ResolveFn;
+  let rejectFn: RejectFn;
+
   const promise = new Promise<void>((resolve, reject) => {
-    resolveFunction = resolve;
-    rejectFunction = reject;
+    resolveFn = resolve;
+    rejectFn = reject;
   });
 
-  promiseMap.set(taskId, { promise, resolve: resolveFunction!, reject: rejectFunction! });
+  promiseMap.set(id, {
+    promise,
+    resolve: resolveFn!,
+    reject: rejectFn!,
+  });
 
   return promise;
 }
 
-// Function to manually resolve a promise in the Map
-export function resolvePromise(taskId: string): void {
-  const task = promiseMap.get(taskId);
+/**
+ * Resolve the promise with the given id.
+ */
+export function resolvePromise(id: string): void {
+  const task = promiseMap.get(id);
   if (task) {
     task.resolve();
+    promiseMap.delete(id);
   }
 }
 
-export function rejectPromise(taskId: string, err: any): void {
-  const task = promiseMap.get(taskId);
+/**
+ * Reject the promise with the given id including an optional error value.
+ */
+export function rejectPromise(id: string, err: any): void {
+  const task = promiseMap.get(id);
   if (task) {
     task.reject(err);
+    promiseMap.delete(id);
   }
 }

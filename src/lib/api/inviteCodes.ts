@@ -1,12 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
 import { calendars } from "$lib/api";
 
-const RESOLVE_INVITE_CODE_TIMEOUT = 1000 * 30;
-const SEND_INVITE_CODE_FREQUENCY = 1000 * 5;
-
-type InviteCodeState = {
+type InviteCodesState = {
   inviteCode: string | null;
-  callbackFn: null | ((resolved: ResolvedCalendar) => void);
+  onResolved: null | ((resolved: ResolvedCalendar) => void);
 };
 
 type ResolvedCalendar = {
@@ -14,10 +11,17 @@ type ResolvedCalendar = {
   name: string;
 };
 
-const pendingInviteCode: InviteCodeState = {
+const RESOLVE_TIMEOUT_MS = 1000 * 30;
+const SEND_FREQUENCY_MS = 1000 * 5;
+
+const pendingInviteCode: InviteCodesState = {
   inviteCode: null,
-  callbackFn: null,
+  onResolved: null,
 };
+
+/*
+ * Commands
+ */
 
 export async function resolve(inviteCode: string): Promise<ResolvedCalendar> {
   // Get local calendars
@@ -32,56 +36,67 @@ export async function resolve(inviteCode: string): Promise<ResolvedCalendar> {
   }
 
   return new Promise((resolve, reject) => {
-    // Clear up state and throw an error if we've waited for too long without any answer.
+    // Clear up state and throw an error if we've waited for too long without
+    // any answer.
     const timeout = setTimeout(() => {
-      pendingInviteCode.inviteCode = null;
-      pendingInviteCode.callbackFn = null;
+      reset();
       clearInterval(interval);
       reject("couldn't resolve invite code within given time");
-    }, RESOLVE_INVITE_CODE_TIMEOUT);
+    }, RESOLVE_TIMEOUT_MS);
 
     // Prepare callback for awaiting a response coming from the channel.
     pendingInviteCode.inviteCode = inviteCode;
-    pendingInviteCode.callbackFn = (calendar) => {
+    pendingInviteCode.onResolved = (calendar) => {
+      reset();
       clearTimeout(timeout);
       clearInterval(interval);
       resolve(calendar);
     };
 
     // Initial request to network
-    send(inviteCode);
-    // Broadcast request every x seconds into the network, hopefully someone will answer ..
+    sendRequest(inviteCode);
+    // Broadcast request every x seconds into the network, hopefully someone
+    // will answer ..
     const interval = setInterval(() => {
-      send(inviteCode);
-    }, SEND_INVITE_CODE_FREQUENCY);
+      sendRequest(inviteCode);
+    }, SEND_FREQUENCY_MS);
   });
 }
 
-export async function process(message: ChannelMessage) {
-  if (message.event === "invite_codes_ready") {
-    // Do nothing for now
-  } else if (message.event === "invite_codes") {
-    if (message.data.messageType === "request") {
-      respond(message.data.inviteCode);
-    }
-
-    if (message.data.messageType === "response") {
-      handleResponse(message.data);
-    }
-  }
+function reset() {
+  pendingInviteCode.inviteCode = null;
+  pendingInviteCode.onResolved = null;
 }
 
-async function send(inviteCode: string) {
+async function sendRequest(inviteCode: string) {
   const payload: ResolveInviteCodeRequest = {
-    inviteCode,
-    timestamp: Date.now(),
     messageType: "request",
+    timestamp: Date.now(),
+    inviteCode,
   };
 
   await invoke("publish_to_invite_code_overlay", { payload });
 }
 
-async function respond(inviteCode: string) {
+/*
+ * Processor
+ */
+
+export async function process(
+  message: InviteCodesReadyMessage | InviteCodesMessage,
+) {
+  if (message.event === "invite_codes_ready") {
+    // Do nothing for now
+  } else if (message.event === "invite_codes") {
+    if (message.data.messageType === "request") {
+      onRequest(message.data.inviteCode);
+    } else if (message.data.messageType === "response") {
+      onResponse(message.data);
+    }
+  }
+}
+
+async function onRequest(inviteCode: string) {
   const calendar = await calendars.findByInviteCode(inviteCode);
   if (!calendar) {
     // We can't answer this request, ignore it.
@@ -89,26 +104,27 @@ async function respond(inviteCode: string) {
   }
 
   const payload: ResolveInviteCodeResponse = {
+    messageType: "response",
+    timestamp: Date.now(),
+    inviteCode,
     calendarId: calendar.id,
     calendarName: calendar.name,
-    inviteCode,
-    timestamp: Date.now(),
-    messageType: "response",
   };
   await invoke("publish_to_invite_code_overlay", { payload });
 }
 
-async function handleResponse(response: ResolveInviteCodeResponse) {
+async function onResponse(response: ResolveInviteCodeResponse) {
   if (pendingInviteCode.inviteCode !== response.inviteCode) {
     // Ignore this invite code response, it's not for us.
     return;
   }
 
-  if (!pendingInviteCode.callbackFn) {
+  if (!pendingInviteCode.onResolved) {
+    // Ignore, we're not looking for one right now.
     return;
   }
 
-  pendingInviteCode.callbackFn({
+  pendingInviteCode.onResolved({
     id: response.calendarId,
     name: response.calendarName,
   });
