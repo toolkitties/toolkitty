@@ -4,6 +4,9 @@
 # This allows us to launch multiple Tauri instances in developer mode at the
 # same time and helps with testing the p2p network on the same machine.
 #
+# This disables vite's hot-mode-reloading via for now as it breaks
+# re-initialization of the frontend-backend Tauri channel.
+#
 # Example:
 #
 # TAURI_CLI_PORT=1234 ./peer.sh
@@ -15,12 +18,10 @@ TAURI_CLI_PORT="${TAURI_CLI_PORT:-$random_port}"
 tauri_json_config="{
   \"build\": {
     \"devUrl\": \"http://localhost:$TAURI_CLI_PORT\",
-    \"beforeDevCommand\": \"npm run dev -- --port $TAURI_CLI_PORT\"
+    \"beforeDevCommand\": \"VITE_DISABLE_HMR=1 npm run dev -- --port $TAURI_CLI_PORT\"
   }
 }"
 
-# Disable hot-mode-reloading via --no-watch for now as it breaks
-# re-initialization of the frontend-backend Tauri channel.
 ./node_modules/.bin/tauri dev \
   --no-dev-server \
   --no-watch \
