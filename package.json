@@ -7,10 +7,9 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "dev": "vite dev",
+    "peer": "./scripts/peer.sh",
     "preview": "vite preview",
-    "tauri": "tauri",
-    "peer-a": "TAURI_CLI_PORT=1420 tauri dev --no-watch --config '{\"build\": {\"devUrl\": \"http://localhost:1420\", \"beforeDevCommand\": \"npm run dev -- --port 1420\"}}'",
-    "peer-b": "TAURI_CLI_PORT=1430 tauri dev --no-watch --config '{\"build\": {\"devUrl\": \"http://localhost:1430\", \"beforeDevCommand\": \"npm run dev -- --port 1430\"}}'"
+    "tauri": "tauri"
   },
   "license": "MIT",
   "dependencies": {
