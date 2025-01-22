@@ -28,28 +28,25 @@ We are planning to launch the app in mid-2025
 ## Getting started
 
 Make sure you have installed the prerequisites for your OS: https://tauri.app/start/prerequisites/, then run:
-  
-  `npm install`
-  
-  `npm run tauri android init`
-  
-  `npm run tauri ios init`
 
+```bash
+# Install dependencies
+npm install
 
-For Desktop development, run:
-  `npm run tauri dev`
+# Initialize environments for Android and iOS development
+npm run tauri android init
+npm run tauri ios init
 
+# Start Desktop application in development mode
+npm run tauri dev
 
-For Android development, run:
-  `npm run tauri android dev`
+# Start Android app in development mode
+npm run tauri android dev
 
-For iOS development, run:
-  `npm run tauri ios dev`
+# Start iOS app in development mode
+npm run tauri ios dev
 
-To launch multiple instances of the app, run: 
-
-  `npm run dev`
-
-  `npm run headless`
-
-  `npm run headless`
+# For testing the p2p functionality you can run the application multiple times
+# on the same machine, repeat this command per peer you want to launch
+npm run peer
+```

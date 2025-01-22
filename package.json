@@ -7,9 +7,9 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "dev": "vite dev",
+    "peer": "./scripts/peer.sh",
     "preview": "vite preview",
-    "tauri": "tauri",
-    "headless": "tauri dev --no-watch --config '{\"build\": {\"beforeDevCommand\": \"\"}}'"
+    "tauri": "tauri"
   },
   "license": "MIT",
   "dependencies": {
