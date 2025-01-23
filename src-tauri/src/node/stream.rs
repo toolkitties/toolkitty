@@ -4,14 +4,131 @@ use p2panda_stream::IngestExt;
 use serde::ser::SerializeStruct;
 use serde::Serialize;
 use thiserror::Error;
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, oneshot};
 use tokio::task::JoinHandle;
 use tokio_stream::wrappers::ReceiverStream;
 use tokio_stream::StreamExt;
 
-use crate::node::operation::{Extensions, LogId};
+use crate::node::operation::{CalendarId, Extensions, LogId};
 
-use super::operation::CalendarId;
+#[allow(clippy::large_enum_variant, dead_code)]
+pub enum ToStreamController {
+    Ingest {
+        header: Header<Extensions>,
+        body: Option<Body>,
+        header_bytes: Vec<u8>,
+    },
+    Ack {
+        operation_id: Hash,
+        reply: oneshot::Sender<Result<(), AckError>>,
+    },
+    Replay {},
+}
+
+#[allow(dead_code)]
+pub struct StreamController {
+    store: MemoryStore<LogId, Extensions>,
+    processor_handle: JoinHandle<()>,
+}
+
+impl StreamController {
+    pub fn new(
+        store: MemoryStore<LogId, Extensions>,
+    ) -> (
+        Self,
+        mpsc::Sender<ToStreamController>,
+        mpsc::Receiver<StreamEvent>,
+    ) {
+        let rt = tokio::runtime::Handle::current();
+
+        let (app_tx, app_rx) = mpsc::channel(1024);
+
+        let (processor_tx, processor_rx) = mpsc::channel(1024);
+        let processor_rx = ReceiverStream::new(processor_rx);
+
+        let (stream_tx, mut stream_rx) = mpsc::channel(1024);
+
+        rt.spawn(async move {
+            loop {
+                match stream_rx.recv().await {
+                    Some(ToStreamController::Ingest {
+                        header,
+                        body,
+                        header_bytes,
+                    }) => {
+                        if let Err(_err) = processor_tx.send((header, body, header_bytes)).await {
+                            // @TODO: Handle error
+                        }
+                    }
+                    Some(ToStreamController::Ack {
+                        operation_id,
+                        reply,
+                    }) => {}
+                    Some(ToStreamController::Replay {}) => {
+                        // @TODO: Implement replay logic
+                    }
+                    None => break,
+                }
+            }
+        });
+
+        let processor_handle = {
+            let store = store.clone();
+
+            rt.spawn(async move {
+                let mut processor =
+                    processor_rx
+                        .ingest(store, 512)
+                        .filter_map(|result| match result {
+                            Ok(operation) => Some(operation),
+                            Err(_err) => {
+                                // @TODO(adz): Which errors do we want to report to the application and
+                                // which not? It might become pretty spammy in some cases and I'm not sure
+                                // if the frontend can do anything about it?
+
+                                // app_tx
+                                //     .blocking_send(StreamEvent::from_error(
+                                //         StreamError::IngestError(err),
+                                //         // @TODO: We should be able to get the operation causing the error.
+                                //         result.header,
+                                //     ))
+                                //     .expect("app_tx send");
+                                None
+                            }
+                        });
+
+                loop {
+                    match processor.next().await {
+                        Some(operation) => {
+                            // If the operation has a body we want to forward it to the application
+                            // layer as it might contain more information relevant for it.
+                            if let Some(body) = operation.body {
+                                app_tx
+                                    .send(StreamEvent::new(operation.header, body))
+                                    .await
+                                    .expect("app_tx send");
+                            }
+                        }
+                        None => {
+                            // @TODO(adz): Panicking here probably doesn't make any sense, I'll keep it
+                            // here until I understand the error handling better.
+                            panic!("processor stream ended");
+                        }
+                    }
+                }
+            })
+        };
+
+        (
+            Self {
+                store,
+                processor_handle,
+            },
+            stream_tx,
+            app_rx,
+        )
+    }
+}
 
 #[derive(Clone, Debug)]
 pub struct StreamEvent {
@@ -103,121 +220,6 @@ impl Serialize for StreamError {
         S: serde::ser::Serializer,
     {
         serializer.serialize_str(&self.to_string())
-    }
-}
-
-#[allow(clippy::large_enum_variant, dead_code)]
-pub enum ToStreamController {
-    Ingest {
-        header: Header<Extensions>,
-        body: Option<Body>,
-        header_bytes: Vec<u8>,
-    },
-    Ack {},
-    Replay {},
-}
-
-#[allow(dead_code)]
-pub struct StreamController {
-    store: MemoryStore<LogId, Extensions>,
-    processor_handle: JoinHandle<()>,
-}
-
-impl StreamController {
-    pub fn new(
-        store: MemoryStore<LogId, Extensions>,
-    ) -> (
-        Self,
-        mpsc::Sender<ToStreamController>,
-        mpsc::Receiver<StreamEvent>,
-    ) {
-        let rt = tokio::runtime::Handle::current();
-
-        let (app_tx, app_rx) = mpsc::channel(1024);
-
-        let (processor_tx, processor_rx) = mpsc::channel(1024);
-        let processor_rx = ReceiverStream::new(processor_rx);
-
-        let (stream_tx, mut stream_rx) = mpsc::channel(1024);
-
-        rt.spawn(async move {
-            loop {
-                match stream_rx.recv().await {
-                    Some(ToStreamController::Ingest {
-                        header,
-                        body,
-                        header_bytes,
-                    }) => {
-                        if let Err(_err) = processor_tx.send((header, body, header_bytes)).await {
-                            // @TODO: Handle error
-                        }
-                    }
-                    Some(ToStreamController::Ack {}) => {
-                        // @TODO: Implement ack logic
-                    }
-                    Some(ToStreamController::Replay {}) => {
-                        // @TODO: Implement replay logic
-                    }
-                    None => break,
-                }
-            }
-        });
-
-        let processor_handle = {
-            let store = store.clone();
-
-            rt.spawn(async move {
-                let mut processor =
-                    processor_rx
-                        .ingest(store, 512)
-                        .filter_map(|result| match result {
-                            Ok(operation) => Some(operation),
-                            Err(_err) => {
-                                // @TODO(adz): Which errors do we want to report to the application and
-                                // which not? It might become pretty spammy in some cases and I'm not sure
-                                // if the frontend can do anything about it?
-
-                                // app_tx
-                                //     .blocking_send(StreamEvent::from_error(
-                                //         StreamError::IngestError(err),
-                                //         // @TODO: We should be able to get the operation causing the error.
-                                //         result.header,
-                                //     ))
-                                //     .expect("app_tx send");
-                                None
-                            }
-                        });
-
-                loop {
-                    match processor.next().await {
-                        Some(operation) => {
-                            // If the operation has a body we want to forward it to the application
-                            // layer as it might contain more information relevant for it.
-                            if let Some(body) = operation.body {
-                                app_tx
-                                    .send(StreamEvent::new(operation.header, body))
-                                    .await
-                                    .expect("app_tx send");
-                            }
-                        }
-                        None => {
-                            // @TODO(adz): Panicking here probably doesn't make any sense, I'll keep it
-                            // here until I understand the error handling better.
-                            panic!("processor stream ended");
-                        }
-                    }
-                }
-            })
-        };
-
-        (
-            Self {
-                store,
-                processor_handle,
-            },
-            stream_tx,
-            app_rx,
-        )
     }
 }
 

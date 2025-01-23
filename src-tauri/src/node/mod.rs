@@ -112,13 +112,18 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
         ))
     }
 
-    pub async fn ack(&mut self, _operation_id: Hash) -> Result<(), AckError> {
+    /// Acknowledge operations to mark them as successfully processed in the stream controller.
+    pub async fn ack(&mut self, operation_id: Hash) -> Result<(), AckError> {
+        let (reply_tx, reply_rx) = oneshot::channel();
         self.stream_tx
-            .send(ToStreamController::Ack {})
+            .send(ToStreamController::Ack {
+                operation_id,
+                reply: reply_tx,
+            })
             .await
-            // @TODO: Handle error.
-            .unwrap();
-        Ok(())
+            .expect("send stream_tx");
+        let result = reply_rx.await.expect("receive reply_rx");
+        result
     }
 
     pub async fn publish_ephemeral(

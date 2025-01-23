@@ -48,6 +48,8 @@ async fn init(
     Ok(())
 }
 
+
+/// Acknowledge operations to mark them as successfully processed in the stream controller.
 #[tauri::command]
 async fn ack(state: State<'_, Mutex<AppContext>>, operation_id: Hash) -> Result<(), AckError> {
     let mut state = state.lock().await;
