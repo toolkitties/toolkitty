@@ -4,6 +4,7 @@
   import { inviteCodes, calendars } from "$lib/api";
   import { db } from "$lib/db";
   import { appConfigDir } from "@tauri-apps/api/path";
+  import { joinWithInviteCode } from "$lib/api/onboarding";
 
   let value: string[] | undefined = [];
 
@@ -23,20 +24,13 @@
     let calendar;
     try {
       progress = "pending";
-      // @TODO: We probably want a "higher-level" API method here which handles
-      // the whole "joinExistingCalendar" onboarding flow by 1. resolve invite
-      // code 2. add resolved calendar to database & set it to "active" 3.
-      // maybe more ..
-      calendar = await inviteCodes.resolve(value.join(""));
+      calendar = await joinWithInviteCode(value.join(""));
     } catch (err) {
       timedOut = true;
       progress = "dormant";
       console.error(err);
       return;
     }
-
-    await calendars.select(calendar.id);
-    await calendars.subscribe(calendar.id);
 
     goto(`/join?code=${calendar.id}`);
   }
