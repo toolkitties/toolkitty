@@ -56,6 +56,24 @@ export async function create(
   return hash;
 }
 
+/**
+ * Select a new calendar. This tells the backend to only forward events associated with the passed
+ * calendar to the frontend. Events for any other calendar we are subscribed to will not be
+ * processed by the frontend.
+ */
+export async function select(calendarId: Hash) {
+  await invoke("select_calendar", { calendarId });
+}
+
+/**
+ * Subscribe to a calendar. This tells the backend to subscribe to all topics associated with this
+ * calendar, enter gossip overlays and sync with any discovered peers. It does not effect which
+ * calendar events are forwarded to the frontend.
+ */
+export async function subscribe(calendarId: Hash) {
+  await invoke("subscribe_to_calendar", { calendarId });
+}
+
 /*
  * Processor
  */
@@ -79,14 +97,4 @@ async function onCalendarCreated(
     ownerId: meta.publicKey,
     name: data.name,
   });
-}
-
-// @TODO: move to own module and add doc string
-export async function select(calendarId: Hash) {
-  await invoke("select_calendar", { calendarId });
-}
-
-// @TODO: move to own module and add doc string
-export async function subscribe(calendarId: Hash) {
-  await invoke("subscribe_to_calendar", { calendarId });
 }
