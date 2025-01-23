@@ -34,7 +34,7 @@ pub struct Node<T> {
     store: MemoryStore<LogId, Extensions>,
     #[allow(dead_code)]
     stream: StreamController,
-    stream_tx: mpsc::Sender<ToStreamController>,
+    stream_tx: mpsc::Sender<ToStreamController<T>>,
     network_actor_tx: mpsc::Sender<ToNodeActor<T>>,
     #[allow(dead_code)]
     actor_handle: Shared<MapErr<AbortOnDropHandle<()>, JoinErrToStr>>,
@@ -123,6 +123,16 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
             .await
             .expect("send stream_tx");
         reply_rx.await.expect("receive reply_rx")
+    }
+
+    /// Send all unacknowledged operations again on the stream which belong to this topic.
+    pub async fn replay(&mut self, topic: &T) {
+        self.stream_tx
+            .send(ToStreamController::Replay {
+                topic: topic.to_owned(),
+            })
+            .await
+            .expect("send stream_tx");
     }
 
     pub async fn publish_ephemeral(

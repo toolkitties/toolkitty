@@ -6,6 +6,7 @@ use std::sync::Arc;
 use p2panda_core::{Body, Extension, Hash, Header, PublicKey};
 use p2panda_store::MemoryStore;
 use p2panda_stream::IngestExt;
+use p2panda_sync::TopicQuery;
 use serde::ser::SerializeStruct;
 use serde::Serialize;
 use thiserror::Error;
@@ -17,7 +18,7 @@ use tokio_stream::StreamExt;
 use crate::node::operation::{CalendarId, Extensions, LogId};
 
 #[allow(clippy::large_enum_variant, dead_code)]
-pub enum ToStreamController {
+pub enum ToStreamController<T> {
     Ingest {
         header: Header<Extensions>,
         body: Option<Body>,
@@ -27,7 +28,9 @@ pub enum ToStreamController {
         operation_id: Hash,
         reply: oneshot::Sender<Result<(), AckError>>,
     },
-    Replay {},
+    Replay {
+        topic: T,
+    },
 }
 
 #[allow(dead_code)]
@@ -38,11 +41,11 @@ pub struct StreamController {
 }
 
 impl StreamController {
-    pub fn new(
+    pub fn new<T: TopicQuery + 'static>(
         operation_store: MemoryStore<LogId, Extensions>,
     ) -> (
         Self,
-        mpsc::Sender<ToStreamController>,
+        mpsc::Sender<ToStreamController<T>>,
         mpsc::Receiver<StreamEvent>,
     ) {
         let rt = tokio::runtime::Handle::current();
@@ -77,7 +80,7 @@ impl StreamController {
                             let Ok(_) = controller_store.ack(operation_id).await;
                             reply.send(Ok(())).ok();
                         }
-                        Some(ToStreamController::Replay {}) => {
+                        Some(ToStreamController::Replay { topic }) => {
                             // @TODO: Implement replay logic
                         }
                         None => break,
