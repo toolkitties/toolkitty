@@ -193,6 +193,7 @@ type Calendar = {
   id: Hash;
   ownerId: PublicKey;
   name: string;
+  // TODO: Should we support non-consecutive dates? It could be arrays of TimeSpan?
   startDate?: Date;
   endDate?: Date;
 };
@@ -207,7 +208,7 @@ type CalendarEvent = {
   endDate: Date; // allocated time of a space
   publicStartDate: Date | null; // public facing
   publicEndDate: Date | null; // public facing
-  resources: Resource[];
+  resources: ResourceRequest[];
   links: Link[];
   images: Image[];
 };
