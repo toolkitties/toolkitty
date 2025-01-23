@@ -1,3 +1,15 @@
+/*
+ *  _   __   
+ * ( `︶` )) 
+ * |     ||  
+ * |     || 
+ * '-----'`
+ * Toasts are temporary messages shown to the user when certain events happen.
+ * They can contain a link which will direct the user to another page.
+ * 
+ */
+
+
 // Set default timeout for toast
 const TOAST_TIMEOUT = 5000;
 
@@ -15,7 +27,6 @@ class Toast {
     this.link = "";
   }
 }
-
 class Toasts {
   toasts: Toast[] = $state([]);
 
@@ -42,6 +53,14 @@ class Toasts {
     setTimeout(() => this.dismissToast(id), TOAST_TIMEOUT);
   }
 
+  private dismissToast(id: number) {
+    this.toasts = this.toasts.filter((toast) => toast.id !== id);
+  }
+
+  /*
+   * Public methods to create new toasts
+   */
+
   success(message: string, link?: string) {
     this.addToast("success", message, link);
   }
@@ -52,10 +71,6 @@ class Toasts {
 
   info(message: string, link?: string) {
     this.addToast("info", message, link)
-  }
-
-  dismissToast(id: number) {
-    this.toasts = this.toasts.filter((toast) => toast.id !== id);
   }
 }
 
