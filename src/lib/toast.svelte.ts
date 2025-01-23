@@ -23,7 +23,7 @@ class Toasts {
     this.toasts = [];
   }
 
-  addToast(type: ToastType, message: string, link?: string) {
+  private addToast(type: ToastType, message: string, link?: string) {
 
     // Create unique id for toast so it can be easily removed.
     const id = Math.floor(Math.random() * 1000000);
