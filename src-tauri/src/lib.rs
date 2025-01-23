@@ -18,7 +18,7 @@ use crate::node::{AckError, Node, PublishError, StreamEvent};
 use crate::topic::{NetworkTopic, TopicMap};
 
 struct AppContext {
-    node: Node<NetworkTopic>,
+    node: Node<NetworkTopic, TopicMap>,
     store: MemoryStore<LogId, Extensions>,
     private_key: PrivateKey,
     selected_calendar: Option<CalendarId>,
@@ -76,6 +76,7 @@ async fn subscribe_to_calendar(
             .send(ChannelEvent::SubscribedToCalendar(calendar_id))
             .expect("can send on app tx");
     }
+
     Ok(())
 }
 
@@ -85,11 +86,18 @@ async fn select_calendar(
     calendar_id: CalendarId,
 ) -> Result<(), PublishError> {
     let mut state = state.lock().await;
+
     state.selected_calendar = Some(calendar_id);
+
+    // Ask stream controller to re-play all operations inside this topic which haven't been
+    // acknowledged yet by the frontend.
+    state.node.replay(&NetworkTopic::Calendar { calendar_id }).await;
+
     state
         .to_app_tx
         .send(ChannelEvent::CalendarSelected(calendar_id))
-        .expect("can send on app tx");
+        .expect("send to_app_tx");
+
     Ok(())
 }
 
@@ -114,16 +122,6 @@ async fn create_calendar(
     let hash = header.hash();
     let calendar_id = hash.into();
     let topic = NetworkTopic::Calendar { calendar_id };
-
-    // @TODO: It would be clearer if this "selecting" of the calendar was handled by calling the
-    // IPC method from the front end. This is not possible until we have re-play of un-acked
-    // operations though, as currently there is the chance that operations are missed (and not
-    // re-played) if we don't select here.
-    state.selected_calendar = Some(calendar_id);
-    state
-        .to_app_tx
-        .send(ChannelEvent::CalendarSelected(calendar_id))
-        .expect("can send on app tx");
 
     // This is a new calendar and so we have never subscribed to it's topic yet. Do this before
     // actually publishing the create event.
@@ -210,7 +208,7 @@ pub fn run() {
                 let store = MemoryStore::new();
                 let topic_map = TopicMap::new();
 
-                let (node, stream_rx, system_events_rx) = Node::<NetworkTopic>::new(
+                let (node, stream_rx, system_events_rx) = Node::<NetworkTopic, TopicMap>::new(
                     private_key.clone(),
                     store.clone(),
                     topic_map.clone(),
@@ -329,6 +327,10 @@ async fn forward_to_app_layer(
 
                     // Check if the event is associated with the currently selected calendar. We
                     // only forward it up to the application if it is.
+                    //
+                    // @TODO: This is filtering out the operations _after_ they've been processed
+                    // by the backend. We should go through the whole processing pipeline when
+                    // selected and not at all when not.
                     if let Some(selected_calendar) = state.selected_calendar {
                         if selected_calendar != meta.calendar_id {
                             return;

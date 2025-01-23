@@ -27,7 +27,7 @@ fn network_id() -> [u8; 32] {
     Hash::new(b"toolkitty").into()
 }
 
-pub struct Node<T> {
+pub struct Node<T, TM> {
     #[allow(dead_code)]
     private_key: PrivateKey,
     #[allow(dead_code)]
@@ -38,10 +38,15 @@ pub struct Node<T> {
     network_actor_tx: mpsc::Sender<ToNodeActor<T>>,
     #[allow(dead_code)]
     actor_handle: Shared<MapErr<AbortOnDropHandle<()>, JoinErrToStr>>,
+    topic_map: TM,
 }
 
-impl<T: TopicId + TopicQuery + 'static> Node<T> {
-    pub async fn new<TM: TopicLogMap<T, LogId> + 'static>(
+impl<T, TM> Node<T, TM>
+where
+    T: TopicId + TopicQuery + 'static,
+    TM: Clone + TopicLogMap<T, LogId> + 'static,
+{
+    pub async fn new(
         private_key: PrivateKey,
         store: MemoryStore<LogId, Extensions>,
         topic_map: TM,
@@ -73,7 +78,7 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
 
         let mdns = LocalDiscovery::new();
 
-        let sync_protocol = LogSyncProtocol::new(topic_map, store.clone());
+        let sync_protocol = LogSyncProtocol::new(topic_map.clone(), store.clone());
         let sync_config = SyncConfiguration::new(sync_protocol);
 
         let network = NetworkBuilder::new(network_id())
@@ -106,6 +111,7 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
                 stream_tx,
                 network_actor_tx,
                 actor_handle: actor_drop_handle,
+                topic_map,
             },
             stream_rx,
             system_events_rx,
@@ -127,10 +133,14 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
 
     /// Send all unacknowledged operations again on the stream which belong to this topic.
     pub async fn replay(&mut self, topic: &T) {
+        let logs = self
+            .topic_map
+            .get(&topic)
+            .await
+            .map_or(vec![], |map| map.values().flatten().cloned().collect());
+
         self.stream_tx
-            .send(ToStreamController::Replay {
-                topic: topic.to_owned(),
-            })
+            .send(ToStreamController::Replay { logs })
             .await
             .expect("send stream_tx");
     }
