@@ -16,6 +16,10 @@ const db = new Dexie("CalendarDatabase") as Dexie & {
     CalendarEvent,
     "id" // primary key
   >;
+  settings: EntityTable<
+    Settings,
+    "name" // primary key
+  >;
 };
 
 /**
@@ -30,6 +34,7 @@ const db = new Dexie("CalendarDatabase") as Dexie & {
 db.version(1).stores({
   calendars: "&id, name",
   events: "&id, name, date, calendarId",
+  settings: "&name"
 });
 
 export { db };
