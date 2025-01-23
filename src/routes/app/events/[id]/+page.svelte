@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <script lang="ts">
     interface Image {
         url: string;
@@ -70,3 +71,10 @@
 {/each}
 
 
+=======
+<script>
+  import Header from "../../../../components/header.svelte";
+</script>
+
+<Header title="Event title" />
+>>>>>>> main
