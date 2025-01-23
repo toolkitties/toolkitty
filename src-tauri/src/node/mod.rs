@@ -7,13 +7,13 @@ use futures_util::future::{MapErr, Shared};
 use futures_util::{FutureExt, TryFutureExt};
 use p2panda_core::{Body, Hash, Header, PrivateKey};
 use p2panda_discovery::mdns::LocalDiscovery;
-use p2panda_net::{FromNetwork, NetworkBuilder, SyncConfiguration, TopicId};
+use p2panda_net::{FromNetwork, NetworkBuilder, SyncConfiguration, SystemEvent, TopicId};
 use p2panda_store::MemoryStore;
 use p2panda_sync::log_sync::{LogSyncProtocol, TopicLogMap};
 use p2panda_sync::TopicQuery;
 use serde::Serialize;
 use thiserror::Error;
-use tokio::sync::{mpsc, oneshot};
+use tokio::sync::{broadcast, mpsc, oneshot};
 use tokio::task::JoinError;
 use tokio_util::task::AbortOnDropHandle;
 use tracing::error;
@@ -45,7 +45,11 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
         private_key: PrivateKey,
         store: MemoryStore<LogId, Extensions>,
         topic_map: TM,
-    ) -> Result<(Self, mpsc::Receiver<StreamEvent>)> {
+    ) -> Result<(
+        Self,
+        mpsc::Receiver<StreamEvent>,
+        broadcast::Receiver<SystemEvent<T>>,
+    )> {
         let rt = tokio::runtime::Handle::current();
 
         let (stream, stream_tx, stream_rx) = StreamController::new(store.clone());
@@ -79,6 +83,8 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
             .build()
             .await?;
 
+        let system_events_rx = network.events().await?;
+
         let (network_actor_tx, network_actor_rx) = mpsc::channel(64);
         let actor = NodeActor::new(network, network_tx, network_actor_rx);
 
@@ -102,6 +108,7 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
                 actor_handle: actor_drop_handle,
             },
             stream_rx,
+            system_events_rx,
         ))
     }
 

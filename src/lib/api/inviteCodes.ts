@@ -6,7 +6,7 @@ type InviteCodesState = {
   onResolved: null | ((resolved: ResolvedCalendar) => void);
 };
 
-type ResolvedCalendar = {
+export type ResolvedCalendar = {
   id: Hash;
   name: string;
 };
