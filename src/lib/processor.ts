@@ -133,6 +133,10 @@ export async function process(message: ChannelMessage) {
     message.event == "invite_codes"
   ) {
     await onInviteCodesMessage(message);
+  } else if (
+    message.event == "calendar_selected" || message.event == "subscribed_to_calendar" || message.event == "calendar_gossip_joined"
+  ) {
+    await onSystemMessage(message);
   }
 }
 
@@ -162,3 +166,18 @@ async function onInviteCodesMessage(
     console.error(`failed processing invite codes message: ${err}`, message);
   }
 }
+
+async function onSystemMessage(
+  message: SystemMessage,
+) {
+  if (message.event === "calendar_selected") {
+    // @TODO: set selected calendar.
+    console.log("calendar selected: ", message.calendarId);
+  } else if (message.event === "subscribed_to_calendar") {
+    console.log("subscribed to calendar: ", message.calendarId);
+  } else if (message.event === "calendar_gossip_joined") {
+    console.log("joined calendar gossip: ", message.calendarId);
+  }
+}
+
+

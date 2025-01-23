@@ -40,9 +40,7 @@ type ChannelMessage =
   | StreamMessage
   | InviteCodesReadyMessage
   | InviteCodesMessage
-  | CalendarSelected
-  | SubscribedToCalendar
-  | CalendarGossipJoined;
+  | SystemMessage;
 
 /**
  * ଘ(˵╹-╹)━☆•.,¸.•*
@@ -111,14 +109,18 @@ type StreamMessageMeta = {
 
 /**
  * o( ❛ᴗ❛ )o	
- * System Events
+ * System Messages
  */
 
 /**
- * System events occur when an action or event occurred on our own node, they don't represent
+ * System messages occur when an action or event occurred on our own node, they don't represent
  * messages passed around the network. They can be the result of a command being called or some
  * backend state change.
  */
+
+type SystemMessage = CalendarSelected
+  | SubscribedToCalendar
+  | CalendarGossipJoined;
 
 /**
  * We have selected a new calendar and are ready to receive it's events.
