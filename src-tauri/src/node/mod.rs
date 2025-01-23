@@ -122,8 +122,7 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
             })
             .await
             .expect("send stream_tx");
-        let result = reply_rx.await.expect("receive reply_rx");
-        result
+        reply_rx.await.expect("receive reply_rx")
     }
 
     pub async fn publish_ephemeral(

@@ -1,10 +1,15 @@
+use std::collections::HashSet;
+use std::convert::Infallible;
+use std::future::Future;
+use std::sync::Arc;
+
 use p2panda_core::{Body, Extension, Hash, Header, PublicKey};
 use p2panda_store::MemoryStore;
 use p2panda_stream::IngestExt;
 use serde::ser::SerializeStruct;
 use serde::Serialize;
 use thiserror::Error;
-use tokio::sync::{mpsc, oneshot};
+use tokio::sync::{mpsc, oneshot, RwLock};
 use tokio::task::JoinHandle;
 use tokio_stream::wrappers::ReceiverStream;
 use tokio_stream::StreamExt;
@@ -27,19 +32,22 @@ pub enum ToStreamController {
 
 #[allow(dead_code)]
 pub struct StreamController {
-    store: MemoryStore<LogId, Extensions>,
+    controller_store: StreamMemoryStore,
+    operation_store: MemoryStore<LogId, Extensions>,
     processor_handle: JoinHandle<()>,
 }
 
 impl StreamController {
     pub fn new(
-        store: MemoryStore<LogId, Extensions>,
+        operation_store: MemoryStore<LogId, Extensions>,
     ) -> (
         Self,
         mpsc::Sender<ToStreamController>,
         mpsc::Receiver<StreamEvent>,
     ) {
         let rt = tokio::runtime::Handle::current();
+
+        let controller_store = StreamMemoryStore::new();
 
         let (app_tx, app_rx) = mpsc::channel(1024);
 
@@ -48,37 +56,43 @@ impl StreamController {
 
         let (stream_tx, mut stream_rx) = mpsc::channel(1024);
 
-        rt.spawn(async move {
-            loop {
-                match stream_rx.recv().await {
-                    Some(ToStreamController::Ingest {
-                        header,
-                        body,
-                        header_bytes,
-                    }) => {
-                        if let Err(_err) = processor_tx.send((header, body, header_bytes)).await {
-                            // @TODO: Handle error
+        {
+            let controller_store = controller_store.clone();
+
+            rt.spawn(async move {
+                loop {
+                    match stream_rx.recv().await {
+                        Some(ToStreamController::Ingest {
+                            header,
+                            body,
+                            header_bytes,
+                        }) => processor_tx
+                            .send((header, body, header_bytes))
+                            .await
+                            .expect("send processor_tx"),
+                        Some(ToStreamController::Ack {
+                            operation_id,
+                            reply,
+                        }) => {
+                            let Ok(_) = controller_store.ack(operation_id).await;
+                            reply.send(Ok(())).ok();
                         }
+                        Some(ToStreamController::Replay {}) => {
+                            // @TODO: Implement replay logic
+                        }
+                        None => break,
                     }
-                    Some(ToStreamController::Ack {
-                        operation_id,
-                        reply,
-                    }) => {}
-                    Some(ToStreamController::Replay {}) => {
-                        // @TODO: Implement replay logic
-                    }
-                    None => break,
                 }
-            }
-        });
+            });
+        }
 
         let processor_handle = {
-            let store = store.clone();
+            let operation_store = operation_store.clone();
 
             rt.spawn(async move {
                 let mut processor =
                     processor_rx
-                        .ingest(store, 512)
+                        .ingest(operation_store, 512)
                         .filter_map(|result| match result {
                             Ok(operation) => Some(operation),
                             Err(_err) => {
@@ -121,7 +135,8 @@ impl StreamController {
 
         (
             Self {
-                store,
+                controller_store,
+                operation_store,
                 processor_handle,
             },
             stream_tx,
@@ -232,5 +247,34 @@ impl Serialize for AckError {
         S: serde::ser::Serializer,
     {
         serializer.serialize_str(&self.to_string())
+    }
+}
+
+trait StreamControllerStore {
+    type Error;
+
+    fn ack(&self, operation_id: Hash) -> impl Future<Output = Result<(), Self::Error>>;
+}
+
+#[derive(Clone, Debug)]
+struct StreamMemoryStore {
+    acked: Arc<RwLock<HashSet<Hash>>>,
+}
+
+impl StreamMemoryStore {
+    pub fn new() -> Self {
+        Self {
+            acked: Arc::new(RwLock::new(HashSet::new())),
+        }
+    }
+}
+
+impl StreamControllerStore for StreamMemoryStore {
+    type Error = Infallible;
+
+    async fn ack(&self, operation_id: Hash) -> Result<(), Self::Error> {
+        let mut acked = self.acked.write().await;
+        acked.insert(operation_id);
+        Ok(())
     }
 }

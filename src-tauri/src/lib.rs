@@ -173,7 +173,7 @@ async fn publish_calendar_event(
         create_operation(&mut state.store, &private_key, extensions, Some(&payload)).await;
 
     let topic = NetworkTopic::Calendar {
-        calendar_id: calendar_id.into(),
+        calendar_id,
     };
 
     state
@@ -271,6 +271,8 @@ pub fn run() {
 }
 
 /// Task for receiving data from network and forwarding them up to the app layer.
+// @TODO: This needs to be refactored into an own struct.
+#[allow(clippy::too_many_arguments)]
 async fn forward_to_app_layer(
     app: AppHandle,
     mut stream_rx: mpsc::Receiver<StreamEvent>,
