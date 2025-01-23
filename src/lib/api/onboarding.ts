@@ -1,18 +1,18 @@
-import { calendars, inviteCodes } from ".";
-import type { ResolvedCalendar } from "./inviteCodes";
-
+import { calendars, inviteCodes } from "$lib/api";
+import type { ResolvedCalendar } from "$lib/api/inviteCodes";
 
 export async function joinWithInviteCode(
-    inviteCode: string,
-  ): Promise<ResolvedCalendar> {
-    let calendar = await inviteCodes.resolve(inviteCode);
-    await calendars.select(calendar.id);
-    await calendars.subscribe(calendar.id);
+  inviteCode: string,
+): Promise<ResolvedCalendar> {
+  const calendar = await inviteCodes.resolve(inviteCode);
 
-    // @TODO: At this point we've "joined" the calendar but we haven't received the
-    // `CalendarCreated` event yet, which will ultimately update our database state when it's
-    // handled by the calendar processor. Is there a transitory state we need to handle here?
+  await calendars.select(calendar.id);
+  await calendars.subscribe(calendar.id);
 
-    return calendar;
+  // @TODO: At this point we've "joined" the calendar but we haven't received
+  // the `CalendarCreated` event yet, which will ultimately update our database
+  // state when it's handled by the calendar processor. Is there a transitory
+  // state we need to handle here?
+
+  return calendar;
 }
-

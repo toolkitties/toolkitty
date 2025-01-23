@@ -32,9 +32,10 @@ export async function create(
 ): Promise<Hash> {
   // Define the "calendar created" application event.
   //
-  // @TODO: Currently subscribing and selecting the calendar occurs on the backend when this
-  // method is called. It would be more transparent, avoiding hidden side-effects, if this could
-  // happen on the frontend with follow-up IPC calls. This can be refactored when
+  // @TODO: Currently subscribing and selecting the calendar occurs on the
+  // backend when this method is called. It would be more transparent, avoiding
+  // hidden side-effects, if this could happen on the frontend with follow-up
+  // IPC calls. This can be refactored when
   // https://github.com/toolkitties/toolkitty/issues/69 is implemented.
   const payload: CalendarCreatedEvent = {
     type: "calendar_created",
@@ -57,18 +58,19 @@ export async function create(
 }
 
 /**
- * Select a new calendar. This tells the backend to only forward events associated with the passed
- * calendar to the frontend. Events for any other calendar we are subscribed to will not be
- * processed by the frontend.
+ * Select a new calendar. This tells the backend to only forward events
+ * associated with the passed calendar to the frontend. Events for any other
+ * calendar we are subscribed to will not be processed by the frontend.
  */
 export async function select(calendarId: Hash) {
   await invoke("select_calendar", { calendarId });
 }
 
 /**
- * Subscribe to a calendar. This tells the backend to subscribe to all topics associated with this
- * calendar, enter gossip overlays and sync with any discovered peers. It does not effect which
- * calendar events are forwarded to the frontend.
+ * Subscribe to a calendar. This tells the backend to subscribe to all topics
+ * associated with this calendar, enter gossip overlays and sync with any
+ * discovered peers. It does not effect which calendar events are forwarded to
+ * the frontend.
  */
 export async function subscribe(calendarId: Hash) {
   await invoke("subscribe_to_calendar", { calendarId });
