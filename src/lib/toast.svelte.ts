@@ -1,13 +1,14 @@
 // Set default timeout for toast
 const TOAST_TIMEOUT = 5000;
 
+type ToastType = "success" | "error" | "info";
 class Toast {
   message: string;
   id: number;
-  type: "success" | "error";
+  type: ToastType;
   link?: string;
 
-  constructor(message: string, id: number, type: "success" | "error") {
+  constructor(message: string, id: number, type: ToastType) {
     this.message = message;
     this.id = id;
     this.type = type;
@@ -22,7 +23,7 @@ class Toasts {
     this.toasts = [];
   }
 
-  addToast(type: "success" | "error", message: string, link?: string) {
+  addToast(type: ToastType, message: string, link?: string) {
 
     // Create unique id for toast so it can be easily removed.
     const id = Math.floor(Math.random() * 1000000);
@@ -37,8 +38,6 @@ class Toasts {
     // Push new toast to top of list
     this.toasts.push(toast)
 
-    console.log(this.toasts);
-
     // Remove toast after certain amount of time
     setTimeout(() => this.dismissToast(id), TOAST_TIMEOUT);
   }
@@ -49,6 +48,10 @@ class Toasts {
 
   error(message: string, link?: string) {
     this.addToast("error", message, link);
+  }
+
+  info(message: string, link?: string) {
+    this.addToast("info", message, link)
   }
 
   dismissToast(id: number) {
