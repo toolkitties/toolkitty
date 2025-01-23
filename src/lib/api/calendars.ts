@@ -4,9 +4,6 @@ import { promiseResult } from "$lib/promiseMap";
 
 /*
  * Queries
- *
- * Queries only return information about the local application state in a
- * read-only manner, usually by asking the database or backend.
  */
 
 export async function getAll(): Promise<Calendar[]> {
@@ -28,19 +25,6 @@ export function inviteCode(calendar: Calendar): string {
 
 /*
  * Commands
- *
- * Commands are called from the UI or middleware. They create one or more
- * "application events" which get published on the p2p network, ready to be
- * processed by us and other peers.
- *
- * Application events we've created ourselves get processed by the backend
- * stream processor, forwarded to the frontend where they are further processed
- * (and finally acknowledged as "completed").
- *
- * Calling a command, creating the event does _not_ cause any state changes
- * yet. At this stage we simply announced our "intent" that we want to change
- * something on the network. The actual state change happens during processing,
- * see further below.
  */
 
 export async function create(
@@ -69,12 +53,6 @@ export async function create(
 
 /*
  * Processor
- *
- * Application events from us or other peers eventually arrive in our stream
- * processor where we finally change our state based on the given event.
- *
- * The processor gets called whenever an event arrives, which is through the
- * channel.
  */
 
 export async function process(message: ApplicationMessage) {
