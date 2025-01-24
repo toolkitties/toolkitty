@@ -375,6 +375,7 @@ where
 mod tests {
     use p2panda_core::{Hash, PrivateKey, PruneFlag};
     use p2panda_store::MemoryStore;
+    use serde_json::json;
     use tokio::sync::oneshot;
 
     use crate::node::operation::{create_operation, CalendarId, Extensions};
@@ -402,7 +403,12 @@ mod tests {
             &mut operation_store,
             &private_key,
             extensions.clone(),
-            Some(b"organize!"),
+            Some(
+                &serde_json::to_vec(&json!({
+                    "message": "organize!"
+                }))
+                .unwrap(),
+            ),
         )
         .await;
         let header_bytes = header.to_bytes();
@@ -429,6 +435,7 @@ mod tests {
         })
         .await
         .unwrap();
+
         assert!(reply_rx.await.is_ok());
 
         // Ask to replay log, but don't expect anything to be sent.
