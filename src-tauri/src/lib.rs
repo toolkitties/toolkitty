@@ -15,7 +15,7 @@ use thiserror::Error;
 use tokio::sync::{broadcast, mpsc, oneshot, Mutex};
 
 use crate::node::operation::{create_operation, CalendarId, Extensions, LogId};
-use crate::node::{AckError, Node, PublishError, StreamEvent};
+use crate::node::{Node, PublishError, StreamControllerError, StreamEvent};
 use crate::topic::{NetworkTopic, TopicMap};
 
 struct AppContext {
@@ -51,7 +51,10 @@ async fn init(
 
 /// Acknowledge operations to mark them as successfully processed in the stream controller.
 #[tauri::command]
-async fn ack(state: State<'_, Mutex<AppContext>>, operation_id: Hash) -> Result<(), AckError> {
+async fn ack(
+    state: State<'_, Mutex<AppContext>>,
+    operation_id: Hash,
+) -> Result<(), StreamControllerError> {
     let mut state = state.lock().await;
     state.node.ack(operation_id).await?;
     Ok(())
@@ -85,20 +88,20 @@ async fn subscribe_to_calendar(
 async fn select_calendar(
     state: State<'_, Mutex<AppContext>>,
     calendar_id: CalendarId,
-) -> Result<(), PublishError> {
+) -> Result<(), StreamControllerError> {
     let mut state = state.lock().await;
 
     state.selected_calendar = Some(calendar_id);
 
     // Ask stream controller to re-play all operations from logs inside this topic which haven't
     // been acknowledged yet by the frontend.
-    let logs = state
+    if let Some(logs) = state
         .topic_map
         .get(&NetworkTopic::Calendar { calendar_id })
         .await
-        .map_or(vec![], |map| map.values().flatten().cloned().collect());
-
-    state.node.replay(logs).await;
+    {
+        state.node.replay(logs).await?;
+    }
 
     state
         .to_app_tx
@@ -176,9 +179,7 @@ async fn publish_calendar_event(
     let (header, body) =
         create_operation(&mut state.store, &private_key, extensions, Some(&payload)).await;
 
-    let topic = NetworkTopic::Calendar {
-        calendar_id,
-    };
+    let topic = NetworkTopic::Calendar { calendar_id };
 
     state
         .node
@@ -310,7 +311,7 @@ async fn forward_to_app_layer(
                     if let SystemEvent::GossipJoined { topic_id, .. } = event {
                         let state = app.state::<Mutex<AppContext>>();
                         let state = state.lock().await;
-    
+
                         if let Some(NetworkTopic::Calendar{calendar_id}) = state.subscriptions.get(&topic_id) {
                             channel.send(ChannelEvent::CalendarGossipJoined(*calendar_id)).expect("can send on app channel");
                         }

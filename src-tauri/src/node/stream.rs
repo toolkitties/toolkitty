@@ -3,7 +3,7 @@ use std::future::Future;
 use std::sync::Arc;
 
 use p2panda_core::{Body, Extension, Hash, Header, PublicKey};
-use p2panda_store::{MemoryStore, OperationStore};
+use p2panda_store::{LogStore, MemoryStore, OperationStore};
 use p2panda_stream::IngestExt;
 use serde::ser::SerializeStruct;
 use serde::Serialize;
@@ -24,10 +24,11 @@ pub enum ToStreamController {
     },
     Ack {
         operation_id: Hash,
-        reply: oneshot::Sender<Result<(), AckError>>,
+        reply: oneshot::Sender<Result<(), StreamControllerError>>,
     },
     Replay {
-        logs: Vec<LogId>,
+        logs: HashMap<PublicKey, Vec<LogId>>,
+        reply: oneshot::Sender<Result<(), StreamControllerError>>,
     },
 }
 
@@ -78,8 +79,20 @@ impl StreamController {
                             let result = controller_store.ack(operation_id).await;
                             reply.send(result).ok();
                         }
-                        Some(ToStreamController::Replay { logs }) => {
-                            // @TODO: Implement replay logic
+                        Some(ToStreamController::Replay { logs, reply }) => {
+                            match controller_store.unacked(logs).await {
+                                Ok(operations) => {
+                                    for operation in operations {
+                                        processor_tx
+                                            .send(operation)
+                                            .await
+                                            .expect("send processor_tx");
+                                    }
+                                }
+                                Err(err) => {
+                                    reply.send(Err(err)).ok();
+                                }
+                            }
                         }
                         None => break,
                     }
@@ -240,15 +253,15 @@ impl Serialize for StreamError {
 }
 
 #[derive(Debug, Error)]
-pub enum AckError {
+pub enum StreamControllerError {
     #[error("tried do ack unknown operation {0}")]
-    UnknownOperation(Hash),
+    AckedUnknownOperation(Hash),
 
-    #[error("can't derive log id for operation {0}")]
+    #[error("can't extract log id from operation {0}")]
     MissingLogId(Hash),
 }
 
-impl Serialize for AckError {
+impl Serialize for StreamControllerError {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::ser::Serializer,
@@ -257,15 +270,29 @@ impl Serialize for AckError {
     }
 }
 
-trait StreamControllerStore {
+type Operation<E> = (Header<E>, Option<Body>, Vec<u8>);
+
+trait StreamControllerStore<L, E>
+where
+    E: p2panda_core::Extensions,
+{
     type Error;
 
+    /// Mark operation as acknowledged.
     fn ack(&self, operation_id: Hash) -> impl Future<Output = Result<(), Self::Error>>;
+
+    /// Return all operations from given logs which have not yet been acknowledged.
+    fn unacked(
+        &self,
+        logs: HashMap<PublicKey, Vec<L>>,
+    ) -> impl Future<Output = Result<Vec<Operation<E>>, Self::Error>>;
 }
 
 #[derive(Clone, Debug)]
 struct StreamMemoryStore<L, E = ()> {
     operation_store: MemoryStore<L, E>,
+
+    /// Log-height of latest ack per log.
     acked: Arc<RwLock<HashMap<(PublicKey, L), u64>>>,
 }
 
@@ -278,28 +305,67 @@ impl<L, E> StreamMemoryStore<L, E> {
     }
 }
 
-impl<L, E> StreamControllerStore for StreamMemoryStore<L, E>
+impl<L, E> StreamControllerStore<L, E> for StreamMemoryStore<L, E>
 where
     L: p2panda_store::LogId + Send + Sync,
     E: p2panda_core::Extensions + Extension<L> + Send + Sync,
 {
-    type Error = AckError;
+    type Error = StreamControllerError;
 
     async fn ack(&self, operation_id: Hash) -> Result<(), Self::Error> {
         let Ok(Some((header, _))) = self.operation_store.get_operation(operation_id).await else {
-            return Err(AckError::UnknownOperation(operation_id));
+            return Err(StreamControllerError::AckedUnknownOperation(operation_id));
         };
 
         let mut acked = self.acked.write().await;
 
         let log_id: Option<L> = header.extension();
         let Some(log_id) = log_id else {
-            return Err(AckError::MissingLogId(operation_id));
+            return Err(StreamControllerError::MissingLogId(operation_id));
         };
 
         // Remember the "acknowledged" log-height for this log.
         acked.insert((header.public_key, log_id), header.seq_num);
 
         Ok(())
+    }
+
+    async fn unacked(
+        &self,
+        logs: HashMap<PublicKey, Vec<L>>,
+    ) -> Result<Vec<Operation<E>>, Self::Error> {
+        let acked = self.acked.read().await;
+
+        let mut result = Vec::new();
+        for (public_key, log_ids) in logs {
+            for log_id in log_ids {
+                match acked.get(&(public_key, log_id.clone())) {
+                    Some(ack_log_height) => {
+                        let Ok(operations) = self
+                            .operation_store
+                            .get_log(&public_key, &log_id, Some(*ack_log_height))
+                            .await;
+
+                        if let Some(operations) = operations {
+                            for (header, body) in operations {
+                                // @TODO(adz): Getting the encoded header bytes in a second
+                                // database call like this feels redundant and should be possible
+                                // to retreive just from calling "get_log".
+                                let (header_bytes, _) = self
+                                    .operation_store
+                                    .get_raw_operation(header.hash())
+                                    .await
+                                    .expect("memory store to be infallible")
+                                    .expect("operation to be known");
+                                result.push((header, body, header_bytes));
+                            }
+                        }
+                    }
+                    None => continue,
+                }
+            }
+        }
+
+        Ok(result)
     }
 }

@@ -2,10 +2,12 @@ mod actor;
 pub mod operation;
 mod stream;
 
+use std::collections::HashMap;
+
 use anyhow::Result;
 use futures_util::future::{MapErr, Shared};
 use futures_util::{FutureExt, TryFutureExt};
-use p2panda_core::{Body, Hash, Header, PrivateKey};
+use p2panda_core::{Body, Hash, Header, PrivateKey, PublicKey};
 use p2panda_discovery::mdns::LocalDiscovery;
 use p2panda_net::{FromNetwork, NetworkBuilder, SyncConfiguration, SystemEvent, TopicId};
 use p2panda_store::MemoryStore;
@@ -20,8 +22,8 @@ use tracing::error;
 
 use crate::node::actor::{NodeActor, ToNodeActor};
 use crate::node::operation::{encode_gossip_message, Extensions, LogId};
-pub use crate::node::stream::{AckError, StreamEvent};
 use crate::node::stream::{StreamController, ToStreamController};
+pub use crate::node::stream::{StreamControllerError, StreamEvent};
 
 fn network_id() -> [u8; 32] {
     Hash::new(b"toolkitty").into()
@@ -116,7 +118,7 @@ where
     }
 
     /// Acknowledge operations to mark them as successfully processed in the stream controller.
-    pub async fn ack(&mut self, operation_id: Hash) -> Result<(), AckError> {
+    pub async fn ack(&mut self, operation_id: Hash) -> Result<(), StreamControllerError> {
         let (reply_tx, reply_rx) = oneshot::channel();
         self.stream_tx
             .send(ToStreamController::Ack {
@@ -129,11 +131,19 @@ where
     }
 
     /// Send all unacknowledged operations again on the stream which belong to these logs.
-    pub async fn replay(&mut self, logs: Vec<LogId>) {
+    pub async fn replay(
+        &mut self,
+        logs: HashMap<PublicKey, Vec<LogId>>,
+    ) -> Result<(), StreamControllerError> {
+        let (reply_tx, reply_rx) = oneshot::channel();
         self.stream_tx
-            .send(ToStreamController::Replay { logs })
+            .send(ToStreamController::Replay {
+                logs,
+                reply: reply_tx,
+            })
             .await
             .expect("send stream_tx");
+        reply_rx.await.expect("receive reply_rx")
     }
 
     pub async fn publish_ephemeral(

@@ -94,10 +94,10 @@ impl Extension<CalendarId> for Extensions {
 
 impl Extension<PruneFlag> for Extensions {
     fn extract(header: &Header<Self>) -> Option<PruneFlag> {
-        match &header.extensions {
-            Some(extensions) => Some(extensions.prune_flag.clone()),
-            None => None,
-        }
+        header
+            .extensions
+            .as_ref()
+            .map(|extensions| extensions.prune_flag.clone())
     }
 }
 
