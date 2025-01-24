@@ -108,7 +108,7 @@ type StreamMessageMeta = {
 };
 
 /**
- * o( ❛ᴗ❛ )o	
+ * o( ❛ᴗ❛ )o
  * System Messages
  */
 
@@ -118,7 +118,8 @@ type StreamMessageMeta = {
  * backend state change.
  */
 
-type SystemMessage = CalendarSelected
+type SystemMessage =
+  | CalendarSelected
   | SubscribedToCalendar
   | CalendarGossipJoined;
 
@@ -209,14 +210,319 @@ type ResolveInviteCodeResponse = {
  * similar words for this), we've created or changed our application data
  * which is further defined below.
  */
-type ApplicationEvent = CalendarCreatedEvent;
 
-type CalendarCreatedEvent = {
-  type: "calendar_created";
+type ApplicationEvent =
+  | UserNameAssigned
+  | CalendarCreated
+  | CalendarUpdated
+  | CalendarDeleted
+  | CalendarAccessRequested
+  | CalendarAccessAccepted
+  | CalendarAccessRejected
+  | CalendarAccessRejected
+  | SpaceCreated
+  | SpaceUpdated
+  | SpaceDeleted
+  | ResourceCreated
+  | ResourceUpdated
+  | ResourceDeleted
+  | EventCreated
+  | EventUpdated
+  | EventDeleted
+  | SpaceRequested
+  | SpaceRequestAccepted
+  | SpaceRequestRejected
+  | SpaceRequestAcceptanceRevoked
+  | ResourceRequested
+  | ResourceRequestAccepted
+  | ResourceRequestRejected
+  | ResourceRequestAcceptanceRevoked
+  | UserRoleAssigned;
+
+/**
+ * Reused types
+ */
+
+type SpaceRequestId = Hash;
+type ResourceRequestId = Hash;
+
+type CalendarFields = {
+  calendarName: string;
+  calendarDates: TimeSpan[];
+};
+
+type SpaceFields = {
+  type: "physical" | "gps" | "virtual";
+  name: string;
+  location: PhysicalLocation | GPSLocation | VirtualLocation;
+  capacity: number;
+  accessibility: string;
+  description: string;
+  contact: string;
+  message: string;
+  link: Link;
+  images: Image[];
+  availability: TimeSpan[] | "always";
+  multiBookable: boolean;
+};
+
+type ResourceFields = {
+  name: string;
+  ownerId: PublicKey;
+  description: string;
+  contact: string;
+  link: Link;
+  images: Image[];
+  availability: TimeSpan[] | "always";
+  multiBookable: boolean; // resource can be booked more than once in the same time span
+};
+
+type EventFields = {
+  name: string;
+  description: string;
+  location?: SpaceRequestId; // ref to a space
+  startDate: Date; // allocated time of a space
+  endDate: Date; // allocated time of a space
+  publicStartDate?: Date; // public facing
+  publicEndDate?: Date; // public facing
+  resources: ResourceRequestId[];
+  links: Link[];
+  images: Image[];
+};
+
+/**
+ * User
+ *
+ * NOTE: sent on `inbox` channel
+ */
+
+type UserNameAssigned = {
+  type: "user_name_assigned";
   data: {
     name: string;
-    startDate?: string;
-    endDate?: string;
+  };
+};
+
+/**
+ * Access
+ *
+ * NOTE: sent on `inbox` channel
+ */
+
+type CalendarAccessRequested = {
+  type: "calendar_access_requested";
+  data: {
+    calendarId: Hash;
+    name: string;
+    message: string;
+  };
+};
+
+type CalendarAccessAccepted = {
+  type: "calendar_access_accepted";
+  data: {
+    calendarId: Hash;
+  };
+};
+
+type CalendarAccessRejected = {
+  type: "calendar_access_rejected";
+  data: {
+    calendarId: Hash;
+  };
+};
+
+/**
+ * Calendar
+ */
+
+type CalendarCreated = {
+  type: "calendar_created";
+  data: {
+    fields: CalendarFields;
+  };
+};
+
+type CalendarUpdated = {
+  type: "calendar_updated";
+  data: {
+    id: Hash;
+    fields: CalendarFields;
+  };
+};
+
+type SpacesPageDescriptionUpdated = {
+  type: "space_page_description_updated";
+  data: {
+    description: string;
+  };
+};
+
+type ResourcesPageDescriptionUpdated = {
+  type: "space_page_description_updated";
+  data: {
+    description: string;
+  };
+};
+
+type AboutPageDescriptionUpdated = {
+  type: "space_page_description_updated";
+  data: {
+    description: string;
+  };
+};
+
+type CalendarDeleted = {
+  type: "calendar_deleted";
+};
+
+/**
+ * Space
+ */
+
+type SpaceCreated = {
+  type: "space_created";
+  data: {
+    field: SpaceFields;
+  };
+};
+
+type SpaceUpdated = {
+  type: "space_updated";
+  data: {
+    id: Hash;
+    fields: SpaceFields;
+  };
+};
+
+type SpaceDeleted = {
+  type: "space_deleted";
+};
+
+/**
+ * Resource
+ */
+
+type ResourceCreated = {
+  type: "resource_created";
+  data: {
+    fields: ResourceFields;
+  };
+};
+
+type ResourceUpdated = {
+  type: "space_updated";
+  data: {
+    id: Hash;
+    fields: ResourceFields;
+  };
+};
+
+type ResourceDeleted = {
+  type: "resource_deleted";
+};
+
+/**
+ * Event
+ */
+
+type EventCreated = {
+  type: "event_created";
+  data: {
+    fields: EventFields;
+  };
+};
+
+type EventUpdated = {
+  type: "event_updated";
+  data: {
+    id: Hash;
+    fields: EventFields;
+  };
+};
+
+type EventDeleted = {
+  type: "event_deleted";
+  data: {
+    id: Hash;
+  };
+};
+
+/**
+ * Requests and responses
+ */
+
+type SpaceRequested = {
+  type: "space_requested";
+  data: {
+    eventId: Hash;
+    spaceId: Hash;
+    message: string;
+    timePeriod: TimeSpan[];
+  };
+};
+
+type SpaceRequestAccepted = {
+  type: "space_request_accepted";
+  data: {
+    requestId: Hash;
+  };
+};
+
+type SpaceRequestRejected = {
+  type: "space_request_rejected";
+  data: {
+    requestId: Hash;
+  };
+};
+
+type SpaceRequestAcceptanceRevoked = {
+  type: "space_request_acceptance_revoked";
+  data: {
+    requestAcceptanceId: Hash;
+  };
+};
+
+type ResourceRequested = {
+  type: "resource_requested";
+  data: {
+    resourceId: Hash;
+    eventId: Hash;
+    message: string;
+    timeSpan: TimeSpan;
+  };
+};
+
+type ResourceRequestAccepted = {
+  type: "resource_request_accepted";
+  data: {
+    requestId: Hash;
+  };
+};
+
+type ResourceRequestRejected = {
+  type: "resource_request_rejected";
+  data: {
+    requestId: Hash;
+  };
+};
+
+type ResourceRequestAcceptanceRevoked = {
+  type: "resource_request_acceptance_revoked";
+  data: {
+    requestAcceptanceId: Hash;
+  };
+};
+
+/**
+ * Roles
+ */
+
+type UserRoleAssigned = {
+  type: "user_role_assigned";
+  data: {
+    publicKey: PublicKey;
+    role: "publisher" | "organiser" | "admin";
   };
 };
 
@@ -224,6 +530,8 @@ type CalendarCreatedEvent = {
  * (´ヮ´)八(*ﾟ▽ﾟ*)
  * Application Data
  */
+
+// @TODO: some updates required here based on the new protocol message definitions above
 
 type User = {
   id: PublicKey;
