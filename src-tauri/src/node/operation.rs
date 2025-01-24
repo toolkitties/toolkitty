@@ -16,13 +16,12 @@ pub enum MessageType {
 
 impl Display for MessageType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let str = match self {
+        let message_type = match self {
             MessageType::Calendar => "calendar",
             MessageType::Event => "event",
             MessageType::Resource => "resource",
         };
-
-        write!(f, "{str}")
+        write!(f, "{message_type}")
     }
 }
 
@@ -48,21 +47,13 @@ impl From<CalendarId> for Hash {
     }
 }
 
-impl From<CalendarId> for LogId {
-    fn from(id: CalendarId) -> Self {
-        LogId(id.0)
-    }
-}
-
-impl From<Hash> for LogId {
-    fn from(value: Hash) -> Self {
-        LogId(value)
-    }
-}
-
 #[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct LogId(Hash);
+pub struct LogId {
+    // @TODO(adz): Currently we store everything in one log per calendar, later we want to list all
+    // possible "log types" here, for example for all events, resources, messages etc.
+    pub calendar_id: CalendarId,
+}
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 pub struct Extensions {
@@ -78,36 +69,35 @@ pub struct Extensions {
 }
 
 impl Extension<LogId> for Extensions {
-    fn with_header(header: &Header<Self>) -> Option<LogId> {
-        Extension::<CalendarId>::with_header(header).map(Into::into)
-    }
-
-    fn extract(&self) -> Option<LogId> {
-        Extension::<CalendarId>::extract(self).map(Into::into)
+    fn extract(header: &Header<Self>) -> Option<LogId> {
+        Extension::<CalendarId>::extract(header).map(|calendar_id| LogId { calendar_id })
     }
 }
 
 impl Extension<CalendarId> for Extensions {
-    fn with_header(header: &Header<Self>) -> Option<CalendarId> {
+    fn extract(header: &Header<Self>) -> Option<CalendarId> {
         let calendar_id: Option<CalendarId> = match &header.extensions {
-            Some(extensions) => extensions.extract(),
+            Some(extensions) => extensions.calendar_id,
             None => None,
         };
 
+        // @TODO: Make sure we can only derive calendar id's for application events who create an
+        // calendar.
         match calendar_id {
             Some(id) => Some(id),
+            // If no calendar id is given we derive it from the header itself of the operation
+            // which creates the festival.
             None => Some(header.hash().into()),
         }
-    }
-
-    fn extract(&self) -> Option<CalendarId> {
-        self.calendar_id
     }
 }
 
 impl Extension<PruneFlag> for Extensions {
-    fn extract(&self) -> Option<PruneFlag> {
-        Some(self.prune_flag.clone())
+    fn extract(header: &Header<Self>) -> Option<PruneFlag> {
+        match &header.extensions {
+            Some(extensions) => Some(extensions.prune_flag.clone()),
+            None => None,
+        }
     }
 }
 
@@ -125,14 +115,16 @@ pub async fn create_operation(
         .expect("time from operation system")
         .as_secs();
 
-    let latest_operation = match extensions.extract() {
-        Some(log_id) => {
+    let latest_operation = match extensions.calendar_id {
+        Some(calendar_id) => {
+            let log_id = LogId { calendar_id };
+
             // @TODO(adz): Memory stores are infallible right now but we'll switch to a SQLite-based one
             // soon and then we need to handle this error here:
             let Ok(latest_operation) = store.latest_operation(&public_key, &log_id).await;
             latest_operation
         }
-        // If no LogId was present on the extensions we can assume this is the first operation in
+        // If no log id was present on the extensions we can assume this is the first operation in
         // a new log.
         None => None,
     };

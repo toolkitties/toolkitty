@@ -27,26 +27,24 @@ fn network_id() -> [u8; 32] {
     Hash::new(b"toolkitty").into()
 }
 
-pub struct Node<T, TM> {
+pub struct Node<T> {
     #[allow(dead_code)]
     private_key: PrivateKey,
     #[allow(dead_code)]
     store: MemoryStore<LogId, Extensions>,
     #[allow(dead_code)]
     stream: StreamController,
-    stream_tx: mpsc::Sender<ToStreamController<T>>,
+    stream_tx: mpsc::Sender<ToStreamController>,
     network_actor_tx: mpsc::Sender<ToNodeActor<T>>,
     #[allow(dead_code)]
     actor_handle: Shared<MapErr<AbortOnDropHandle<()>, JoinErrToStr>>,
-    topic_map: TM,
 }
 
-impl<T, TM> Node<T, TM>
+impl<T> Node<T>
 where
     T: TopicId + TopicQuery + 'static,
-    TM: Clone + TopicLogMap<T, LogId> + 'static,
 {
-    pub async fn new(
+    pub async fn new<TM: TopicLogMap<T, LogId> + 'static>(
         private_key: PrivateKey,
         store: MemoryStore<LogId, Extensions>,
         topic_map: TM,
@@ -78,7 +76,7 @@ where
 
         let mdns = LocalDiscovery::new();
 
-        let sync_protocol = LogSyncProtocol::new(topic_map.clone(), store.clone());
+        let sync_protocol = LogSyncProtocol::new(topic_map, store.clone());
         let sync_config = SyncConfiguration::new(sync_protocol);
 
         let network = NetworkBuilder::new(network_id())
@@ -111,7 +109,6 @@ where
                 stream_tx,
                 network_actor_tx,
                 actor_handle: actor_drop_handle,
-                topic_map,
             },
             stream_rx,
             system_events_rx,
@@ -131,14 +128,8 @@ where
         reply_rx.await.expect("receive reply_rx")
     }
 
-    /// Send all unacknowledged operations again on the stream which belong to this topic.
-    pub async fn replay(&mut self, topic: &T) {
-        let logs = self
-            .topic_map
-            .get(&topic)
-            .await
-            .map_or(vec![], |map| map.values().flatten().cloned().collect());
-
+    /// Send all unacknowledged operations again on the stream which belong to these logs.
+    pub async fn replay(&mut self, logs: Vec<LogId>) {
         self.stream_tx
             .send(ToStreamController::Replay { logs })
             .await

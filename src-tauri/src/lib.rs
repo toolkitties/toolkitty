@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use p2panda_core::{Hash, PrivateKey};
 use p2panda_net::{FromNetwork, SystemEvent, TopicId};
 use p2panda_store::MemoryStore;
+use p2panda_sync::log_sync::TopicLogMap;
 use serde::ser::SerializeStruct;
 use serde::Serialize;
 use tauri::ipc::Channel;
@@ -18,7 +19,7 @@ use crate::node::{AckError, Node, PublishError, StreamEvent};
 use crate::topic::{NetworkTopic, TopicMap};
 
 struct AppContext {
-    node: Node<NetworkTopic, TopicMap>,
+    node: Node<NetworkTopic>,
     store: MemoryStore<LogId, Extensions>,
     private_key: PrivateKey,
     selected_calendar: Option<CalendarId>,
@@ -89,9 +90,15 @@ async fn select_calendar(
 
     state.selected_calendar = Some(calendar_id);
 
-    // Ask stream controller to re-play all operations inside this topic which haven't been
-    // acknowledged yet by the frontend.
-    state.node.replay(&NetworkTopic::Calendar { calendar_id }).await;
+    // Ask stream controller to re-play all operations from logs inside this topic which haven't
+    // been acknowledged yet by the frontend.
+    let logs = state
+        .topic_map
+        .get(&NetworkTopic::Calendar { calendar_id })
+        .await
+        .map_or(vec![], |map| map.values().flatten().cloned().collect());
+
+    state.node.replay(logs).await;
 
     state
         .to_app_tx
@@ -208,7 +215,7 @@ pub fn run() {
                 let store = MemoryStore::new();
                 let topic_map = TopicMap::new();
 
-                let (node, stream_rx, system_events_rx) = Node::<NetworkTopic, TopicMap>::new(
+                let (node, stream_rx, system_events_rx) = Node::<NetworkTopic>::new(
                     private_key.clone(),
                     store.clone(),
                     topic_map.clone(),

@@ -82,10 +82,10 @@ impl TopicLogMap<NetworkTopic, LogId> for TopicMap {
                     for public_key in public_keys {
                         result.insert(
                             public_key.to_owned(),
-                            // @NOTE(adz): Currently we store everything in one log per calendar,
+                            // @TODO(adz): Currently we store everything in one log per calendar,
                             // later we want to list all possible "log types" here, for example for
                             // all events, resources, messages etc.
-                            vec![calendar_id.into()],
+                            vec![LogId { calendar_id }],
                         );
                     }
                     result

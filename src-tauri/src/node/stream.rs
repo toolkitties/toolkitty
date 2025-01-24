@@ -1,12 +1,10 @@
-use std::collections::HashSet;
-use std::convert::Infallible;
+use std::collections::HashMap;
 use std::future::Future;
 use std::sync::Arc;
 
 use p2panda_core::{Body, Extension, Hash, Header, PublicKey};
-use p2panda_store::MemoryStore;
+use p2panda_store::{MemoryStore, OperationStore};
 use p2panda_stream::IngestExt;
-use p2panda_sync::TopicQuery;
 use serde::ser::SerializeStruct;
 use serde::Serialize;
 use thiserror::Error;
@@ -18,7 +16,7 @@ use tokio_stream::StreamExt;
 use crate::node::operation::{CalendarId, Extensions, LogId};
 
 #[allow(clippy::large_enum_variant, dead_code)]
-pub enum ToStreamController<T> {
+pub enum ToStreamController {
     Ingest {
         header: Header<Extensions>,
         body: Option<Body>,
@@ -29,28 +27,28 @@ pub enum ToStreamController<T> {
         reply: oneshot::Sender<Result<(), AckError>>,
     },
     Replay {
-        topic: T,
+        logs: Vec<LogId>,
     },
 }
 
 #[allow(dead_code)]
 pub struct StreamController {
-    controller_store: StreamMemoryStore,
+    controller_store: StreamMemoryStore<LogId, Extensions>,
     operation_store: MemoryStore<LogId, Extensions>,
     processor_handle: JoinHandle<()>,
 }
 
 impl StreamController {
-    pub fn new<T: TopicQuery + 'static>(
+    pub fn new(
         operation_store: MemoryStore<LogId, Extensions>,
     ) -> (
         Self,
-        mpsc::Sender<ToStreamController<T>>,
+        mpsc::Sender<ToStreamController>,
         mpsc::Receiver<StreamEvent>,
     ) {
         let rt = tokio::runtime::Handle::current();
 
-        let controller_store = StreamMemoryStore::new();
+        let controller_store = StreamMemoryStore::new(operation_store.clone());
 
         let (app_tx, app_rx) = mpsc::channel(1024);
 
@@ -77,10 +75,10 @@ impl StreamController {
                             operation_id,
                             reply,
                         }) => {
-                            let Ok(_) = controller_store.ack(operation_id).await;
-                            reply.send(Ok(())).ok();
+                            let result = controller_store.ack(operation_id).await;
+                            reply.send(result).ok();
                         }
-                        Some(ToStreamController::Replay { topic }) => {
+                        Some(ToStreamController::Replay { logs }) => {
                             // @TODO: Implement replay logic
                         }
                         None => break,
@@ -197,7 +195,7 @@ pub struct EventMeta {
 impl From<Header<Extensions>> for EventMeta {
     fn from(header: Header<Extensions>) -> Self {
         let calendar_id: CalendarId = header
-            .extract()
+            .extension()
             .expect("header to have calendar id extension");
 
         Self {
@@ -242,7 +240,13 @@ impl Serialize for StreamError {
 }
 
 #[derive(Debug, Error)]
-pub enum AckError {}
+pub enum AckError {
+    #[error("tried do ack unknown operation {0}")]
+    UnknownOperation(Hash),
+
+    #[error("can't derive log id for operation {0}")]
+    MissingLogId(Hash),
+}
 
 impl Serialize for AckError {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -260,24 +264,42 @@ trait StreamControllerStore {
 }
 
 #[derive(Clone, Debug)]
-struct StreamMemoryStore {
-    acked: Arc<RwLock<HashSet<Hash>>>,
+struct StreamMemoryStore<L, E = ()> {
+    operation_store: MemoryStore<L, E>,
+    acked: Arc<RwLock<HashMap<(PublicKey, L), u64>>>,
 }
 
-impl StreamMemoryStore {
-    pub fn new() -> Self {
+impl<L, E> StreamMemoryStore<L, E> {
+    pub fn new(operation_store: MemoryStore<L, E>) -> Self {
         Self {
-            acked: Arc::new(RwLock::new(HashSet::new())),
+            operation_store,
+            acked: Arc::new(RwLock::new(HashMap::new())),
         }
     }
 }
 
-impl StreamControllerStore for StreamMemoryStore {
-    type Error = Infallible;
+impl<L, E> StreamControllerStore for StreamMemoryStore<L, E>
+where
+    L: p2panda_store::LogId + Send + Sync,
+    E: p2panda_core::Extensions + Extension<L> + Send + Sync,
+{
+    type Error = AckError;
 
     async fn ack(&self, operation_id: Hash) -> Result<(), Self::Error> {
+        let Ok(Some((header, _))) = self.operation_store.get_operation(operation_id).await else {
+            return Err(AckError::UnknownOperation(operation_id));
+        };
+
         let mut acked = self.acked.write().await;
-        acked.insert(operation_id);
+
+        let log_id: Option<L> = header.extension();
+        let Some(log_id) = log_id else {
+            return Err(AckError::MissingLogId(operation_id));
+        };
+
+        // Remember the "acknowledged" log-height for this log.
+        acked.insert((header.public_key, log_id), header.seq_num);
+
         Ok(())
     }
 }
