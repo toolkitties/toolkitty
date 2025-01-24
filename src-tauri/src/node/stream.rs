@@ -159,7 +159,7 @@ impl StreamController {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct StreamEvent {
     pub meta: EventMeta,
     pub data: EventData,
@@ -197,7 +197,7 @@ impl Serialize for StreamEvent {
     }
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EventMeta {
     pub operation_id: Hash,
@@ -220,7 +220,7 @@ impl From<Header<Extensions>> for EventMeta {
 }
 
 #[allow(dead_code)]
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum EventData {
     Application(serde_json::Value),
@@ -241,6 +241,12 @@ impl EventData {
 pub enum StreamError {
     #[error(transparent)]
     IngestError(p2panda_stream::operation::IngestError),
+}
+
+impl PartialEq for StreamError {
+    fn eq(&self, other: &Self) -> bool {
+        self.to_string() == other.to_string()
+    }
 }
 
 impl Serialize for StreamError {
@@ -348,15 +354,10 @@ where
 
                         if let Some(operations) = operations {
                             for (header, body) in operations {
-                                // @TODO(adz): Getting the encoded header bytes in a second
-                                // database call like this feels redundant and should be possible
-                                // to retreive just from calling "get_log".
-                                let (header_bytes, _) = self
-                                    .operation_store
-                                    .get_raw_operation(header.hash())
-                                    .await
-                                    .expect("memory store to be infallible")
-                                    .expect("operation to be known");
+                                // @TODO(adz): Getting the encoded header bytes through encoding
+                                // like this feels redundant and should be possible to retreive
+                                // just from calling "get_log".
+                                let header_bytes = header.to_bytes();
                                 result.push((header, body, header_bytes));
                             }
                         }
@@ -367,5 +368,77 @@ where
         }
 
         Ok(result)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use p2panda_core::{Hash, PrivateKey, PruneFlag};
+    use p2panda_store::MemoryStore;
+    use tokio::sync::oneshot;
+
+    use crate::node::operation::{create_operation, CalendarId, Extensions};
+    use crate::node::StreamEvent;
+
+    use super::{StreamController, ToStreamController};
+
+    #[tokio::test]
+    async fn replay_unacked_operations() {
+        let mut operation_store = MemoryStore::new();
+
+        let (_controller, tx, mut rx) = StreamController::new(operation_store.clone());
+
+        let private_key = PrivateKey::new();
+
+        let calendar_id: CalendarId = Hash::new(b"Penguin's Pyjama Party").into();
+
+        let extensions = Extensions {
+            calendar_id: Some(calendar_id),
+            prune_flag: PruneFlag::default(),
+        };
+
+        // Create and ingest operation 0.
+        let (header, body) = create_operation(
+            &mut operation_store,
+            &private_key,
+            extensions.clone(),
+            Some(b"organize!"),
+        )
+        .await;
+        let header_bytes = header.to_bytes();
+
+        tx.send(ToStreamController::Ingest {
+            header: header.clone(),
+            body: body.clone(),
+            header_bytes,
+        })
+        .await
+        .unwrap();
+
+        assert_eq!(
+            rx.recv().await.unwrap(),
+            StreamEvent::new(header.clone(), body.unwrap())
+        );
+
+        // Acknowledge operation 0.
+        let (reply, reply_rx) = oneshot::channel();
+        let operation_id = header.hash();
+        tx.send(ToStreamController::Ack {
+            operation_id,
+            reply,
+        })
+        .await
+        .unwrap();
+        assert!(reply_rx.await.is_ok());
+
+        // Ask to replay log, but don't expect anything to be sent.
+        let (reply, reply_rx) = oneshot::channel();
+        tx.send(ToStreamController::Ack {
+            operation_id,
+            reply,
+        })
+        .await
+        .unwrap();
+        assert!(reply_rx.await.is_ok());
     }
 }
