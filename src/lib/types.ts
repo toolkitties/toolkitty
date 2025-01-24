@@ -232,10 +232,12 @@ type ApplicationEvent =
   | SpaceRequested
   | SpaceRequestAccepted
   | SpaceRequestRejected
+  | SpaceRequestCancelled
   | SpaceRequestAcceptanceRevoked
   | ResourceRequested
   | ResourceRequestAccepted
   | ResourceRequestRejected
+  | ResourceRequestCancelled
   | ResourceRequestAcceptanceRevoked
   | UserRoleAssigned;
 
@@ -476,6 +478,13 @@ type SpaceRequestRejected = {
   };
 };
 
+type SpaceRequestCancelled = {
+  type: "space_request_cancelled";
+  data: {
+    requestId: Hash;
+  };
+};
+
 type SpaceRequestAcceptanceRevoked = {
   type: "space_request_acceptance_revoked";
   data: {
@@ -502,6 +511,13 @@ type ResourceRequestAccepted = {
 
 type ResourceRequestRejected = {
   type: "resource_request_rejected";
+  data: {
+    requestId: Hash;
+  };
+};
+
+type ResourceRequestCancelled = {
+  type: "resource_request_cancelled";
   data: {
     requestId: Hash;
   };
