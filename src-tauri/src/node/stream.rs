@@ -88,6 +88,7 @@ impl StreamController {
                                             .await
                                             .expect("send processor_tx");
                                     }
+                                    reply.send(Ok(())).ok();
                                 }
                                 Err(err) => {
                                     reply.send(Err(err)).ok();
@@ -349,7 +350,8 @@ where
                     Some(ack_log_height) => {
                         let Ok(operations) = self
                             .operation_store
-                            .get_log(&public_key, &log_id, Some(*ack_log_height))
+                            // Get all operations from > ack_log_height
+                            .get_log(&public_key, &log_id, Some(*ack_log_height + 1))
                             .await;
 
                         if let Some(operations) = operations {
@@ -373,34 +375,31 @@ where
 
 #[cfg(test)]
 mod tests {
-    use p2panda_core::{Hash, PrivateKey, PruneFlag};
+    use std::collections::HashMap;
+
+    use futures_util::FutureExt;
+    use p2panda_core::{Body, Hash, Header, PrivateKey, PruneFlag};
     use p2panda_store::MemoryStore;
     use serde_json::json;
     use tokio::sync::oneshot;
 
-    use crate::node::operation::{create_operation, CalendarId, Extensions};
+    use crate::node::operation::{self, CalendarId, Extensions, LogId};
     use crate::node::StreamEvent;
 
     use super::{StreamController, ToStreamController};
 
-    #[tokio::test]
-    async fn replay_unacked_operations() {
-        let mut operation_store = MemoryStore::new();
-
-        let (_controller, tx, mut rx) = StreamController::new(operation_store.clone());
-
-        let private_key = PrivateKey::new();
-
-        let calendar_id: CalendarId = Hash::new(b"Penguin's Pyjama Party").into();
-
+    async fn create_operation(
+        operation_store: &mut MemoryStore<LogId, Extensions>,
+        private_key: &PrivateKey,
+        calendar_id: &CalendarId,
+    ) -> (Header<Extensions>, Body, Vec<u8>, Hash) {
         let extensions = Extensions {
-            calendar_id: Some(calendar_id),
+            calendar_id: Some(*calendar_id),
             prune_flag: PruneFlag::default(),
         };
 
-        // Create and ingest operation 0.
-        let (header, body) = create_operation(
-            &mut operation_store,
+        let (header, body) = operation::create_operation(
+            operation_store,
             &private_key,
             extensions.clone(),
             Some(
@@ -412,40 +411,128 @@ mod tests {
         )
         .await;
         let header_bytes = header.to_bytes();
+        let operation_id = header.hash();
+
+        (header, body.unwrap(), header_bytes, operation_id)
+    }
+
+    #[tokio::test]
+    async fn replay_unacked_operations() {
+        let mut operation_store = MemoryStore::new();
+
+        let (_controller, tx, mut rx) = StreamController::new(operation_store.clone());
+
+        let private_key = PrivateKey::new();
+        let public_key = private_key.public_key();
+
+        let calendar_id: CalendarId = Hash::new(b"Penguin's Pyjama Party").into();
+
+        // Create and ingest operation 0.
+        let (header_0, body_0, header_bytes_0, operation_id_0) =
+            create_operation(&mut operation_store, &private_key, &calendar_id).await;
 
         tx.send(ToStreamController::Ingest {
-            header: header.clone(),
-            body: body.clone(),
-            header_bytes,
+            header: header_0.clone(),
+            body: Some(body_0.clone()),
+            header_bytes: header_bytes_0,
         })
         .await
         .unwrap();
-
-        assert_eq!(
-            rx.recv().await.unwrap(),
-            StreamEvent::new(header.clone(), body.unwrap())
-        );
+        assert_eq!(rx.recv().await.unwrap(), StreamEvent::new(header_0, body_0));
 
         // Acknowledge operation 0.
         let (reply, reply_rx) = oneshot::channel();
-        let operation_id = header.hash();
         tx.send(ToStreamController::Ack {
-            operation_id,
+            operation_id: operation_id_0,
             reply,
         })
         .await
         .unwrap();
-
         assert!(reply_rx.await.is_ok());
 
         // Ask to replay log, but don't expect anything to be sent.
         let (reply, reply_rx) = oneshot::channel();
-        tx.send(ToStreamController::Ack {
-            operation_id,
+        tx.send(ToStreamController::Replay {
+            logs: HashMap::from([(public_key, vec![LogId { calendar_id }])]),
             reply,
         })
         .await
         .unwrap();
         assert!(reply_rx.await.is_ok());
+        assert_eq!(rx.recv().now_or_never(), None);
+
+        // Create and ingest operation 1.
+        let (header_1, body_1, header_bytes_1, operation_id_1) =
+            create_operation(&mut operation_store, &private_key, &calendar_id).await;
+
+        tx.send(ToStreamController::Ingest {
+            header: header_1.clone(),
+            body: Some(body_1.clone()),
+            header_bytes: header_bytes_1,
+        })
+        .await
+        .unwrap();
+        assert_eq!(
+            rx.recv().await.unwrap(),
+            StreamEvent::new(header_1.clone(), body_1.clone())
+        );
+
+        // Create and ingest operation 2.
+        let (header_2, body_2, header_bytes_2, operation_id_2) =
+            create_operation(&mut operation_store, &private_key, &calendar_id).await;
+
+        tx.send(ToStreamController::Ingest {
+            header: header_2.clone(),
+            body: Some(body_2.clone()),
+            header_bytes: header_bytes_2,
+        })
+        .await
+        .unwrap();
+        assert_eq!(
+            rx.recv().await.unwrap(),
+            StreamEvent::new(header_2.clone(), body_2.clone())
+        );
+
+        // Ask to replay log, expect operation 1 and 2 to be sent again.
+        let (reply, reply_rx) = oneshot::channel();
+        tx.send(ToStreamController::Replay {
+            logs: HashMap::from([(public_key, vec![LogId { calendar_id }])]),
+            reply,
+        })
+        .await
+        .unwrap();
+        assert!(reply_rx.await.is_ok());
+        assert_eq!(rx.recv().await.unwrap(), StreamEvent::new(header_1, body_1));
+        assert_eq!(rx.recv().await.unwrap(), StreamEvent::new(header_2, body_2));
+
+        // Acknowledge operation 1 and 2.
+        let (reply, reply_rx) = oneshot::channel();
+        tx.send(ToStreamController::Ack {
+            operation_id: operation_id_1,
+            reply,
+        })
+        .await
+        .unwrap();
+        assert!(reply_rx.await.is_ok());
+
+        let (reply, reply_rx) = oneshot::channel();
+        tx.send(ToStreamController::Ack {
+            operation_id: operation_id_2,
+            reply,
+        })
+        .await
+        .unwrap();
+        assert!(reply_rx.await.is_ok());
+
+        // Ask to replay log, but don't expect anything to be sent.
+        let (reply, reply_rx) = oneshot::channel();
+        tx.send(ToStreamController::Replay {
+            logs: HashMap::from([(public_key, vec![LogId { calendar_id }])]),
+            reply,
+        })
+        .await
+        .unwrap();
+        assert!(reply_rx.await.is_ok());
+        assert_eq!(rx.recv().now_or_never(), None);
     }
 }
