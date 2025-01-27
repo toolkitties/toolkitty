@@ -17,11 +17,13 @@ class Toast {
 }
 
 /**
+ * ```
  *  _   __   
  * ( `︶` )) 
  * |     ||  
  * |     || 
  * '-----'`
+ * ```
  * Toasts are temporary messages shown to the user when certain events happen.
  * They can contain a link which will direct the user to another page.
  * 
