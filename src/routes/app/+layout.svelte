@@ -2,6 +2,7 @@
   import "../../app.css";
   import Icon from "@iconify/svelte";
   import { page } from "$app/stores";
+  import Header from "../../components/header.svelte";
 
   interface MenuItem {
     name: string;
@@ -42,6 +43,7 @@
   );
 </script>
 
+<Header />
 <main class="h-dvh">
   <div class="p-8">
     <slot />

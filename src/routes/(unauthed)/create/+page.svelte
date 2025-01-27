@@ -13,9 +13,12 @@
   async function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
 
+    const data = new FormData(event.target as HTMLFormElement);
+    const name = data.get("name") as string;
+
     try {
       await calendars.create({
-        name: "Kitty Fest, 2025",
+        name: name,
       });
     } catch (err) {
       // Toasty!
