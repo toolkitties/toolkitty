@@ -8,7 +8,7 @@ import { spaces } from '$lib/api/data'
 /**
  * Get spaces that are associated with the currently active calendar
  */
-export async function find(): Promise<Space[]> {
+export async function findMany(): Promise<Space[]> {
   //TODO: Return spaces from db as liveQuery and add params
 
   // return test data.

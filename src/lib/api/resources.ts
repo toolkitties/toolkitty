@@ -8,7 +8,7 @@ import { resources } from '$lib/api/data'
 /**
  * Get resources that are associated with the currently active calendar
  */
-export async function find(): Promise<Resource[]> {
+export async function findMany(): Promise<Resource[]> {
   //TODO: Return resources from db as liveQuery and add params
 
   // return test data.

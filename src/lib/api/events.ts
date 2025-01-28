@@ -8,7 +8,7 @@ import { events } from '$lib/api/data'
 /**
  * Get events that are associated with the currently active calendar
  */
-export async function find(): Promise<CalendarEvent[]> {
+export async function findMany(): Promise<CalendarEvent[]> {
   //TODO: Return events from db as liveQuery and add params
   // return test data.
   return events
