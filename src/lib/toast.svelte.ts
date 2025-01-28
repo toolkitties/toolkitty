@@ -7,12 +7,14 @@ class Toast {
   id: number;
   type: ToastType;
   link?: string;
+  actionRequired: boolean;
 
-  constructor(message: string, id: number, type: ToastType) {
+  constructor(message: string, id: number, type: ToastType, actionRequired: boolean) {
     this.message = message;
     this.id = id;
     this.type = type;
     this.link = "";
+    this.actionRequired = actionRequired;
   }
 }
 
@@ -30,6 +32,13 @@ class Toast {
  */
 
 class Toasts {
+  /**
+   * Determines if toasts disappear automatically, false when dialog is open so user doesn't miss any new toasts
+   */
+  autoDismiss: boolean = $state(true)
+  /**
+   * Array of toasts to show the user
+   */
   toasts: Toast[] = $state([]);
 
   constructor() {
@@ -49,27 +58,47 @@ class Toasts {
     this.addToast("info", message, link)
   }
 
+  dismissToast(id: number) {
+    this.toasts = this.toasts.filter((toast) => toast.id !== id);
+  }
+
+  //TODO: Only show new toasts to the user when dialog is closed
   private addToast(type: ToastType, message: string, link?: string) {
 
     // Create unique id for toast so it can be easily removed.
     const id = Math.floor(Math.random() * 1000000);
+
+    const actionRequired = true
 
     const toast: Toast = {
       id,
       message,
       type,
       link,
+      actionRequired
     }
 
     // Push new toast to top of list
     this.toasts.push(toast)
 
-    // Remove toast after certain amount of time
-    setTimeout(() => this.dismissToast(id), TOAST_TIMEOUT);
+    this.dismissToastTimeout(toast.id)
   }
 
-  private dismissToast(id: number) {
-    this.toasts = this.toasts.filter((toast) => toast.id !== id);
+  /**
+   * Timeout function that either dismissed the toast
+   * or calls itself if dismissing toasts is paused
+   */
+  private dismissToastTimeout(id: number) {
+    const timeout = setTimeout(() => {
+      console.log('dismissing toast: ' + this.autoDismiss)
+      if (this.autoDismiss) {
+        clearTimeout(timeout);
+        this.dismissToast(id);
+      } else {
+        clearTimeout(timeout);
+        this.dismissToastTimeout(id);
+      }
+    }, TOAST_TIMEOUT)
   }
 }
 

@@ -11,7 +11,7 @@ export type ResolvedCalendar = {
   name: string;
 };
 
-const RESOLVE_TIMEOUT_MS = 1000 * 30;
+const RESOLVE_TIMEOUT_MS = 1000 * 3;
 const SEND_FREQUENCY_MS = 1000 * 5;
 
 const pendingInviteCode: InviteCodesState = {

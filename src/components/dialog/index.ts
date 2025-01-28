@@ -8,6 +8,7 @@ const Root = DialogPrimitive.Root;
 const Title = DialogPrimitive.Title;
 const Trigger = DialogPrimitive.Trigger;
 const Close = DialogPrimitive.Close;
+const Portal = DialogPrimitive.Portal
 
 // export both custom and default.
 export {
@@ -16,6 +17,7 @@ export {
   Trigger,
   Content,
   Close,
+  Portal
 };
 
 /*

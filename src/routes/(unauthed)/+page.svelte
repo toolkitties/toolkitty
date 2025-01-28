@@ -5,6 +5,7 @@
   import { db } from "$lib/db";
   import { appConfigDir } from "@tauri-apps/api/path";
   import { joinWithInviteCode } from "$lib/api/onboarding";
+  import { toast } from "$lib/toast.svelte";
 
   let value: string[] | undefined = [];
 
@@ -29,6 +30,10 @@
       timedOut = true;
       progress = "dormant";
       console.error(err);
+      toast.error('Calendar not found')
+      setTimeout(() => {
+        toast.error('Another error occured!')
+      }, 3000);
       return;
     }
 
