@@ -53,12 +53,15 @@ export async function update(data: CalendarEvent) {
   return '123';
 }
 
-export async function remove(id: string) {
+async function remove(id: string) {
   //TODO: send to backend for processing, add to promise map and await.
 
   // for now we are just returning a hash.
   return '123';
 }
+
+//TODO: Move to class so we don't have to export as an alias
+export { remove as delete };
 
 
 //TODO: Add processor

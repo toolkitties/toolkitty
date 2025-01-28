@@ -62,5 +62,7 @@ export async function remove(id: string) {
   return '123';
 }
 
+//TODO: Move to class so we don't have to export as an alias
+export { remove as delete };
 
 //TODO: Add processor
