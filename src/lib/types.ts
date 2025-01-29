@@ -344,3 +344,8 @@ type TimeSpan = {
 type BookedTimeSpan = TimeSpan & {
   event: Hash;
 };
+
+type Settings = {
+  name: string;
+  value: Hash | string;
+}
