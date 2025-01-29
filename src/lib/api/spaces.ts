@@ -55,7 +55,7 @@ export async function update(data: Space) {
   return '123';
 }
 
-export async function deleteSpace(id: string) {
+export async function deleteSpace(id: Hash) {
   //TODO: send to backend for processing, add to promise map and await.
 
   // for now we are just returning a hash.

@@ -55,7 +55,7 @@ export async function update(data: Resource) {
   return '123';
 }
 
-async function deleteResource(id: string) {
+async function deleteResource(id: Hash) {
   //TODO: send to backend for processing, add to promise map and await.
 
   // for now we are just returning a hash.

@@ -53,7 +53,7 @@ export async function update(data: CalendarEvent) {
   return '123';
 }
 
-async function deleteEvent(id: string) {
+async function deleteEvent(id: Hash) {
   //TODO: send to backend for processing, add to promise map and await.
 
   // for now we are just returning a hash.
