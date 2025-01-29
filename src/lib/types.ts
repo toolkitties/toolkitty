@@ -297,8 +297,8 @@ type EventFields = {
  * NOTE: sent on `inbox` channel
  */
 
-type UserNameAssigned = {
-  type: "user_name_assigned";
+type UserProfileUpdated = {
+  type: "user_profile_updated";
   data: {
     name: string;
   };
