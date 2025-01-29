@@ -55,7 +55,7 @@ export async function update(data: Resource) {
   return '123';
 }
 
-async function remove(id: string) {
+async function deleteResource(id: string) {
   //TODO: send to backend for processing, add to promise map and await.
 
   // for now we are just returning a hash.
@@ -63,7 +63,7 @@ async function remove(id: string) {
 }
 
 //TODO: Move to class so we don't have to export as an alias
-export { remove as delete };
+export { deleteResource as delete };
 
 
 //TODO: Add processor

@@ -55,7 +55,7 @@ export async function update(data: Space) {
   return '123';
 }
 
-export async function remove(id: string) {
+export async function deleteSpace(id: string) {
   //TODO: send to backend for processing, add to promise map and await.
 
   // for now we are just returning a hash.
@@ -63,6 +63,6 @@ export async function remove(id: string) {
 }
 
 //TODO: Move to class so we don't have to export as an alias
-export { remove as delete };
+export { deleteSpace as delete };
 
 //TODO: Add processor
