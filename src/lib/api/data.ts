@@ -118,11 +118,28 @@ export const events: CalendarEvent[] = [
     location: {
       space: spaces[1],
       response: {
-        id: '1',
+        id: '3',
         answer: 'approve',
       },
     },
     image: 'https://placecats.com/bella/300/200',
     tags: ['dancing', 'anarchism', 'improvisation'],
   },
+]
+
+export const requests: SpaceRequest[] = [
+  {
+    id: '1',
+    eventId: '2',
+    spaceId: '2',
+    message: 'Require a big main stage for the big band (*-ω-)',
+    response: null
+  },
+  {
+    id: '2',
+    eventId: '2',
+    spaceId: '2',
+    message: 'recording our album and need a good sounding studio ( ＾∇＾)',
+    response: null
+  }
 ]

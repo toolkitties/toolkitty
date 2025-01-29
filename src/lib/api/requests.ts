@@ -1,4 +1,4 @@
-import { resources } from '$lib/api/data'
+import { requests } from '$lib/api/data'
 
 /**
  * Queries
@@ -8,21 +8,21 @@ import { resources } from '$lib/api/data'
 /**
  * Get all requests that are pending and associated with user public key
  */
-export async function findPending(): Promise<Resource[]> {
+export async function findPending(): Promise<SpaceRequest[]> {
   //TODO: Return events from db as liveQuery
 
   // return test data.
-  return resources
+  return requests
 }
 
 /**
  * Get one request by its ID
  */
-export async function findById(id: Hash): Promise<Resource> {
+export async function findById(id: Hash): Promise<SpaceRequest> {
   //TODO: Return events from db
 
   // return test data.
-  return resources[0]
+  return requests[0]
 }
 
 
