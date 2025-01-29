@@ -270,7 +270,6 @@ type SpaceFields = {
 
 type ResourceFields = {
   name: string;
-  ownerId: PublicKey;
   description: string;
   contact: string;
   link: Link;
