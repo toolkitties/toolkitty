@@ -14,9 +14,11 @@
     event.preventDefault();
 
     try {
-      await calendars.create({
+      const calendarId = await calendars.create({
         name: "Kitty Fest, 2025",
       });
+      await calendars.select(calendarId);
+      await calendars.subscribe(calendarId);
     } catch (err) {
       // Toasty!
     }
