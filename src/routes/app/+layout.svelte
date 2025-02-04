@@ -37,13 +37,11 @@
       icon: "lucide:share-2",
     },
   ];
-
-  console.log(page.data.title);
 </script>
 
 <svelte:head>
   <title>
-    {page.data.title} | toolkitty
+    {page.data.title ? `${page.data.title} | toolkitty` : "toolkitty"}
   </title>
 </svelte:head>
 
