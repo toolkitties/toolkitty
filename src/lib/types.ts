@@ -375,7 +375,7 @@ type CalendarDeleted = {
 type SpaceCreated = {
   type: "space_created";
   data: {
-    field: SpaceFields;
+    fields: SpaceFields;
   };
 };
 
