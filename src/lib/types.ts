@@ -465,6 +465,11 @@ type SpaceRequestRejected = {
   };
 };
 
+/**
+ * Message for explicitly cancelling a previously issued space request. Should not be used when a
+ * request can be considered implicitly cancelled due to event deletion or other changes which may
+ * impact existing requests.
+ */
 type SpaceRequestCancelled = {
   type: "space_request_cancelled";
   data: {
@@ -472,6 +477,11 @@ type SpaceRequestCancelled = {
   };
 };
 
+/**
+ * Message for explicitly revoking a previously accepted space request. Should not be used when a
+ * request can be considered implicitly revoked due to space deletion or other changes which may
+ * impact existing requests.
+ */
 type SpaceRequestAcceptanceRevoked = {
   type: "space_request_acceptance_revoked";
   data: {
@@ -503,6 +513,11 @@ type ResourceRequestRejected = {
   };
 };
 
+/**
+ * Message for explicitly cancelling a previously issued resource request. Should not be used when a
+ * request can be considered implicitly cancelled due to event deletion or other changes which may
+ * impact existing requests.
+ */
 type ResourceRequestCancelled = {
   type: "resource_request_cancelled";
   data: {
@@ -510,6 +525,11 @@ type ResourceRequestCancelled = {
   };
 };
 
+/**
+ * Message for explicitly revoking a previously accepted resource request. Should not be used when a
+ * request can be considered implicitly revoked due to resource deletion or other changes which may
+ * impact existing requests.
+ */
 type ResourceRequestAcceptanceRevoked = {
   type: "resource_request_acceptance_revoked";
   data: {
