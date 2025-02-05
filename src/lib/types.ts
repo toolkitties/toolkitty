@@ -363,6 +363,9 @@ type PageUpdated = {
 
 type CalendarDeleted = {
   type: "calendar_deleted";
+  data: {
+    id: Hash;
+  };
 };
 
 /**
@@ -386,6 +389,9 @@ type SpaceUpdated = {
 
 type SpaceDeleted = {
   type: "space_deleted";
+  data: {
+    id: Hash;
+  };
 };
 
 /**
@@ -409,6 +415,9 @@ type ResourceUpdated = {
 
 type ResourceDeleted = {
   type: "resource_deleted";
+  data: {
+    id: Hash;
+  };
 };
 
 /**
