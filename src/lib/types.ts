@@ -212,7 +212,7 @@ type ResolveInviteCodeResponse = {
  */
 
 type ApplicationEvent =
-  | UserNameAssigned
+  | UserProfileUpdated
   | CalendarCreated
   | CalendarUpdated
   | CalendarDeleted
@@ -220,6 +220,7 @@ type ApplicationEvent =
   | CalendarAccessAccepted
   | CalendarAccessRejected
   | CalendarAccessRejected
+  | PageUpdated
   | SpaceCreated
   | SpaceUpdated
   | SpaceDeleted
@@ -352,23 +353,10 @@ type CalendarUpdated = {
   };
 };
 
-type SpacesPageDescriptionUpdated = {
-  type: "space_page_description_updated";
+type PageUpdated = {
+  type: "page_updated";
   data: {
-    description: string;
-  };
-};
-
-type ResourcesPageDescriptionUpdated = {
-  type: "space_page_description_updated";
-  data: {
-    description: string;
-  };
-};
-
-type AboutPageDescriptionUpdated = {
-  type: "space_page_description_updated";
-  data: {
+    page_type: "spaces" | "resources" | "about";
     description: string;
   };
 };
