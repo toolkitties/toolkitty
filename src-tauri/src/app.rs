@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use futures_util::future::Shared;
+use futures_util::FutureExt;
 use p2panda_core::PrivateKey;
 use p2panda_net::{FromNetwork, SystemEvent};
 use p2panda_store::MemoryStore;
@@ -12,7 +14,7 @@ use crate::node::operation::CalendarId;
 use crate::node::{Node, StreamEvent};
 use crate::topic::{NetworkTopic, TopicMap};
 
-pub struct AppContext {
+pub struct Context {
     pub node: Node<NetworkTopic>,
     pub selected_calendar: Option<CalendarId>,
     pub subscriptions: HashMap<[u8; 32], NetworkTopic>,
@@ -23,7 +25,7 @@ pub struct AppContext {
     pub channel_set: bool,
 }
 
-impl AppContext {
+impl Context {
     pub fn new(
         node: Node<NetworkTopic>,
         to_app_tx: broadcast::Sender<ChannelEvent>,
@@ -42,18 +44,18 @@ impl AppContext {
     }
 }
 
-pub struct Stream {
+pub struct Service {
     app_handle: AppHandle,
     stream_rx: mpsc::Receiver<StreamEvent>,
     invite_codes_rx: mpsc::Receiver<FromNetwork>,
-    invite_codes_ready: oneshot::Receiver<()>,
+    invite_codes_ready: Shared<oneshot::Receiver<()>>,
     network_events_rx: broadcast::Receiver<SystemEvent<NetworkTopic>>,
     topic_map: TopicMap,
     to_app_rx: broadcast::Receiver<ChannelEvent>,
     channel_rx: mpsc::Receiver<Channel<ChannelEvent>>,
 }
 
-impl Stream {
+impl Service {
     pub async fn build(app_handle: AppHandle) -> anyhow::Result<Self> {
         let private_key = PrivateKey::new();
         let store = MemoryStore::new();
@@ -64,18 +66,19 @@ impl Stream {
 
         let (invite_codes_rx, invite_codes_ready) =
             node.subscribe(NetworkTopic::InviteCodes).await?;
+        let shared_invite_codes_ready = invite_codes_ready.shared();
 
         let (to_app_tx, to_app_rx) = broadcast::channel(32);
         let (channel_tx, channel_rx) = mpsc::channel(32);
 
-        let context = AppContext::new(node, to_app_tx, topic_map.clone(), channel_tx);
+        let context = Context::new(node, to_app_tx, topic_map.clone(), channel_tx);
         app_handle.manage(Mutex::new(context));
 
         Ok(Self {
             app_handle,
             stream_rx,
             invite_codes_rx,
-            invite_codes_ready,
+            invite_codes_ready: shared_invite_codes_ready,
             network_events_rx,
             topic_map,
             to_app_rx,
@@ -83,30 +86,16 @@ impl Stream {
         })
     }
 
-    pub async fn run(mut self) -> anyhow::Result<()> {
-        let rt = tokio::runtime::Handle::current();
+    pub fn run(app_handle: AppHandle) {
+        tauri::async_runtime::spawn(async move {
+            let mut app = Self::build(app_handle).await.expect("build stream");
+            let channel = app.recv_channel().await.expect("receive on channel rx");
+            app.spawn_invite_code_ready_watcher(channel.clone());
+            app.inner_run(channel).await.expect("run stream task");
+        });
+    }
 
-        // @TODO: Handle errors in this method.
-        let Some(channel) = self.channel_rx.recv().await else {
-            return Err(anyhow::anyhow!("channel tx closed"));
-        };
-
-        self.app_handle
-            .state::<Mutex<AppContext>>()
-            .lock()
-            .await
-            .channel_set = true;
-
-        {
-            let channel = channel.clone();
-            rt.spawn(async move {
-                let _ = self.invite_codes_ready.await;
-                channel
-                    .send(ChannelEvent::InviteCodesReady)
-                    .expect("channel receiver not dropped");
-            });
-        }
-
+    pub async fn inner_run(mut self, channel: Channel<ChannelEvent>) -> anyhow::Result<()> {
         loop {
             tokio::select! {
                 Ok(event) = self.to_app_rx.recv() => {
@@ -128,7 +117,7 @@ impl Stream {
                     let StreamEvent { meta, .. } = &event;
                     self.topic_map.add_author(meta.public_key, meta.calendar_id).await;
 
-                    let state = self.app_handle.state::<Mutex<AppContext>>();
+                    let state = self.app_handle.state::<Mutex<Context>>();
                     let state = state.lock().await;
 
                     // Check if the event is associated with the currently selected calendar. We
@@ -156,11 +145,32 @@ impl Stream {
             }
         }
     }
-}
 
-pub fn spawn_stream(app_handle: AppHandle) {
-    tauri::async_runtime::spawn(async move {
-        let stream = Stream::build(app_handle).await.expect("build stream");
-        stream.run().await.expect("run stream task");
-    });
+    pub async fn recv_channel(&mut self) -> anyhow::Result<Channel<ChannelEvent>> {
+        let Some(channel) = self.channel_rx.recv().await else {
+            return Err(anyhow::anyhow!("channel tx closed"));
+        };
+
+        self.app_handle
+            .state::<Mutex<Context>>()
+            .lock()
+            .await
+            .channel_set = true;
+
+        Ok(channel)
+    }
+
+    pub fn spawn_invite_code_ready_watcher(&self, channel: Channel<ChannelEvent>) {
+        let rt = tokio::runtime::Handle::current();
+        let channel = channel.clone();
+        let invite_codes_ready = self.invite_codes_ready.clone();
+        rt.spawn(async move {
+            invite_codes_ready
+                .await
+                .expect("invite codes ready channel open");
+            channel
+                .send(ChannelEvent::InviteCodesReady)
+                .expect("channel receiver not dropped");
+        });
+    }
 }
