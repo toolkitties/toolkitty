@@ -30,10 +30,8 @@ fn network_id() -> [u8; 32] {
 }
 
 pub struct Node<T> {
-    #[allow(dead_code)]
-    private_key: PrivateKey,
-    #[allow(dead_code)]
-    store: MemoryStore<LogId, Extensions>,
+    pub private_key: PrivateKey,
+    pub store: MemoryStore<LogId, Extensions>,
     #[allow(dead_code)]
     stream: StreamController,
     stream_tx: mpsc::Sender<ToStreamController>,

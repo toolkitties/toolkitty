@@ -1,50 +1,35 @@
 mod messages;
 mod node;
+mod stream;
 mod topic;
 
-use std::collections::HashMap;
-
-use p2panda_core::{Hash, PrivateKey};
-use p2panda_net::{FromNetwork, SystemEvent, TopicId};
-use p2panda_store::MemoryStore;
+use p2panda_core::Hash;
+use p2panda_net::TopicId;
 use p2panda_sync::log_sync::TopicLogMap;
 use serde::Serialize;
+use stream::{spawn_stream, AppContext};
 use tauri::ipc::Channel;
-use tauri::{AppHandle, Builder, Manager, State};
+use tauri::{Builder, State};
 use thiserror::Error;
-use tokio::sync::{broadcast, mpsc, oneshot, Mutex};
+use tokio::sync::Mutex;
 
 use crate::messages::ChannelEvent;
-use crate::node::operation::{create_operation, CalendarId, Extensions, LogId};
-use crate::node::{Node, PublishError, StreamControllerError, StreamEvent};
-use crate::topic::{NetworkTopic, TopicMap};
-
-struct AppContext {
-    node: Node<NetworkTopic>,
-    store: MemoryStore<LogId, Extensions>,
-    private_key: PrivateKey,
-    selected_calendar: Option<CalendarId>,
-    subscriptions: HashMap<[u8; 32], NetworkTopic>,
-    to_app_tx: broadcast::Sender<ChannelEvent>,
-    #[allow(dead_code)]
-    topic_map: TopicMap,
-    channel_oneshot_tx: Option<oneshot::Sender<Channel<ChannelEvent>>>,
-}
+use crate::node::operation::{create_operation, CalendarId, Extensions};
+use crate::node::{PublishError, StreamControllerError};
+use crate::topic::NetworkTopic;
 
 #[tauri::command]
 async fn init(
     state: State<'_, Mutex<AppContext>>,
     channel: Channel<ChannelEvent>,
 ) -> Result<(), InitError> {
-    let mut state = state.lock().await;
+    let state = state.lock().await;
+    if state.channel_set {
+        return Err(InitError::SetStreamChannelError);
+    }
 
-    match state.channel_oneshot_tx.take() {
-        Some(tx) => {
-            if tx.send(channel).is_err() {
-                return Err(InitError::OneshotChannelError);
-            }
-        }
-        None => return Err(InitError::SetStreamChannelError),
+    if state.channel_tx.send(channel).await.is_err() {
+        return Err(InitError::OneshotChannelError);
     };
 
     Ok(())
@@ -118,7 +103,7 @@ async fn create_calendar(
     payload: serde_json::Value,
 ) -> Result<Hash, PublishError> {
     let mut state = state.lock().await;
-    let private_key = state.private_key.clone();
+    let private_key = state.node.private_key.clone();
 
     // @TODO: Handle error.
     let payload = serde_json::to_vec(&payload).unwrap();
@@ -127,8 +112,13 @@ async fn create_calendar(
 
     // @TODO(adz): Memory stores are infallible right now but we'll switch to a SQLite-based
     // one soon and then we need to handle this error here:
-    let (header, body) =
-        create_operation(&mut state.store, &private_key, extensions, Some(&payload)).await;
+    let (header, body) = create_operation(
+        &mut state.node.store,
+        &private_key,
+        extensions,
+        Some(&payload),
+    )
+    .await;
 
     let hash = header.hash();
     let calendar_id = hash.into();
@@ -167,7 +157,7 @@ async fn publish_calendar_event(
     calendar_id: CalendarId,
 ) -> Result<Hash, PublishError> {
     let mut state = state.lock().await;
-    let private_key = state.private_key.clone();
+    let private_key = state.node.private_key.clone();
 
     // @TODO: Handle error.
     let payload = serde_json::to_vec(&payload).unwrap();
@@ -177,8 +167,13 @@ async fn publish_calendar_event(
         ..Default::default()
     };
 
-    let (header, body) =
-        create_operation(&mut state.store, &private_key, extensions, Some(&payload)).await;
+    let (header, body) = create_operation(
+        &mut state.node.store,
+        &private_key,
+        extensions,
+        Some(&payload),
+    )
+    .await;
 
     let topic = NetworkTopic::Calendar { calendar_id };
 
@@ -210,56 +205,7 @@ pub fn run() {
     Builder::default()
         .setup(|app| {
             let app_handle = app.handle().clone();
-
-            // @TODO(adz): All of this could be refactored to an own struct.
-            tauri::async_runtime::spawn(async move {
-                let private_key = PrivateKey::new();
-                let store = MemoryStore::new();
-                let topic_map = TopicMap::new();
-
-                let (node, stream_rx, system_events_rx) = Node::<NetworkTopic>::new(
-                    private_key.clone(),
-                    store.clone(),
-                    topic_map.clone(),
-                )
-                .await
-                .expect("node successfully starts");
-                let (channel_oneshot_tx, channel_oneshot_rx) = oneshot::channel();
-
-                let (to_app_tx, to_app_rx) = broadcast::channel(32);
-
-                let (invite_codes_rx, invite_codes_ready) = node
-                    .subscribe(NetworkTopic::InviteCodes)
-                    .await
-                    .expect("subscribes to invite codes topic");
-
-                app_handle.manage(Mutex::new(AppContext {
-                    node,
-                    store,
-                    private_key,
-                    selected_calendar: None,
-                    subscriptions: HashMap::new(),
-                    to_app_tx,
-                    topic_map: topic_map.clone(),
-                    channel_oneshot_tx: Some(channel_oneshot_tx),
-                }));
-
-                if let Err(err) = forward_to_app_layer(
-                    app_handle,
-                    stream_rx,
-                    system_events_rx,
-                    to_app_rx,
-                    topic_map,
-                    invite_codes_rx,
-                    invite_codes_ready,
-                    channel_oneshot_rx,
-                )
-                .await
-                {
-                    panic!("failed to start node receiver task: {err}")
-                };
-            });
-
+            spawn_stream(app_handle);
             Ok(())
         })
         .plugin(tauri_plugin_shell::init())
@@ -274,86 +220,6 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-}
-
-/// Task for receiving data from network and forwarding them up to the app layer.
-// @TODO: This needs to be refactored into an own struct.
-#[allow(clippy::too_many_arguments)]
-async fn forward_to_app_layer(
-    app: AppHandle,
-    mut stream_rx: mpsc::Receiver<StreamEvent>,
-    mut system_events_rx: broadcast::Receiver<SystemEvent<NetworkTopic>>,
-    mut to_app_rx: broadcast::Receiver<ChannelEvent>,
-    topic_map: TopicMap,
-    mut invite_codes_rx: mpsc::Receiver<FromNetwork>,
-    invite_codes_ready: oneshot::Receiver<()>,
-    channel_oneshot_rx: oneshot::Receiver<Channel<ChannelEvent>>,
-) -> anyhow::Result<()> {
-    let rt = tokio::runtime::Handle::current();
-
-    // @TODO: Handle errors in this method.
-    let channel = channel_oneshot_rx.await?;
-
-    {
-        let channel = channel.clone();
-        rt.spawn(async move {
-            let _ = invite_codes_ready.await;
-            channel.send(ChannelEvent::InviteCodesReady).unwrap();
-        });
-    }
-
-    rt.spawn(async move {
-        loop {
-            tokio::select! {
-                Ok(event) = to_app_rx.recv() => {
-                    channel.send(event).expect("can send on app channel");
-                }
-                Ok(event) = system_events_rx.recv() => {
-                    channel.send(ChannelEvent::NetworkEvent(messages::NetworkEvent(event))).expect("can send on app channel");
-                },
-                Some(event) = stream_rx.recv() => {
-                    // Register author as contributor to this calendar in our database.
-                    //
-                    // @NOTE(adz): At this point we are in the middle of processing this event and
-                    // haven't ack-ed it yet. The data itself might be invalid, but we already
-                    // inserted it here into the topic map, which will allow other peers to sync it
-                    // from us.
-                    //
-                    // There is probably a better place to do this, but it needs more thought. For
-                    // now I'll leave it here as a POC.
-                    let StreamEvent { meta, .. } = &event;
-                    topic_map.add_author(meta.public_key, meta.calendar_id).await;
-
-                    let state = app.state::<Mutex<AppContext>>();
-                    let state = state.lock().await;
-
-                    // Check if the event is associated with the currently selected calendar. We
-                    // only forward it up to the application if it is.
-                    //
-                    // @TODO: This is filtering out the operations _after_ they've been processed
-                    // by the backend. We should go through the whole processing pipeline when
-                    // selected and not at all when not.
-                    if let Some(selected_calendar) = state.selected_calendar {
-                        if selected_calendar != meta.calendar_id {
-                            return;
-                        };
-                        channel.send(ChannelEvent::Stream(event)).unwrap();
-                    }
-                },
-                Some(event) = invite_codes_rx.recv() => {
-                    let json = match event {
-                        FromNetwork::GossipMessage { bytes, .. } => {
-                            serde_json::from_slice(&bytes).unwrap()
-                        },
-                        FromNetwork::SyncMessage { .. } => unreachable!(),
-                    };
-                    channel.send(ChannelEvent::InviteCodes(json)).unwrap();
-                }
-            }
-        }
-    });
-
-    Ok(())
 }
 
 #[derive(Debug, Error)]
