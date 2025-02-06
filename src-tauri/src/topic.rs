@@ -13,14 +13,6 @@ use tokio::sync::RwLock;
 use crate::node::operation::{CalendarId, LogId};
 
 #[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub struct Calendar {
-    pub id: Hash,
-    pub owner: PublicKey,
-    pub created_at: u64,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
 #[serde(tag = "t", content = "c", rename_all = "snake_case")]
 pub enum NetworkTopic {
     InviteCodes,
