@@ -12,6 +12,9 @@ use tokio::sync::RwLock;
 
 use crate::node::operation::{CalendarId, LogId};
 
+const INVITE_CODES_TOPIC_ID: &str = "invite-codes";
+const DATA_TOPIC_ID_PREFIX: &str = "data";
+
 #[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
 #[serde(tag = "t", content = "c", rename_all = "snake_case")]
 pub enum NetworkTopic {
@@ -24,9 +27,9 @@ impl TopicQuery for NetworkTopic {}
 impl TopicId for NetworkTopic {
     fn id(&self) -> [u8; 32] {
         match self {
-            NetworkTopic::InviteCodes => Hash::new(b"invite-codes").into(),
+            NetworkTopic::InviteCodes => Hash::new(INVITE_CODES_TOPIC_ID.as_bytes()).into(),
             NetworkTopic::Calendar { calendar_id } => {
-                Hash::new(format!("data-{calendar_id}").as_bytes()).into()
+                Hash::new(format!("{DATA_TOPIC_ID_PREFIX}-{calendar_id}").as_bytes()).into()
             }
         }
     }
