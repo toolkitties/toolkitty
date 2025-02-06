@@ -17,12 +17,12 @@ tauri-build = { version = "2", features = [] }
 anyhow = "1.0.95"
 async-trait = "0.1.85"
 futures-util = "0.3.31"
-p2panda-core = { git = "https://github.com/p2panda/p2panda", rev = "b9818729f95922282e8f4cb8f2fd709314162ce6" }
-p2panda-discovery = { git = "https://github.com/p2panda/p2panda", rev = "b9818729f95922282e8f4cb8f2fd709314162ce6", features = ["mdns"] }
-p2panda-net = { git = "https://github.com/p2panda/p2panda", rev = "b9818729f95922282e8f4cb8f2fd709314162ce6" }
-p2panda-store = { git = "https://github.com/p2panda/p2panda", rev = "b9818729f95922282e8f4cb8f2fd709314162ce6" }
-p2panda-stream = { git = "https://github.com/p2panda/p2panda", rev = "b9818729f95922282e8f4cb8f2fd709314162ce6" }
-p2panda-sync = { git = "https://github.com/p2panda/p2panda", rev = "b9818729f95922282e8f4cb8f2fd709314162ce6", features = ["log-sync"] }
+p2panda-core = { git = "https://github.com/p2panda/p2panda", rev = "e55b11a936f6635cb22b66fa2e06508e040af7d9" }
+p2panda-discovery = { git = "https://github.com/p2panda/p2panda", rev = "e55b11a936f6635cb22b66fa2e06508e040af7d9", features = ["mdns"] }
+p2panda-net = { git = "https://github.com/p2panda/p2panda", rev = "e55b11a936f6635cb22b66fa2e06508e040af7d9" }
+p2panda-store = { git = "https://github.com/p2panda/p2panda", rev = "e55b11a936f6635cb22b66fa2e06508e040af7d9" }
+p2panda-stream = { git = "https://github.com/p2panda/p2panda", rev = "e55b11a936f6635cb22b66fa2e06508e040af7d9" }
+p2panda-sync = { git = "https://github.com/p2panda/p2panda", rev = "e55b11a936f6635cb22b66fa2e06508e040af7d9", features = ["log-sync"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tauri = { version = "2", features = [] }

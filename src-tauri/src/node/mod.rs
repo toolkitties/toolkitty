@@ -2,26 +2,28 @@ mod actor;
 pub mod operation;
 mod stream;
 
+use std::collections::HashMap;
+
 use anyhow::Result;
 use futures_util::future::{MapErr, Shared};
 use futures_util::{FutureExt, TryFutureExt};
-use p2panda_core::{Body, Hash, Header, PrivateKey};
+use p2panda_core::{Body, Hash, Header, PrivateKey, PublicKey};
 use p2panda_discovery::mdns::LocalDiscovery;
-use p2panda_net::{FromNetwork, NetworkBuilder, SyncConfiguration, TopicId};
+use p2panda_net::{FromNetwork, NetworkBuilder, SyncConfiguration, SystemEvent, TopicId};
 use p2panda_store::MemoryStore;
 use p2panda_sync::log_sync::{LogSyncProtocol, TopicLogMap};
 use p2panda_sync::TopicQuery;
 use serde::Serialize;
 use thiserror::Error;
-use tokio::sync::{mpsc, oneshot};
+use tokio::sync::{broadcast, mpsc, oneshot};
 use tokio::task::JoinError;
 use tokio_util::task::AbortOnDropHandle;
 use tracing::error;
 
 use crate::node::actor::{NodeActor, ToNodeActor};
 use crate::node::operation::{encode_gossip_message, Extensions, LogId};
-pub use crate::node::stream::{AckError, StreamEvent};
 use crate::node::stream::{StreamController, ToStreamController};
+pub use crate::node::stream::{StreamControllerError, StreamEvent};
 
 fn network_id() -> [u8; 32] {
     Hash::new(b"toolkitty").into()
@@ -40,12 +42,19 @@ pub struct Node<T> {
     actor_handle: Shared<MapErr<AbortOnDropHandle<()>, JoinErrToStr>>,
 }
 
-impl<T: TopicId + TopicQuery + 'static> Node<T> {
+impl<T> Node<T>
+where
+    T: TopicId + TopicQuery + 'static,
+{
     pub async fn new<TM: TopicLogMap<T, LogId> + 'static>(
         private_key: PrivateKey,
         store: MemoryStore<LogId, Extensions>,
         topic_map: TM,
-    ) -> Result<(Self, mpsc::Receiver<StreamEvent>)> {
+    ) -> Result<(
+        Self,
+        mpsc::Receiver<StreamEvent>,
+        broadcast::Receiver<SystemEvent<T>>,
+    )> {
         let rt = tokio::runtime::Handle::current();
 
         let (stream, stream_tx, stream_rx) = StreamController::new(store.clone());
@@ -79,6 +88,8 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
             .build()
             .await?;
 
+        let system_events_rx = network.events().await?;
+
         let (network_actor_tx, network_actor_rx) = mpsc::channel(64);
         let actor = NodeActor::new(network, network_tx, network_actor_rx);
 
@@ -102,16 +113,37 @@ impl<T: TopicId + TopicQuery + 'static> Node<T> {
                 actor_handle: actor_drop_handle,
             },
             stream_rx,
+            system_events_rx,
         ))
     }
 
-    pub async fn ack(&mut self, _operation_id: Hash) -> Result<(), AckError> {
+    /// Acknowledge operations to mark them as successfully processed in the stream controller.
+    pub async fn ack(&mut self, operation_id: Hash) -> Result<(), StreamControllerError> {
+        let (reply_tx, reply_rx) = oneshot::channel();
         self.stream_tx
-            .send(ToStreamController::Ack {})
+            .send(ToStreamController::Ack {
+                operation_id,
+                reply: reply_tx,
+            })
             .await
-            // @TODO: Handle error.
-            .unwrap();
-        Ok(())
+            .expect("send stream_tx");
+        reply_rx.await.expect("receive reply_rx")
+    }
+
+    /// Send all unacknowledged operations again on the stream which belong to these logs.
+    pub async fn replay(
+        &mut self,
+        logs: HashMap<PublicKey, Vec<LogId>>,
+    ) -> Result<(), StreamControllerError> {
+        let (reply_tx, reply_rx) = oneshot::channel();
+        self.stream_tx
+            .send(ToStreamController::Replay {
+                logs,
+                reply: reply_tx,
+            })
+            .await
+            .expect("send stream_tx");
+        reply_rx.await.expect("receive reply_rx")
     }
 
     pub async fn publish_ephemeral(

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { init } from "$lib/channel";
   import { onMount } from "svelte";
+  import Toasts from "../components/toasts.svelte";
 
   onMount(() => {
     // Hacky workaround to only call "init" once in a Svelte HMR life-cycle.
@@ -17,4 +18,5 @@
   });
 </script>
 
+<Toasts />
 <slot />

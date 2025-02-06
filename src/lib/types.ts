@@ -39,7 +39,8 @@ type Image = string;
 type ChannelMessage =
   | StreamMessage
   | InviteCodesReadyMessage
-  | InviteCodesMessage;
+  | InviteCodesMessage
+  | SystemMessage;
 
 /**
  * ଘ(˵╹-╹)━☆•.,¸.•*
@@ -104,6 +105,46 @@ type StreamMessageMeta = {
   calendarId: Hash;
   operationId: Hash;
   publicKey: PublicKey;
+};
+
+/**
+ * o( ❛ᴗ❛ )o	
+ * System Messages
+ */
+
+/**
+ * System messages occur when an action or event occurred on our own node, they don't represent
+ * messages passed around the network. They can be the result of a command being called or some
+ * backend state change.
+ */
+
+type SystemMessage = CalendarSelected
+  | SubscribedToCalendar
+  | CalendarGossipJoined;
+
+/**
+ * We have selected a new calendar and are ready to receive it's events.
+ */
+type CalendarSelected = {
+  event: "calendar_selected";
+  calendarId: string;
+};
+
+/**
+ * We have successfully subscribed to (but not necessarily selected) a new calendar.
+ */
+type SubscribedToCalendar = {
+  event: "subscribed_to_calendar";
+  calendarId: string;
+};
+
+/**
+ * We joined a gossip overlay of a calendar we are subscribed to. This occurs when we meet a peer
+ * subscribed to the same calendar.
+ */
+type CalendarGossipJoined = {
+  event: "calendar_gossip_joined";
+  calendarId: string;
 };
 
 /**
@@ -193,6 +234,7 @@ type Calendar = {
   id: Hash;
   ownerId: PublicKey;
   name: string;
+  // TODO: Should we support non-consecutive dates? It could be arrays of TimeSpan?
   startDate?: Date;
   endDate?: Date;
 };
@@ -207,7 +249,7 @@ type CalendarEvent = {
   endDate: Date; // allocated time of a space
   publicStartDate: Date | null; // public facing
   publicEndDate: Date | null; // public facing
-  resources: Resource[];
+  resources: ResourceRequest[];
   links: Link[];
   images: Image[];
 };
@@ -302,3 +344,8 @@ type TimeSpan = {
 type BookedTimeSpan = TimeSpan & {
   event: Hash;
 };
+
+type Settings = {
+  name: string;
+  value: Hash | string;
+}
