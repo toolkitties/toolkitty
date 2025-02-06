@@ -120,7 +120,7 @@ type StreamMessageMeta = {
 
 type SystemMessage = CalendarSelected
   | SubscribedToCalendar
-  | CalendarGossipJoined;
+  | NetworkEvent;
 
 /**
  * We have selected a new calendar and are ready to receive it's events.
@@ -139,12 +139,12 @@ type SubscribedToCalendar = {
 };
 
 /**
- * We joined a gossip overlay of a calendar we are subscribed to. This occurs when we meet a peer
- * subscribed to the same calendar.
+ * We received a network system event from the backend node.
  */
-type CalendarGossipJoined = {
-  event: "calendar_gossip_joined";
-  calendarId: string;
+type NetworkEvent = {
+  event: "network_event";
+  // @TODO: define all possible system events we will receive on the frontend
+  data: any;
 };
 
 /**

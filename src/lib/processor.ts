@@ -134,7 +134,9 @@ export async function process(message: ChannelMessage) {
   ) {
     await onInviteCodesMessage(message);
   } else if (
-    message.event == "calendar_selected" || message.event == "subscribed_to_calendar" || message.event == "calendar_gossip_joined"
+    message.event == "calendar_selected" ||
+    message.event == "subscribed_to_calendar" ||
+    message.event == "network_event"
   ) {
     await onSystemMessage(message);
   }
@@ -167,17 +169,13 @@ async function onInviteCodesMessage(
   }
 }
 
-async function onSystemMessage(
-  message: SystemMessage,
-) {
+async function onSystemMessage(message: SystemMessage) {
   if (message.event === "calendar_selected") {
     // @TODO: set selected calendar.
     console.log("calendar selected: ", message.calendarId);
   } else if (message.event === "subscribed_to_calendar") {
     console.log("subscribed to calendar: ", message.calendarId);
-  } else if (message.event === "calendar_gossip_joined") {
-    console.log("joined calendar gossip: ", message.calendarId);
+  } else if (message.event === "network_event") {
+    console.log("network system event received: ", message);
   }
 }
-
-

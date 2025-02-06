@@ -1,10 +1,9 @@
+mod messages;
 mod node;
 mod topic;
-mod messages;
 
 use std::collections::HashMap;
 
-use messages::ChannelEvent;
 use p2panda_core::{Hash, PrivateKey};
 use p2panda_net::{FromNetwork, SystemEvent, TopicId};
 use p2panda_store::MemoryStore;
@@ -15,6 +14,7 @@ use tauri::{AppHandle, Builder, Manager, State};
 use thiserror::Error;
 use tokio::sync::{broadcast, mpsc, oneshot, Mutex};
 
+use crate::messages::ChannelEvent;
 use crate::node::operation::{create_operation, CalendarId, Extensions, LogId};
 use crate::node::{Node, PublishError, StreamControllerError, StreamEvent};
 use crate::topic::{NetworkTopic, TopicMap};
@@ -309,14 +309,7 @@ async fn forward_to_app_layer(
                     channel.send(event).expect("can send on app channel");
                 }
                 Ok(event) = system_events_rx.recv() => {
-                    if let SystemEvent::GossipJoined { topic_id, .. } = event {
-                        let state = app.state::<Mutex<AppContext>>();
-                        let state = state.lock().await;
-
-                        if let Some(NetworkTopic::Calendar{calendar_id}) = state.subscriptions.get(&topic_id) {
-                            channel.send(ChannelEvent::CalendarGossipJoined(*calendar_id)).expect("can send on app channel");
-                        }
-                    };
+                    channel.send(ChannelEvent::NetworkEvent(messages::NetworkEvent(event))).expect("can send on app channel");
                 },
                 Some(event) = stream_rx.recv() => {
                     // Register author as contributor to this calendar in our database.
