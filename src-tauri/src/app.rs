@@ -56,6 +56,11 @@ pub struct Service {
 }
 
 impl Service {
+    /// Construct node, context and channels required for running the app service. Already
+    /// subscribe to the invite codes topic.
+    ///
+    /// The node and several channel senders are added to the shared app context while channel
+    /// receivers are stored on the Service struct for use during the runtime loop.
     pub async fn build(app_handle: AppHandle) -> anyhow::Result<Self> {
         let private_key = PrivateKey::new();
         let store = MemoryStore::new();
@@ -86,6 +91,7 @@ impl Service {
         })
     }
 
+    /// Spawn the service task.
     pub fn run(app_handle: AppHandle) {
         tauri::async_runtime::spawn(async move {
             let mut app = Self::build(app_handle).await.expect("build stream");
@@ -95,7 +101,9 @@ impl Service {
         });
     }
 
-    pub async fn inner_run(mut self, channel: Channel<ChannelEvent>) -> anyhow::Result<()> {
+    /// Run the inner service loop which awaits events arriving on the app, network, stream and
+    /// invite codes channels.
+    async fn inner_run(mut self, channel: Channel<ChannelEvent>) -> anyhow::Result<()> {
         loop {
             tokio::select! {
                 Ok(event) = self.to_app_rx.recv() => {
@@ -146,7 +154,7 @@ impl Service {
         }
     }
 
-    pub async fn recv_channel(&mut self) -> anyhow::Result<Channel<ChannelEvent>> {
+    async fn recv_channel(&mut self) -> anyhow::Result<Channel<ChannelEvent>> {
         let Some(channel) = self.channel_rx.recv().await else {
             return Err(anyhow::anyhow!("channel tx closed"));
         };
@@ -160,7 +168,7 @@ impl Service {
         Ok(channel)
     }
 
-    pub fn spawn_invite_code_ready_watcher(&self, channel: Channel<ChannelEvent>) {
+    fn spawn_invite_code_ready_watcher(&self, channel: Channel<ChannelEvent>) {
         let rt = tokio::runtime::Handle::current();
         let channel = channel.clone();
         let invite_codes_ready = self.invite_codes_ready.clone();
