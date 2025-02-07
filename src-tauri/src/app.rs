@@ -8,6 +8,7 @@ use p2panda_store::MemoryStore;
 use tauri::ipc::Channel;
 use tauri::{AppHandle, Manager};
 use tokio::sync::{broadcast, mpsc, oneshot, Mutex};
+use tracing::debug;
 
 use crate::messages::{ChannelEvent, NetworkEvent};
 use crate::node::operation::CalendarId;
@@ -170,6 +171,7 @@ impl Service {
                     // selected and not at all when not.
                     if let Some(selected_calendar) = state.selected_calendar {
                         if selected_calendar != meta.calendar_id {
+                            debug!("ignoring stream event: calendar not selected");
                             continue;
                         };
                         channel.send(ChannelEvent::Stream(event))?;

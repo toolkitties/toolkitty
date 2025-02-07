@@ -5,6 +5,7 @@ use serde::Serialize;
 use tauri::{ipc::Channel, State};
 use thiserror::Error;
 use tokio::sync::Mutex;
+use tracing::debug;
 
 use crate::app::Context;
 use crate::messages::ChannelEvent;
@@ -18,6 +19,8 @@ pub async fn init(
     state: State<'_, Mutex<Context>>,
     channel: Channel<ChannelEvent>,
 ) -> Result<(), InitError> {
+    debug!(command.name = "init", "RPC request received");
+
     let state = state.lock().await;
     if state.channel_set {
         return Err(InitError::SetStreamChannelError);
@@ -36,6 +39,12 @@ pub async fn ack(
     state: State<'_, Mutex<Context>>,
     operation_id: Hash,
 ) -> Result<(), StreamControllerError> {
+    debug!(
+        command.name = "ack",
+        command.operation_id = operation_id.to_hex(),
+        "RPC request received"
+    );
+
     let mut state = state.lock().await;
     state.node.ack(operation_id).await?;
     Ok(())
@@ -47,6 +56,12 @@ pub async fn subscribe_to_calendar(
     state: State<'_, Mutex<Context>>,
     calendar_id: CalendarId,
 ) -> Result<(), PublishError> {
+    debug!(
+        command.name = "subscribe_to_calendar",
+        command.calendar_id = calendar_id.0.to_hex(),
+        "RPC request received"
+    );
+
     let mut state = state.lock().await;
     let topic = NetworkTopic::Calendar { calendar_id };
 
@@ -77,6 +92,12 @@ pub async fn select_calendar(
     state: State<'_, Mutex<Context>>,
     calendar_id: CalendarId,
 ) -> Result<(), StreamControllerError> {
+    debug!(
+        command.name = "select_calendar",
+        command.calendar_id = calendar_id.0.to_hex(),
+        "RPC request received"
+    );
+
     let mut state = state.lock().await;
 
     state.selected_calendar = Some(calendar_id);
@@ -107,6 +128,8 @@ pub async fn create_calendar(
     state: State<'_, Mutex<Context>>,
     payload: serde_json::Value,
 ) -> Result<Hash, PublishError> {
+    debug!(command.name = "create_calendar", "RPC request received");
+
     let mut state = state.lock().await;
     let private_key = state.node.private_key.clone();
 
@@ -164,6 +187,12 @@ pub async fn publish_calendar_event(
     payload: serde_json::Value,
     calendar_id: CalendarId,
 ) -> Result<Hash, PublishError> {
+    debug!(
+        command.name = "publish_calendar_event",
+        command.calendar_id = calendar_id.0.to_hex(),
+        "RPC request received"
+    );
+
     let mut state = state.lock().await;
     let private_key = state.node.private_key.clone();
 
@@ -199,6 +228,11 @@ pub async fn publish_to_invite_code_overlay(
     state: State<'_, Mutex<Context>>,
     payload: serde_json::Value,
 ) -> Result<(), PublishError> {
+    debug!(
+        command.name = "publish_to_invite_code_overlay",
+        "RPC request received"
+    );
+
     let mut state = state.lock().await;
     // @TODO: Handle error.
     let payload = serde_json::to_vec(&payload).unwrap();
