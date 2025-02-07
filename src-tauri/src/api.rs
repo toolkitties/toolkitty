@@ -12,6 +12,7 @@ use crate::node::operation::{create_operation, CalendarId, Extensions};
 use crate::node::{PublishError, StreamControllerError};
 use crate::topic::NetworkTopic;
 
+/// Initialize the app by passing it a channel from the frontend.
 #[tauri::command]
 pub async fn init(
     state: State<'_, Mutex<Context>>,
@@ -40,6 +41,7 @@ pub async fn ack(
     Ok(())
 }
 
+/// Subscribe to a specific calendar by it's id.
 #[tauri::command]
 pub async fn subscribe_to_calendar(
     state: State<'_, Mutex<Context>>,
@@ -64,6 +66,12 @@ pub async fn subscribe_to_calendar(
     Ok(())
 }
 
+/// Select a calendar we have already subscribed to.
+/// 
+/// Calling this method causes all events for calendars other than the selected one to be filtered
+/// out of the channel stream. The frontend will only receive events of the selected calendar.
+/// 
+/// Any operations which arrived at the node since we last selected this calendar will be replayed.
 #[tauri::command]
 pub async fn select_calendar(
     state: State<'_, Mutex<Context>>,
@@ -91,6 +99,9 @@ pub async fn select_calendar(
     Ok(())
 }
 
+/// Create a new calendar and subscribe to it.
+/// 
+/// Returns the hash of the operation on which the calendar payload was encoded. 
 #[tauri::command]
 pub async fn create_calendar(
     state: State<'_, Mutex<Context>>,
@@ -144,6 +155,9 @@ pub async fn create_calendar(
     Ok(hash)
 }
 
+/// Publish an event to the calendar topic.
+/// 
+/// Returns the hash of the operation on which the payload was encoded. 
 #[tauri::command]
 pub async fn publish_calendar_event(
     state: State<'_, Mutex<Context>>,
@@ -179,6 +193,7 @@ pub async fn publish_calendar_event(
     Ok(header.hash())
 }
 
+/// Publish an invite code to onto the invite overlay network.
 #[tauri::command]
 pub async fn publish_to_invite_code_overlay(
     state: State<'_, Mutex<Context>>,
