@@ -10,7 +10,6 @@ use tracing::debug;
 use crate::app::Context;
 use crate::messages::ChannelEvent;
 use crate::node::operation::{create_operation, CalendarId, Extensions};
-use crate::node::{PublishError, StreamControllerError};
 use crate::topic::NetworkTopic;
 
 /// Initialize the app by passing it a channel from the frontend.
@@ -18,16 +17,16 @@ use crate::topic::NetworkTopic;
 pub async fn init(
     state: State<'_, Mutex<Context>>,
     channel: Channel<ChannelEvent>,
-) -> Result<(), InitError> {
+) -> Result<(), RpcError> {
     debug!(command.name = "init", "RPC request received");
 
     let state = state.lock().await;
     if state.channel_set {
-        return Err(InitError::SetStreamChannelError);
+        return Err(RpcError::SetStreamChannelError);
     }
 
     if state.channel_tx.send(channel).await.is_err() {
-        return Err(InitError::OneshotChannelError);
+        return Err(RpcError::OneshotChannelError);
     };
 
     Ok(())
@@ -35,10 +34,7 @@ pub async fn init(
 
 /// Acknowledge operations to mark them as successfully processed in the stream controller.
 #[tauri::command]
-pub async fn ack(
-    state: State<'_, Mutex<Context>>,
-    operation_id: Hash,
-) -> Result<(), StreamControllerError> {
+pub async fn ack(state: State<'_, Mutex<Context>>, operation_id: Hash) -> Result<(), RpcError> {
     debug!(
         command.name = "ack",
         command.operation_id = operation_id.to_hex(),
@@ -55,7 +51,7 @@ pub async fn ack(
 pub async fn subscribe_to_calendar(
     state: State<'_, Mutex<Context>>,
     calendar_id: CalendarId,
-) -> Result<(), PublishError> {
+) -> Result<(), RpcError> {
     debug!(
         command.name = "subscribe_to_calendar",
         command.calendar_id = calendar_id.0.to_hex(),
@@ -71,11 +67,11 @@ pub async fn subscribe_to_calendar(
             .node
             .subscribe_processed(&NetworkTopic::Calendar { calendar_id })
             .await
-            .unwrap();
+            .expect("can subscribe to topic");
+
         state
             .to_app_tx
-            .send(ChannelEvent::SubscribedToCalendar(calendar_id))
-            .expect("can send on app tx");
+            .send(ChannelEvent::SubscribedToCalendar(calendar_id))?;
     }
 
     Ok(())
@@ -91,7 +87,7 @@ pub async fn subscribe_to_calendar(
 pub async fn select_calendar(
     state: State<'_, Mutex<Context>>,
     calendar_id: CalendarId,
-) -> Result<(), StreamControllerError> {
+) -> Result<(), RpcError> {
     debug!(
         command.name = "select_calendar",
         command.calendar_id = calendar_id.0.to_hex(),
@@ -114,8 +110,7 @@ pub async fn select_calendar(
 
     state
         .to_app_tx
-        .send(ChannelEvent::CalendarSelected(calendar_id))
-        .expect("send to_app_tx");
+        .send(ChannelEvent::CalendarSelected(calendar_id))?;
 
     Ok(())
 }
@@ -127,14 +122,14 @@ pub async fn select_calendar(
 pub async fn create_calendar(
     state: State<'_, Mutex<Context>>,
     payload: serde_json::Value,
-) -> Result<Hash, PublishError> {
+) -> Result<Hash, RpcError> {
     debug!(command.name = "create_calendar", "RPC request received");
 
     let mut state = state.lock().await;
     let private_key = state.node.private_key.clone();
 
     // @TODO: Handle error.
-    let payload = serde_json::to_vec(&payload).unwrap();
+    let payload = serde_json::to_vec(&payload)?;
 
     let extensions = Extensions::default();
 
@@ -163,11 +158,10 @@ pub async fn create_calendar(
             .node
             .subscribe_processed(&NetworkTopic::Calendar { calendar_id })
             .await
-            .unwrap();
+            .expect("can subscribe to topic");
         state
             .to_app_tx
-            .send(ChannelEvent::SubscribedToCalendar(calendar_id))
-            .expect("can send on app tx");
+            .send(ChannelEvent::SubscribedToCalendar(calendar_id))?;
     };
 
     state
@@ -186,7 +180,7 @@ pub async fn publish_calendar_event(
     state: State<'_, Mutex<Context>>,
     payload: serde_json::Value,
     calendar_id: CalendarId,
-) -> Result<Hash, PublishError> {
+) -> Result<Hash, RpcError> {
     debug!(
         command.name = "publish_calendar_event",
         command.calendar_id = calendar_id.0.to_hex(),
@@ -197,7 +191,7 @@ pub async fn publish_calendar_event(
     let private_key = state.node.private_key.clone();
 
     // @TODO: Handle error.
-    let payload = serde_json::to_vec(&payload).unwrap();
+    let payload = serde_json::to_vec(&payload)?;
 
     let extensions = Extensions {
         calendar_id: Some(calendar_id),
@@ -227,7 +221,7 @@ pub async fn publish_calendar_event(
 pub async fn publish_to_invite_code_overlay(
     state: State<'_, Mutex<Context>>,
     payload: serde_json::Value,
-) -> Result<(), PublishError> {
+) -> Result<(), RpcError> {
     debug!(
         command.name = "publish_to_invite_code_overlay",
         "RPC request received"
@@ -235,7 +229,7 @@ pub async fn publish_to_invite_code_overlay(
 
     let mut state = state.lock().await;
     // @TODO: Handle error.
-    let payload = serde_json::to_vec(&payload).unwrap();
+    let payload = serde_json::to_vec(&payload)?;
     state
         .node
         .publish_ephemeral(&NetworkTopic::InviteCodes, &payload)
@@ -244,15 +238,27 @@ pub async fn publish_to_invite_code_overlay(
 }
 
 #[derive(Debug, Error)]
-pub enum InitError {
+pub enum RpcError {
     #[error("oneshot channel receiver closed")]
     OneshotChannelError,
 
     #[error("stream channel already set")]
     SetStreamChannelError,
+
+    #[error(transparent)]
+    StreamControllerError(#[from] crate::node::StreamControllerError),
+
+    #[error(transparent)]
+    PublishError(#[from] crate::node::PublishError),
+
+    #[error("payload decoding failed")]
+    SerdeError(#[from] serde_json::Error),
+
+    #[error("sending message on channel failed")]
+    ChannelSenderError(#[from] tokio::sync::broadcast::error::SendError<ChannelEvent>),
 }
 
-impl Serialize for InitError {
+impl Serialize for RpcError {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::ser::Serializer,
