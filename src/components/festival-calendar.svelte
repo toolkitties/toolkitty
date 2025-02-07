@@ -2,39 +2,11 @@
   import { Calendar } from "bits-ui";
   import { CalendarDate } from "@internationalized/date";
   import type { DateValue } from "@internationalized/date";
+  import { createDatesArray } from "$lib/utils/createDatesArray";
 
   let { canSelectMultiple, festivalDates = null, eventCount = null } = $props();
 
-  const generateFestivalDates = (): DateValue[] => {
-    if (!festivalDates) return [];
-
-    const { startCalendarDate, endCalendarDate } = festivalDates;
-
-    let startDate = new CalendarDate(
-      startCalendarDate.year,
-      startCalendarDate.month,
-      startCalendarDate.day,
-    );
-    let endDate = new CalendarDate(
-      endCalendarDate.year,
-      endCalendarDate.month,
-      endCalendarDate.day,
-    );
-
-    let dates: DateValue[] = [];
-    let currentDate = startDate;
-
-    while (currentDate.compare(endDate) <= 0) {
-      dates.push(
-        new CalendarDate(currentDate.year, currentDate.month, currentDate.day),
-      );
-      currentDate = currentDate.add({ days: 1 });
-    }
-
-    return dates;
-  };
-
-  const festivalDateArray = generateFestivalDates();
+  const festivalDateArray = createDatesArray(festivalDates);
 
   const isFestivalDate = (date: DateValue): boolean => {
     return festivalDateArray.some((festivalDate) =>
@@ -51,6 +23,9 @@
     );
   };
 
+  /*
+    @TODO - figure out how to manage this if events can span across multiple days
+  */
   //Busy-ness indicator on highlighted dates
   // const getOpacity = (date: DateValue): number => {
   //   if (!eventsCount || !Array.isArray(eventsCount)) {

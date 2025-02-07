@@ -6,23 +6,9 @@
   import EventRow from "../../../components/event-row.svelte";
   import { findMany as findEvents } from "$lib/api/events";
 
-  function convertDateStringToCalendarDate(dateString: string) {
-    let date = new Date(dateString);
-    return new CalendarDate(
-      date.getUTCFullYear(),
-      date.getUTCMonth() + 1,
-      date.getUTCDate(),
-    );
-  }
-
-  let festivalDates = {
-    startDate: "2025-01-06T14:40:02.536Z",
-    endDate: "2025-01-11T14:40:02.536Z",
-  };
-
-  let festivalCalendarDates = {
-    startCalendarDate: convertDateStringToCalendarDate(festivalDates.startDate),
-    endCalendarDate: convertDateStringToCalendarDate(festivalDates.endDate),
+  let festivalDates: TimeSpan = {
+    start: new Date("2025-01-06T14:40:02.536Z"),
+    end: new Date("2025-01-11T14:40:02.536Z"),
   };
 
   let events: CalendarEvent[] = [];
@@ -53,10 +39,7 @@
   <option value="/create">Create New Festival</option>
 </select>
 
-<FestivalCalendar
-  canSelectMultiple={false}
-  festivalDates={festivalCalendarDates}
-/>
+<FestivalCalendar canSelectMultiple={false} {festivalDates} />
 
 {#each events as event}
   <EventRow {event} />
