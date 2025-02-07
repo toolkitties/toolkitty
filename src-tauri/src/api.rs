@@ -67,10 +67,10 @@ pub async fn subscribe_to_calendar(
 }
 
 /// Select a calendar we have already subscribed to.
-/// 
+///
 /// Calling this method causes all events for calendars other than the selected one to be filtered
 /// out of the channel stream. The frontend will only receive events of the selected calendar.
-/// 
+///
 /// Any operations which arrived at the node since we last selected this calendar will be replayed.
 #[tauri::command]
 pub async fn select_calendar(
@@ -100,8 +100,8 @@ pub async fn select_calendar(
 }
 
 /// Create a new calendar and subscribe to it.
-/// 
-/// Returns the hash of the operation on which the calendar payload was encoded. 
+///
+/// Returns the hash of the operation on which the calendar payload was encoded.
 #[tauri::command]
 pub async fn create_calendar(
     state: State<'_, Mutex<Context>>,
@@ -156,8 +156,8 @@ pub async fn create_calendar(
 }
 
 /// Publish an event to the calendar topic.
-/// 
-/// Returns the hash of the operation on which the payload was encoded. 
+///
+/// Returns the hash of the operation on which the payload was encoded.
 #[tauri::command]
 pub async fn publish_calendar_event(
     state: State<'_, Mutex<Context>>,
