@@ -176,6 +176,6 @@ async function onSystemMessage(message: SystemMessage) {
   } else if (message.event === "subscribed_to_calendar") {
     console.log("subscribed to calendar: ", message.calendarId);
   } else if (message.event === "network_event") {
-    console.log("network system event received: ", message);
+    // console.log("network system event received: ", message);
   }
 }
