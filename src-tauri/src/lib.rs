@@ -1,4 +1,4 @@
-mod api;
+mod rpc;
 mod app;
 mod messages;
 mod node;
@@ -6,7 +6,7 @@ mod topic;
 
 use tauri::Builder;
 
-use crate::api::{
+use crate::rpc::{
     ack, create_calendar, init, publish_calendar_event, publish_to_invite_code_overlay,
     select_calendar, subscribe_to_calendar,
 };
