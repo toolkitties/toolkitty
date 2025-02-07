@@ -14,14 +14,33 @@ use crate::node::operation::CalendarId;
 use crate::node::{Node, StreamEvent};
 use crate::topic::{NetworkTopic, TopicMap};
 
+/// Shared application context which can be accessed from within the main application runtime loop
+/// as well as any tauri command.
 pub struct Context {
+    /// Local p2panda node.
     pub node: Node<NetworkTopic>,
+
+    /// Currently selected calendar.
     pub selected_calendar: Option<CalendarId>,
+
+    /// All topics we have subscribed to.
     pub subscriptions: HashMap<[u8; 32], NetworkTopic>,
+
+    /// Channel for sending messages to the frontend application. Messages are forwarded on the
+    /// main event channel and will be received by the channel processor on the frontend.
     pub to_app_tx: broadcast::Sender<ChannelEvent>,
+
+    /// Sync protocol topic map.
     #[allow(dead_code)]
     pub topic_map: TopicMap,
+
+    /// Channel for sending the actual tauri channel where all backend->frontend events are sent.
+    /// We need this so that when the `init` command is called with the channel as an argument it
+    /// can be forwarded into the main application service task which is waiting for it.
     pub channel_tx: mpsc::Sender<Channel<ChannelEvent>>,
+
+    /// Flag indicating that we already received a channel from the frontend (init was already
+    /// called). There is a bug if `init` is called twice.
     pub channel_set: bool,
 }
 
@@ -45,13 +64,28 @@ impl Context {
 }
 
 pub struct Service {
+    /// Handle onto the tauri application. The shared Context can be accessed and modified here.
     app_handle: AppHandle,
+
+    /// Stream where we receive all topic events from the p2panda node.
     stream_rx: mpsc::Receiver<StreamEvent>,
+
+    /// Channel where we receive messages from the dedicated invite codes topic.
     invite_codes_rx: mpsc::Receiver<FromNetwork>,
+
+    /// Ready signal for the invite codes topic.
     invite_codes_ready: Shared<oneshot::Receiver<()>>,
+
+    /// Channel where we receive network status events from the p2panda node.
     network_events_rx: broadcast::Receiver<SystemEvent<NetworkTopic>>,
+
+    /// Sync protocol topic map.
     topic_map: TopicMap,
+
+    /// Channel where we receive messages which should be forwarded up to the frontend.
     to_app_rx: broadcast::Receiver<ChannelEvent>,
+
+    /// Channel where we receive the actual backend->frontend event channel.
     channel_rx: mpsc::Receiver<Channel<ChannelEvent>>,
 }
 
