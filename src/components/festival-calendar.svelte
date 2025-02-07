@@ -3,13 +3,8 @@
   import { CalendarDate } from "@internationalized/date";
   import type { DateValue } from "@internationalized/date";
 
-  let {
-    canSelectMultiple,
-    festivalDates = null,
-    eventsCount = null,
-  } = $props();
+  let { canSelectMultiple, festivalDates = null, eventCount = null } = $props();
 
-  // Generate an array of all festival dates
   const generateFestivalDates = (): DateValue[] => {
     if (!festivalDates) return [];
 
@@ -41,7 +36,6 @@
 
   const festivalDateArray = generateFestivalDates();
 
-  // Highlight festival dates
   const isFestivalDate = (date: DateValue): boolean => {
     return festivalDateArray.some((festivalDate) =>
       isSameDate(festivalDate, date),
@@ -57,19 +51,19 @@
     );
   };
 
-  // Busy-ness indicator on highlighted dates
-  const getOpacity = (date: DateValue): number => {
-    if (!eventsCount || !Array.isArray(eventsCount)) {
-      return 1;
-    }
-    const eventForDate = eventsCount.find((event) =>
-      isSameDate(event.date, date),
-    );
-    if (eventForDate) {
-      return Math.min(0.2 + eventForDate.numberOfEvents * 0.2, 1);
-    }
-    return 0.1;
-  };
+  //Busy-ness indicator on highlighted dates
+  // const getOpacity = (date: DateValue): number => {
+  //   if (!eventsCount || !Array.isArray(eventsCount)) {
+  //     return 1;
+  //   }
+  //   const eventForDate = eventsCount.find((event) =>
+  //     isSameDate(event.date, date),
+  //   );
+  //   if (eventForDate) {
+  //     return Math.min(0.2 + eventForDate.numberOfEvents * 0.2, 1);
+  //   }
+  //   return 0.1;
+  // };
 </script>
 
 <Calendar.Root let:months let:weekdays multiple={canSelectMultiple}>
@@ -98,7 +92,6 @@
                 <Calendar.Day
                   {date}
                   month={month.value}
-                  style={`opacity: ${getOpacity(date)}`}
                   class={`data-[outside-month]:pointer-events-none
                     data-[outside-month]:text-gray-300
                     data-[selected]:bg-black
