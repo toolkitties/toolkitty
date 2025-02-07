@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import ResourceCalendar from "../../../../components/resource-calendar.svelte";
   import { findMany as findSpaces } from "$lib/api/spaces";
   import { findMany as findResources } from "$lib/api/resources";
+  import SpaceCalendar from "../../../../components/space-calendar.svelte";
 
   let spaces: Space[] = [];
   let resources: Resource[] = [];
@@ -76,10 +76,7 @@
 
     <div class="space-availability">
       <p>Select from available dates:</p>
-      <ResourceCalendar
-        resources={spaces}
-        currentlySelectedId={currentlySelectedSpaceId}
-      />
+      <SpaceCalendar currentlySelectedId={currentlySelectedSpaceId} />
     </div>
   {:else}
     <p>No spaces found.</p>

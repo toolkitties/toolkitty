@@ -15,7 +15,6 @@
     (resource: Resource | Space) => resource.id === currentlySelectedId,
   );
   let availableDatesAndTimes = selectedResource?.availability;
-  console.log(resources[0].availability);
 
   let availableCalendarDates = availableDatesAndTimes.map(
     (entry: AvailableDateEntry) => {

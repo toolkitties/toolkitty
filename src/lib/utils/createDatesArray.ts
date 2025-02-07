@@ -10,7 +10,6 @@ import { CalendarDate } from "@internationalized/date";
 import type { DateValue } from "@internationalized/date";
 
 export function createDatesArray(timeSpan: TimeSpan): DateValue[] {
-  console.log(timeSpan);
   const { start, end } = timeSpan;
   const startCalendarDate = convertDateToCalendarDate(start);
   const endCalendarDate = convertDateToCalendarDate(end);

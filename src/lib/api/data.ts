@@ -7,12 +7,12 @@ export const resources: Resource[] = [
     contact: "Signal @beamer",
     availability: [
       {
-        start: new Date("2025-01-20T00:0:00Z"),
-        end: new Date("2025-01-22T00:0:00Z"),
+        start: new Date("2025-01-20T00:00:00Z"),
+        end: new Date("2025-01-22T00:00:00Z"),
       },
       {
-        start: new Date("2025-01-24T00:0:00Z"),
-        end: new Date("2025-01-26T00:0:00Z"),
+        start: new Date("2025-01-24T00:00:00Z"),
+        end: new Date("2025-01-26T00:00:00Z"),
       },
     ],
     quantity: 1,
@@ -27,8 +27,8 @@ export const resources: Resource[] = [
     description: "as above. Call me to confirm pick up",
     availability: [
       {
-        start: new Date("2025-01-01T00:0:00Z"),
-        end: new Date("2025-02-30T00:0:00Z"),
+        start: new Date("2025-01-01T00:00:00Z"),
+        end: new Date("2025-02-30T00:00:00Z"),
       },
     ],
     quantity: 10,
@@ -58,8 +58,8 @@ export const spaces: Space[] = [
     ],
     availability: [
       {
-        start: new Date("2025-01-01T00:0:00Z"),
-        end: new Date("2025-02-29T00:0:00Z"),
+        start: new Date("2025-01-01T00:00:00Z"),
+        end: new Date("2025-02-29T00:00:00Z"),
       },
     ],
     multiBookable: false,
@@ -87,8 +87,8 @@ export const spaces: Space[] = [
     ],
     availability: [
       {
-        start: new Date("2025-01-01T00:0:00Z"),
-        end: new Date("2025-02-30T00:0:00Z"),
+        start: new Date("2025-01-01T00:00:00Z"),
+        end: new Date("2025-02-30T00:00:00Z"),
       },
     ],
     multiBookable: false,

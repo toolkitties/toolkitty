@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
-  import { CalendarDate } from "@internationalized/date";
   import FestivalCalendar from "../../../components/festival-calendar.svelte";
   import EventRow from "../../../components/event-row.svelte";
   import { findMany as findEvents } from "$lib/api/events";
