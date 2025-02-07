@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use p2panda_core::{Hash, PrivateKey};
 use p2panda_net::{FromNetwork, SystemEvent, TopicId};
 use p2panda_store::MemoryStore;
+use p2panda_sync::log_sync::TopicLogMap;
 use serde::ser::SerializeStruct;
 use serde::Serialize;
 use tauri::ipc::Channel;
@@ -14,7 +15,7 @@ use thiserror::Error;
 use tokio::sync::{broadcast, mpsc, oneshot, Mutex};
 
 use crate::node::operation::{create_operation, CalendarId, Extensions, LogId};
-use crate::node::{AckError, Node, PublishError, StreamEvent};
+use crate::node::{Node, PublishError, StreamControllerError, StreamEvent};
 use crate::topic::{NetworkTopic, TopicMap};
 
 struct AppContext {
@@ -48,8 +49,12 @@ async fn init(
     Ok(())
 }
 
+/// Acknowledge operations to mark them as successfully processed in the stream controller.
 #[tauri::command]
-async fn ack(state: State<'_, Mutex<AppContext>>, operation_id: Hash) -> Result<(), AckError> {
+async fn ack(
+    state: State<'_, Mutex<AppContext>>,
+    operation_id: Hash,
+) -> Result<(), StreamControllerError> {
     let mut state = state.lock().await;
     state.node.ack(operation_id).await?;
     Ok(())
@@ -75,6 +80,7 @@ async fn subscribe_to_calendar(
             .send(ChannelEvent::SubscribedToCalendar(calendar_id))
             .expect("can send on app tx");
     }
+
     Ok(())
 }
 
@@ -82,13 +88,26 @@ async fn subscribe_to_calendar(
 async fn select_calendar(
     state: State<'_, Mutex<AppContext>>,
     calendar_id: CalendarId,
-) -> Result<(), PublishError> {
+) -> Result<(), StreamControllerError> {
     let mut state = state.lock().await;
+
     state.selected_calendar = Some(calendar_id);
+
+    // Ask stream controller to re-play all operations from logs inside this topic which haven't
+    // been acknowledged yet by the frontend.
+    if let Some(logs) = state
+        .topic_map
+        .get(&NetworkTopic::Calendar { calendar_id })
+        .await
+    {
+        state.node.replay(logs).await?;
+    }
+
     state
         .to_app_tx
         .send(ChannelEvent::CalendarSelected(calendar_id))
-        .expect("can send on app tx");
+        .expect("send to_app_tx");
+
     Ok(())
 }
 
@@ -113,16 +132,6 @@ async fn create_calendar(
     let hash = header.hash();
     let calendar_id = hash.into();
     let topic = NetworkTopic::Calendar { calendar_id };
-
-    // @TODO: It would be clearer if this "selecting" of the calendar was handled by calling the
-    // IPC method from the front end. This is not possible until we have re-play of un-acked
-    // operations though, as currently there is the chance that operations are missed (and not
-    // re-played) if we don't select here.
-    state.selected_calendar = Some(calendar_id);
-    state
-        .to_app_tx
-        .send(ChannelEvent::CalendarSelected(calendar_id))
-        .expect("can send on app tx");
 
     // This is a new calendar and so we have never subscribed to it's topic yet. Do this before
     // actually publishing the create event.
@@ -170,9 +179,7 @@ async fn publish_calendar_event(
     let (header, body) =
         create_operation(&mut state.store, &private_key, extensions, Some(&payload)).await;
 
-    let topic = NetworkTopic::Calendar {
-        calendar_id: calendar_id.into(),
-    };
+    let topic = NetworkTopic::Calendar { calendar_id };
 
     state
         .node
@@ -269,6 +276,8 @@ pub fn run() {
 }
 
 /// Task for receiving data from network and forwarding them up to the app layer.
+// @TODO: This needs to be refactored into an own struct.
+#[allow(clippy::too_many_arguments)]
 async fn forward_to_app_layer(
     app: AppHandle,
     mut stream_rx: mpsc::Receiver<StreamEvent>,
@@ -302,7 +311,7 @@ async fn forward_to_app_layer(
                     if let SystemEvent::GossipJoined { topic_id, .. } = event {
                         let state = app.state::<Mutex<AppContext>>();
                         let state = state.lock().await;
-    
+
                         if let Some(NetworkTopic::Calendar{calendar_id}) = state.subscriptions.get(&topic_id) {
                             channel.send(ChannelEvent::CalendarGossipJoined(*calendar_id)).expect("can send on app channel");
                         }
@@ -326,6 +335,10 @@ async fn forward_to_app_layer(
 
                     // Check if the event is associated with the currently selected calendar. We
                     // only forward it up to the application if it is.
+                    //
+                    // @TODO: This is filtering out the operations _after_ they've been processed
+                    // by the backend. We should go through the whole processing pipeline when
+                    // selected and not at all when not.
                     if let Some(selected_calendar) = state.selected_calendar {
                         if selected_calendar != meta.calendar_id {
                             return;

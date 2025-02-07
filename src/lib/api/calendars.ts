@@ -7,14 +7,14 @@ import { liveQuery } from "dexie";
  * Queries
  */
 
-export async function getAll(): Promise<Calendar[]> {
+export async function findMany(): Promise<Calendar[]> {
   return await db.calendars.toArray();
 }
 
 export async function findByInviteCode(
   code: string,
 ): Promise<undefined | Calendar> {
-  const calendars = await getAll();
+  const calendars = await findMany();
   return calendars.find((calendar) => {
     return inviteCode(calendar) === code;
   });

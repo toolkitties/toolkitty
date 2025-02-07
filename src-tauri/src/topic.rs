@@ -77,15 +77,15 @@ impl TopicLogMap<NetworkTopic, LogId> for TopicMap {
             NetworkTopic::Calendar { calendar_id } => {
                 let inner = self.inner.read().await;
                 let calendar_id = *calendar_id;
-                inner.authors.get(&calendar_id.into()).map(|public_keys| {
+                inner.authors.get(&calendar_id).map(|public_keys| {
                     let mut result = HashMap::with_capacity(public_keys.len());
                     for public_key in public_keys {
                         result.insert(
                             public_key.to_owned(),
-                            // @NOTE(adz): Currently we store everything in one log per calendar,
+                            // @TODO(adz): Currently we store everything in one log per calendar,
                             // later we want to list all possible "log types" here, for example for
                             // all events, resources, messages etc.
-                            vec![calendar_id.into()],
+                            vec![LogId { calendar_id }],
                         );
                     }
                     result
