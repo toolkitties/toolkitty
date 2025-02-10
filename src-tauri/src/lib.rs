@@ -1,9 +1,10 @@
-mod rpc;
 mod app;
 mod messages;
 mod node;
+mod rpc;
 mod topic;
 
+use rpc::add_calendar_author;
 use tauri::Builder;
 
 use crate::rpc::{
@@ -28,6 +29,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             init,
             ack,
+            add_calendar_author,
             create_calendar,
             publish_calendar_event,
             publish_to_invite_code_overlay,

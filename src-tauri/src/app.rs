@@ -32,7 +32,6 @@ pub struct Context {
     pub to_app_tx: broadcast::Sender<ChannelEvent>,
 
     /// Sync protocol topic map.
-    #[allow(dead_code)]
     pub topic_map: TopicMap,
 
     /// Channel for sending the actual tauri channel where all backend->frontend events are sent.
@@ -80,9 +79,6 @@ pub struct Service {
     /// Channel where we receive network status events from the p2panda node.
     network_events_rx: broadcast::Receiver<SystemEvent<NetworkTopic>>,
 
-    /// Sync protocol topic map.
-    topic_map: TopicMap,
-
     /// Channel where we receive messages which should be forwarded up to the frontend.
     to_app_rx: broadcast::Receiver<ChannelEvent>,
 
@@ -111,7 +107,7 @@ impl Service {
         let (to_app_tx, to_app_rx) = broadcast::channel(32);
         let (channel_tx, channel_rx) = mpsc::channel(32);
 
-        let context = Context::new(node, to_app_tx, topic_map.clone(), channel_tx);
+        let context = Context::new(node, to_app_tx, topic_map, channel_tx);
         app_handle.manage(Mutex::new(context));
 
         Ok(Self {
@@ -120,7 +116,6 @@ impl Service {
             invite_codes_rx,
             invite_codes_ready: shared_invite_codes_ready,
             network_events_rx,
-            topic_map,
             to_app_rx,
             channel_rx,
         })
@@ -148,18 +143,7 @@ impl Service {
                     channel.send(ChannelEvent::NetworkEvent(NetworkEvent(event)))?;
                 },
                 Some(event) = self.stream_rx.recv() => {
-                    // Register author as contributor to this calendar in our database.
-                    //
-                    // @NOTE(adz): At this point we are in the middle of processing this event and
-                    // haven't ack-ed it yet. The data itself might be invalid, but we already
-                    // inserted it here into the topic map, which will allow other peers to sync it
-                    // from us.
-                    //
-                    // There is probably a better place to do this, but it needs more thought. For
-                    // now I'll leave it here as a POC.
                     let StreamEvent { meta, .. } = &event;
-                    self.topic_map.add_author(meta.public_key, meta.calendar_id).await;
-
                     let state = self.app_handle.state::<Mutex<Context>>();
                     let state = state.lock().await;
 

@@ -1,4 +1,4 @@
-use p2panda_core::Hash;
+use p2panda_core::{Hash, PublicKey};
 use p2panda_net::TopicId;
 use p2panda_sync::log_sync::TopicLogMap;
 use serde::Serialize;
@@ -46,6 +46,26 @@ pub async fn ack(state: State<'_, Mutex<Context>>, operation_id: Hash) -> Result
     Ok(())
 }
 
+/// Add an author to a calendar.
+///
+/// This means that we will actively sync operations from this author for the specific calendar.
+#[tauri::command]
+pub async fn add_calendar_author(
+    state: State<'_, Mutex<Context>>,
+    public_key: PublicKey,
+    calendar_id: CalendarId,
+) -> Result<(), RpcError> {
+    debug!(
+        command.name = "add_calendar_author",
+        command.operation_id = public_key.to_hex(),
+        "RPC request received"
+    );
+
+    let state = state.lock().await;
+    state.topic_map.add_author(public_key, calendar_id).await;
+    Ok(())
+}
+
 /// Subscribe to a specific calendar by it's id.
 #[tauri::command]
 pub async fn subscribe_to_calendar(
@@ -59,13 +79,16 @@ pub async fn subscribe_to_calendar(
     );
 
     let mut state = state.lock().await;
-    let topic = NetworkTopic::Calendar { calendar_id };
+    let topic = NetworkTopic::CalendarData { calendar_id };
 
-    if state.subscriptions.insert(topic.id(), topic).is_none() {
-        // @TODO: error handling.
+    if state
+        .subscriptions
+        .insert(topic.id(), topic.clone())
+        .is_none()
+    {
         state
             .node
-            .subscribe_processed(&NetworkTopic::Calendar { calendar_id })
+            .subscribe_processed(&topic)
             .await
             .expect("can subscribe to topic");
 
@@ -95,14 +118,13 @@ pub async fn select_calendar(
     );
 
     let mut state = state.lock().await;
-
     state.selected_calendar = Some(calendar_id);
 
     // Ask stream controller to re-play all operations from logs inside this topic which haven't
     // been acknowledged yet by the frontend.
     if let Some(logs) = state
         .topic_map
-        .get(&NetworkTopic::Calendar { calendar_id })
+        .get(&NetworkTopic::CalendarData { calendar_id })
         .await
     {
         state.node.replay(logs).await?;
@@ -115,7 +137,10 @@ pub async fn select_calendar(
     Ok(())
 }
 
-/// Create a new calendar and subscribe to it.
+/// Create a new calendar.
+///
+/// NOTE: subscribing to a calendar does _not_ occur as part of this method and must be requested
+/// from the frontend with a further call to `subscribe_to_calendar`
 ///
 /// Returns the hash of the operation on which the calendar payload was encoded.
 #[tauri::command]
@@ -128,7 +153,6 @@ pub async fn create_calendar(
     let mut state = state.lock().await;
     let private_key = state.node.private_key.clone();
 
-    // @TODO: Handle error.
     let payload = serde_json::to_vec(&payload)?;
 
     let extensions = Extensions::default();
@@ -143,31 +167,8 @@ pub async fn create_calendar(
     )
     .await;
 
+    state.node.ingest(&header, body.as_ref()).await?;
     let hash = header.hash();
-    let calendar_id = hash.into();
-    let topic = NetworkTopic::Calendar { calendar_id };
-
-    // This is a new calendar and so we have never subscribed to it's topic yet. Do this before
-    // actually publishing the create event.
-    if state
-        .subscriptions
-        .insert(topic.id(), topic.clone())
-        .is_none()
-    {
-        state
-            .node
-            .subscribe_processed(&NetworkTopic::Calendar { calendar_id })
-            .await
-            .expect("can subscribe to topic");
-        state
-            .to_app_tx
-            .send(ChannelEvent::SubscribedToCalendar(calendar_id))?;
-    };
-
-    state
-        .node
-        .publish_to_stream(&topic, &header, body.as_ref())
-        .await?;
 
     Ok(hash)
 }
@@ -190,7 +191,6 @@ pub async fn publish_calendar_event(
     let mut state = state.lock().await;
     let private_key = state.node.private_key.clone();
 
-    // @TODO: Handle error.
     let payload = serde_json::to_vec(&payload)?;
 
     let extensions = Extensions {
@@ -206,7 +206,7 @@ pub async fn publish_calendar_event(
     )
     .await;
 
-    let topic = NetworkTopic::Calendar { calendar_id };
+    let topic = NetworkTopic::CalendarData { calendar_id };
 
     state
         .node
