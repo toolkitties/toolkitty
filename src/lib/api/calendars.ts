@@ -125,6 +125,18 @@ export async function requestAccess(data: CalendarAccessRequested["data"]) {
   await invoke("publish_to_calendar_inbox", { payload });
 }
 
+/**
+ * Accept a calendar access request.
+ */
+export async function acceptAccessRequest(data: CalendarAccessAccepted["data"]) {
+  const payload: CalendarAccessAccepted = {
+    type: "calendar_access_accepted",
+    data,
+  };
+
+  await invoke("publish_to_calendar_inbox", { payload });
+}
+
 /*
  * Processor
  */
@@ -136,6 +148,10 @@ export async function process(message: ApplicationMessage) {
   switch (type) {
     case "calendar_created":
       return await onCalendarCreated(meta, data);
+    case "calendar_access_requested":
+      // @TODO: store calendar access request
+    case "calendar_access_accepted":
+      // @TODO: flip the "hasAccess" flag
   }
 }
 

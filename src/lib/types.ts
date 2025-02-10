@@ -323,6 +323,7 @@ type CalendarAccessRequested = {
 type CalendarAccessAccepted = {
   type: "calendar_access_accepted";
   data: {
+    publicKey: PublicKey,
     calendarId: Hash;
   };
 };
