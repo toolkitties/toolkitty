@@ -46,6 +46,26 @@ pub async fn ack(state: State<'_, Mutex<Context>>, operation_id: Hash) -> Result
     Ok(())
 }
 
+/// Add an author to a calendar.
+///
+/// This means that we will actively sync operations from this author for the specific calendar.
+#[tauri::command]
+pub async fn add_calendar_author(
+    state: State<'_, Mutex<Context>>,
+    public_key: PublicKey,
+    calendar_id: CalendarId,
+) -> Result<(), RpcError> {
+    debug!(
+        command.name = "add_calendar_author",
+        command.operation_id = public_key.to_hex(),
+        "RPC request received"
+    );
+
+    let state = state.lock().await;
+    state.topic_map.add_author(public_key, calendar_id).await;
+    Ok(())
+}
+
 /// Subscribe to a specific calendar by it's id.
 #[tauri::command]
 pub async fn subscribe_to_calendar(
