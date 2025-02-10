@@ -47,7 +47,7 @@ export const getActiveCalendar = liveQuery(async () => {
  */
 
 export async function create(
-  data: CalendarCreatedEvent["data"],
+  data: CalendarCreated["data"],
 ): Promise<Hash> {
   // Define the "calendar created" application event.
   //
@@ -56,7 +56,7 @@ export async function create(
   // hidden side-effects, if this could happen on the frontend with follow-up
   // IPC calls. This can be refactored when
   // https://github.com/toolkitties/toolkitty/issues/69 is implemented.
-  const payload: CalendarCreatedEvent = {
+  const payload: CalendarCreated = {
     type: "calendar_created",
     data,
   };
@@ -131,13 +131,13 @@ export async function process(message: ApplicationMessage) {
 
 async function onCalendarCreated(
   meta: StreamMessageMeta,
-  data: CalendarCreatedEvent["data"],
+  data: CalendarCreated["data"],
 ) {
   // Store calendar in database.
   await db.calendars.add({
     id: meta.calendarId,
     ownerId: meta.publicKey,
-    name: data.name,
+    name: data.fields.calendarName,
   });
 
   // Add the calendar creator the the list of authors who's data we want to 
