@@ -12,13 +12,8 @@ use tokio::sync::RwLock;
 
 use crate::node::operation::{CalendarId, LogId};
 
-#[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub struct Calendar {
-    pub id: Hash,
-    pub owner: PublicKey,
-    pub created_at: u64,
-}
+const INVITE_CODES_TOPIC_ID: &str = "invite-codes";
+const DATA_TOPIC_ID_PREFIX: &str = "data";
 
 #[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
 #[serde(tag = "t", content = "c", rename_all = "snake_case")]
@@ -32,9 +27,9 @@ impl TopicQuery for NetworkTopic {}
 impl TopicId for NetworkTopic {
     fn id(&self) -> [u8; 32] {
         match self {
-            NetworkTopic::InviteCodes => Hash::new(b"invite-codes").into(),
+            NetworkTopic::InviteCodes => Hash::new(INVITE_CODES_TOPIC_ID.as_bytes()).into(),
             NetworkTopic::Calendar { calendar_id } => {
-                Hash::new(format!("data-{calendar_id}").as_bytes()).into()
+                Hash::new(format!("{DATA_TOPIC_ID_PREFIX}-{calendar_id}").as_bytes()).into()
             }
         }
     }
@@ -77,15 +72,15 @@ impl TopicLogMap<NetworkTopic, LogId> for TopicMap {
             NetworkTopic::Calendar { calendar_id } => {
                 let inner = self.inner.read().await;
                 let calendar_id = *calendar_id;
-                inner.authors.get(&calendar_id.into()).map(|public_keys| {
+                inner.authors.get(&calendar_id).map(|public_keys| {
                     let mut result = HashMap::with_capacity(public_keys.len());
                     for public_key in public_keys {
                         result.insert(
                             public_key.to_owned(),
-                            // @NOTE(adz): Currently we store everything in one log per calendar,
+                            // @TODO(adz): Currently we store everything in one log per calendar,
                             // later we want to list all possible "log types" here, for example for
                             // all events, resources, messages etc.
-                            vec![calendar_id.into()],
+                            vec![LogId { calendar_id }],
                         );
                     }
                     result

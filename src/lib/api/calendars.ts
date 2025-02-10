@@ -1,19 +1,20 @@
 import { invoke } from "@tauri-apps/api/core";
 import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
+import { liveQuery } from "dexie";
 
 /*
  * Queries
  */
 
-export async function getAll(): Promise<Calendar[]> {
+export async function findMany(): Promise<Calendar[]> {
   return await db.calendars.toArray();
 }
 
 export async function findByInviteCode(
   code: string,
 ): Promise<undefined | Calendar> {
-  const calendars = await getAll();
+  const calendars = await findMany();
   return calendars.find((calendar) => {
     return inviteCode(calendar) === code;
   });
@@ -22,6 +23,26 @@ export async function findByInviteCode(
 export function inviteCode(calendar: Calendar): string {
   return calendar.id.slice(0, 4);
 }
+
+/*
+ * Returns the id of the currently active calendar
+ */
+export async function getActiveCalendarId() {
+  const activeCalendar = await db.settings.get('activeCalendar')
+  return activeCalendar?.value
+}
+
+/*
+ * Observable for watching the name of the currently active calendar
+ */
+export const getActiveCalendar = liveQuery(
+  async () => {
+    const activeCalendarId = await db.settings.get('activeCalendar');
+    if (!activeCalendarId) return;
+    const activeCalendar = await db.calendars.get(activeCalendarId.value)
+    return activeCalendar?.name
+  }
+)
 
 /*
  * Commands
@@ -99,4 +120,14 @@ async function onCalendarCreated(
     ownerId: meta.publicKey,
     name: data.name,
   });
+  await setActiveCalendar(meta.calendarId)
 }
+
+async function setActiveCalendar(id: Hash) {
+  await db.settings.add({
+    name: 'activeCalendar',
+    value: id
+  })
+}
+
+
