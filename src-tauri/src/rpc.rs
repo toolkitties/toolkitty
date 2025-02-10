@@ -1,4 +1,4 @@
-use p2panda_core::Hash;
+use p2panda_core::{Hash, PublicKey};
 use p2panda_net::TopicId;
 use p2panda_sync::log_sync::TopicLogMap;
 use serde::Serialize;
@@ -79,13 +79,16 @@ pub async fn subscribe_to_calendar(
     );
 
     let mut state = state.lock().await;
-    let topic = NetworkTopic::Calendar { calendar_id };
+    let topic = NetworkTopic::CalendarData { calendar_id };
 
-    if state.subscriptions.insert(topic.id(), topic).is_none() {
-        // @TODO: error handling.
+    if state
+        .subscriptions
+        .insert(topic.id(), topic.clone())
+        .is_none()
+    {
         state
             .node
-            .subscribe_processed(&NetworkTopic::Calendar { calendar_id })
+            .subscribe_processed(&topic)
             .await
             .expect("can subscribe to topic");
 
@@ -115,14 +118,13 @@ pub async fn select_calendar(
     );
 
     let mut state = state.lock().await;
-
     state.selected_calendar = Some(calendar_id);
 
     // Ask stream controller to re-play all operations from logs inside this topic which haven't
     // been acknowledged yet by the frontend.
     if let Some(logs) = state
         .topic_map
-        .get(&NetworkTopic::Calendar { calendar_id })
+        .get(&NetworkTopic::CalendarData { calendar_id })
         .await
     {
         state.node.replay(logs).await?;
@@ -189,7 +191,6 @@ pub async fn publish_calendar_event(
     let mut state = state.lock().await;
     let private_key = state.node.private_key.clone();
 
-    // @TODO: Handle error.
     let payload = serde_json::to_vec(&payload)?;
 
     let extensions = Extensions {
@@ -205,7 +206,7 @@ pub async fn publish_calendar_event(
     )
     .await;
 
-    let topic = NetworkTopic::Calendar { calendar_id };
+    let topic = NetworkTopic::CalendarData { calendar_id };
 
     state
         .node
