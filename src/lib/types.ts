@@ -635,8 +635,16 @@ type VirtualLocation = string;
 
 type SpaceRequest = {
   id: Hash;
-  eventId: Hash;
-  spaceId: Hash;
+  space: {
+    id: Hash;
+    name: string;
+  }
+  event: {
+    id: Hash;
+    name: string;
+    startDate: Date;
+    endDate: Date;
+  }
   message: string;
   response: SpaceResponse | null;
 };
@@ -662,8 +670,17 @@ type Resource = {
 
 type ResourceRequest = {
   id: Hash;
-  resourceId: Hash;
-  eventId: Hash;
+  resource: {
+    id: Hash;
+    name: string
+  }
+  event: {
+    id: Hash;
+    name: string;
+    startDate: Date;
+    endDate: Date;
+    location: string;
+  }
   message: string;
   response: ResourceResponse | null;
 };
@@ -689,3 +706,11 @@ type Settings = {
   name: string;
   value: Hash | string;
 }
+
+type CalendarAccessRequest = {
+  calendarId: Hash;
+  name: string;
+  message: string;
+}
+
+type RequestEvent = SpaceRequest | ResourceRequest | CalendarAccessRequest
