@@ -135,7 +135,10 @@ pub async fn select_calendar(
     Ok(())
 }
 
-/// Create a new calendar and subscribe to it.
+/// Create a new calendar.
+///
+/// NOTE: subscribing to a calendar does _not_ occur as part of this method and must be requested
+/// from the frontend with a further call to `subscribe_to_calendar`
 ///
 /// Returns the hash of the operation on which the calendar payload was encoded.
 #[tauri::command]
@@ -148,7 +151,6 @@ pub async fn create_calendar(
     let mut state = state.lock().await;
     let private_key = state.node.private_key.clone();
 
-    // @TODO: Handle error.
     let payload = serde_json::to_vec(&payload)?;
 
     let extensions = Extensions::default();
@@ -163,31 +165,8 @@ pub async fn create_calendar(
     )
     .await;
 
+    state.node.ingest(&header, body.as_ref()).await?;
     let hash = header.hash();
-    let calendar_id = hash.into();
-    let topic = NetworkTopic::Calendar { calendar_id };
-
-    // This is a new calendar and so we have never subscribed to it's topic yet. Do this before
-    // actually publishing the create event.
-    if state
-        .subscriptions
-        .insert(topic.id(), topic.clone())
-        .is_none()
-    {
-        state
-            .node
-            .subscribe_processed(&NetworkTopic::Calendar { calendar_id })
-            .await
-            .expect("can subscribe to topic");
-        state
-            .to_app_tx
-            .send(ChannelEvent::SubscribedToCalendar(calendar_id))?;
-    };
-
-    state
-        .node
-        .publish_to_stream(&topic, &header, body.as_ref())
-        .await?;
 
     Ok(hash)
 }
