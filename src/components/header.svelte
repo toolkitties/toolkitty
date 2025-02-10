@@ -3,6 +3,7 @@
   import Back from "./back.svelte";
   import { calendars } from "$lib/api";
 
+  // TODO: change or remove default title once we have a name.
   let { title = "(^._.^)ﾉ" } = $props();
 
   const activeCalendarName = calendars.getActiveCalendar;
