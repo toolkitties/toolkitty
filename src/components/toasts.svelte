@@ -2,18 +2,22 @@
   import { toast } from "$lib/toast.svelte";
   import { fly } from "svelte/transition";
   import * as Dialog from "./dialog";
-  import Permissions from "./dialog/permissions.svelte"
+  import Request from "./dialog/request.svelte";
+  import { tick } from "svelte";
 
   /**
    * Handle dialog opening and closing.
-   * 
+   *
    * When it opens we want to pause dismissal of toasts.
    * When it closes we want to immediately dismiss the toast that was associated with that dialog
    */
-  function handleDialogOpenChange(open: boolean, id: number){
-    toast.autoDismiss = !open
+  function handleDialogOpenChange(open: boolean, id: number) {
+    toast.autoDismiss = !open;
     if (!open) {
-      toast.dismissToast(id)
+      // wait for next tick so dialog can dismiss with a nice transition
+      tick().then(() => {
+        toast.dismissToast(id);
+      });
     }
   }
 </script>
@@ -26,22 +30,23 @@
         class={`toast ${t.type}`}
         transition:fly={{ y: -50, duration: 500 }}
       >
-        <!-- Its a link so we wrap in an a tag -->
         {#if t.link}
+          <!-- Its a link so we wrap in an a tag -->
           <a href={t.link} class="text-center">
             {@render toastContent(t)}
           </a>
-        <!-- Action is required so it should open a modal -->
-        {:else if t.actionRequired}
-          <Dialog.Root onOpenChange={(open) => handleDialogOpenChange(open, t.id)}>
+        {:else if t.request}
+          <!-- Action is required so it should open a modal -->
+          <Dialog.Root
+            onOpenChange={(open) => handleDialogOpenChange(open, t.id)}
+          >
             <Dialog.Trigger class="button">
               {@render toastContent(t)}
-              Its a dialog
             </Dialog.Trigger>
-            <Permissions />
+            <Request request={t.request} />
           </Dialog.Root>
-        <!-- It's just a regular toast so we display the message -->
         {:else}
+          <!-- It's just a regular toast so we display the message -->
           {@render toastContent(t)}
         {/if}
       </li>

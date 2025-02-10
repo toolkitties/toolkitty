@@ -7,14 +7,14 @@ class Toast {
   id: number;
   type: ToastType;
   link?: string;
-  actionRequired: boolean;
+  request?: RequestEvent; // opens a modal for the user to respond to the request quickly
 
-  constructor(message: string, id: number, type: ToastType, actionRequired: boolean) {
+  constructor(message: string, id: number, type: ToastType, link: string, request: RequestEvent) {
     this.message = message;
     this.id = id;
     this.type = type;
-    this.link = "";
-    this.actionRequired = actionRequired;
+    this.link = link;
+    this.request = request;
   }
 }
 
@@ -46,16 +46,16 @@ class Toasts {
   }
 
   // Public methods to create new toasts
-  success(message: string, link?: string) {
-    this.addToast("success", message, link);
+  success(message: string, options?: { link?: string }) {
+    this.addToast("success", message, options);
   }
 
-  error(message: string, link?: string) {
-    this.addToast("error", message, link);
+  error(message: string, options?: { link?: string }) {
+    this.addToast("error", message, options);
   }
 
-  info(message: string, link?: string) {
-    this.addToast("info", message, link)
+  info(message: string, options?: { link?: string, request?: RequestEvent }) {
+    this.addToast("info", message, options)
   }
 
   dismissToast(id: number) {
@@ -63,19 +63,17 @@ class Toasts {
   }
 
   //TODO: Only show new toasts to the user when dialog is closed
-  private addToast(type: ToastType, message: string, link?: string) {
+  private addToast(type: ToastType, message: string, options?: { link?: string, request?: RequestEvent }) {
 
     // Create unique id for toast so it can be easily removed.
     const id = Math.floor(Math.random() * 1000000);
-
-    const actionRequired = true
 
     const toast: Toast = {
       id,
       message,
       type,
-      link,
-      actionRequired
+      link: options?.link,
+      request: options?.request
     }
 
     // Push new toast to top of list

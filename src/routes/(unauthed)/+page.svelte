@@ -30,10 +30,7 @@
       timedOut = true;
       progress = "dormant";
       console.error(err);
-      toast.error('Calendar not found')
-      setTimeout(() => {
-        toast.error('Another error occured!')
-      }, 3000);
+      toast.error("Calendar not found");
       return;
     }
 
