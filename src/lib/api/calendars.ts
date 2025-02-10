@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
 import { liveQuery } from "dexie";
+import { publicKey } from "./identity";
 
 /*
  * Queries
@@ -128,7 +129,9 @@ export async function requestAccess(data: CalendarAccessRequested["data"]) {
 /**
  * Accept a calendar access request.
  */
-export async function acceptAccessRequest(data: CalendarAccessAccepted["data"]) {
+export async function acceptAccessRequest(
+  data: CalendarAccessAccepted["data"],
+) {
   const payload: CalendarAccessAccepted = {
     type: "calendar_access_accepted",
     data,
@@ -150,8 +153,9 @@ export async function process(message: ApplicationMessage) {
       return await onCalendarCreated(meta, data);
     case "calendar_access_requested":
       // @TODO: store calendar access request
+      return;
     case "calendar_access_accepted":
-      // @TODO: flip the "hasAccess" flag
+      return await onCalendarAccessAccepted(meta, data);
   }
 }
 
@@ -172,6 +176,21 @@ async function onCalendarCreated(
 
   // Set this as the active calendar.
   await setActiveCalendar(meta.calendarId);
+}
+
+async function onCalendarAccessAccepted(
+  meta: StreamMessageMeta,
+  data: CalendarAccessAccepted["data"],
+) {
+  let acceptorPublicKey = meta.publicKey;
+
+  // @TODO: validate that the "acceptor" has authority to accept the access request (eg. they are
+  // the owner or an admin).
+
+  let myPublicKey = await publicKey();
+  if (myPublicKey == data.publicKey) {
+    // @TODO: flip the "hasAccess" flag
+  }
 }
 
 async function setActiveCalendar(id: Hash) {
