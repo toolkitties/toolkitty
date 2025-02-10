@@ -1,7 +1,7 @@
-mod rpc;
 mod app;
 mod messages;
 mod node;
+mod rpc;
 mod topic;
 
 use rpc::add_calendar_author;
