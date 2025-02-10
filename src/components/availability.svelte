@@ -37,18 +37,18 @@
    * then display them as absolutely positioned elements with
    * start being % from top and length being % height.
    */
-  function getBookedSlots() {
-    const totalBookableTime = getHoursDifference(
+  function getBookedBlocks() {
+    const availabilityLength = getHoursDifference(
       availability.start,
       availability.end,
     );
     return booked.map((booking) => {
       const start =
         (getHoursDifference(availability.start, booking.start) /
-          totalBookableTime) *
+          availabilityLength) *
         100;
       const length =
-        (getHoursDifference(booking.start, booking.end) / totalBookableTime) *
+        (getHoursDifference(booking.start, booking.end) / availabilityLength) *
         100;
       return { start, length };
     });
@@ -69,7 +69,7 @@
     return hours;
   }
 
-  const bookedSlots = getBookedSlots();
+  const bookedBlocks = getBookedBlocks();
   const hours = getHours();
 </script>
 
@@ -83,7 +83,7 @@
     </ul>
     <!-- bookings -->
     <div class="grow relative">
-      {#each bookedSlots as block}
+      {#each bookedBlocks as block}
         <div
           class="bg-red-light absolute w-full"
           style="top: {block.start}%; height: {block.length}%"
