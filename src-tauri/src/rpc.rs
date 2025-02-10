@@ -32,6 +32,16 @@ pub async fn init(
     Ok(())
 }
 
+/// The public key of the local node.
+#[tauri::command]
+pub async fn public_key(state: State<'_, Mutex<Context>>) -> Result<PublicKey, RpcError> {
+    debug!(command.name = "public_key", "RPC request received");
+
+    let state = state.lock().await;
+    let public_key = state.node.private_key.public_key();
+    Ok(public_key)
+}
+
 /// Acknowledge operations to mark them as successfully processed in the stream controller.
 #[tauri::command]
 pub async fn ack(state: State<'_, Mutex<Context>>, operation_id: Hash) -> Result<(), RpcError> {
