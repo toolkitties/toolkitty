@@ -46,9 +46,7 @@ export const getActiveCalendar = liveQuery(async () => {
  * Commands
  */
 
-export async function create(
-  data: CalendarCreated["data"],
-): Promise<Hash> {
+export async function create(data: CalendarCreated["data"]): Promise<Hash> {
   // Define the "calendar created" application event.
   //
   // @TODO: Currently subscribing and selecting the calendar occurs on the
@@ -115,6 +113,18 @@ export async function addCalendarAuthor(
   await invoke("add_calendar_author", { calendarId, publicKey });
 }
 
+/**
+ * Request access to a calendar.
+ */
+export async function requestAccess(data: CalendarAccessRequested["data"]) {
+  const payload: CalendarAccessRequested = {
+    type: "calendar_access_requested",
+    data,
+  };
+
+  await invoke("publish_to_calendar_inbox", { payload });
+}
+
 /*
  * Processor
  */
@@ -140,7 +150,7 @@ async function onCalendarCreated(
     name: data.fields.calendarName,
   });
 
-  // Add the calendar creator the the list of authors who's data we want to 
+  // Add the calendar creator the the list of authors who's data we want to
   // sync for this calendar.
   await addCalendarAuthor(meta.calendarId, meta.publicKey);
 

@@ -9,7 +9,7 @@ use tracing::debug;
 
 use crate::app::Context;
 use crate::messages::ChannelEvent;
-use crate::node::operation::{create_operation, CalendarId, Extensions};
+use crate::node::operation::{create_operation, CalendarId, Extensions, LogType};
 use crate::topic::NetworkTopic;
 
 /// Initialize the app by passing it a channel from the frontend.
@@ -62,7 +62,17 @@ pub async fn add_calendar_author(
     );
 
     let state = state.lock().await;
-    state.topic_map.add_author(public_key, calendar_id).await;
+
+    // @TODO(sam): Currently we add the author to both the inbox and data topics, maybe we want
+    // to split this into two different RPC methods later.
+    state
+        .topic_map
+        .add_author(public_key, NetworkTopic::CalendarInbox { calendar_id })
+        .await;
+    state
+        .topic_map
+        .add_author(public_key, NetworkTopic::CalendarData { calendar_id })
+        .await;
     Ok(())
 }
 
@@ -79,23 +89,30 @@ pub async fn subscribe_to_calendar(
     );
 
     let mut state = state.lock().await;
-    let topic = NetworkTopic::CalendarData { calendar_id };
 
-    if state
-        .subscriptions
-        .insert(topic.id(), topic.clone())
-        .is_none()
-    {
-        state
-            .node
-            .subscribe_processed(&topic)
-            .await
-            .expect("can subscribe to topic");
+    // TODO(sam): Always subscribe to both "inbox" and "data" topics for now. We want to split
+    // this apart later so we can first subscribe to just the "inbox" topic and then later the
+    // "data" topic itself.
+    let inbox_topic = NetworkTopic::CalendarInbox { calendar_id };
+    let data_topic = NetworkTopic::CalendarData { calendar_id };
 
-        state
-            .to_app_tx
-            .send(ChannelEvent::SubscribedToCalendar(calendar_id))?;
+    for topic in [inbox_topic, data_topic] {
+        if state
+            .subscriptions
+            .insert(topic.id(), topic.clone())
+            .is_none()
+        {
+            state
+                .node
+                .subscribe_processed(&topic)
+                .await
+                .expect("can subscribe to topic");
+        }
     }
+
+    state
+        .to_app_tx
+        .send(ChannelEvent::SubscribedToCalendar(calendar_id))?;
 
     Ok(())
 }
@@ -207,6 +224,50 @@ pub async fn publish_calendar_event(
     .await;
 
     let topic = NetworkTopic::CalendarData { calendar_id };
+
+    state
+        .node
+        .publish_to_stream(&topic, &header, body.as_ref())
+        .await?;
+
+    Ok(header.hash())
+}
+
+/// Publish an event to the calendars inbox topic.
+///
+/// Returns the hash of the operation on which the payload was encoded.
+#[tauri::command]
+pub async fn publish_to_calendar_inbox(
+    state: State<'_, Mutex<Context>>,
+    payload: serde_json::Value,
+    calendar_id: CalendarId,
+) -> Result<Hash, RpcError> {
+    debug!(
+        command.name = "publish_to_calendar_inbox",
+        command.calendar_id = calendar_id.0.to_hex(),
+        "RPC request received"
+    );
+
+    let mut state = state.lock().await;
+    let private_key = state.node.private_key.clone();
+
+    let payload = serde_json::to_vec(&payload)?;
+
+    let extensions = Extensions {
+        calendar_id: Some(calendar_id),
+        log_type: Some(LogType::Inbox),
+        ..Default::default()
+    };
+
+    let (header, body) = create_operation(
+        &mut state.node.store,
+        &private_key,
+        extensions,
+        Some(&payload),
+    )
+    .await;
+
+    let topic = NetworkTopic::CalendarInbox { calendar_id };
 
     state
         .node

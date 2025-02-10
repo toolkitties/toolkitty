@@ -383,7 +383,7 @@ mod tests {
     use serde_json::json;
     use tokio::sync::oneshot;
 
-    use crate::node::operation::{self, CalendarId, Extensions, LogId};
+    use crate::node::operation::{self, CalendarId, Extensions, LogId, LogType};
     use crate::node::StreamEvent;
 
     use super::{StreamController, ToStreamController};
@@ -394,6 +394,7 @@ mod tests {
         calendar_id: &CalendarId,
     ) -> (Header<Extensions>, Body, Vec<u8>, Hash) {
         let extensions = Extensions {
+            log_type: Some(LogType::Data),
             calendar_id: Some(*calendar_id),
             prune_flag: PruneFlag::default(),
         };
@@ -453,7 +454,13 @@ mod tests {
         // Ask to replay log, but don't expect anything to be sent.
         let (reply, reply_rx) = oneshot::channel();
         tx.send(ToStreamController::Replay {
-            logs: HashMap::from([(public_key, vec![LogId { calendar_id }])]),
+            logs: HashMap::from([(
+                public_key,
+                vec![LogId {
+                    calendar_id,
+                    log_type: LogType::default(),
+                }],
+            )]),
             reply,
         })
         .await
@@ -496,7 +503,13 @@ mod tests {
         // Ask to replay log, expect operation 1 and 2 to be sent again.
         let (reply, reply_rx) = oneshot::channel();
         tx.send(ToStreamController::Replay {
-            logs: HashMap::from([(public_key, vec![LogId { calendar_id }])]),
+            logs: HashMap::from([(
+                public_key,
+                vec![LogId {
+                    calendar_id,
+                    log_type: LogType::default(),
+                }],
+            )]),
             reply,
         })
         .await
@@ -527,7 +540,13 @@ mod tests {
         // Ask to replay log, but don't expect anything to be sent.
         let (reply, reply_rx) = oneshot::channel();
         tx.send(ToStreamController::Replay {
-            logs: HashMap::from([(public_key, vec![LogId { calendar_id }])]),
+            logs: HashMap::from([(
+                public_key,
+                vec![LogId {
+                    calendar_id,
+                    log_type: LogType::default(),
+                }],
+            )]),
             reply,
         })
         .await

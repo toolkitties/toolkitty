@@ -4,7 +4,7 @@ mod node;
 mod rpc;
 mod topic;
 
-use rpc::add_calendar_author;
+use rpc::{add_calendar_author, publish_to_calendar_inbox};
 use tauri::Builder;
 
 use crate::rpc::{
@@ -32,6 +32,7 @@ pub fn run() {
             add_calendar_author,
             create_calendar,
             publish_calendar_event,
+            publish_to_calendar_inbox,
             publish_to_invite_code_overlay,
             select_calendar,
             subscribe_to_calendar,
