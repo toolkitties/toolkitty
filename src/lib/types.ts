@@ -19,6 +19,12 @@ type PublicKey = string;
 type Image = string;
 
 /**
+ * The different subscription types which exist for a calendar. Each represents a logical set of
+ * data which can be subscribed to independently.
+ */
+type SubscriptionType = "inbox" | "data";
+
+/**
  *ヾ( ˃ᴗ˂ )◞ • *✰
  * Channel Messages
  */

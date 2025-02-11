@@ -7,7 +7,7 @@ export async function joinWithInviteCode(
   const calendar = await inviteCodes.resolve(inviteCode);
 
   await calendars.select(calendar.id);
-  await calendars.subscribe(calendar.id);
+  await calendars.subscribe(calendar.id, "inbox");
 
   // @TODO: At this point we've "joined" the calendar but we haven't received
   // the `CalendarCreated` event yet, which will ultimately update our database

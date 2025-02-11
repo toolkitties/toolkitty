@@ -67,7 +67,8 @@ export async function create(data: CalendarCreated["data"]): Promise<Hash> {
 
   // The above command created a calendar on the local node, but we also want to subscribe to it
   // as a topic on the network in order to discover and sync with other interested peers.
-  await subscribe(hash);
+  await subscribe(hash, "inbox");
+  await subscribe(hash, "data");
 
   // Also select the calendar.
   //
@@ -99,8 +100,11 @@ export async function select(calendarId: Hash) {
  * discovered peers. It does not effect which calendar events are forwarded to
  * the frontend.
  */
-export async function subscribe(calendarId: Hash) {
-  await invoke("subscribe_to_calendar", { calendarId });
+export async function subscribe(
+  calendarId: Hash,
+  subscriptionType: SubscriptionType,
+) {
+  await invoke("subscribe_to_calendar", { calendarId, subscriptionType });
 }
 
 /**
@@ -195,6 +199,10 @@ async function onCalendarAccessAccepted(
   let myPublicKey = await publicKey();
   if (myPublicKey == data.publicKey) {
     // @TODO: flip the "hasAccess" flag
+
+    // We are now added to the calendar and so will be able to decrypt payloads sent on the calendar
+    // data overlay, so we subscribe to that now.
+    await subscribe(data.calendarId, "data");
   }
 }
 

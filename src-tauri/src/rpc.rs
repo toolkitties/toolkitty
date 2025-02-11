@@ -1,7 +1,7 @@
 use p2panda_core::{Hash, PublicKey};
 use p2panda_net::TopicId;
 use p2panda_sync::log_sync::TopicLogMap;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tauri::{ipc::Channel, State};
 use thiserror::Error;
 use tokio::sync::Mutex;
@@ -11,6 +11,13 @@ use crate::app::Context;
 use crate::messages::ChannelEvent;
 use crate::node::operation::{create_operation, CalendarId, Extensions, LogType};
 use crate::topic::NetworkTopic;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum SubscriptionType {
+    Inbox,
+    Data,
+}
 
 /// Initialize the app by passing it a channel from the frontend.
 #[tauri::command]
@@ -88,41 +95,39 @@ pub async fn add_calendar_author(
 
 /// Subscribe to a specific calendar by it's id.
 #[tauri::command]
-pub async fn subscribe_to_calendar(
+pub async fn subscribe(
     state: State<'_, Mutex<Context>>,
     calendar_id: CalendarId,
+    subscription_type: SubscriptionType,
 ) -> Result<(), RpcError> {
     debug!(
-        command.name = "subscribe_to_calendar",
+        command.name = "subscribe",
         command.calendar_id = calendar_id.0.to_hex(),
         "RPC request received"
     );
 
     let mut state = state.lock().await;
 
-    // TODO(sam): Always subscribe to both "inbox" and "data" topics for now. We want to split
-    // this apart later so we can first subscribe to just the "inbox" topic and then later the
-    // "data" topic itself.
-    let inbox_topic = NetworkTopic::CalendarInbox { calendar_id };
-    let data_topic = NetworkTopic::CalendarData { calendar_id };
+    let topic = match subscription_type {
+        SubscriptionType::Inbox => NetworkTopic::CalendarInbox { calendar_id },
+        SubscriptionType::Data => NetworkTopic::CalendarData { calendar_id },
+    };
 
-    for topic in [inbox_topic, data_topic] {
-        if state
-            .subscriptions
-            .insert(topic.id(), topic.clone())
-            .is_none()
-        {
-            state
-                .node
-                .subscribe_processed(&topic)
-                .await
-                .expect("can subscribe to topic");
-        }
+    if state
+        .subscriptions
+        .insert(topic.id(), topic.clone())
+        .is_none()
+    {
+        state
+            .node
+            .subscribe_processed(&topic)
+            .await
+            .expect("can subscribe to topic");
+
+        state
+            .to_app_tx
+            .send(ChannelEvent::SubscribedToCalendar(calendar_id))?;
     }
-
-    state
-        .to_app_tx
-        .send(ChannelEvent::SubscribedToCalendar(calendar_id))?;
 
     Ok(())
 }
