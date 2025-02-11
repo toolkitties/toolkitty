@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { calendars, inviteCodes } from "$lib/api";
+import { calendars, inviteCodes, access } from "$lib/api";
 import { rejectPromise, resolvePromise } from "$lib/promiseMap";
 
 /**
@@ -145,6 +145,7 @@ export async function process(message: ChannelMessage) {
 async function onApplicationMessage(message: ApplicationMessage) {
   try {
     await calendars.process(message);
+    await access.process(message);
 
     // Mark this operation as "processed", this can be used as a signal for the
     // frontend to change the UI now, for example change the state of a spinner

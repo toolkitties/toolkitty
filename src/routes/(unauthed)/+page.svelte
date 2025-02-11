@@ -4,7 +4,7 @@
   import { inviteCodes, calendars } from "$lib/api";
   import { db } from "$lib/db";
   import { appConfigDir } from "@tauri-apps/api/path";
-  import { joinWithInviteCode } from "$lib/api/onboarding";
+  import { resolveInviteCode } from "$lib/api/access";
 
   let value: string[] | undefined = [];
 
@@ -24,7 +24,7 @@
     let calendar;
     try {
       progress = "pending";
-      calendar = await joinWithInviteCode(value.join(""));
+      calendar = await resolveInviteCode(value.join(""));
     } catch (err) {
       timedOut = true;
       progress = "dormant";

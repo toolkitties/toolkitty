@@ -2,7 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
 import { liveQuery } from "dexie";
-import { publicKey } from "./identity";
+import { addCalendarAuthor } from "./access";
 
 /*
  * Queries
@@ -104,49 +104,7 @@ export async function subscribe(
   calendarId: Hash,
   subscriptionType: SubscriptionType,
 ) {
-  await invoke("subscribe_to_calendar", { calendarId, subscriptionType });
-}
-
-/**
- * Register that we want to sync events from an author for a certain festival. There are two
- * reasons we want to do this:
- *
- * 1) We observe a "CalendarCreated" event for a calendar we're subscribed to and want to add
- *    therefore want to sync events from the calendar creator.
- * 2) We observe a "CalendarAccessAccepted" event for a calendar we're subscribed to and want to
- *    sync events from the newly added author.
- */
-export async function addCalendarAuthor(
-  calendarId: Hash,
-  publicKey: PublicKey,
-) {
-  await invoke("add_calendar_author", { calendarId, publicKey });
-}
-
-/**
- * Request access to a calendar.
- */
-export async function requestAccess(data: CalendarAccessRequested["data"]) {
-  const payload: CalendarAccessRequested = {
-    type: "calendar_access_requested",
-    data,
-  };
-
-  await invoke("publish_to_calendar_inbox", { payload });
-}
-
-/**
- * Accept a calendar access request.
- */
-export async function acceptAccessRequest(
-  data: CalendarAccessAccepted["data"],
-) {
-  const payload: CalendarAccessAccepted = {
-    type: "calendar_access_accepted",
-    data,
-  };
-
-  await invoke("publish_to_calendar_inbox", { payload });
+  await invoke("subscribe", { calendarId, subscriptionType });
 }
 
 /*
@@ -160,11 +118,6 @@ export async function process(message: ApplicationMessage) {
   switch (type) {
     case "calendar_created":
       return await onCalendarCreated(meta, data);
-    case "calendar_access_requested":
-      // @TODO: store calendar access request
-      return;
-    case "calendar_access_accepted":
-      return await onCalendarAccessAccepted(meta, data);
   }
 }
 
@@ -179,31 +132,12 @@ async function onCalendarCreated(
     name: data.fields.calendarName,
   });
 
-  // Add the calendar creator the the list of authors who's data we want to
+  // Add the calendar creator to the list of authors who's data we want to
   // sync for this calendar.
   await addCalendarAuthor(meta.calendarId, meta.publicKey);
 
   // Set this as the active calendar.
   await setActiveCalendar(meta.calendarId);
-}
-
-async function onCalendarAccessAccepted(
-  meta: StreamMessageMeta,
-  data: CalendarAccessAccepted["data"],
-) {
-  let acceptorPublicKey = meta.publicKey;
-
-  // @TODO: validate that the "acceptor" has authority to accept the access request (eg. they are
-  // the owner or an admin).
-
-  let myPublicKey = await publicKey();
-  if (myPublicKey == data.publicKey) {
-    // @TODO: flip the "hasAccess" flag
-
-    // We are now added to the calendar and so will be able to decrypt payloads sent on the calendar
-    // data overlay, so we subscribe to that now.
-    await subscribe(data.calendarId, "data");
-  }
 }
 
 async function setActiveCalendar(id: Hash) {
