@@ -69,6 +69,11 @@ export async function create(data: CalendarCreated["data"]): Promise<Hash> {
   // as a topic on the network in order to discover and sync with other interested peers.
   await subscribe(hash);
 
+  // Also select the calendar.
+  //
+  // @TODO(sam): do we want this to happen here or in a manual step?
+  await select(hash);
+
   // Register this operation hash to wait until it's later resolved by the
   // processor. Like this we can conveniently return from this method as soon as
   // this application event has actually been processed. This allows us to build
