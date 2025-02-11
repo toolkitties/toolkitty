@@ -2,6 +2,48 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom fonts ＼(；￢_￢) */
+@font-face {
+  font-family: "Atkinson-Hyperlegible";
+  src:
+    url("/fonts/Atkinson-Hyperlegible-Regular.woff2") format("woff2"),
+    url("/fonts/Atkinson-Hyperlegible-Regular.woff") format("woff");
+  font-weight: bold;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Atkinson-Hyperlegible";
+  src:
+    url("/fonts/Atkinson-Hyperlegible-Italic.woff2") format("woff2"),
+    url("/fonts/Atkinson-Hyperlegible-Italic.woff") format("woff");
+  font-weight: normal;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Atkinson-Hyperlegible";
+  src:
+    url("/fonts/Atkinson-Hyperlegible-Bold.woff2") format("woff2"),
+    url("/fonts/Atkinson-Hyperlegible-Bold.woff") format("woff");
+  font-weight: bold;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Handjet";
+  src:
+    url("/fonts/Handjet-Regular.woff2") format("woff2"),
+    url("/fonts/Handjet-Regular.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+}
+
+html {
+  font-size: 0.9375rem;
+  @apply font-sans;
+}
+
 @layer base {
   input,
   textarea {
@@ -16,4 +58,15 @@
     @apply border border-black rounded-full px-2.5 py-[3px];
   }
 
+  h1,
+  h2 {
+    font-size: 1.375rem;
+    text-transform: capitalize;
+  }
+
+  h3,
+  h4,
+  h5 {
+    font-size: 1.25rem;
+  }
 }
