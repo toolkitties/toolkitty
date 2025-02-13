@@ -26,16 +26,15 @@ export async function hasRequested(calendarId: Hash): Promise<boolean> {
       request.calendarId == calendarId && request.publicKey == myPublicKey,
   );
 
-  return request != undefined
+  return request != undefined;
 }
 
 export async function wasRejected(requestId: Hash): Promise<boolean> {
   let response = (await db.accessResponses.toArray()).find(
-    (response) =>
-      response.requestId == requestId && !response.accept,
+    (response) => response.requestId == requestId && !response.accept,
   );
 
-  return response != undefined
+  return response != undefined;
 }
 
 /**
@@ -179,12 +178,28 @@ async function onCalendarAccessRequested(
   data: CalendarAccessRequested["data"],
 ) {
   await db.accessRequests.add({
-    id: meta.calendarId,
+    id: meta.operationId,
     calendarId: data.calendarId,
     publicKey: meta.publicKey,
   });
 
   await handleRequestOrResponse(meta.calendarId, meta.publicKey);
+
+  //@TODO: For testing purposes only, we accept any requests for festivals where we are the
+  //owner.
+  let myPublicKey = await publicKey();
+  let hasAccess = await checkHasAccess(meta.publicKey, data.calendarId);
+  if (!hasAccess) {
+    let calendar = await calendars.findOne(data.calendarId);
+    if (calendar?.ownerId == myPublicKey) {
+
+      let message = {
+        requestId: meta.operationId
+      }
+      await acceptAccessRequest(message);
+    }
+    return;
+  }
 }
 
 async function onCalendarAccessAccepted(
