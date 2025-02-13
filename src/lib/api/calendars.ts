@@ -66,10 +66,10 @@ export async function create(data: CalendarCreated["data"]): Promise<Hash> {
   // identifier for the application event.
   const hash: Hash = await invoke("create_calendar", { payload });
 
-  // Also select the calendar. If we didn't do this, then we would never receive the
-  // "calendar_created" event on our stream. When we receive the "calendar_selected" event on the
-  // stream we then subscribe to all relevant calendar topics.
+  // Select the calendar and subscribe to all topics.
   await select(hash);
+  await subscribe(hash, "inbox");
+  await subscribe(hash, "data");
 
   // Register this operation hash to wait until it's later resolved by the
   // processor. Like this we can conveniently return from this method as soon as
