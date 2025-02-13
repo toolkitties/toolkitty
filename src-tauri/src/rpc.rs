@@ -126,7 +126,7 @@ pub async fn subscribe(
 
         state
             .to_app_tx
-            .send(ChannelEvent::SubscribedToCalendar(calendar_id))?;
+            .send(ChannelEvent::SubscribedToCalendar(calendar_id, topic_type))?;
     }
 
     Ok(())
@@ -152,8 +152,20 @@ pub async fn select_calendar(
     let mut state = state.lock().await;
     state.selected_calendar = Some(calendar_id);
 
+    state
+        .to_app_tx
+        .send(ChannelEvent::CalendarSelected(calendar_id))?;
+
     // Ask stream controller to re-play all operations from logs inside this topic which haven't
     // been acknowledged yet by the frontend.
+    if let Some(logs) = state
+        .topic_map
+        .get(&NetworkTopic::CalendarInbox { calendar_id })
+        .await
+    {
+        state.node.replay(logs).await?;
+    }
+
     if let Some(logs) = state
         .topic_map
         .get(&NetworkTopic::CalendarData { calendar_id })
@@ -161,10 +173,6 @@ pub async fn select_calendar(
     {
         state.node.replay(logs).await?;
     }
-
-    state
-        .to_app_tx
-        .send(ChannelEvent::CalendarSelected(calendar_id))?;
 
     Ok(())
 }
