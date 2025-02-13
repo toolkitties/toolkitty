@@ -91,13 +91,17 @@ export async function requestAccess(
     data,
   };
 
-  return await invoke("publish_to_calendar_inbox", { payload });
+  return await invoke("publish_to_calendar_inbox", {
+    payload,
+    calendarId: data.calendarId,
+  });
 }
 
 /**
  * Accept a calendar access request.
  */
 export async function acceptAccessRequest(
+  calendarId: Hash,
   data: CalendarAccessAccepted["data"],
 ) {
   const payload: CalendarAccessAccepted = {
@@ -105,13 +109,14 @@ export async function acceptAccessRequest(
     data,
   };
 
-  await invoke("publish_to_calendar_inbox", { payload });
+  await invoke("publish_to_calendar_inbox", { payload, calendarId });
 }
 
 /**
  * Accept a calendar access request.
  */
 export async function rejectAccessRequest(
+  calendarId: Hash,
   data: CalendarAccessAccepted["data"],
 ) {
   const payload: CalendarAccessRejected = {
@@ -119,7 +124,7 @@ export async function rejectAccessRequest(
     data,
   };
 
-  await invoke("publish_to_calendar_inbox", { payload });
+  await invoke("publish_to_calendar_inbox", { payload, calendarId });
 }
 
 /**
@@ -192,11 +197,10 @@ async function onCalendarAccessRequested(
   if (!hasAccess) {
     let calendar = await calendars.findOne(data.calendarId);
     if (calendar?.ownerId == myPublicKey) {
-
       let message = {
-        requestId: meta.operationId
-      }
-      await acceptAccessRequest(message);
+        requestId: meta.operationId,
+      };
+      await acceptAccessRequest(calendar.id, message);
     }
     return;
   }
