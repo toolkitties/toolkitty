@@ -5,6 +5,7 @@ import { liveQuery } from "dexie";
 import { checkHasAccess } from "./access";
 import { publicKey } from "./identity";
 import { calendars, topics } from ".";
+import { subscribe } from "./topics";
 
 /*
  * Queries
@@ -87,6 +88,7 @@ export async function create(data: CalendarCreated["data"]): Promise<Hash> {
  * calendar we are subscribed to will not be processed by the frontend.
  */
 export async function select(calendarId: Hash) {
+  await setActiveCalendar(calendarId);
   await invoke("select_calendar", { calendarId });
 }
 

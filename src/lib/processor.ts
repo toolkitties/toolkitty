@@ -176,7 +176,7 @@ async function onInviteCodesMessage(
 
 async function onSystemMessage(message: SystemMessage) {
   if (message.event === "calendar_selected") {
-    calendars.setActiveCalendar(message.calendarId);
+    // @TODO
   } else if (message.event === "subscribed_to_calendar") {
     // @TODO
   } else if (message.event === "network_event") {

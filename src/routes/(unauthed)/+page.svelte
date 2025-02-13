@@ -25,6 +25,7 @@
     try {
       progress = "pending";
       calendar = await resolveInviteCode(value.join(""));
+      await calendars.select(calendar.id);
     } catch (err) {
       timedOut = true;
       progress = "dormant";

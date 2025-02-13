@@ -1,9 +1,8 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { access } from "$lib/api";
-    import { wasRejected } from "$lib/api/access";
+  import { getActiveCalendarId } from "$lib/api/calendars";
   import { publicKey } from "$lib/api/identity";
-  import { promiseResult } from "$lib/promiseMap";
 
   // @TODO: We want to check in the database if we already made a request by calling the async
   // method access.hasRequested(), is there a svelty way to do this from here? Like with `onMount`
@@ -17,7 +16,14 @@
     event.preventDefault();
 
     // @TODO: Want to get the calendar id from the page url somehow.
-    let calendarId = "";
+    let calendarId = await getActiveCalendarId();
+
+    if (calendarId == undefined) {
+      console.error("active calendar not set");
+      goto(`/app/calendar/${calendarId}`);
+      return;
+    };
+
     let request = {
       calendarId,
       name: "",
