@@ -1,6 +1,6 @@
-use std::{collections::HashMap, fmt::Display};
 use std::hash::Hash as StdHash;
 use std::sync::Arc;
+use std::{collections::HashMap, fmt::Display};
 
 use async_trait::async_trait;
 use p2panda_core::{Hash, PublicKey};
@@ -101,7 +101,7 @@ impl TopicLogMap<NetworkTopic, LogId> for TopicMap {
         };
 
         let inner = self.inner.read().await;
-        inner.authors.get(&topic).map(|public_keys| {
+        inner.authors.get(topic).map(|public_keys| {
             let mut result = HashMap::with_capacity(public_keys.len());
             for public_key in public_keys {
                 result.insert(

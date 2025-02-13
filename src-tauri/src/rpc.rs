@@ -1,7 +1,7 @@
 use p2panda_core::{Hash, PublicKey};
 use p2panda_net::TopicId;
 use p2panda_sync::log_sync::TopicLogMap;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use tauri::{ipc::Channel, State};
 use thiserror::Error;
 use tokio::sync::Mutex;
@@ -22,11 +22,11 @@ pub async fn init(
 
     let state = state.lock().await;
     if state.channel_set {
-        return Err(RpcError::SetStreamChannelError);
+        return Err(RpcError::SetStreamChannel);
     }
 
     if state.channel_tx.send(channel).await.is_err() {
-        return Err(RpcError::OneshotChannelError);
+        return Err(RpcError::OneshotChannel);
     };
 
     Ok(())
@@ -279,22 +279,22 @@ pub async fn publish_to_invite_code_overlay(
 #[derive(Debug, Error)]
 pub enum RpcError {
     #[error("oneshot channel receiver closed")]
-    OneshotChannelError,
+    OneshotChannel,
 
     #[error("stream channel already set")]
-    SetStreamChannelError,
+    SetStreamChannel,
 
     #[error(transparent)]
-    StreamControllerError(#[from] crate::node::StreamControllerError),
+    StreamController(#[from] crate::node::StreamControllerError),
 
     #[error(transparent)]
-    PublishError(#[from] crate::node::PublishError),
+    Publish(#[from] crate::node::PublishError),
 
     #[error("payload decoding failed")]
-    SerdeError(#[from] serde_json::Error),
+    Serde(#[from] serde_json::Error),
 
     #[error("sending message on channel failed")]
-    ChannelSenderError(#[from] tokio::sync::broadcast::error::SendError<ChannelEvent>),
+    ChannelSender(#[from] tokio::sync::broadcast::error::SendError<ChannelEvent>),
 }
 
 impl Serialize for RpcError {
