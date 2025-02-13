@@ -1,7 +1,6 @@
-import { calendars, inviteCodes } from "$lib/api";
+import { calendars, inviteCodes, topics } from "$lib/api";
 import type { ResolvedCalendar } from "$lib/api/inviteCodes";
 import { invoke } from "@tauri-apps/api/core";
-import { addCalendarAuthor, subscribe } from "./calendars";
 import { publicKey } from "./identity";
 import { db } from "$lib/db";
 
@@ -21,9 +20,9 @@ export async function resolveInviteCode(
 }
 
 /**
- * Check if a peer has access to the calendar. A peer can be understood to "have access" 
+ * Check if a peer has access to the calendar. A peer can be understood to "have access"
  * in two possible ways.
- * 
+ *
  * 1) the peer is owner of the calendar
  * 2) the peer has been given access by the calendar owner
  */
@@ -92,9 +91,9 @@ export async function acceptAccessRequest(
 /**
  * There are two paths to getting access to a calendar. 1) the creator of the calendar is the
  * "owner" and has access by default 2) a peer has requested access and received an access
- * accepted message from the calendar owner. A flow diagram for all access states can be seen 
+ * accepted message from the calendar owner. A flow diagram for all access states can be seen
  * below.
- * 
+ *
  *    ┌──────────────────────────────────────────┐
  *    │                                          │
  *    │                                          │
@@ -112,19 +111,19 @@ export async function acceptAccessRequest(
  *
  *
  * Access messages are all handled in the access processor. We need to detect and handle
- * two distinct states: 
- * 
+ * two distinct states:
+ *
  * 1) any author gained access to a calendar
  * 2) we gained access to a calendar
- * 
+ *
  * In the case of 1) the only thing we need to do is inform the backend that we want to sync data
  * from this author for the calendar they have access to. In the case of one, we want to do the
  * same, but also subscribe to the calendar "data" topic (as we didn't have access, this won't
  * have been done yet).
- * 
+ *
  * Additionally requests and responses are stored in the database, we can query these tables to
- * infer if any peer has access to a certain festival. 
- * 
+ * infer if any peer has access to a certain festival.
+ *
  */
 export async function process(message: ApplicationMessage) {
   const meta = message.meta;
@@ -188,7 +187,7 @@ async function handleRequestOrResponse(
   }
 
   // Inform the backend that there is a new author who may contribute to the calendar.
-  await addCalendarAuthor(calendarId, requesterPublicKey);
+  await topics.addCalendarAuthor(calendarId, requesterPublicKey);
 
   let myPublicKey = await publicKey();
   if (myPublicKey != requesterPublicKey) {
@@ -199,5 +198,5 @@ async function handleRequestOrResponse(
   // data overlay so we subscribe to the data topic now finally. This will mean we receive the
   // "calendar_created" event on the stream, which in turn means the calendar will be inserted
   // into our database.
-  await subscribe(calendarId, "data");
+  await topics.subscribe(calendarId, "data");
 }
