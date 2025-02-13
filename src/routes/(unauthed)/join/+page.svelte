@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { access } from "$lib/api";
+    import { wasRejected } from "$lib/api/access";
   import { publicKey } from "$lib/api/identity";
   import { promiseResult } from "$lib/promiseMap";
 
@@ -9,7 +10,7 @@
   // or something?
   let pending = false;
 
-  // @TODO: Same here, want to actually check the db.
+  // @TODO: Same here, want to actually check the db using access.wasRejected.
   let rejected = false;
 
   async function join(event: Event) {
@@ -26,19 +27,13 @@
     let requestId = await access.requestAccess(request);
     pending = true;
 
-    // @TODO: For now I'm just waiting on a promise which is resolved when the request response is
-    // processed. Don't know if this is the pattern we want, as it doesn't account for app
-    // restarts (the promise would be lost), and it is a different way of using the promiseMap to
-    // what we do so far (just waiting on an operation passing through the processor). Maybe we
-    // could use a live query somehow to wait on database change?
-    await promiseResult(requestId);
-
-    // Check if we now have access.
+    // @TODO: Is this the best way to wait on a response here (probably no)?
+    let hasAccess = false;
     let myPublicKey = await publicKey();
-    let hasAccess = await access.checkHasAccess(myPublicKey, calendarId);
-
-    // If the answer is "no" then we were rejected.
-    rejected = !hasAccess;
+    while (!hasAccess && !rejected) {
+      hasAccess = await access.checkHasAccess(myPublicKey, calendarId);
+      rejected = await access.wasRejected(requestId);
+    }
 
     if (hasAccess) {
       goto(`/app/calendar/${calendarId}`);

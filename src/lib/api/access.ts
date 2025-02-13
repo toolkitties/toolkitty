@@ -29,6 +29,15 @@ export async function hasRequested(calendarId: Hash): Promise<boolean> {
   return request != undefined
 }
 
+export async function wasRejected(requestId: Hash): Promise<boolean> {
+  let response = (await db.accessResponses.toArray()).find(
+    (response) =>
+      response.requestId == requestId && !response.accept,
+  );
+
+  return response != undefined
+}
+
 /**
  * Check if a peer has access to the calendar. A peer can be understood to "have access"
  * in two possible ways.
