@@ -74,7 +74,7 @@ pub async fn add_calendar_author(
 ) -> Result<(), RpcError> {
     debug!(
         command.name = "add_calendar_author",
-        command.operation_id = public_key.to_hex(),
+        command.public_key = public_key.to_hex(),
         "RPC request received"
     );
 
@@ -253,6 +253,8 @@ pub async fn publish_calendar_event(
         .publish_to_stream(&topic, &header, body.as_ref())
         .await?;
 
+    debug!("publish operation: {}", header.hash());
+
     Ok(header.hash())
 }
 
@@ -296,6 +298,8 @@ pub async fn publish_to_calendar_inbox(
         .node
         .publish_to_stream(&topic, &header, body.as_ref())
         .await?;
+
+    debug!("publish operation: {}", header.hash());
 
     Ok(header.hash())
 }

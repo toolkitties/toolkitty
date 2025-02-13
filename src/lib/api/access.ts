@@ -61,19 +61,22 @@ export async function checkHasAccess(
       request.publicKey == publicKey && request.calendarId == calendarId,
   );
 
-  if (!request) {
+  if (request == undefined) {
+    console.log("no request found");
     return false;
   }
 
   let response = (await db.accessResponses.toArray()).find(
     (response) =>
       response.requestId == request.id &&
-      response.accept &&
-      // The response must come from the calendar owner.
-      response.from == calendar?.ownerId,
+      response.accept
+      // @TODO: We need to be able to check if the response came from the calendar owner but at
+      // this point we haven't received the "calendar_created" event yet. It will help when the
+      // actual calendar id contains the owner information.
   );
 
-  if (!response) {
+  if (response == undefined) {
+    console.log("no response found");
     return false;
   }
 
@@ -187,9 +190,6 @@ async function onCalendarAccessRequested(
     calendarId: data.calendarId,
     publicKey: meta.publicKey,
   });
-
-  await handleRequestOrResponse(meta.calendarId, meta.publicKey);
-
   //@TODO: For testing purposes only, we accept any requests for festivals where we are the
   //owner.
   let myPublicKey = await publicKey();
@@ -202,8 +202,9 @@ async function onCalendarAccessRequested(
       };
       await acceptAccessRequest(calendar.id, message);
     }
-    return;
   }
+
+  await handleRequestOrResponse(meta.calendarId, meta.publicKey);
 }
 
 async function onCalendarAccessAccepted(
@@ -221,7 +222,7 @@ async function onCalendarAccessAccepted(
     (request) => request.id == data.requestId,
   );
 
-  if (request) {
+  if (request != undefined) {
     await handleRequestOrResponse(meta.calendarId, request.publicKey);
   }
 }
@@ -250,6 +251,7 @@ async function handleRequestOrResponse(
 ) {
   let hasAccess = await checkHasAccess(requesterPublicKey, calendarId);
   if (!hasAccess) {
+    console.log("no access");
     return;
   }
 
@@ -258,6 +260,7 @@ async function handleRequestOrResponse(
 
   let myPublicKey = await publicKey();
   if (myPublicKey != requesterPublicKey) {
+    console.log("not my public key");
     return;
   }
 
@@ -265,5 +268,6 @@ async function handleRequestOrResponse(
   // data overlay so we subscribe to the data topic now finally. This will mean we receive the
   // "calendar_created" event on the stream, which in turn means the calendar will be inserted
   // into our database.
+  console.log("subscribe to calendar");
   await topics.subscribe(calendarId, "data");
 }

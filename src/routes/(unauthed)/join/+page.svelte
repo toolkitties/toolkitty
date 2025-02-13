@@ -24,6 +24,7 @@
       return;
     };
 
+    // @TODO: take name and message values from form.
     let request = {
       calendarId,
       name: "",
@@ -42,7 +43,7 @@
     }
 
     if (hasAccess) {
-      goto(`/app/calendar/${calendarId}`);
+      goto("/app/events");
     }
   }
 
