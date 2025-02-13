@@ -14,7 +14,7 @@ use crate::topic::NetworkTopic;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub enum SubscriptionType {
+pub enum TopicType {
     Inbox,
     Data,
 }
@@ -98,7 +98,7 @@ pub async fn add_calendar_author(
 pub async fn subscribe(
     state: State<'_, Mutex<Context>>,
     calendar_id: CalendarId,
-    subscription_type: SubscriptionType,
+    topic_type: TopicType,
 ) -> Result<(), RpcError> {
     debug!(
         command.name = "subscribe",
@@ -108,9 +108,9 @@ pub async fn subscribe(
 
     let mut state = state.lock().await;
 
-    let topic = match subscription_type {
-        SubscriptionType::Inbox => NetworkTopic::CalendarInbox { calendar_id },
-        SubscriptionType::Data => NetworkTopic::CalendarData { calendar_id },
+    let topic = match topic_type {
+        TopicType::Inbox => NetworkTopic::CalendarInbox { calendar_id },
+        TopicType::Data => NetworkTopic::CalendarData { calendar_id },
     };
 
     if state
