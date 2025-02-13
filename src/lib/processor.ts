@@ -125,17 +125,23 @@ export async function process(message: ChannelMessage) {
   // Related issue: https://github.com/toolkitties/toolkitty/issues/77
 
   if (message.event == "application") {
+    console.debug("received application message", message);
     await onApplicationMessage(message);
   } else if (
     message.event == "invite_codes_ready" ||
     message.event == "invite_codes"
   ) {
+    console.debug("received invite message", message);
     await onInviteCodesMessage(message);
   } else if (
     message.event == "calendar_selected" ||
     message.event == "subscribed_to_calendar" ||
     message.event == "network_event"
   ) {
+    // Filter out network events for now.
+    if (message.event != "network_event") {
+      console.debug("received system message", message);
+    }
     await onSystemMessage(message);
   }
 }
@@ -172,8 +178,8 @@ async function onSystemMessage(message: SystemMessage) {
   if (message.event === "calendar_selected") {
     calendars.setActiveCalendar(message.calendarId);
   } else if (message.event === "subscribed_to_calendar") {
-    console.log("subscribed to calendar: ", message.calendarId);
+    // @TODO
   } else if (message.event === "network_event") {
-    // console.log("network system event received: ", message);
+    // @TODO
   }
 }
