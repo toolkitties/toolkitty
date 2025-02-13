@@ -2,10 +2,8 @@ import { invoke } from "@tauri-apps/api/core";
 import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
 import { liveQuery } from "dexie";
-import { checkHasAccess } from "./access";
 import { publicKey } from "./identity";
-import { calendars, topics } from ".";
-import { subscribe } from "./topics";
+import { topics } from ".";
 
 /*
  * Queries
@@ -67,10 +65,16 @@ export async function create(data: CalendarCreated["data"]): Promise<Hash> {
   // identifier for the application event.
   const hash: Hash = await invoke("create_calendar", { payload });
 
-  // Select the calendar and subscribe to all topics.
+  // Subscribe to all calendar topics.
+  await topics.subscribe(hash, "inbox");
+  await topics.subscribe(hash, "data");
+
+  // Add our public key to the topic map on the backend.
+  let myPublicKey = await publicKey();
+  await topics.addCalendarAuthor(hash, myPublicKey);
+
+  // Select this calendar.
   await select(hash);
-  await subscribe(hash, "inbox");
-  await subscribe(hash, "data");
 
   // Register this operation hash to wait until it's later resolved by the
   // processor. Like this we can conveniently return from this method as soon as
