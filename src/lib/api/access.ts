@@ -19,6 +19,16 @@ export async function resolveInviteCode(
   return calendar;
 }
 
+export async function hasRequested(calendarId: Hash): Promise<boolean> {
+  let myPublicKey = await publicKey();
+  let request = (await db.accessRequests.toArray()).find(
+    (request) =>
+      request.calendarId == calendarId && request.publicKey == myPublicKey,
+  );
+
+  return request != undefined
+}
+
 /**
  * Check if a peer has access to the calendar. A peer can be understood to "have access"
  * in two possible ways.
@@ -65,13 +75,15 @@ export async function checkHasAccess(
 /**
  * Request access to a calendar and subscribe to the "inbox" topic so we can wait for the response.
  */
-export async function requestAccess(data: CalendarAccessRequested["data"]) {
+export async function requestAccess(
+  data: CalendarAccessRequested["data"],
+): Promise<Hash> {
   const payload: CalendarAccessRequested = {
     type: "calendar_access_requested",
     data,
   };
 
-  await invoke("publish_to_calendar_inbox", { payload });
+  return await invoke("publish_to_calendar_inbox", { payload });
 }
 
 /**

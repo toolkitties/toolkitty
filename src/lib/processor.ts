@@ -120,8 +120,6 @@ import { rejectPromise, resolvePromise } from "$lib/promiseMap";
  * the message gets processed a second time.
  */
 export async function process(message: ChannelMessage) {
-  console.debug("received message to process", message);
-
   // @TODO: We need to validate here if the received messages are correctly
   // formatted and contain all the required fields.
   // Related issue: https://github.com/toolkitties/toolkitty/issues/77
