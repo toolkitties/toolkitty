@@ -12,6 +12,7 @@ use tokio::sync::{mpsc, oneshot, RwLock};
 use tokio::task::JoinHandle;
 use tokio_stream::wrappers::ReceiverStream;
 use tokio_stream::StreamExt;
+use tracing::debug;
 
 use crate::node::operation::{CalendarId, Extensions, LogId};
 
@@ -83,6 +84,7 @@ impl StreamController {
                             match controller_store.unacked(logs).await {
                                 Ok(operations) => {
                                     for operation in operations {
+                                        debug!("send operation: {}", &operation.0.hash());
                                         processor_tx
                                             .send(operation)
                                             .await
@@ -364,7 +366,23 @@ where
                             }
                         }
                     }
-                    None => continue,
+                    None => {
+                        let Ok(operations) = self
+                            .operation_store
+                            // Get all operations from > ack_log_height
+                            .get_log(&public_key, &log_id, Some(0))
+                            .await;
+
+                        if let Some(operations) = operations {
+                            for (header, body) in operations {
+                                // @TODO(adz): Getting the encoded header bytes through encoding
+                                // like this feels redundant and should be possible to retreive
+                                // just from calling "get_log".
+                                let header_bytes = header.to_bytes();
+                                result.push((header, body, header_bytes));
+                            }
+                        }
+                    }
                 }
             }
         }
