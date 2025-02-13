@@ -577,7 +577,6 @@ type Calendar = {
   // TODO: Should we support non-consecutive dates? It could be arrays of TimeSpan?
   startDate?: Date;
   endDate?: Date;
-  hasAccess: boolean;
 };
 
 type AccessRequest = {

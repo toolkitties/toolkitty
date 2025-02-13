@@ -120,7 +120,6 @@ async function onCalendarCreated(
     id: meta.calendarId,
     ownerId: meta.publicKey,
     name: data.fields.calendarName,
-    hasAccess: true,
   });
 
   // Add the calendar creator to the list of authors who's data we want to
