@@ -3,6 +3,7 @@ use serde::Serialize;
 
 use crate::node::operation::CalendarId;
 use crate::node::StreamEvent;
+use crate::rpc::TopicType;
 use crate::topic::NetworkTopic;
 
 #[derive(Clone, Debug)]
@@ -11,7 +12,7 @@ pub enum ChannelEvent {
     InviteCodesReady,
     InviteCodes(serde_json::Value),
     CalendarSelected(CalendarId),
-    SubscribedToCalendar(CalendarId),
+    SubscribedToCalendar(CalendarId, TopicType),
     NetworkEvent(NetworkEvent),
 }
 
@@ -42,10 +43,11 @@ impl Serialize for ChannelEvent {
                 state.serialize_field("calendarId", &calendar_id)?;
                 state.end()
             }
-            ChannelEvent::SubscribedToCalendar(calendar_id) => {
+            ChannelEvent::SubscribedToCalendar(calendar_id, topic_type) => {
                 let mut state = serializer.serialize_struct("StreamEvent", 2)?;
                 state.serialize_field("event", "subscribed_to_calendar")?;
                 state.serialize_field("calendarId", &calendar_id)?;
+                state.serialize_field("type", &topic_type)?;
                 state.end()
             }
             ChannelEvent::NetworkEvent(ref event) => {
