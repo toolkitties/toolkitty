@@ -3,8 +3,8 @@ use serde::Serialize;
 
 use crate::node::operation::CalendarId;
 use crate::node::StreamEvent;
-use crate::rpc::TopicType;
 use crate::topic::NetworkTopic;
+use crate::topic::TopicType;
 
 #[derive(Clone, Debug)]
 pub enum ChannelEvent {

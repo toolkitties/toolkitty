@@ -71,7 +71,8 @@ export async function create(data: CalendarCreated["data"]): Promise<Hash> {
 
   // Add our public key to the topic map on the backend.
   let myPublicKey = await publicKey();
-  await topics.addCalendarAuthor(hash, myPublicKey);
+  await topics.addCalendarAuthor(hash, myPublicKey, "inbox");
+  await topics.addCalendarAuthor(hash, myPublicKey, "data");
 
   // Select this calendar.
   await select(hash);
@@ -124,7 +125,8 @@ async function onCalendarCreated(
 
   // Add the calendar creator to the list of authors who's data we want to
   // sync for this calendar.
-  await topics.addCalendarAuthor(meta.calendarId, meta.publicKey);
+  await topics.addCalendarAuthor(meta.calendarId, meta.publicKey, "inbox");
+  await topics.addCalendarAuthor(meta.calendarId, meta.publicKey, "data");
 }
 
 export async function setActiveCalendar(id: Hash) {

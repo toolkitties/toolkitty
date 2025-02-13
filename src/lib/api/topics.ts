@@ -15,8 +15,9 @@ import { access } from ".";
 export async function addCalendarAuthor(
   calendarId: Hash,
   publicKey: PublicKey,
+  topicType: TopicType,
 ) {
-  await invoke("add_calendar_author", { calendarId, publicKey });
+  await invoke("add_calendar_author", { calendarId, publicKey, topicType });
 }
 
 /**
@@ -36,7 +37,10 @@ export async function subscribeToAll() {
   for (const request of allMyRequests) {
     await subscribe(request.id, "inbox");
 
-    let hasAccess = await access.checkHasAccess(myPublicKey, request.calendarId);
+    let hasAccess = await access.checkHasAccess(
+      myPublicKey,
+      request.calendarId,
+    );
     if (hasAccess) {
       await subscribe(request.id, "data");
     }

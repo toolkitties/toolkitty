@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Display};
 use std::hash::Hash as StdHash;
 use std::sync::Arc;
 
@@ -15,6 +15,23 @@ use crate::node::operation::{CalendarId, LogId, LogType};
 const INVITE_CODES_TOPIC_ID: &str = "invite-codes";
 const DATA_TOPIC_ID_PREFIX: &str = "data";
 const INBOX_TOPIC_ID_PREFIX: &str = "inbox";
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum TopicType {
+    Inbox,
+    Data,
+}
+
+impl Display for TopicType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let topic_type = match self {
+            TopicType::Inbox => "inbox",
+            TopicType::Data => "data",
+        };
+        write!(f, "{topic_type}")
+    }
+}
 
 #[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
 #[serde(tag = "t", content = "c", rename_all = "snake_case")]

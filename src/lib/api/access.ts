@@ -62,21 +62,17 @@ export async function checkHasAccess(
   );
 
   if (request == undefined) {
-    console.log("no request found");
     return false;
   }
 
   let response = (await db.accessResponses.toArray()).find(
-    (response) =>
-      response.requestId == request.id &&
-      response.accept
-      // @TODO: We need to be able to check if the response came from the calendar owner but at
-      // this point we haven't received the "calendar_created" event yet. It will help when the
-      // actual calendar id contains the owner information.
+    (response) => response.requestId == request.id && response.accept,
+    // @TODO: We need to be able to check if the response came from the calendar owner but at
+    // this point we haven't received the "calendar_created" event yet. It will help when the
+    // actual calendar id contains the owner information.
   );
 
   if (response == undefined) {
-    console.log("no response found");
     return false;
   }
 
@@ -94,9 +90,10 @@ export async function requestAccess(
     data,
   };
 
-  return await invoke("publish_to_calendar_inbox", {
+  return await invoke("publish", {
     payload,
     calendarId: data.calendarId,
+    topicType: "inbox",
   });
 }
 
@@ -112,7 +109,11 @@ export async function acceptAccessRequest(
     data,
   };
 
-  await invoke("publish_to_calendar_inbox", { payload, calendarId });
+  await invoke("publish", {
+    payload,
+    calendarId,
+    topicType: "inbox",
+  });
 }
 
 /**
@@ -127,7 +128,11 @@ export async function rejectAccessRequest(
     data,
   };
 
-  await invoke("publish_to_calendar_inbox", { payload, calendarId });
+  await invoke("publish", {
+    payload,
+    calendarId,
+    topicType: "inbox",
+  });
 }
 
 /**
@@ -251,16 +256,15 @@ async function handleRequestOrResponse(
 ) {
   let hasAccess = await checkHasAccess(requesterPublicKey, calendarId);
   if (!hasAccess) {
-    console.log("no access");
     return;
   }
 
   // Inform the backend that there is a new author who may contribute to the calendar.
-  await topics.addCalendarAuthor(calendarId, requesterPublicKey);
+  await topics.addCalendarAuthor(calendarId, requesterPublicKey, "inbox");
+  await topics.addCalendarAuthor(calendarId, requesterPublicKey, "data");
 
   let myPublicKey = await publicKey();
   if (myPublicKey != requesterPublicKey) {
-    console.log("not my public key");
     return;
   }
 
@@ -268,6 +272,5 @@ async function handleRequestOrResponse(
   // data overlay so we subscribe to the data topic now finally. This will mean we receive the
   // "calendar_created" event on the stream, which in turn means the calendar will be inserted
   // into our database.
-  console.log("subscribe to calendar");
   await topics.subscribe(calendarId, "data");
 }

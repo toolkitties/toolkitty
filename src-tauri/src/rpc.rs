@@ -10,14 +10,7 @@ use tracing::debug;
 use crate::app::Context;
 use crate::messages::ChannelEvent;
 use crate::node::operation::{create_operation, CalendarId, Extensions, LogType};
-use crate::topic::NetworkTopic;
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub enum TopicType {
-    Inbox,
-    Data,
-}
+use crate::topic::{NetworkTopic, TopicType};
 
 /// Initialize the app by passing it a channel from the frontend.
 #[tauri::command]
@@ -71,25 +64,22 @@ pub async fn add_calendar_author(
     state: State<'_, Mutex<Context>>,
     public_key: PublicKey,
     calendar_id: CalendarId,
+    topic_type: TopicType,
 ) -> Result<(), RpcError> {
     debug!(
         command.name = "add_calendar_author",
         command.public_key = public_key.to_hex(),
+        command.topic_type = topic_type.to_string(),
         "RPC request received"
     );
 
     let state = state.lock().await;
 
-    // @TODO(sam): Currently we add the author to both the inbox and data topics, maybe we want
-    // to split this into two different RPC methods later.
-    state
-        .topic_map
-        .add_author(public_key, NetworkTopic::CalendarInbox { calendar_id })
-        .await;
-    state
-        .topic_map
-        .add_author(public_key, NetworkTopic::CalendarData { calendar_id })
-        .await;
+    let topic = match topic_type {
+        TopicType::Inbox => NetworkTopic::CalendarInbox { calendar_id },
+        TopicType::Data => NetworkTopic::CalendarData { calendar_id },
+    };
+    state.topic_map.add_author(public_key, topic).await;
     Ok(())
 }
 
@@ -103,6 +93,7 @@ pub async fn subscribe(
     debug!(
         command.name = "subscribe",
         command.calendar_id = calendar_id.0.to_hex(),
+        command.topic_type = topic_type.to_string(),
         "RPC request received"
     );
 
@@ -213,18 +204,20 @@ pub async fn create_calendar(
     Ok(hash)
 }
 
-/// Publish an event to the calendar topic.
+/// Publish an event to a calendar topic.
 ///
 /// Returns the hash of the operation on which the payload was encoded.
 #[tauri::command]
-pub async fn publish_calendar_event(
+pub async fn publish(
     state: State<'_, Mutex<Context>>,
     payload: serde_json::Value,
     calendar_id: CalendarId,
+    topic_type: TopicType,
 ) -> Result<Hash, RpcError> {
     debug!(
-        command.name = "publish_calendar_event",
+        command.name = "publish",
         command.calendar_id = calendar_id.0.to_hex(),
+        command.topic_type = topic_type.to_string(),
         "RPC request received"
     );
 
@@ -233,8 +226,14 @@ pub async fn publish_calendar_event(
 
     let payload = serde_json::to_vec(&payload)?;
 
+    let (log_type, topic) = match topic_type {
+        TopicType::Inbox => (LogType::Inbox, NetworkTopic::CalendarInbox { calendar_id }),
+        TopicType::Data => (LogType::Data, NetworkTopic::CalendarData { calendar_id }),
+    };
+
     let extensions = Extensions {
         calendar_id: Some(calendar_id),
+        log_type: Some(log_type),
         ..Default::default()
     };
 
@@ -245,54 +244,6 @@ pub async fn publish_calendar_event(
         Some(&payload),
     )
     .await;
-
-    let topic = NetworkTopic::CalendarData { calendar_id };
-
-    state
-        .node
-        .publish_to_stream(&topic, &header, body.as_ref())
-        .await?;
-
-    debug!("publish operation: {}", header.hash());
-
-    Ok(header.hash())
-}
-
-/// Publish an event to the calendars inbox topic.
-///
-/// Returns the hash of the operation on which the payload was encoded.
-#[tauri::command]
-pub async fn publish_to_calendar_inbox(
-    state: State<'_, Mutex<Context>>,
-    payload: serde_json::Value,
-    calendar_id: CalendarId,
-) -> Result<Hash, RpcError> {
-    debug!(
-        command.name = "publish_to_calendar_inbox",
-        command.calendar_id = calendar_id.0.to_hex(),
-        "RPC request received"
-    );
-
-    let mut state = state.lock().await;
-    let private_key = state.node.private_key.clone();
-
-    let payload = serde_json::to_vec(&payload)?;
-
-    let extensions = Extensions {
-        calendar_id: Some(calendar_id),
-        log_type: Some(LogType::Inbox),
-        ..Default::default()
-    };
-
-    let (header, body) = create_operation(
-        &mut state.node.store,
-        &private_key,
-        extensions,
-        Some(&payload),
-    )
-    .await;
-
-    let topic = NetworkTopic::CalendarInbox { calendar_id };
 
     state
         .node
