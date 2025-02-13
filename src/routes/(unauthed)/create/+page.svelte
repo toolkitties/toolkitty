@@ -17,9 +17,10 @@
     const name = data.get("name") as string;
 
     try {
-      const calendarId = await calendars.create({ name });
-      await calendars.select(calendarId);
-      await calendars.subscribe(calendarId);
+      await calendars.create({ fields: {
+          calendarName: name,
+          calendarDates: []
+      } });
     } catch (err) {
       // Toasty!
     }

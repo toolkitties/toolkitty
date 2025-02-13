@@ -172,8 +172,7 @@ async function onInviteCodesMessage(
 
 async function onSystemMessage(message: SystemMessage) {
   if (message.event === "calendar_selected") {
-    // @TODO: set selected calendar.
-    console.log("calendar selected: ", message.calendarId);
+    calendars.setActiveCalendar(message.calendarId);
   } else if (message.event === "subscribed_to_calendar") {
     console.log("subscribed to calendar: ", message.calendarId);
   } else if (message.event === "network_event") {
