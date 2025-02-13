@@ -19,12 +19,6 @@ type PublicKey = string;
 type Image = string;
 
 /**
- * The different subscription types which exist for a calendar. Each represents a logical set of
- * data which can be subscribed to independently.
- */
-type SubscriptionType = "inbox" | "data";
-
-/**
  *ヾ( ˃ᴗ˂ )◞ • *✰
  * Channel Messages
  */
@@ -583,6 +577,20 @@ type Calendar = {
   // TODO: Should we support non-consecutive dates? It could be arrays of TimeSpan?
   startDate?: Date;
   endDate?: Date;
+  hasAccess: boolean;
+};
+
+type AccessRequest = {
+  id: Hash;
+  calendarId: Hash;
+  publicKey: PublicKey;
+};
+
+type AccessResponse = {
+  id: Hash;
+  from: PublicKey;
+  requestId: Hash;
+  accept: boolean;
 };
 
 type CalendarEvent = {
@@ -694,4 +702,15 @@ type BookedTimeSpan = TimeSpan & {
 type Settings = {
   name: string;
   value: Hash | string;
+}
+
+/**
+ * The different subscription types which exist for a calendar. Each represents a logical set of
+ * data which can be subscribed to independently.
+ */
+type TopicType = "inbox" | "data";
+
+type Subscription = {
+  calendarId: Hash,
+  type: TopicType,
 }
