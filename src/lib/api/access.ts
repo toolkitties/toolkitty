@@ -89,6 +89,20 @@ export async function acceptAccessRequest(
 }
 
 /**
+ * Accept a calendar access request.
+ */
+export async function rejectAccessRequest(
+  data: CalendarAccessAccepted["data"],
+) {
+  const payload: CalendarAccessRejected = {
+    type: "calendar_access_rejected",
+    data,
+  };
+
+  await invoke("publish_to_calendar_inbox", { payload });
+}
+
+/**
  * There are two paths to getting access to a calendar. 1) the creator of the calendar is the
  * "owner" and has access by default 2) a peer has requested access and received an access
  * accepted message from the calendar owner. A flow diagram for all access states can be seen
@@ -134,7 +148,8 @@ export async function process(message: ApplicationMessage) {
       return await onCalendarAccessRequested(meta, data);
     case "calendar_access_accepted":
       return await onCalendarAccessAccepted(meta, data);
-    // @TODO(sam): handle `calendar_access_rejected`
+    case "calendar_access_rejected":
+      return await onCalendarAccessRejected(meta, data);
   }
 }
 
@@ -169,6 +184,18 @@ async function onCalendarAccessAccepted(
   if (request) {
     await handleRequestOrResponse(meta.calendarId, request.publicKey);
   }
+}
+
+async function onCalendarAccessRejected(
+  meta: StreamMessageMeta,
+  data: CalendarAccessRejected["data"],
+) {
+  await db.accessResponses.add({
+    id: meta.operationId,
+    from: meta.publicKey,
+    requestId: data.requestId,
+    accept: false,
+  });
 }
 
 /**

@@ -330,7 +330,7 @@ type CalendarAccessAccepted = {
 type CalendarAccessRejected = {
   type: "calendar_access_rejected";
   data: {
-    calendarId: Hash;
+    requestId: Hash;
   };
 };
 
