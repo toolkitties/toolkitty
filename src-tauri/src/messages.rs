@@ -1,7 +1,7 @@
 use serde::ser::SerializeStruct;
 use serde::Serialize;
 
-use crate::node::operation::CalendarId;
+use crate::node::extensions::CalendarId;
 use crate::node::StreamEvent;
 use crate::topic::NetworkTopic;
 use crate::topic::TopicType;

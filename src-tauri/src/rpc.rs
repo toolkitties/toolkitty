@@ -9,7 +9,8 @@ use tracing::debug;
 
 use crate::app::Context;
 use crate::messages::ChannelEvent;
-use crate::node::operation::{create_operation, CalendarId, Extensions, LogType};
+use crate::node::extensions::{CalendarId, Extensions, LogId, StreamName};
+use crate::node::operation::create_operation;
 use crate::topic::{NetworkTopic, TopicType};
 
 /// Initialize the app by passing it a channel from the frontend.
@@ -60,14 +61,15 @@ pub async fn ack(state: State<'_, Mutex<Context>>, operation_id: Hash) -> Result
 ///
 /// This means that we will actively sync operations from this author for the specific calendar.
 #[tauri::command]
-pub async fn add_calendar_author(
+pub async fn add_topic_log(
     state: State<'_, Mutex<Context>>,
     public_key: PublicKey,
     calendar_id: CalendarId,
     topic_type: TopicType,
+    stream_name: StreamName,
 ) -> Result<(), RpcError> {
     debug!(
-        command.name = "add_calendar_author",
+        command.name = "add_topic_log",
         command.public_key = public_key.to_hex(),
         command.topic_type = topic_type.to_string(),
         "RPC request received"
@@ -79,7 +81,13 @@ pub async fn add_calendar_author(
         TopicType::Inbox => NetworkTopic::CalendarInbox { calendar_id },
         TopicType::Data => NetworkTopic::CalendarData { calendar_id },
     };
-    state.topic_map.add_author(public_key, topic).await;
+
+    let log_id = LogId {
+        calendar_id,
+        stream_name,
+    };
+
+    state.topic_map.add_log(topic, public_key, log_id).await;
     Ok(())
 }
 
@@ -92,7 +100,7 @@ pub async fn subscribe(
 ) -> Result<(), RpcError> {
     debug!(
         command.name = "subscribe",
-        command.calendar_id = calendar_id.0.to_hex(),
+        command.calendar_id = calendar_id.to_string(),
         command.topic_type = topic_type.to_string(),
         "RPC request received"
     );
@@ -136,7 +144,7 @@ pub async fn select_calendar(
 ) -> Result<(), RpcError> {
     debug!(
         command.name = "select_calendar",
-        command.calendar_id = calendar_id.0.to_hex(),
+        command.calendar_id = calendar_id.to_string(),
         "RPC request received"
     );
 
@@ -168,42 +176,6 @@ pub async fn select_calendar(
     Ok(())
 }
 
-/// Create a new calendar.
-///
-/// NOTE: subscribing to a calendar does _not_ occur as part of this method and must be requested
-/// from the frontend with a further call to `subscribe_to_calendar`
-///
-/// Returns the hash of the operation on which the calendar payload was encoded.
-#[tauri::command]
-pub async fn create_calendar(
-    state: State<'_, Mutex<Context>>,
-    payload: serde_json::Value,
-) -> Result<Hash, RpcError> {
-    debug!(command.name = "create_calendar", "RPC request received");
-
-    let mut state = state.lock().await;
-    let private_key = state.node.private_key.clone();
-
-    let payload = serde_json::to_vec(&payload)?;
-
-    let extensions = Extensions::default();
-
-    // @TODO(adz): Memory stores are infallible right now but we'll switch to a SQLite-based
-    // one soon and then we need to handle this error here:
-    let (header, body) = create_operation(
-        &mut state.node.store,
-        &private_key,
-        extensions,
-        Some(&payload),
-    )
-    .await;
-
-    state.node.ingest(&header, body.as_ref()).await?;
-    let hash = header.hash();
-
-    Ok(hash)
-}
-
 /// Publish an event to a calendar topic.
 ///
 /// Returns the hash of the operation on which the payload was encoded.
@@ -211,12 +183,13 @@ pub async fn create_calendar(
 pub async fn publish(
     state: State<'_, Mutex<Context>>,
     payload: serde_json::Value,
-    calendar_id: CalendarId,
     topic_type: TopicType,
+    calendar_id: Option<CalendarId>,
+    stream_name: Option<StreamName>,
 ) -> Result<Hash, RpcError> {
     debug!(
         command.name = "publish",
-        command.calendar_id = calendar_id.0.to_hex(),
+        command.calendar_id = calendar_id.as_ref().map(ToString::to_string),
         command.topic_type = topic_type.to_string(),
         "RPC request received"
     );
@@ -226,14 +199,9 @@ pub async fn publish(
 
     let payload = serde_json::to_vec(&payload)?;
 
-    let (log_type, topic) = match topic_type {
-        TopicType::Inbox => (LogType::Inbox, NetworkTopic::CalendarInbox { calendar_id }),
-        TopicType::Data => (LogType::Data, NetworkTopic::CalendarData { calendar_id }),
-    };
-
     let extensions = Extensions {
-        calendar_id: Some(calendar_id),
-        log_type: Some(log_type),
+        calendar_id,
+        stream_name,
         ..Default::default()
     };
 
@@ -244,6 +212,15 @@ pub async fn publish(
         Some(&payload),
     )
     .await;
+
+    let calendar_id = header
+        .extension()
+        .expect("get calendar id extension");
+
+    let topic = match topic_type {
+        TopicType::Inbox => NetworkTopic::CalendarInbox { calendar_id },
+        TopicType::Data => NetworkTopic::CalendarData { calendar_id },
+    };
 
     state
         .node

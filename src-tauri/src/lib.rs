@@ -7,7 +7,7 @@ mod topic;
 use tauri::Builder;
 
 use crate::rpc::{
-    ack, add_calendar_author, create_calendar, init, public_key, publish,
+    ack, add_topic_log, init, public_key, publish,
     publish_to_invite_code_overlay, select_calendar, subscribe,
 };
 
@@ -29,8 +29,7 @@ pub fn run() {
             init,
             ack,
             public_key,
-            add_calendar_author,
-            create_calendar,
+            add_topic_log,
             publish,
             publish_to_invite_code_overlay,
             select_calendar,

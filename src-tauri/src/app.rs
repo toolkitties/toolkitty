@@ -11,7 +11,7 @@ use tokio::sync::{broadcast, mpsc, oneshot, Mutex};
 use tracing::debug;
 
 use crate::messages::{ChannelEvent, NetworkEvent};
-use crate::node::operation::CalendarId;
+use crate::node::extensions::CalendarId;
 use crate::node::{Node, StreamEvent};
 use crate::topic::{NetworkTopic, TopicMap};
 
@@ -153,8 +153,8 @@ impl Service {
                     // @TODO: This is filtering out the operations _after_ they've been processed
                     // by the backend. We should go through the whole processing pipeline when
                     // selected and not at all when not.
-                    if let Some(selected_calendar) = state.selected_calendar {
-                        if selected_calendar != meta.calendar_id {
+                    if let Some(ref selected_calendar) = state.selected_calendar {
+                        if selected_calendar != &meta.calendar_id {
                             debug!("ignoring stream event: calendar not selected");
                             continue;
                         };

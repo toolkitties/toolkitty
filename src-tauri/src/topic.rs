@@ -10,7 +10,7 @@ use p2panda_sync::TopicQuery;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 
-use crate::node::operation::{CalendarId, LogId, LogType};
+use crate::node::extensions::{CalendarId, LogId};
 
 const INVITE_CODES_TOPIC_ID: &str = "invite-codes";
 const DATA_TOPIC_ID_PREFIX: &str = "data";
@@ -64,55 +64,40 @@ pub struct TopicMap {
 
 #[derive(Clone, Debug)]
 struct InnerTopicMap {
-    authors: HashMap<NetworkTopic, Vec<PublicKey>>,
+    topics: HashMap<NetworkTopic, AuthorLogs>,
 }
+
+type AuthorLogs = HashMap<PublicKey, Vec<LogId>>;
 
 impl TopicMap {
     pub fn new() -> Self {
         Self {
             inner: Arc::new(RwLock::new(InnerTopicMap {
-                authors: HashMap::new(),
+                topics: HashMap::new(),
             })),
         }
     }
 
-    pub async fn add_author(&self, public_key: PublicKey, topic: NetworkTopic) {
+    pub async fn add_log(&self, topic: NetworkTopic, public_key: PublicKey, log_id: LogId) {
         let mut lock = self.inner.write().await;
-        lock.authors
+        lock.topics
             .entry(topic)
-            .and_modify(|public_keys| public_keys.push(public_key))
-            .or_insert(vec![public_key]);
+            .and_modify(|author_logs| {
+                author_logs
+                    .entry(public_key)
+                    .and_modify(|logs| {
+                        logs.push(log_id.clone());
+                    })
+                    .or_insert(vec![log_id.clone()]);
+            })
+            .or_insert(HashMap::from([(public_key, vec![log_id])]));
     }
 }
 
 #[async_trait]
 impl TopicLogMap<NetworkTopic, LogId> for TopicMap {
     async fn get(&self, topic: &NetworkTopic) -> Option<HashMap<PublicKey, Vec<LogId>>> {
-        let log_id = match topic {
-            NetworkTopic::InviteCodes => return None,
-            NetworkTopic::CalendarInbox { calendar_id } => LogId {
-                calendar_id: *calendar_id,
-                log_type: LogType::Inbox,
-            },
-            NetworkTopic::CalendarData { calendar_id } => LogId {
-                calendar_id: *calendar_id,
-                log_type: LogType::Data,
-            },
-        };
-
-        let inner = self.inner.read().await;
-        inner.authors.get(topic).map(|public_keys| {
-            let mut result = HashMap::with_capacity(public_keys.len());
-            for public_key in public_keys {
-                result.insert(
-                    public_key.to_owned(),
-                    // @TODO(adz): Currently we store all operations in one log per topic,
-                    // later we want to list all possible "log types" here, for example for
-                    // all events, resources, messages etc.
-                    vec![log_id.clone()],
-                );
-            }
-            result
-        })
+        let lock = self.inner.read().await;
+        lock.topics.get(&topic).cloned()
     }
 }
