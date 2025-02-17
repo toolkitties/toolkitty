@@ -28,28 +28,26 @@ export function inviteCode(calendar: Calendar): string {
  * Returns the id of the currently active calendar
  */
 export async function getActiveCalendarId() {
-  const activeCalendar = await db.settings.get('activeCalendar')
-  return activeCalendar?.value
+  const activeCalendar = await db.settings.get("activeCalendar");
+  return activeCalendar?.value;
 }
 
 /*
  * Observable for watching the name of the currently active calendar
  */
-export const getActiveCalendar = liveQuery(
-  async () => {
-    const activeCalendarId = await db.settings.get('activeCalendar');
-    if (!activeCalendarId) return;
-    const activeCalendar = await db.calendars.get(activeCalendarId.value)
-    return activeCalendar?.name
-  }
-)
+export const getActiveCalendar = liveQuery(async () => {
+  const activeCalendarId = await db.settings.get("activeCalendar");
+  if (!activeCalendarId) return;
+  const activeCalendar = await db.calendars.get(activeCalendarId.value);
+  return activeCalendar?.name;
+});
 
 /*
  * Commands
  */
 
 export async function create(
-  data: CalendarCreatedEvent["data"],
+  data: CalendarCreated["data"],
 ): Promise<Hash> {
   // Define the "calendar created" application event.
   //
@@ -58,7 +56,7 @@ export async function create(
   // hidden side-effects, if this could happen on the frontend with follow-up
   // IPC calls. This can be refactored when
   // https://github.com/toolkitties/toolkitty/issues/69 is implemented.
-  const payload: CalendarCreatedEvent = {
+  const payload: CalendarCreated = {
     type: "calendar_created",
     data,
   };
@@ -67,6 +65,10 @@ export async function create(
   // p2panda operation from the backend. We can use this now as an unique
   // identifier for the application event.
   const hash: Hash = await invoke("create_calendar", { payload });
+
+  // The above command created a calendar on the local node, but we also want to subscribe to it
+  // as a topic on the network in order to discover and sync with other interested peers.
+  await subscribe(hash);
 
   // Register this operation hash to wait until it's later resolved by the
   // processor. Like this we can conveniently return from this method as soon as
@@ -97,6 +99,22 @@ export async function subscribe(calendarId: Hash) {
   await invoke("subscribe_to_calendar", { calendarId });
 }
 
+/**
+ * Register that we want to sync events from an author for a certain festival. There are two
+ * reasons we want to do this:
+ *
+ * 1) We observe a "CalendarCreated" event for a calendar we're subscribed to and want to add
+ *    therefore want to sync events from the calendar creator.
+ * 2) We observe a "CalendarAccessAccepted" event for a calendar we're subscribed to and want to
+ *    sync events from the newly added author.
+ */
+export async function addCalendarAuthor(
+  calendarId: Hash,
+  publicKey: PublicKey,
+) {
+  await invoke("add_calendar_author", { calendarId, publicKey });
+}
+
 /*
  * Processor
  */
@@ -113,21 +131,26 @@ export async function process(message: ApplicationMessage) {
 
 async function onCalendarCreated(
   meta: StreamMessageMeta,
-  data: CalendarCreatedEvent["data"],
+  data: CalendarCreated["data"],
 ) {
+  // Store calendar in database.
   await db.calendars.add({
     id: meta.calendarId,
     ownerId: meta.publicKey,
-    name: data.name,
+    name: data.fields.calendarName,
   });
-  await setActiveCalendar(meta.calendarId)
+
+  // Add the calendar creator the the list of authors who's data we want to 
+  // sync for this calendar.
+  await addCalendarAuthor(meta.calendarId, meta.publicKey);
+
+  // Set this as the active calendar.
+  await setActiveCalendar(meta.calendarId);
 }
 
 async function setActiveCalendar(id: Hash) {
   await db.settings.add({
-    name: 'activeCalendar',
-    value: id
-  })
+    name: "activeCalendar",
+    value: id,
+  });
 }
-
-

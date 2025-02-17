@@ -58,8 +58,8 @@ export const spaces: Space[] = [
     ],
     availability: [
       {
-        start: new Date("2025-01-01T00:00:00Z"),
-        end: new Date("2025-02-29T00:00:00Z"),
+        start: new Date("2025-01-01T00:0:00Z"),
+        end: new Date("2025-02-30T00:0:00Z"),
       },
     ],
     multiBookable: false,

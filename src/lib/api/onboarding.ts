@@ -8,6 +8,8 @@ export async function joinWithInviteCode(
 
   await calendars.select(calendar.id);
   await calendars.subscribe(calendar.id);
+  // @TODO: add ourselves to the topic map for this calendar.
+  // await calendars.addCalendarAuthor(calendar.id, myPublicKey);
 
   // @TODO: At this point we've "joined" the calendar but we haven't received
   // the `CalendarCreated` event yet, which will ultimately update our database
