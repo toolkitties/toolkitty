@@ -19,7 +19,7 @@
     try {
       await calendars.create({ fields: {
           name: name,
-          dates: []
+          dates: [{start: new Date(), end: new Date()}]
       } });
     } catch (err) {
       // Toasty!
