@@ -406,7 +406,7 @@ type ResourceCreated = {
 };
 
 type ResourceUpdated = {
-  type: "space_updated";
+  type: "resource_updated";
   data: {
     id: Hash;
     fields: ResourceFields;

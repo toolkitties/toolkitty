@@ -87,6 +87,38 @@ export async function create(data: CalendarCreated["data"]): Promise<Hash> {
   return hash;
 }
 
+export async function update(
+  calendar_id: Hash,
+  fields: CalendarFields,
+): Promise<Hash> {
+  let calendar_updated: CalendarUpdated = {
+    type: "calendar_updated",
+    data: {
+      id: calendar_id,
+      fields,
+    },
+  };
+  let hash: Hash = await invoke("publish", {
+    calendar_id,
+    payload: calendar_updated,
+  });
+  return hash;
+}
+
+export async function deleteCalendar(calendar_id: Hash): Promise<Hash> {
+  let calendar_deleted: CalendarDeleted = {
+    type: "calendar_deleted",
+    data: {
+      id: calendar_id,
+    },
+  };
+  let hash: Hash = await invoke("publish", {
+    calendar_id,
+    payload: calendar_deleted,
+  });
+  return hash;
+}
+
 /**
  * Select a new calendar. This tells the backend to only forward events
  * associated with the passed calendar to the frontend. Events for any other
