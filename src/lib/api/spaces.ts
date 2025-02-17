@@ -1,4 +1,5 @@
 import { spaces } from "$lib/api/data";
+import { db } from "$lib/db";
 import { invoke } from "@tauri-apps/api/core";
 
 /**
@@ -95,4 +96,118 @@ export async function deleteSpace(
 //TODO: Move to class so we don't have to export as an alias
 export { deleteSpace as delete };
 
-//TODO: Add processor
+/*
+ * Processor
+ */
+
+export async function process(message: ApplicationMessage) {
+  const meta = message.meta;
+  const { data, type } = message.data;
+
+  switch (type) {
+    case "space_created":
+      return await onSpaceCreated(meta, data);
+    case "space_updated":
+      return await onSpaceUpdated(meta, data);
+    case "space_deleted":
+      return await onSpaceDeleted(meta, data);
+  }
+}
+
+async function onSpaceCreated(
+  meta: StreamMessageMeta,
+  data: SpaceCreated["data"],
+) {
+  // Store calendar in database.
+  let {
+    type,
+    name,
+    location,
+    capacity,
+    accessibility,
+    description,
+    contact,
+    link,
+    images,
+    availability,
+    multiBookable,
+  } = data.fields;
+
+  await db.spaces.add({
+    id: meta.calendarId,
+    ownerId: meta.publicKey,
+    booked: [],
+    type,
+    name,
+    location,
+    capacity,
+    accessibility,
+    description,
+    contact,
+    link,
+    images,
+    availability,
+    multiBookable,
+  });
+}
+
+async function onSpaceUpdated(
+  meta: StreamMessageMeta,
+  data: SpaceUpdated["data"],
+) {
+  await validateUpdateDelete(meta.publicKey, data.id);
+
+  let {
+    type,
+    name,
+    location,
+    capacity,
+    accessibility,
+    description,
+    contact,
+    link,
+    images,
+    availability,
+    multiBookable,
+  } = data.fields;
+
+  await db.spaces.update(data.id, {
+    type,
+    name,
+    location,
+    capacity,
+    accessibility,
+    description,
+    contact,
+    link,
+    images,
+    availability,
+    multiBookable,
+  });
+}
+
+async function onSpaceDeleted(
+  meta: StreamMessageMeta,
+  data: SpaceDeleted["data"],
+) {
+  await validateUpdateDelete(meta.publicKey, data.id);
+  await db.spaces.delete(data.id);
+}
+
+/**
+ * Validation
+ */
+
+async function validateUpdateDelete(publicKey: PublicKey, spaceId: Hash) {
+  let space = await db.spaces.get(spaceId);
+
+  // The space must already exist.
+  if (!space) {
+    throw new Error("space does not exist");
+  }
+
+  // Only the space owner can perform updates and deletes.
+  if (space.ownerId != publicKey) {
+    throw new Error("non-owner update or delete");
+  }
+}
