@@ -250,8 +250,8 @@ type SpaceRequestId = Hash;
 type ResourceRequestId = Hash;
 
 type CalendarFields = {
-  calendarName: string;
-  calendarDates: TimeSpan[];
+  name: string;
+  dates: TimeSpan[];
 };
 
 type SpaceFields = {
