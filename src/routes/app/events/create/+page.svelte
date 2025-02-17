@@ -4,11 +4,11 @@
   import { findMany as findResources } from "$lib/api/resources";
   import AvailabilityViewer from "../../../../components/availability-viewer.svelte";
 
-  let spaces: Space[] = [];
-  let resources: Resource[] = [];
+  let spaces: Space[] = $state<Space[]>([]);
+  let resources: Resource[] = $state<Resource[]>([]);
 
-  let currentlySelectedSpaceId = "";
-  let currentlySelectedResourceId = "";
+  let selectedSpace: Space | null = $state<Space | null>(null);
+  let currentlySelectedResourceId = $state("");
 
   onMount(async () => {
     try {
@@ -17,25 +17,35 @@
         findResources(),
       ]);
       spaces = [...fetchedSpaces];
-      currentlySelectedSpaceId = spaces[0].id;
+
+      if (spaces.length > 0) {
+        selectedSpace = spaces[0]; // Store entire object, not just ID
+      }
 
       resources = [...fetchedResources];
-      currentlySelectedResourceId = resources[0].id;
+
+      if (resources.length > 0) {
+        currentlySelectedResourceId = resources[0].id;
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
     }
   });
 
-  let tags = ["tag 1", "tag 2", "tag 3"];
-  let tagColours = ["bg-yellow-light", "bg-fluro-green-light", "bg-red-light"];
+  function handleSpaceChange(event: Event) {
+    const target = event.target as HTMLSelectElement;
+    selectedSpace = spaces.find((space) => space.id === target.value) ?? null;
+  }
 </script>
 
 <p>Hello organisers! Fill this form to upload your event to the program.</p>
+
 <form>
   <label for="name">Event name*</label>
-  <input type="text" name="name" />
+  <input type="text" name="name" required />
+
   <label for="description">Event description*</label>
-  <textarea name="description"></textarea>
+  <textarea name="description" required></textarea>
 
   <p>🎫 Ticket Link</p>
   <div class="flex flex-row">
@@ -45,7 +55,7 @@
     </div>
     <div>
       <label for="ticket-link-url">URL</label>
-      <input type="text" name="ticket-link-url" />
+      <input type="url" name="ticket-link-url" />
     </div>
   </div>
 
@@ -57,50 +67,51 @@
     </div>
     <div>
       <label for="additional-link-url">URL</label>
-      <input type="text" name="additional-link-url" />
+      <input type="url" name="additional-link-url" />
     </div>
   </div>
 
   {#if spaces.length > 0}
     <label for="select-space">Select Space</label><br />
-    <select name="select-space" bind:value={currentlySelectedSpaceId}>
+    <select
+      name="select-space"
+      bind:value={selectedSpace}
+      on:change={handleSpaceChange}
+    >
       {#each spaces as space}
-        <option
-          value={space.id}
-          selected={space.id === currentlySelectedSpaceId}
-        >
-          {space.name}
-        </option>
+        <option value={space.id}>{space.name}</option>
       {/each}
     </select>
 
-    <div class="space-availability">
-      <p>Select from available dates:</p>
-      <AvailabilityViewer
-        resourceId={currentlySelectedSpaceId}
-        type={"space"}
-      />
-    </div>
+    {#if selectedSpace}
+      <div class="space-availability">
+        <p>Select from available dates:</p>
+        <AvailabilityViewer
+          availability={Array.isArray(selectedSpace.availability)
+            ? selectedSpace.availability
+            : []}
+        />
+      </div>
+    {/if}
   {:else}
     <p>No spaces found.</p>
   {/if}
 
   <p>Event time (excluding set-up)</p>
-
   <div class="flex flex-row">
     <p>Event start</p>
-    <label for="event-name">Date *</label>
-    <input name="event-name" type="date" required />
+    <label for="event-start-date">Date *</label>
+    <input name="event-start-date" type="date" required />
     <label for="event-start-time">Time *</label>
     <input name="event-start-time" type="time" required />
   </div>
 
   <div class="flex flex-row">
     <p>Event end</p>
-    <label for="event-name">Date *</label>
-    <input name="event-name" type="date" required />
-    <label for="event-start-time">Time *</label>
-    <input name="event-start-time" type="time" required />
+    <label for="event-end-date">Date *</label>
+    <input name="event-end-date" type="date" required />
+    <label for="event-end-time">Time *</label>
+    <input name="event-end-time" type="time" required />
   </div>
 
   {#if resources.length > 0}
@@ -120,14 +131,6 @@
   {:else}
     <p>No resources available.</p>
   {/if}
-
-  <!-- image upload component -->
-
-  <div class="flex flex-row">
-    {#each tags as tag, index}
-      <div class={`tag ${tagColours[index]}`}>{tag}</div>
-    {/each}
-  </div>
 
   <button type="submit">Publish</button>
 </form>
