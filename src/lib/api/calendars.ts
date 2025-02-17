@@ -119,6 +119,13 @@ export async function deleteCalendar(calendar_id: Hash): Promise<Hash> {
   return hash;
 }
 
+export async function setActiveCalendar(id: Hash) {
+  await db.settings.add({
+    name: "activeCalendar",
+    value: id,
+  });
+}
+
 /**
  * Select a new calendar. This tells the backend to only forward events
  * associated with the passed calendar to the frontend. Events for any other
@@ -140,6 +147,10 @@ export async function process(message: ApplicationMessage) {
   switch (type) {
     case "calendar_created":
       return await onCalendarCreated(meta, data);
+    case "calendar_updated":
+      return await onCalendarUpdated(meta, data);
+    case "calendar_deleted":
+      return await onCalendarDeleted(meta, data);
   }
 }
 
@@ -147,12 +158,17 @@ async function onCalendarCreated(
   meta: StreamMessageMeta,
   data: CalendarCreated["data"],
 ) {
-  // Store calendar in database.
+  validateFields(data.fields);
+
+  let { name, dates } = data.fields;
+  let timeSpan = dates[0];
+
   await db.calendars.add({
     id: meta.calendarId,
     ownerId: meta.publicKey,
-    name: data.fields.name,
-    startDate: new Date(),
+    name,
+    startDate: timeSpan.start,
+    endDate: timeSpan.end,
   });
 
   // Add the calendar creator to the list of authors who's data we want to
@@ -161,9 +177,52 @@ async function onCalendarCreated(
   await topics.addCalendarAuthor(meta.calendarId, meta.publicKey, "data");
 }
 
-export async function setActiveCalendar(id: Hash) {
-  await db.settings.add({
-    name: "activeCalendar",
-    value: id,
+async function onCalendarUpdated(
+  meta: StreamMessageMeta,
+  data: CalendarUpdated["data"],
+) {
+  validateFields(data.fields);
+  await validateUpdateDelete(meta.publicKey, data.id);
+
+  let { name, dates } = data.fields;
+  let timeSpan = dates[0];
+
+  await db.calendars.update(data.id, {
+    name,
+    startDate: timeSpan.start,
+    endDate: timeSpan.end,
   });
+}
+
+async function onCalendarDeleted(
+  meta: StreamMessageMeta,
+  data: CalendarDeleted["data"],
+) {
+  await validateUpdateDelete(meta.publicKey, data.id);
+  await db.calendars.delete(data.id);
+}
+
+/**
+ * Validation
+ */
+
+function validateFields(fields: CalendarFields) {
+  let { dates } = fields;
+  if (dates.length == 0) {
+    throw new Error("calendar dates must contain at least on time span");
+  }
+}
+
+async function validateUpdateDelete(publicKey: PublicKey, calendarId: Hash) {
+  let calendar = await db.calendars.get(calendarId);
+
+  // The calendar must already exist.
+  if (!calendar) {
+    throw new Error("calendar does not exist");
+  }
+
+  // Only the calendar owner can perform updates and deletes.
+  if (calendar.ownerId != publicKey) {
+    throw new Error("non-owner update or delete on calendar");
+  }
 }
