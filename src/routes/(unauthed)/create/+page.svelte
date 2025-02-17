@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+<script>
+  import FestivalCalendar from '../../../components/festival-calendar.svelte';
+=======
 <script lang="ts">
   import CustomCalendar from "../../../components/CustomCalendar.svelte";
   import Select from "../../../components/select.svelte";
@@ -27,10 +31,19 @@
 
     goto(`/app/events`);
   }
+>>>>>>> main
 </script>
 
 <h1>Welcome to ToolKitties! Start here to organise your own programme.</h1>
 
+<<<<<<< HEAD
+<form>
+  <input id="name" name="name" type="text" placeholder="Programme name" />
+  <input id="username" name="username" type="text" placeholder="Your name" />
+  <FestivalCalendar 
+    canSelectMultiple={true}
+  />
+=======
 <form onsubmit={handleSubmit}>
   <label for="name">Programme name*</label>
   <input
@@ -74,5 +87,6 @@
     Calendars are private. Invite others with your calendar code.
   </p>
 
+>>>>>>> main
   <button class="border border-black rounded p-4" type="submit">Create</button>
 </form>

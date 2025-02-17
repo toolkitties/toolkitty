@@ -39,12 +39,12 @@
   ];
 
   let topLevelPage = $derived(
-    menu.some((item) => item.url.includes($page.url.pathname))
+    menu.some((item) => item.url.includes($page.url.pathname)),
   );
 </script>
 
 <Header />
-<main class="h-dvh">
+<main class="h-dvh mt-16">
   <div class="p-8">
     <slot />
   </div>

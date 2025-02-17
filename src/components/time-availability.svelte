@@ -1,12 +1,12 @@
 <script lang="ts">
-  // these would be our props when we make this into a reusable component.
-  // let { availability, booked } = $props();
+  // booked eventually becomes prop.
+  let { availability = $bindable() } = $props();
   // for now placing data below so its easier to understand
 
-  const availability = {
-    start: new Date("2025-02-10T10:00Z"),
-    end: new Date("2025-02-10T23:00Z"),
-  };
+  // const availability = {
+  //   start: new Date("2025-02-10T10:00Z"),
+  //   end: new Date("2025-02-10T23:00Z"),
+  // };
 
   const booked = [
     {
