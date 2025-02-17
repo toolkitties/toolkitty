@@ -84,7 +84,7 @@
 
     {#if selectedSpace}
       <div class="space-availability">
-        <p>Select from available dates:</p>
+        <p>View availability</p>
         <AvailabilityViewer
           availability={Array.isArray(selectedSpace.availability)
             ? selectedSpace.availability
@@ -92,6 +92,22 @@
         />
       </div>
     {/if}
+    <p>Request selected space</p>
+    <div class="flex flex-row">
+      <p>Access from:</p>
+      <label for="event-start-date">Date *</label>
+      <input name="event-start-date" type="date" required />
+      <label for="event-start-time">Time *</label>
+      <input name="event-start-time" type="time" required />
+    </div>
+
+    <div class="flex flex-row">
+      <p>Leave by:</p>
+      <label for="event-end-date">Date *</label>
+      <input name="event-end-date" type="date" required />
+      <label for="event-end-time">Time *</label>
+      <input name="event-end-time" type="time" required />
+    </div>
   {:else}
     <p>No spaces found.</p>
   {/if}
@@ -113,6 +129,7 @@
     <input name="event-end-time" type="time" required />
   </div>
 
+  <!-- @TODO - validate against space availability -->
   {#if resources.length > 0}
     <label for="resource-list">Select resources</label>
     <ul id="resource-list">
