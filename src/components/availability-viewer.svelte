@@ -24,10 +24,8 @@
     }
   }
 
-  // Process availability when component mounts
   onMount(processAvailability);
 
-  // Reactively update when availability prop changes
   $effect(() => {
     processAvailability();
   });
