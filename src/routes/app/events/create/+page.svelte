@@ -18,10 +18,6 @@
       ]);
       spaces = [...fetchedSpaces];
 
-      if (spaces.length > 0) {
-        selectedSpace = spaces[0]; // Store entire object, not just ID
-      }
-
       resources = [...fetchedResources];
 
       if (resources.length > 0) {
@@ -32,9 +28,8 @@
     }
   });
 
-  function handleSpaceChange(event: Event) {
-    const target = event.target as HTMLSelectElement;
-    selectedSpace = spaces.find((space) => space.id === target.value) ?? null;
+  function handleSpaceSelection(space: Space) {
+    selectedSpace = space;
   }
 </script>
 
@@ -72,16 +67,20 @@
   </div>
 
   {#if spaces.length > 0}
-    <label for="select-space">Select Space</label><br />
-    <select
-      name="select-space"
-      bind:value={selectedSpace}
-      on:change={handleSpaceChange}
-    >
+    <p>Select a space:</p>
+    <ul>
       {#each spaces as space}
-        <option value={space.id}>{space.name}</option>
+        <li>
+          <input
+            type="radio"
+            id={space.id}
+            name="selected-space"
+            onchange={() => handleSpaceSelection(space)}
+          />
+          <label for={space.id}>{space.name}</label>
+        </li>
       {/each}
-    </select>
+    </ul>
 
     {#if selectedSpace}
       <div class="space-availability">

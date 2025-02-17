@@ -8,7 +8,7 @@
   let { availability = [] } = $props();
   let availableDays: DateValue[] = $state([]);
   let alwaysAvailable: boolean = $state(false);
-  let timeAvailability: TimeSpan | null = null;
+  let timeAvailability: TimeSpan | null = $state(null);
 
   function processAvailability() {
     availableDays = [];
