@@ -323,14 +323,14 @@ type CalendarAccessRequested = {
 type CalendarAccessAccepted = {
   type: "calendar_access_accepted";
   data: {
-    calendarId: Hash;
+    requestId: Hash;
   };
 };
 
 type CalendarAccessRejected = {
   type: "calendar_access_rejected";
   data: {
-    calendarId: Hash;
+    requestId: Hash;
   };
 };
 
@@ -579,6 +579,19 @@ type Calendar = {
   endDate?: Date;
 };
 
+type AccessRequest = {
+  id: Hash;
+  calendarId: Hash;
+  publicKey: PublicKey;
+};
+
+type AccessResponse = {
+  id: Hash;
+  from: PublicKey;
+  requestId: Hash;
+  accept: boolean;
+};
+
 type CalendarEvent = {
   id: Hash;
   ownerId: PublicKey;
@@ -688,4 +701,15 @@ type BookedTimeSpan = TimeSpan & {
 type Settings = {
   name: string;
   value: Hash | string;
+}
+
+/**
+ * The different subscription types which exist for a calendar. Each represents a logical set of
+ * data which can be subscribed to independently.
+ */
+type TopicType = "inbox" | "data";
+
+type Subscription = {
+  calendarId: Hash,
+  type: TopicType,
 }
