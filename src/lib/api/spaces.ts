@@ -118,7 +118,6 @@ async function onSpaceCreated(
   meta: StreamMessageMeta,
   data: SpaceCreated["data"],
 ) {
-  // Store calendar in database.
   let {
     type,
     name,
