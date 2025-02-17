@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { findMany as findSpaces } from "$lib/api/spaces";
   import { findMany as findResources } from "$lib/api/resources";
-  import SpaceCalendar from "../../../../components/space-calendar.svelte";
+  import AvailabilityViewer from "../../../../components/availability-viewer.svelte";
 
   let spaces: Space[] = [];
   let resources: Resource[] = [];
@@ -76,7 +76,10 @@
 
     <div class="space-availability">
       <p>Select from available dates:</p>
-      <SpaceCalendar currentlySelectedId={currentlySelectedSpaceId} />
+      <AvailabilityViewer
+        resourceId={currentlySelectedSpaceId}
+        type={"space"}
+      />
     </div>
   {:else}
     <p>No spaces found.</p>

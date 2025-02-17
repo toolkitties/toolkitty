@@ -7,12 +7,24 @@ export const resources: Resource[] = [
     contact: "Signal @beamer",
     availability: [
       {
-        start: new Date("2025-01-20T00:00:00Z"),
-        end: new Date("2025-01-22T00:00:00Z"),
+        start: new Date("2025-02-20T10:00:00Z"),
+        end: new Date("2025-02-20T15:20:00Z"),
       },
       {
-        start: new Date("2025-01-24T00:00:00Z"),
-        end: new Date("2025-01-26T00:00:00Z"),
+        start: new Date("2025-02-21T10:00:00Z"),
+        end: new Date("2025-02-21T12:00:00Z"),
+      },
+      {
+        start: new Date("2025-02-22T13:00:00Z"),
+        end: new Date("2025-02-22T16:00:00Z"),
+      },
+      {
+        start: new Date("2025-02-23T14:00:00Z"),
+        end: new Date("2025-02-23T18:00:00Z"),
+      },
+      {
+        start: new Date("2025-02-24T09:30:00Z"),
+        end: new Date("2025-02-24T11:30:00Z"),
       },
     ],
     quantity: 1,
@@ -27,8 +39,8 @@ export const resources: Resource[] = [
     description: "as above. Call me to confirm pick up",
     availability: [
       {
-        start: new Date("2025-01-01T00:00:00Z"),
-        end: new Date("2025-02-30T00:00:00Z"),
+        start: new Date("2025-01-01T10:00:00Z"),
+        end: new Date("2025-01-01T18:00:00Z"),
       },
     ],
     quantity: 10,
@@ -58,8 +70,24 @@ export const spaces: Space[] = [
     ],
     availability: [
       {
-        start: new Date("2025-01-01T00:0:00Z"),
-        end: new Date("2025-02-30T00:0:00Z"),
+        start: new Date("2025-02-15T10:00:00Z"),
+        end: new Date("2025-02-15T15:20:00Z"),
+      },
+      {
+        start: new Date("2025-02-16T17:00:00Z"),
+        end: new Date("2025-02-16T23:00:00Z"),
+      },
+      {
+        start: new Date("2025-02-17T10:00:00Z"),
+        end: new Date("2025-02-17T10:00:00Z"),
+      },
+      {
+        start: new Date("2025-02-18T19:00:00Z"),
+        end: new Date("2025-04-18T11:59:00Z"),
+      },
+      {
+        start: new Date("2025-02-19T10:00:00Z"),
+        end: new Date("2025-02-15T19:00:00Z"),
       },
     ],
     multiBookable: false,
