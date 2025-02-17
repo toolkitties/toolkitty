@@ -1,6 +1,6 @@
-import { spaces } from "$lib/api/data";
 import { db } from "$lib/db";
 import { invoke } from "@tauri-apps/api/core";
+import { publicKey } from "./identity";
 
 /**
  * Queries
@@ -10,9 +10,7 @@ import { invoke } from "@tauri-apps/api/core";
  * Get spaces that are associated with the currently active calendar
  */
 export async function findMany(): Promise<Space[]> {
-  //TODO: Return spaces from db as liveQuery and add params
-
-  // return test data.
+  let spaces = await db.spaces.toArray();
   return spaces;
 }
 
@@ -20,20 +18,26 @@ export async function findMany(): Promise<Space[]> {
  * Get all spaces that I am the owner of.
  */
 export async function findMine(): Promise<Space[]> {
-  //TODO: Return spaces from db with ownerId that is equal to users public key.
-
-  // return test data.
+  let myPublicKey = await publicKey();
+  let spaces = (await db.spaces.toArray()).filter(
+    (space) => space.ownerId == myPublicKey,
+  );
   return spaces;
 }
 
 /**
  * Get one event by its ID
  */
-export async function findById(id: Hash): Promise<Space> {
-  // TODO: Return events from db
+export async function findById(id: Hash): Promise<Space | undefined> {
+  let space = (await db.spaces.toArray()).filter(
+    (space) => space.id == id,
+  );
 
-  // return test data.
-  return spaces[0];
+  if (space.length == 0) {
+    return;
+  }
+
+  return space[0];
 }
 
 /**
@@ -133,7 +137,7 @@ async function onSpaceCreated(
   } = data.fields;
 
   await db.spaces.add({
-    id: meta.calendarId,
+    id: meta.operationId,
     ownerId: meta.publicKey,
     booked: [],
     type,

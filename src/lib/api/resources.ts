@@ -1,6 +1,6 @@
-import { resources } from "$lib/api/data";
 import { db } from "$lib/db";
 import { invoke } from "@tauri-apps/api/core";
+import { publicKey } from "./identity";
 
 /**
  * Queries
@@ -10,9 +10,7 @@ import { invoke } from "@tauri-apps/api/core";
  * Get resources that are associated with the currently active calendar
  */
 export async function findMany(): Promise<Resource[]> {
-  //TODO: Return resources from db as liveQuery and add params
-
-  // return test data.
+  let resources = await db.resources.toArray();
   return resources;
 }
 
@@ -20,20 +18,26 @@ export async function findMany(): Promise<Resource[]> {
  * Get all resources that I am the owner of.
  */
 export async function findMine(): Promise<Resource[]> {
-  //TODO: Return resources from db with ownerId that is equal to users public key.
-
-  // return test data.
+  let myPublicKey = await publicKey();
+  let resources = (await db.resources.toArray()).filter(
+    (resource) => resource.ownerId == myPublicKey,
+  );
   return resources;
 }
 
 /**
  * Get one event by its ID
  */
-export async function findById(id: Hash): Promise<Resource> {
-  //TODO: Return events from db
+export async function findById(id: Hash): Promise<Resource | undefined> {
+  let resource = (await db.resources.toArray()).filter(
+    (resource) => resource.id == id,
+  );
 
-  // return test data.
-  return resources[0];
+  if (resource.length == 0) {
+    return;
+  }
+
+  return resource[0];
 }
 
 /**
@@ -129,7 +133,7 @@ async function onResourceCreated(
   } = data.fields;
 
   await db.resources.add({
-    id: meta.calendarId,
+    id: meta.operationId,
     ownerId: meta.publicKey,
     booked: [],
     name,
