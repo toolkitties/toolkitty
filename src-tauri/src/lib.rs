@@ -20,7 +20,10 @@ pub fn run() {
     Builder::default()
         .setup(|app| {
             let app_handle = app.handle().clone();
+
+            #[cfg(not(test))]
             app::Service::run(app_handle);
+            
             Ok(())
         })
         .plugin(logger)

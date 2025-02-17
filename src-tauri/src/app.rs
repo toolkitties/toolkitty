@@ -1,19 +1,24 @@
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use futures_util::future::Shared;
 use futures_util::FutureExt;
-use p2panda_core::PrivateKey;
-use p2panda_net::{FromNetwork, SystemEvent};
+use p2panda_core::{Hash, PrivateKey, PublicKey};
+use p2panda_net::{FromNetwork, SystemEvent, TopicId};
 use p2panda_store::MemoryStore;
+use p2panda_sync::log_sync::TopicLogMap;
+use serde::Serialize;
 use tauri::ipc::Channel;
 use tauri::{AppHandle, Manager};
+use thiserror::Error;
 use tokio::sync::{broadcast, mpsc, oneshot, Mutex};
 use tracing::debug;
 
 use crate::messages::{ChannelEvent, NetworkEvent};
-use crate::node::extensions::CalendarId;
+use crate::node::extensions::{CalendarId, Extensions, LogId, StreamName};
+use crate::node::operation::create_operation;
 use crate::node::{Node, StreamEvent};
-use crate::topic::{NetworkTopic, TopicMap};
+use crate::topic::{NetworkTopic, TopicMap, TopicType};
 
 /// Shared application context which can be accessed from within the main application runtime loop
 /// as well as any tauri command.
@@ -65,7 +70,7 @@ impl Context {
 
 pub struct Service {
     /// Handle onto the tauri application. The shared Context can be accessed and modified here.
-    app_handle: AppHandle,
+    context: Arc<Mutex<Context>>,
 
     /// Stream where we receive all topic events from the p2panda node.
     stream_rx: mpsc::Receiver<StreamEvent>,
@@ -92,7 +97,7 @@ impl Service {
     ///
     /// The node and several channel senders are added to the shared app context while channel
     /// receivers are stored on the Service struct for use during the runtime loop.
-    pub async fn build(app_handle: AppHandle) -> anyhow::Result<Self> {
+    pub async fn build() -> anyhow::Result<Self> {
         let private_key = PrivateKey::new();
         let store = MemoryStore::new();
         let topic_map = TopicMap::new();
@@ -108,10 +113,9 @@ impl Service {
         let (channel_tx, channel_rx) = mpsc::channel(32);
 
         let context = Context::new(node, to_app_tx, topic_map, channel_tx);
-        app_handle.manage(Mutex::new(context));
 
         Ok(Self {
-            app_handle,
+            context: Arc::new(Mutex::new(context)),
             stream_rx,
             invite_codes_rx,
             invite_codes_ready: shared_invite_codes_ready,
@@ -122,18 +126,38 @@ impl Service {
     }
 
     /// Spawn the service task.
+    #[cfg(not(test))]
     pub fn run(app_handle: AppHandle) {
         tauri::async_runtime::spawn(async move {
-            let mut app = Self::build(app_handle).await.expect("build stream");
+            let mut app = Self::build().await.expect("build stream");
+            let rpc = Rpc {
+                context: app.context.clone(),
+            };
+            app_handle.manage(rpc);
             let channel = app.recv_channel().await.expect("receive on channel rx");
-            app.spawn_invite_code_ready_watcher(channel.clone());
+            // app.spawn_invite_code_ready_watcher(channel.clone());
             app.inner_run(channel).await.expect("run stream task");
         });
     }
 
+    /// Spawn the service task.
+    #[cfg(test)]
+    pub async fn run() -> Arc<Mutex<Context>> {
+        let mut app = Self::build().await.expect("build stream");
+        let context = app.context.clone();
+
+        tauri::async_runtime::spawn(async move {
+            let channel = app.recv_channel().await.expect("receive on channel rx");
+            // app.spawn_invite_code_ready_watcher(channel.clone());
+            app.inner_run(channel).await.expect("run stream task");
+        });
+
+        context
+    }
+
     /// Run the inner service loop which awaits events arriving on the app, network, stream and
     /// invite codes channels.
-    async fn inner_run(mut self, channel: Channel<ChannelEvent>) -> anyhow::Result<()> {
+    pub(crate) async fn inner_run(mut self, channel: Channel<ChannelEvent>) -> anyhow::Result<()> {
         loop {
             tokio::select! {
                 Ok(event) = self.to_app_rx.recv() => {
@@ -144,8 +168,7 @@ impl Service {
                 },
                 Some(event) = self.stream_rx.recv() => {
                     let StreamEvent { meta, .. } = &event;
-                    let state = self.app_handle.state::<Mutex<Context>>();
-                    let state = state.lock().await;
+                    let context = self.context.lock().await;
 
                     // Check if the event is associated with the currently selected calendar. We
                     // only forward it up to the application if it is.
@@ -153,7 +176,7 @@ impl Service {
                     // @TODO: This is filtering out the operations _after_ they've been processed
                     // by the backend. We should go through the whole processing pipeline when
                     // selected and not at all when not.
-                    if let Some(ref selected_calendar) = state.selected_calendar {
+                    if let Some(ref selected_calendar) = context.selected_calendar {
                         if selected_calendar != &meta.calendar_id {
                             debug!("ignoring stream event: calendar not selected");
                             continue;
@@ -179,26 +202,275 @@ impl Service {
             return Err(anyhow::anyhow!("channel tx closed"));
         };
 
-        self.app_handle
-            .state::<Mutex<Context>>()
-            .lock()
-            .await
-            .channel_set = true;
+        self.context.lock().await.channel_set = true;
 
         Ok(channel)
     }
 
-    fn spawn_invite_code_ready_watcher(&self, channel: Channel<ChannelEvent>) {
-        let rt = tokio::runtime::Handle::current();
-        let channel = channel.clone();
-        let invite_codes_ready = self.invite_codes_ready.clone();
-        rt.spawn(async move {
-            invite_codes_ready
+    // fn spawn_invite_code_ready_watcher(&self, channel: Channel<ChannelEvent>) {
+    //     let rt = tokio::runtime::Handle::current();
+    //     let invite_codes_ready = self.invite_codes_ready.clone();
+    //     rt.spawn(async move {
+    //         invite_codes_ready
+    //             .await
+    //             .expect("invite codes ready channel open");
+    //         channel
+    //             .send(ChannelEvent::InviteCodesReady)
+    //             .expect("channel receiver not dropped");
+    //     });
+    // }
+}
+
+pub struct Rpc {
+    context: Arc<Mutex<Context>>,
+}
+
+impl Rpc {
+    /// Initialize the app by passing it a channel from the frontend.
+    pub async fn init(&self, channel: Channel<ChannelEvent>) -> Result<(), RpcError> {
+        let context = self.context.lock().await;
+        if context.channel_set {
+            return Err(RpcError::SetStreamChannel);
+        }
+
+        if context.channel_tx.send(channel).await.is_err() {
+            return Err(RpcError::OneshotChannel);
+        };
+
+        Ok(())
+    }
+
+    /// The public key of the local node.
+    pub async fn public_key(&self) -> Result<PublicKey, RpcError> {
+        let context = self.context.lock().await;
+        let public_key = context.node.private_key.public_key();
+        Ok(public_key)
+    }
+
+    /// Acknowledge operations to mark them as successfully processed in the stream controller.
+    pub async fn ack(&self, operation_id: Hash) -> Result<(), RpcError> {
+        let mut context = self.context.lock().await;
+        context.node.ack(operation_id).await?;
+        Ok(())
+    }
+
+    /// Add an author to a calendar.
+    ///
+    /// This means that we will actively sync operations from this author for the specific calendar.
+    pub async fn add_topic_log(
+        &self,
+        public_key: PublicKey,
+        calendar_id: CalendarId,
+        topic_type: TopicType,
+        stream_name: StreamName,
+    ) -> Result<(), RpcError> {
+        let context = self.context.lock().await;
+
+        let topic = match topic_type {
+            TopicType::Inbox => NetworkTopic::CalendarInbox { calendar_id },
+            TopicType::Data => NetworkTopic::CalendarData { calendar_id },
+        };
+
+        let log_id = LogId {
+            calendar_id,
+            stream_name,
+        };
+
+        context.topic_map.add_log(topic, public_key, log_id).await;
+        Ok(())
+    }
+
+    /// Subscribe to a specific calendar by it's id.
+    pub async fn subscribe(
+        &self,
+        calendar_id: CalendarId,
+        topic_type: TopicType,
+    ) -> Result<(), RpcError> {
+        let mut context = self.context.lock().await;
+
+        let topic = match topic_type {
+            TopicType::Inbox => NetworkTopic::CalendarInbox { calendar_id },
+            TopicType::Data => NetworkTopic::CalendarData { calendar_id },
+        };
+
+        if context
+            .subscriptions
+            .insert(topic.id(), topic.clone())
+            .is_none()
+        {
+            context
+                .node
+                .subscribe_processed(&topic)
                 .await
-                .expect("invite codes ready channel open");
-            channel
-                .send(ChannelEvent::InviteCodesReady)
-                .expect("channel receiver not dropped");
+                .expect("can subscribe to topic");
+
+            context
+                .to_app_tx
+                .send(ChannelEvent::SubscribedToCalendar(calendar_id, topic_type))?;
+        }
+
+        Ok(())
+    }
+
+    /// Select a calendar we have already subscribed to.
+    ///
+    /// Calling this method causes all events for calendars other than the selected one to be filtered
+    /// out of the channel stream. The frontend will only receive events of the selected calendar.
+    ///
+    /// Any operations which arrived at the node since we last selected this calendar will be replayed.
+    pub async fn select_calendar(&self, calendar_id: CalendarId) -> Result<(), RpcError> {
+        let mut context = self.context.lock().await;
+        context.selected_calendar = Some(calendar_id);
+
+        context
+            .to_app_tx
+            .send(ChannelEvent::CalendarSelected(calendar_id))?;
+
+        // Ask stream controller to re-play all operations from logs inside this topic which haven't
+        // been acknowledged yet by the frontend.
+        if let Some(logs) = context
+            .topic_map
+            .get(&NetworkTopic::CalendarInbox { calendar_id })
+            .await
+        {
+            context.node.replay(logs).await?;
+        }
+
+        if let Some(logs) = context
+            .topic_map
+            .get(&NetworkTopic::CalendarData { calendar_id })
+            .await
+        {
+            context.node.replay(logs).await?;
+        }
+
+        Ok(())
+    }
+
+    /// Publish an event to a calendar topic.
+    ///
+    /// Returns the hash of the operation on which the payload was encoded.
+    pub async fn publish(
+        &self,
+        payload: Vec<u8>,
+        topic_type: TopicType,
+        calendar_id: Option<CalendarId>,
+        stream_name: Option<StreamName>,
+    ) -> Result<Hash, RpcError> {
+        let mut context = self.context.lock().await;
+        let private_key = context.node.private_key.clone();
+
+        let extensions = Extensions {
+            calendar_id,
+            stream_name,
+            ..Default::default()
+        };
+
+        let (header, body) = create_operation(
+            &mut context.node.store,
+            &private_key,
+            extensions,
+            Some(&payload),
+        )
+        .await;
+
+        let calendar_id = header.extension().expect("get calendar id extension");
+
+        let topic = match topic_type {
+            TopicType::Inbox => NetworkTopic::CalendarInbox { calendar_id },
+            TopicType::Data => NetworkTopic::CalendarData { calendar_id },
+        };
+
+        context
+            .node
+            .publish_to_stream(&topic, &header, body.as_ref())
+            .await?;
+
+        debug!("publish operation: {}", header.hash());
+
+        Ok(header.hash())
+    }
+
+    /// Publish an invite code to onto the invite overlay network.
+    pub async fn publish_to_invite_code_overlay(&self, payload: Vec<u8>) -> Result<(), RpcError> {
+        let mut context = self.context.lock().await;
+        context
+            .node
+            .publish_ephemeral(&NetworkTopic::InviteCodes, &payload)
+            .await?;
+        Ok(())
+    }
+}
+
+#[derive(Debug, Error)]
+pub enum RpcError {
+    #[error("oneshot channel receiver closed")]
+    OneshotChannel,
+
+    #[error("stream channel already set")]
+    SetStreamChannel,
+
+    #[error(transparent)]
+    StreamController(#[from] crate::node::StreamControllerError),
+
+    #[error(transparent)]
+    Publish(#[from] crate::node::PublishError),
+
+    #[error("payload decoding failed")]
+    Serde(#[from] serde_json::Error),
+
+    #[error("sending message on channel failed")]
+    ChannelSender(#[from] tokio::sync::broadcast::error::SendError<ChannelEvent>),
+}
+
+impl Serialize for RpcError {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::ser::Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use p2panda_core::PrivateKey;
+    use tauri::ipc::Channel;
+
+    use crate::{
+        node::extensions::StreamName,
+        topic::{NetworkTopic, TopicType},
+    };
+
+    use super::{Rpc, Service};
+
+    #[tokio::test]
+    async fn public_key() {
+        let context = Service::run().await;
+        let node_private_key = context.lock().await.node.private_key.clone();
+        let rpc = Rpc { context };
+
+        let channel = Channel::new(|channel_event| {
+            println!("{:#?}", channel_event);
+            Ok(())
         });
+        let result = rpc.init(channel).await;
+        assert!(result.is_ok());
+
+        let result = rpc.public_key().await;
+        assert!(result.is_ok());
+        let public_key = result.unwrap();
+        assert_eq!(public_key, node_private_key.public_key());
+
+        let private_key = PrivateKey::new();
+        let calendar_stream = StreamName {
+            owner: private_key.public_key(),
+            name: "my_unique_calendar".to_string(),
+        };
+
+        let result = rpc
+            .subscribe(calendar_stream.hash().into(), TopicType::Data)
+            .await;
+        assert!(result.is_ok());
     }
 }
