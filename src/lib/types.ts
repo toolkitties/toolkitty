@@ -661,16 +661,9 @@ type Space = {
 
 type SpaceRequest = {
   id: Hash;
-  space: {
-    id: Hash;
-    name: string;
-  }
-  event: {
-    id: Hash;
-    name: string;
-    startDate: Date;
-    endDate: Date;
-  }
+  calendarId: Hash;
+  spaceId: Hash;
+  eventId: Hash;
   message: string;
   timeSpan: TimeSpan;
   response: SpaceResponse | null;
@@ -678,6 +671,7 @@ type SpaceRequest = {
 
 type SpaceResponse = {
   id: Hash;
+  calendarId: Hash;
   request: SpaceRequest;
   answer: Answer;
 };
@@ -692,17 +686,9 @@ type Resource = {
 
 type ResourceRequest = {
   id: Hash;
-  resource: {
-    id: Hash;
-    name: string
-  }
-  event: {
-    id: Hash;
-    name: string;
-    startDate: Date;
-    endDate: Date;
-    location: string;
-  }
+  calendarId: Hash;
+  resourceId: Hash;
+  eventId: Hash;
   message: string;
   timeSpan: TimeSpan;
   response: ResourceResponse | null;
@@ -710,6 +696,7 @@ type ResourceRequest = {
 
 type ResourceResponse = {
   id: Hash;
+  calendarId: Hash;
   request: ResourceRequest;
   answer: Answer;
 };
@@ -718,7 +705,6 @@ type Settings = {
   name: string;
   value: Hash | string;
 };
-
 
 
 /**
