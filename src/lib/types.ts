@@ -661,7 +661,6 @@ type Space = {
 
 type SpaceRequest = {
   id: Hash;
-  calendarId: Hash;
   spaceId: Hash;
   eventId: Hash;
   message: string;
@@ -686,7 +685,6 @@ type Resource = {
 
 type ResourceRequest = {
   id: Hash;
-  calendarId: Hash;
   resourceId: Hash;
   eventId: Hash;
   message: string;
