@@ -588,13 +588,6 @@ type UserRoleAssigned = {
 };
 
 
-type CalendarAccessRequest = {
-  calendarId: Hash;
-  name: string;
-  message: string;
-};
-
-
 /**
  * The different subscription types which exist for a calendar. Each represents a logical set of
  * data which can be subscribed to independently.
@@ -634,7 +627,9 @@ type Calendar = {
 type AccessRequest = {
   id: Hash;
   calendarId: Hash;
-  publicKey: PublicKey;
+  from: PublicKey;
+  name: string;
+  message: string;
 };
 
 type AccessResponse = {
@@ -708,5 +703,5 @@ type Settings = {
  * Application Data
  */
 
-type RequestEvent = SpaceRequest | ResourceRequest | CalendarAccessRequest;
+type RequestEvent = SpaceRequest | ResourceRequest | AccessRequest;
 

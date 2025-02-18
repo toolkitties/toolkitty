@@ -23,7 +23,7 @@ export async function hasRequested(calendarId: Hash): Promise<boolean> {
   let myPublicKey = await publicKey();
   let request = (await db.accessRequests.toArray()).find(
     (request) =>
-      request.calendarId == calendarId && request.publicKey == myPublicKey,
+      request.calendarId == calendarId && request.from == myPublicKey,
   );
 
   return request != undefined;
@@ -58,7 +58,7 @@ export async function checkHasAccess(
   // Check if the peer has been given access by the calendar owner.
   let request = (await db.accessRequests.toArray()).find(
     (request) =>
-      request.publicKey == publicKey && request.calendarId == calendarId,
+      request.from == publicKey && request.calendarId == calendarId,
   );
 
   if (request == undefined) {
@@ -193,7 +193,9 @@ async function onCalendarAccessRequested(
   await db.accessRequests.add({
     id: meta.operationId,
     calendarId: data.calendarId,
-    publicKey: meta.publicKey,
+    from: meta.publicKey,
+    name: data.name,
+    message: data.message
   });
   //@TODO: For testing purposes only, we accept any requests for festivals where we are the
   //owner.
@@ -218,6 +220,7 @@ async function onCalendarAccessAccepted(
 ) {
   await db.accessResponses.add({
     id: meta.operationId,
+    calendarId: meta.calendarId,
     from: meta.publicKey,
     requestId: data.requestId,
     accept: true,
@@ -228,7 +231,7 @@ async function onCalendarAccessAccepted(
   );
 
   if (request != undefined) {
-    await handleRequestOrResponse(meta.calendarId, request.publicKey);
+    await handleRequestOrResponse(meta.calendarId, request.from);
   }
 }
 
@@ -238,6 +241,7 @@ async function onCalendarAccessRejected(
 ) {
   await db.accessResponses.add({
     id: meta.operationId,
+    calendarId: meta.calendarId,
     from: meta.publicKey,
     requestId: data.requestId,
     accept: false,
