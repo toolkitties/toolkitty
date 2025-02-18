@@ -6,7 +6,7 @@ use tracing::debug;
 use crate::app::{Rpc, RpcError};
 use crate::messages::ChannelEvent;
 use crate::node::extensions::{CalendarId, StreamName};
-use crate::topic::TopicType;
+use crate::topic::Topic;
 
 /// Initialize the app by passing it a channel from the frontend.
 #[tauri::command]
@@ -46,6 +46,18 @@ pub async fn ack(rpc: State<'_, Rpc>, operation_id: Hash) -> Result<(), RpcError
     Ok(())
 }
 
+#[tauri::command]
+pub async fn replay(rpc: State<'_, Rpc>, topic: Topic) -> Result<(), RpcError> {
+    debug!(
+        command.name = "replay",
+        // command.topic = topic.to_hex(),
+        "RPC request received"
+    );
+
+    rpc.replay(topic).await?;
+    Ok(())
+}
+
 /// Add an author to a calendar.
 ///
 /// This means that we will actively sync operations from this author for the specific calendar.
@@ -54,36 +66,44 @@ pub async fn add_topic_log(
     rpc: State<'_, Rpc>,
     public_key: PublicKey,
     calendar_id: CalendarId,
-    topic_type: TopicType,
+    topic: Topic,
     stream_name: StreamName,
 ) -> Result<(), RpcError> {
     debug!(
         command.name = "add_topic_log",
         command.public_key = public_key.to_hex(),
-        command.topic_type = topic_type.to_string(),
+        // command.topic_type = topic.to_string(),
         "RPC request received"
     );
 
-    rpc.add_topic_log(public_key, calendar_id, topic_type, stream_name)
+    rpc.add_topic_log(public_key, calendar_id, topic, stream_name)
         .await?;
     Ok(())
 }
 
 /// Subscribe to a specific calendar by it's id.
 #[tauri::command]
-pub async fn subscribe(
-    rpc: State<'_, Rpc>,
-    calendar_id: CalendarId,
-    topic_type: TopicType,
-) -> Result<(), RpcError> {
+pub async fn subscribe(rpc: State<'_, Rpc>, topic: Topic) -> Result<(), RpcError> {
     debug!(
         command.name = "subscribe",
-        command.calendar_id = calendar_id.to_string(),
-        command.topic_type = topic_type.to_string(),
+        // command.topic_type = topic.to_string(),
         "RPC request received"
     );
 
-    rpc.subscribe(calendar_id, topic_type).await?;
+    rpc.subscribe(topic).await?;
+    Ok(())
+}
+
+/// Subscribe to a specific calendar by it's id.
+#[tauri::command]
+pub async fn subscribe_ephemeral(rpc: State<'_, Rpc>, topic: Topic) -> Result<(), RpcError> {
+    debug!(
+        command.name = "subscribe_ephemeral",
+        // command.topic_type = topic.to_string(),
+        "RPC request received"
+    );
+
+    rpc.subscribe_ephemeral(topic).await?;
     Ok(())
 }
 
@@ -93,17 +113,17 @@ pub async fn subscribe(
 /// out of the channel stream. The frontend will only receive events of the selected calendar.
 ///
 /// Any operations which arrived at the node since we last selected this calendar will be replayed.
-#[tauri::command]
-pub async fn select_calendar(rpc: State<'_, Rpc>, calendar_id: CalendarId) -> Result<(), RpcError> {
-    debug!(
-        command.name = "select_calendar",
-        command.calendar_id = calendar_id.to_string(),
-        "RPC request received"
-    );
-
-    rpc.select_calendar(calendar_id).await?;
-    Ok(())
-}
+// #[tauri::command]
+// pub async fn select_calendar(rpc: State<'_, Rpc>, calendar_id: CalendarId) -> Result<(), RpcError> {
+//     debug!(
+//         command.name = "select_calendar",
+//         command.calendar_id = calendar_id.to_string(),
+//         "RPC request received"
+//     );
+//
+//     rpc.select_calendar(calendar_id).await?;
+//     Ok(())
+// }
 
 /// Publish an event to a calendar topic.
 ///
@@ -112,27 +132,28 @@ pub async fn select_calendar(rpc: State<'_, Rpc>, calendar_id: CalendarId) -> Re
 pub async fn publish(
     rpc: State<'_, Rpc>,
     payload: serde_json::Value,
-    topic_type: TopicType,
+    topic: Topic,
     calendar_id: Option<CalendarId>,
     stream_name: Option<StreamName>,
 ) -> Result<Hash, RpcError> {
     debug!(
         command.name = "publish",
         command.calendar_id = calendar_id.as_ref().map(ToString::to_string),
-        command.topic_type = topic_type.to_string(),
+        // command.topic = topic.to_string(),
         "RPC request received"
     );
     let payload = serde_json::to_vec(&payload)?;
     let hash = rpc
-        .publish(payload, topic_type, calendar_id, stream_name)
+        .publish(payload, topic, calendar_id, stream_name)
         .await?;
     Ok(hash)
 }
 
 /// Publish an invite code to onto the invite overlay network.
 #[tauri::command]
-pub async fn publish_to_invite_code_overlay(
+pub async fn publish_ephemeral(
     rpc: State<'_, Rpc>,
+    topic: Topic,
     payload: serde_json::Value,
 ) -> Result<(), RpcError> {
     debug!(
@@ -141,6 +162,6 @@ pub async fn publish_to_invite_code_overlay(
     );
 
     let payload = serde_json::to_vec(&payload)?;
-    rpc.publish_to_invite_code_overlay(payload).await?;
+    rpc.publish_ephemeral(topic, payload).await?;
     Ok(())
 }

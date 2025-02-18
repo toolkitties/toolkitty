@@ -219,9 +219,9 @@ where
         Ok(())
     }
 
-    pub async fn subscribe(
+    pub async fn subscribe_ephemeral(
         &self,
-        topic: T,
+        topic: &T,
     ) -> Result<(mpsc::Receiver<FromNetwork>, oneshot::Receiver<()>)> {
         let (reply_tx, reply_rx) = oneshot::channel();
         self.network_actor_tx

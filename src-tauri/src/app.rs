@@ -1,36 +1,31 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use futures_util::future::Shared;
-use futures_util::FutureExt;
 use p2panda_core::{Hash, PrivateKey, PublicKey};
-use p2panda_net::{FromNetwork, SystemEvent, TopicId};
+use p2panda_net::{SystemEvent, TopicId};
 use p2panda_store::MemoryStore;
 use p2panda_sync::log_sync::TopicLogMap;
 use serde::Serialize;
 #[cfg(not(test))]
 use tauri::{AppHandle, Manager};
 use thiserror::Error;
-use tokio::sync::{broadcast, mpsc, oneshot, Mutex};
+use tokio::sync::{broadcast, mpsc, Mutex};
 use tracing::debug;
 
 use crate::messages::{ChannelEvent, NetworkEvent};
 use crate::node::extensions::{CalendarId, Extensions, LogId, StreamName};
 use crate::node::operation::create_operation;
 use crate::node::{Node, StreamEvent};
-use crate::topic::{NetworkTopic, TopicMap, TopicType};
+use crate::topic::{Topic, TopicMap};
 
 /// Shared application context which can be accessed from within the main application runtime loop
 /// as well as any tauri command.
 pub struct Context {
     /// Local p2panda node.
-    pub node: Node<NetworkTopic>,
-
-    /// Currently selected calendar.
-    pub selected_calendar: Option<CalendarId>,
+    pub node: Node<Topic>,
 
     /// All topics we have subscribed to.
-    pub subscriptions: HashMap<[u8; 32], NetworkTopic>,
+    pub subscriptions: HashMap<[u8; 32], Topic>,
 
     /// Channel for sending messages to the frontend application. Messages are forwarded on the
     /// main event channel and will be received by the channel processor on the frontend.
@@ -51,14 +46,13 @@ pub struct Context {
 
 impl Context {
     pub fn new(
-        node: Node<NetworkTopic>,
+        node: Node<Topic>,
         to_app_tx: broadcast::Sender<ChannelEvent>,
         topic_map: TopicMap,
         channel_tx: mpsc::Sender<broadcast::Sender<ChannelEvent>>,
     ) -> Self {
         Self {
             node,
-            selected_calendar: None,
             subscriptions: HashMap::new(),
             to_app_tx,
             topic_map: topic_map.clone(),
@@ -75,14 +69,8 @@ pub struct Service {
     /// Stream where we receive all topic events from the p2panda node.
     stream_rx: mpsc::Receiver<StreamEvent>,
 
-    /// Channel where we receive messages from the dedicated invite codes topic.
-    invite_codes_rx: mpsc::Receiver<FromNetwork>,
-
-    /// Ready signal for the invite codes topic.
-    invite_codes_ready: Shared<oneshot::Receiver<()>>,
-
     /// Channel where we receive network status events from the p2panda node.
-    network_events_rx: broadcast::Receiver<SystemEvent<NetworkTopic>>,
+    network_events_rx: broadcast::Receiver<SystemEvent<Topic>>,
 
     /// Channel where we receive messages which should be forwarded up to the frontend.
     to_app_rx: broadcast::Receiver<ChannelEvent>,
@@ -105,10 +93,6 @@ impl Service {
         let (node, stream_rx, network_events_rx) =
             Node::new(private_key.clone(), store.clone(), topic_map.clone()).await?;
 
-        let (invite_codes_rx, invite_codes_ready) =
-            node.subscribe(NetworkTopic::InviteCodes).await?;
-        let shared_invite_codes_ready = invite_codes_ready.shared();
-
         let (to_app_tx, to_app_rx) = broadcast::channel(32);
         let (channel_tx, channel_rx) = mpsc::channel(32);
 
@@ -117,8 +101,6 @@ impl Service {
         Ok(Self {
             context: Arc::new(Mutex::new(context)),
             stream_rx,
-            invite_codes_rx,
-            invite_codes_ready: shared_invite_codes_ready,
             network_events_rx,
             to_app_rx,
             channel_rx,
@@ -135,7 +117,6 @@ impl Service {
             };
             app_handle.manage(rpc);
             let channel = app.recv_channel().await.expect("receive on channel rx");
-            app.spawn_invite_code_ready_watcher(channel.clone());
             app.inner_run(channel).await.expect("run stream task");
         });
     }
@@ -149,7 +130,6 @@ impl Service {
 
         rt.spawn(async move {
             let channel = app.recv_channel().await.expect("receive on channel rx");
-            app.spawn_invite_code_ready_watcher(channel.clone());
             app.inner_run(channel).await.expect("run stream task");
         });
 
@@ -171,32 +151,20 @@ impl Service {
                     channel.send(ChannelEvent::NetworkEvent(NetworkEvent(event)))?;
                 },
                 Some(event) = self.stream_rx.recv() => {
-                    let StreamEvent { meta, .. } = &event;
-                    let context = self.context.lock().await;
-
-                    // Check if the event is associated with the currently selected calendar. We
-                    // only forward it up to the application if it is.
-                    //
-                    // @TODO: This is filtering out the operations _after_ they've been processed
-                    // by the backend. We should go through the whole processing pipeline when
-                    // selected and not at all when not.
-                    if let Some(ref selected_calendar) = context.selected_calendar {
-                        if selected_calendar != &meta.calendar_id {
-                            debug!("ignoring stream event: calendar not selected");
-                            continue;
-                        };
-                        channel.send(ChannelEvent::Stream(event))?;
-                    }
+                    channel.send(ChannelEvent::Stream(event))?;
                 },
-                Some(event) = self.invite_codes_rx.recv() => {
-                    let json = match event {
-                        FromNetwork::GossipMessage { bytes, .. } => {
-                            serde_json::from_slice(&bytes)?
-                        },
-                        FromNetwork::SyncMessage { .. } => unreachable!(),
-                    };
-                    channel.send(ChannelEvent::InviteCodes(json))?;
-                }
+                // @TODO(sam): Need a way to handle ephemeral topics in the stream controller as
+                // we now don't have a static topic we can subscribe to on startup.
+                //
+                // Some(event) = self.invite_codes_rx.recv() => {
+                //     let json = match event {
+                //         FromNetwork::GossipMessage { bytes, .. } => {
+                //             serde_json::from_slice(&bytes)?
+                //         },
+                //         FromNetwork::SyncMessage { .. } => unreachable!(),
+                //     };
+                //     channel.send(ChannelEvent::InviteCodes(json))?;
+                // }
             }
         }
     }
@@ -209,19 +177,6 @@ impl Service {
         self.context.lock().await.channel_set = true;
 
         Ok(channel)
-    }
-
-    fn spawn_invite_code_ready_watcher(&self, channel: broadcast::Sender<ChannelEvent>) {
-        let rt = tokio::runtime::Handle::current();
-        let invite_codes_ready = self.invite_codes_ready.clone();
-        rt.spawn(async move {
-            invite_codes_ready
-                .await
-                .expect("invite codes ready channel open");
-            channel
-                .send(ChannelEvent::InviteCodesReady)
-                .expect("channel receiver not dropped");
-        });
     }
 }
 
@@ -258,6 +213,15 @@ impl Rpc {
         Ok(())
     }
 
+    /// Acknowledge operations to mark them as successfully processed in the stream controller.
+    pub async fn replay(&self, topic: Topic) -> Result<(), RpcError> {
+        let mut context = self.context.lock().await;
+        if let Some(logs) = context.topic_map.get(&topic).await {
+            context.node.replay(logs).await?;
+        };
+        Ok(())
+    }
+
     /// Add an author to a calendar.
     ///
     /// This means that we will actively sync operations from this author for the specific calendar.
@@ -265,16 +229,10 @@ impl Rpc {
         &self,
         public_key: PublicKey,
         calendar_id: CalendarId,
-        topic_type: TopicType,
+        topic: Topic,
         stream_name: StreamName,
     ) -> Result<(), RpcError> {
         let context = self.context.lock().await;
-
-        let topic = match topic_type {
-            TopicType::Inbox => NetworkTopic::CalendarInbox { calendar_id },
-            TopicType::Data => NetworkTopic::CalendarData { calendar_id },
-        };
-
         let log_id = LogId {
             calendar_id,
             stream_name,
@@ -285,17 +243,8 @@ impl Rpc {
     }
 
     /// Subscribe to a specific calendar by it's id.
-    pub async fn subscribe(
-        &self,
-        calendar_id: CalendarId,
-        topic_type: TopicType,
-    ) -> Result<(), RpcError> {
+    pub async fn subscribe(&self, topic: Topic) -> Result<(), RpcError> {
         let mut context = self.context.lock().await;
-
-        let topic = match topic_type {
-            TopicType::Inbox => NetworkTopic::CalendarInbox { calendar_id },
-            TopicType::Data => NetworkTopic::CalendarData { calendar_id },
-        };
 
         if context
             .subscriptions
@@ -310,46 +259,69 @@ impl Rpc {
 
             context
                 .to_app_tx
-                .send(ChannelEvent::SubscribedToCalendar(calendar_id, topic_type))?;
+                .send(ChannelEvent::SubscribedToTopic(topic))?;
         }
 
         Ok(())
     }
 
-    /// Select a calendar we have already subscribed to.
-    ///
-    /// Calling this method causes all events for calendars other than the selected one to be filtered
-    /// out of the channel stream. The frontend will only receive events of the selected calendar.
-    ///
-    /// Any operations which arrived at the node since we last selected this calendar will be replayed.
-    pub async fn select_calendar(&self, calendar_id: CalendarId) -> Result<(), RpcError> {
+    pub async fn subscribe_ephemeral(&self, topic: Topic) -> Result<(), RpcError> {
         let mut context = self.context.lock().await;
-        context.selected_calendar = Some(calendar_id);
 
-        context
-            .to_app_tx
-            .send(ChannelEvent::CalendarSelected(calendar_id))?;
-
-        // Ask stream controller to re-play all operations from logs inside this topic which haven't
-        // been acknowledged yet by the frontend.
-        if let Some(logs) = context
-            .topic_map
-            .get(&NetworkTopic::CalendarInbox { calendar_id })
-            .await
+        if context
+            .subscriptions
+            .insert(topic.id(), topic.clone())
+            .is_none()
         {
-            context.node.replay(logs).await?;
-        }
+            context
+                .node
+                .subscribe_ephemeral(&topic)
+                .await
+                .expect("can subscribe to topic");
 
-        if let Some(logs) = context
-            .topic_map
-            .get(&NetworkTopic::CalendarData { calendar_id })
-            .await
-        {
-            context.node.replay(logs).await?;
+            context
+                .to_app_tx
+                .send(ChannelEvent::SubscribedToTopic(topic))?;
         }
 
         Ok(())
     }
+
+    //
+    //     /// Select a calendar we have already subscribed to.
+    //     ///
+    //     /// Calling this method causes all events for calendars other than the selected one to be filtered
+    //     /// out of the channel stream. The frontend will only receive events of the selected calendar.
+    //     ///
+    //     /// Any operations which arrived at the node since we last selected this calendar will be replayed.
+    //     pub async fn select_calendar(&self, calendar_id: CalendarId) -> Result<(), RpcError> {
+    //         let mut context = self.context.lock().await;
+    //         context.selected_calendar = Some(calendar_id);
+    //
+    //         context
+    //             .to_app_tx
+    //             .send(ChannelEvent::CalendarSelected(calendar_id))?;
+    //
+    //         // Ask stream controller to re-play all operations from logs inside this topic which haven't
+    //         // been acknowledged yet by the frontend.
+    //         if let Some(logs) = context
+    //             .topic_map
+    //             .get(&NetworkTopic::CalendarInbox { calendar_id })
+    //             .await
+    //         {
+    //             context.node.replay(logs).await?;
+    //         }
+    //
+    //         if let Some(logs) = context
+    //             .topic_map
+    //             .get(&NetworkTopic::CalendarData { calendar_id })
+    //             .await
+    //         {
+    //             context.node.replay(logs).await?;
+    //         }
+    //
+    //         Ok(())
+    //     }
 
     /// Publish an event to a calendar topic.
     ///
@@ -357,7 +329,7 @@ impl Rpc {
     pub async fn publish(
         &self,
         payload: Vec<u8>,
-        topic_type: TopicType,
+        topic: Topic,
         calendar_id: Option<CalendarId>,
         stream_name: Option<StreamName>,
     ) -> Result<Hash, RpcError> {
@@ -378,13 +350,6 @@ impl Rpc {
         )
         .await;
 
-        let calendar_id = header.extension().expect("get calendar id extension");
-
-        let topic = match topic_type {
-            TopicType::Inbox => NetworkTopic::CalendarInbox { calendar_id },
-            TopicType::Data => NetworkTopic::CalendarData { calendar_id },
-        };
-
         context
             .node
             .publish_to_stream(&topic, &header, body.as_ref())
@@ -396,12 +361,9 @@ impl Rpc {
     }
 
     /// Publish an invite code to onto the invite overlay network.
-    pub async fn publish_to_invite_code_overlay(&self, payload: Vec<u8>) -> Result<(), RpcError> {
+    pub async fn publish_ephemeral(&self, topic: Topic, payload: Vec<u8>) -> Result<(), RpcError> {
         let mut context = self.context.lock().await;
-        context
-            .node
-            .publish_ephemeral(&NetworkTopic::InviteCodes, &payload)
-            .await?;
+        context.node.publish_ephemeral(&topic, &payload).await?;
         Ok(())
     }
 }
@@ -448,7 +410,7 @@ mod tests {
             extensions::{CalendarId, StreamName},
             stream::{EventData, EventMeta},
         },
-        topic::TopicType,
+        topic::Topic,
     };
 
     use super::{Rpc, Service};
@@ -484,17 +446,14 @@ mod tests {
             name: "my_unique_calendar".to_string(),
         };
 
-        let result = rpc
-            .subscribe(calendar_stream.hash().into(), TopicType::Data)
-            .await;
+        let topic: Topic = calendar_stream.hash().to_hex().into();
+        let result = rpc.subscribe(topic.clone()).await;
         assert!(result.is_ok());
 
         let event = channel_rx.recv().await.unwrap();
         match event {
-            ChannelEvent::SubscribedToCalendar(calendar_id, topic_type) => {
-                let expected_calendar_id: CalendarId = calendar_stream.hash().into();
-                assert_eq!(expected_calendar_id, calendar_id);
-                assert_eq!(topic_type, TopicType::Data);
+            ChannelEvent::SubscribedToTopic(received_topic) => {
+                assert_eq!(received_topic, topic);
             }
             _ => panic!(),
         }
@@ -515,18 +474,15 @@ mod tests {
             name: "my_unique_calendar".to_string(),
         };
 
-        let result = rpc.select_calendar(calendar_stream.hash().into()).await;
-        assert!(result.is_ok());
-        let _event = channel_rx.recv().await.unwrap();
-
         let payload = json!({
             "message": "organize!"
         });
 
+        let topic: Topic = calendar_stream.hash().to_hex().into();
         let result = rpc
             .publish(
                 serde_json::to_vec(&payload).unwrap(),
-                TopicType::Data,
+                topic,
                 Some(calendar_stream.hash().into()),
                 Some(calendar_stream),
             )
