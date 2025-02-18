@@ -1,11 +1,12 @@
 <script lang="ts">
   import { PinInput, Toggle } from "bits-ui";
   import { goto } from "$app/navigation";
-  import { inviteCodes, calendars } from "$lib/api";
+  import { inviteCodes, calendars, topics } from "$lib/api";
   import { db } from "$lib/db";
   import { appConfigDir } from "@tauri-apps/api/path";
   import { joinWithInviteCode } from "$lib/api/onboarding";
   import { toast } from "$lib/toast.svelte";
+  import { resolveInviteCode } from "$lib/api/access";
 
   let value: string[] | undefined = [];
 
@@ -25,7 +26,9 @@
     let calendar;
     try {
       progress = "pending";
-      calendar = await joinWithInviteCode(value.join(""));
+      calendar = await resolveInviteCode(value.join(""));
+      await topics.subscribe(calendar.id, "inbox");
+      await calendars.select(calendar.id);
     } catch (err) {
       timedOut = true;
       progress = "dormant";

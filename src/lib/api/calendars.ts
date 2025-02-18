@@ -2,6 +2,8 @@ import { invoke } from "@tauri-apps/api/core";
 import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
 import { liveQuery } from "dexie";
+import { publicKey } from "./identity";
+import { topics } from ".";
 
 /*
  * Queries
@@ -9,6 +11,11 @@ import { liveQuery } from "dexie";
 
 export async function findMany(): Promise<Calendar[]> {
   return await db.calendars.toArray();
+}
+
+export async function findOne(id: Hash): Promise<Calendar | undefined> {
+  let calendars = await db.calendars.toArray();
+  return calendars.find((calendar) => calendar.id == id);
 }
 
 export async function findByInviteCode(
@@ -28,37 +35,27 @@ export function inviteCode(calendar: Calendar): string {
  * Returns the id of the currently active calendar
  */
 export async function getActiveCalendarId() {
-  const activeCalendar = await db.settings.get('activeCalendar')
-  return activeCalendar?.value
+  const activeCalendar = await db.settings.get("activeCalendar");
+  return activeCalendar?.value;
 }
 
 /*
  * Observable for watching the name of the currently active calendar
  */
-export const getActiveCalendar = liveQuery(
-  async () => {
-    const activeCalendarId = await db.settings.get('activeCalendar');
-    if (!activeCalendarId) return;
-    const activeCalendar = await db.calendars.get(activeCalendarId.value)
-    return activeCalendar?.name
-  }
-)
+export const getActiveCalendar = liveQuery(async () => {
+  const activeCalendarId = await db.settings.get("activeCalendar");
+  if (!activeCalendarId) return;
+  const activeCalendar = await db.calendars.get(activeCalendarId.value);
+  return activeCalendar?.name;
+});
 
 /*
  * Commands
  */
 
-export async function create(
-  data: CalendarCreatedEvent["data"],
-): Promise<Hash> {
+export async function create(data: CalendarCreated["data"]): Promise<Hash> {
   // Define the "calendar created" application event.
-  //
-  // @TODO: Currently subscribing and selecting the calendar occurs on the
-  // backend when this method is called. It would be more transparent, avoiding
-  // hidden side-effects, if this could happen on the frontend with follow-up
-  // IPC calls. This can be refactored when
-  // https://github.com/toolkitties/toolkitty/issues/69 is implemented.
-  const payload: CalendarCreatedEvent = {
+  const payload: CalendarCreated = {
     type: "calendar_created",
     data,
   };
@@ -67,6 +64,18 @@ export async function create(
   // p2panda operation from the backend. We can use this now as an unique
   // identifier for the application event.
   const hash: Hash = await invoke("create_calendar", { payload });
+
+  // Subscribe to all calendar topics.
+  await topics.subscribe(hash, "inbox");
+  await topics.subscribe(hash, "data");
+
+  // Add our public key to the topic map on the backend.
+  let myPublicKey = await publicKey();
+  await topics.addCalendarAuthor(hash, myPublicKey, "inbox");
+  await topics.addCalendarAuthor(hash, myPublicKey, "data");
+
+  // Select this calendar.
+  await select(hash);
 
   // Register this operation hash to wait until it's later resolved by the
   // processor. Like this we can conveniently return from this method as soon as
@@ -78,23 +87,53 @@ export async function create(
   return hash;
 }
 
+export async function update(
+  calendar_id: Hash,
+  fields: CalendarFields,
+): Promise<Hash> {
+  let calendar_updated: CalendarUpdated = {
+    type: "calendar_updated",
+    data: {
+      id: calendar_id,
+      fields,
+    },
+  };
+  let hash: Hash = await invoke("publish", {
+    calendar_id,
+    payload: calendar_updated,
+  });
+  return hash;
+}
+
+export async function deleteCalendar(calendar_id: Hash): Promise<Hash> {
+  let calendar_deleted: CalendarDeleted = {
+    type: "calendar_deleted",
+    data: {
+      id: calendar_id,
+    },
+  };
+  let hash: Hash = await invoke("publish", {
+    calendar_id,
+    payload: calendar_deleted,
+  });
+  return hash;
+}
+
+export async function setActiveCalendar(id: Hash) {
+  await db.settings.add({
+    name: "activeCalendar",
+    value: id,
+  });
+}
+
 /**
  * Select a new calendar. This tells the backend to only forward events
  * associated with the passed calendar to the frontend. Events for any other
  * calendar we are subscribed to will not be processed by the frontend.
  */
 export async function select(calendarId: Hash) {
+  await setActiveCalendar(calendarId);
   await invoke("select_calendar", { calendarId });
-}
-
-/**
- * Subscribe to a calendar. This tells the backend to subscribe to all topics
- * associated with this calendar, enter gossip overlays and sync with any
- * discovered peers. It does not effect which calendar events are forwarded to
- * the frontend.
- */
-export async function subscribe(calendarId: Hash) {
-  await invoke("subscribe_to_calendar", { calendarId });
 }
 
 /*
@@ -108,26 +147,82 @@ export async function process(message: ApplicationMessage) {
   switch (type) {
     case "calendar_created":
       return await onCalendarCreated(meta, data);
+    case "calendar_updated":
+      return await onCalendarUpdated(meta, data);
+    case "calendar_deleted":
+      return await onCalendarDeleted(meta, data);
   }
 }
 
 async function onCalendarCreated(
   meta: StreamMessageMeta,
-  data: CalendarCreatedEvent["data"],
+  data: CalendarCreated["data"],
 ) {
+  validateFields(data.fields);
+
+  let { name, dates } = data.fields;
+  let timeSpan = dates[0];
+
   await db.calendars.add({
     id: meta.calendarId,
     ownerId: meta.publicKey,
-    name: data.name,
+    name,
+    startDate: timeSpan.start,
+    endDate: timeSpan.end,
   });
-  await setActiveCalendar(meta.calendarId)
+
+  // Add the calendar creator to the list of authors who's data we want to
+  // sync for this calendar.
+  await topics.addCalendarAuthor(meta.calendarId, meta.publicKey, "inbox");
+  await topics.addCalendarAuthor(meta.calendarId, meta.publicKey, "data");
 }
 
-async function setActiveCalendar(id: Hash) {
-  await db.settings.add({
-    name: 'activeCalendar',
-    value: id
-  })
+async function onCalendarUpdated(
+  meta: StreamMessageMeta,
+  data: CalendarUpdated["data"],
+) {
+  validateFields(data.fields);
+  await validateUpdateDelete(meta.publicKey, data.id);
+
+  let { name, dates } = data.fields;
+  let timeSpan = dates[0];
+
+  await db.calendars.update(data.id, {
+    name,
+    startDate: timeSpan.start,
+    endDate: timeSpan.end,
+  });
 }
 
+async function onCalendarDeleted(
+  meta: StreamMessageMeta,
+  data: CalendarDeleted["data"],
+) {
+  await validateUpdateDelete(meta.publicKey, data.id);
+  await db.calendars.delete(data.id);
+}
 
+/**
+ * Validation
+ */
+
+function validateFields(fields: CalendarFields) {
+  let { dates } = fields;
+  if (dates.length == 0) {
+    throw new Error("calendar dates must contain at least on time span");
+  }
+}
+
+async function validateUpdateDelete(publicKey: PublicKey, calendarId: Hash) {
+  let calendar = await db.calendars.get(calendarId);
+
+  // The calendar must already exist.
+  if (!calendar) {
+    throw new Error("calendar does not exist");
+  }
+
+  // Only the calendar owner can perform updates and deletes.
+  if (calendar.ownerId != publicKey) {
+    throw new Error("non-owner update or delete on calendar");
+  }
+}

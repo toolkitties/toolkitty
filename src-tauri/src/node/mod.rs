@@ -30,10 +30,8 @@ fn network_id() -> [u8; 32] {
 }
 
 pub struct Node<T> {
-    #[allow(dead_code)]
-    private_key: PrivateKey,
-    #[allow(dead_code)]
-    store: MemoryStore<LogId, Extensions>,
+    pub private_key: PrivateKey,
+    pub store: MemoryStore<LogId, Extensions>,
     #[allow(dead_code)]
     stream: StreamController,
     stream_tx: mpsc::Sender<ToStreamController>,
@@ -146,6 +144,27 @@ where
         reply_rx.await.expect("receive reply_rx")
     }
 
+    /// Ingest an operation without publishing it.
+    pub async fn ingest(
+        &mut self,
+        header: &Header<Extensions>,
+        body: Option<&Body>,
+    ) -> Result<(), PublishError> {
+        let header_bytes = header.to_bytes();
+
+        self.stream_tx
+            .send(ToStreamController::Ingest {
+                header: header.to_owned(),
+                body: body.cloned(),
+                header_bytes,
+            })
+            .await
+            // @TODO: Handle error.
+            .unwrap();
+
+        Ok(())
+    }
+
     pub async fn publish_ephemeral(
         &mut self,
         topic: &T,
@@ -168,24 +187,19 @@ where
         header: &Header<Extensions>,
         body: Option<&Body>,
     ) -> Result<Hash, PublishError> {
-        let header_bytes = header.to_bytes();
         let operation_id = header.hash();
 
         let bytes = encode_gossip_message(header, body)?;
-        self.network_actor_tx
-            .send(ToNodeActor::Broadcast {
-                topic_id: topic.id(),
-                bytes,
-            })
+
+        self.ingest(&header, body)
             .await
             // @TODO: Handle error.
             .unwrap();
 
-        self.stream_tx
-            .send(ToStreamController::Ingest {
-                header: header.to_owned(),
-                body: body.cloned(),
-                header_bytes,
+        self.network_actor_tx
+            .send(ToNodeActor::Broadcast {
+                topic_id: topic.id(),
+                bytes,
             })
             .await
             // @TODO: Handle error.

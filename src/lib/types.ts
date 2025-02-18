@@ -118,10 +118,7 @@ type StreamMessageMeta = {
  * backend state change.
  */
 
-type SystemMessage =
-  | CalendarSelected
-  | SubscribedToCalendar
-  | CalendarGossipJoined;
+type SystemMessage = CalendarSelected | SubscribedToCalendar | NetworkEvent;
 
 /**
  * We have selected a new calendar and are ready to receive it's events.
@@ -140,12 +137,12 @@ type SubscribedToCalendar = {
 };
 
 /**
- * We joined a gossip overlay of a calendar we are subscribed to. This occurs when we meet a peer
- * subscribed to the same calendar.
+ * We received a network system event from the backend node.
  */
-type CalendarGossipJoined = {
-  event: "calendar_gossip_joined";
-  calendarId: string;
+type NetworkEvent = {
+  event: "network_event";
+  // @TODO: define all possible system events we will receive on the frontend
+  data: any;
 };
 
 /**
@@ -250,8 +247,8 @@ type SpaceRequestId = Hash;
 type ResourceRequestId = Hash;
 
 type CalendarFields = {
-  calendarName: string;
-  calendarDates: TimeSpan[];
+  name: string;
+  dates: TimeSpan[];
 };
 
 type SpaceFields = {
@@ -262,7 +259,6 @@ type SpaceFields = {
   accessibility: string;
   description: string;
   contact: string;
-  message: string;
   link: Link;
   images: Image[];
   availability: TimeSpan[] | "always";
@@ -276,7 +272,7 @@ type ResourceFields = {
   link: Link;
   images: Image[];
   availability: TimeSpan[] | "always";
-  multiBookable: boolean; // resource can be booked more than once in the same time span
+  multiBookable: boolean;
 };
 
 type EventFields = {
@@ -323,14 +319,14 @@ type CalendarAccessRequested = {
 type CalendarAccessAccepted = {
   type: "calendar_access_accepted";
   data: {
-    calendarId: Hash;
+    requestId: Hash;
   };
 };
 
 type CalendarAccessRejected = {
   type: "calendar_access_rejected";
   data: {
-    calendarId: Hash;
+    requestId: Hash;
   };
 };
 
@@ -406,7 +402,7 @@ type ResourceCreated = {
 };
 
 type ResourceUpdated = {
-  type: "space_updated";
+  type: "resource_updated";
   data: {
     id: Hash;
     fields: ResourceFields;
@@ -563,7 +559,7 @@ type UserRoleAssigned = {
  * Application Data
  */
 
-// @TODO: some updates required here based on the new protocol message definitions above
+type FlattenField<T, K extends keyof T> = Omit<T, K> & T[K];
 
 type User = {
   id: PublicKey;
@@ -574,25 +570,35 @@ type Calendar = {
   id: Hash;
   ownerId: PublicKey;
   name: string;
-  // TODO: Should we support non-consecutive dates? It could be arrays of TimeSpan?
-  startDate?: Date;
+  // TODO: Should we support non-consecutive dates? It could be arrays of TimeSpan? The
+  // `CalendarCreated` fields contains a TimeSpan[] so it's possible to encode non-consecutive
+  // dates there, but we don't need to support that in the app right now. Here I've left it as a
+  // single time range.
+  startDate: Date;
   endDate?: Date;
 };
 
-type CalendarEvent = {
+type AccessRequest = {
   id: Hash;
-  ownerId: PublicKey;
-  name: string;
-  description: string;
-  location: SpaceRequest | null;
-  startDate: Date; // allocated time of a space
-  endDate: Date; // allocated time of a space
-  publicStartDate: Date | null; // public facing
-  publicEndDate: Date | null; // public facing
-  resources: ResourceRequest[];
-  links: Link[];
-  images: Image[];
+  calendarId: Hash;
+  publicKey: PublicKey;
 };
+
+type AccessResponse = {
+  id: Hash;
+  from: PublicKey;
+  requestId: Hash;
+  accept: boolean;
+};
+
+type CalendarEvent = FlattenField<
+  {
+    id: Hash;
+    ownerId: PublicKey;
+    fields: EventFields;
+  },
+  "fields"
+>;
 
 type Link = {
   type: "ticket" | "custom";
@@ -600,22 +606,15 @@ type Link = {
   url: string;
 };
 
-type Space = {
-  id: Hash;
-  type: "physical" | "gps" | "virtual";
-  ownerId: PublicKey;
-  name: string;
-  location: PhysicalLocation | GPSLocation | VirtualLocation; // TODO: change to proper address structure
-  capacity: number;
-  accessibility: string;
-  description: string;
-  contact: string;
-  link: Link;
-  images: Image[];
-  availability: TimeSpan[] | "always";
-  multiBookable: boolean; // Resource can be booked more than once in the same time span
-  booked: BookedTimeSpan[];
-};
+type Space = FlattenField<
+  {
+    id: Hash;
+    ownerId: PublicKey;
+    booked: BookedTimeSpan[];
+    fields: SpaceFields;
+  },
+  "fields"
+>;
 
 // TODO: TBC from open street maps
 type PhysicalLocation = {
@@ -646,6 +645,7 @@ type SpaceRequest = {
     endDate: Date;
   }
   message: string;
+  timeSpan: TimeSpan;
   response: SpaceResponse | null;
 };
 
@@ -655,18 +655,15 @@ type SpaceResponse = {
   answer: Answer;
 };
 
-type Resource = {
-  id: Hash;
-  name: string;
-  ownerId: PublicKey;
-  description: string;
-  contact: string;
-  link: Link;
-  images: Image[];
-  availability: TimeSpan[] | "always";
-  multiBookable: boolean; // resource can be booked more than once in the same time span
-  booked: BookedTimeSpan[];
-};
+type Resource = FlattenField<
+  {
+    id: Hash;
+    ownerId: PublicKey;
+    booked: BookedTimeSpan[];
+    fields: ResourceFields;
+  },
+  "fields"
+>;
 
 type ResourceRequest = {
   id: Hash;
@@ -682,6 +679,7 @@ type ResourceRequest = {
     location: string;
   }
   message: string;
+  timeSpan: TimeSpan;
   response: ResourceResponse | null;
 };
 
@@ -713,4 +711,15 @@ type CalendarAccessRequest = {
   message: string;
 }
 
-type RequestEvent = SpaceRequest | ResourceRequest | CalendarAccessRequest
+type RequestEvent = SpaceRequest | ResourceRequest | CalendarAccessRequest;
+
+/**
+ * The different subscription types which exist for a calendar. Each represents a logical set of
+ * data which can be subscribed to independently.
+ */
+type TopicType = "inbox" | "data";
+
+type Subscription = {
+  calendarId: Hash;
+  type: TopicType;
+};
