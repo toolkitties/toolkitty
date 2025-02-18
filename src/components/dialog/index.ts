@@ -1,4 +1,4 @@
-import { Dialog, Dialog as DialogPrimitive } from "bits-ui";
+import { Dialog as DialogPrimitive } from "bits-ui";
 
 // import custom components to be styled consistently across the app.
 import Content from "./dialog-content.svelte";
