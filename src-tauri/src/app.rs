@@ -15,7 +15,7 @@ use tokio::sync::{broadcast, mpsc, oneshot, Mutex};
 use tracing::debug;
 
 use crate::messages::{ChannelEvent, NetworkEvent};
-use crate::node::extensions::{CalendarId, Extensions, LogId, StreamName};
+use crate::node::extensions::{CalendarId, Extensions, LogId, StreamName, StreamType};
 use crate::node::operation::create_operation;
 use crate::node::{Node, StreamEvent};
 use crate::topic::{NetworkTopic, TopicMap, TopicType};
@@ -42,7 +42,7 @@ pub struct Context {
     /// Channel for sending the actual tauri channel where all backend->frontend events are sent.
     /// We need this so that when the `init` command is called with the channel as an argument it
     /// can be forwarded into the main application service task which is waiting for it.
-    pub channel_tx: mpsc::Sender<Channel<ChannelEvent>>,
+    pub channel_tx: mpsc::Sender<broadcast::Sender<ChannelEvent>>,
 
     /// Flag indicating that we already received a channel from the frontend (init was already
     /// called). There is a bug if `init` is called twice.
@@ -54,7 +54,7 @@ impl Context {
         node: Node<NetworkTopic>,
         to_app_tx: broadcast::Sender<ChannelEvent>,
         topic_map: TopicMap,
-        channel_tx: mpsc::Sender<Channel<ChannelEvent>>,
+        channel_tx: mpsc::Sender<broadcast::Sender<ChannelEvent>>,
     ) -> Self {
         Self {
             node,
@@ -88,7 +88,7 @@ pub struct Service {
     to_app_rx: broadcast::Receiver<ChannelEvent>,
 
     /// Channel where we receive the actual backend->frontend event channel.
-    channel_rx: mpsc::Receiver<Channel<ChannelEvent>>,
+    channel_rx: mpsc::Receiver<broadcast::Sender<ChannelEvent>>,
 }
 
 impl Service {
@@ -135,7 +135,7 @@ impl Service {
             };
             app_handle.manage(rpc);
             let channel = app.recv_channel().await.expect("receive on channel rx");
-            // app.spawn_invite_code_ready_watcher(channel.clone());
+            app.spawn_invite_code_ready_watcher(channel.clone());
             app.inner_run(channel).await.expect("run stream task");
         });
     }
@@ -145,10 +145,11 @@ impl Service {
     pub async fn run() -> Arc<Mutex<Context>> {
         let mut app = Self::build().await.expect("build stream");
         let context = app.context.clone();
+        let rt = tokio::runtime::Handle::current();
 
-        tauri::async_runtime::spawn(async move {
+        rt.spawn(async move {
             let channel = app.recv_channel().await.expect("receive on channel rx");
-            // app.spawn_invite_code_ready_watcher(channel.clone());
+            app.spawn_invite_code_ready_watcher(channel.clone());
             app.inner_run(channel).await.expect("run stream task");
         });
 
@@ -157,7 +158,10 @@ impl Service {
 
     /// Run the inner service loop which awaits events arriving on the app, network, stream and
     /// invite codes channels.
-    pub(crate) async fn inner_run(mut self, channel: Channel<ChannelEvent>) -> anyhow::Result<()> {
+    pub(crate) async fn inner_run(
+        mut self,
+        channel: broadcast::Sender<ChannelEvent>,
+    ) -> anyhow::Result<()> {
         loop {
             tokio::select! {
                 Ok(event) = self.to_app_rx.recv() => {
@@ -197,7 +201,7 @@ impl Service {
         }
     }
 
-    async fn recv_channel(&mut self) -> anyhow::Result<Channel<ChannelEvent>> {
+    async fn recv_channel(&mut self) -> anyhow::Result<broadcast::Sender<ChannelEvent>> {
         let Some(channel) = self.channel_rx.recv().await else {
             return Err(anyhow::anyhow!("channel tx closed"));
         };
@@ -207,18 +211,18 @@ impl Service {
         Ok(channel)
     }
 
-    // fn spawn_invite_code_ready_watcher(&self, channel: Channel<ChannelEvent>) {
-    //     let rt = tokio::runtime::Handle::current();
-    //     let invite_codes_ready = self.invite_codes_ready.clone();
-    //     rt.spawn(async move {
-    //         invite_codes_ready
-    //             .await
-    //             .expect("invite codes ready channel open");
-    //         channel
-    //             .send(ChannelEvent::InviteCodesReady)
-    //             .expect("channel receiver not dropped");
-    //     });
-    // }
+    fn spawn_invite_code_ready_watcher(&self, channel: broadcast::Sender<ChannelEvent>) {
+        let rt = tokio::runtime::Handle::current();
+        let invite_codes_ready = self.invite_codes_ready.clone();
+        rt.spawn(async move {
+            invite_codes_ready
+                .await
+                .expect("invite codes ready channel open");
+            channel
+                .send(ChannelEvent::InviteCodesReady)
+                .expect("channel receiver not dropped");
+        });
+    }
 }
 
 pub struct Rpc {
@@ -227,7 +231,7 @@ pub struct Rpc {
 
 impl Rpc {
     /// Initialize the app by passing it a channel from the frontend.
-    pub async fn init(&self, channel: Channel<ChannelEvent>) -> Result<(), RpcError> {
+    pub async fn init(&self, channel: broadcast::Sender<ChannelEvent>) -> Result<(), RpcError> {
         let context = self.context.lock().await;
         if context.channel_set {
             return Err(RpcError::SetStreamChannel);
@@ -356,6 +360,7 @@ impl Rpc {
         topic_type: TopicType,
         calendar_id: Option<CalendarId>,
         stream_name: Option<StreamName>,
+        stream_type: Option<StreamType>,
     ) -> Result<Hash, RpcError> {
         let mut context = self.context.lock().await;
         let private_key = context.node.private_key.clone();
@@ -363,6 +368,7 @@ impl Rpc {
         let extensions = Extensions {
             calendar_id,
             stream_name,
+            stream_type,
             ..Default::default()
         };
 
@@ -434,11 +440,17 @@ impl Serialize for RpcError {
 
 #[cfg(test)]
 mod tests {
-    use p2panda_core::PrivateKey;
-    use tauri::ipc::Channel;
+    use p2panda_core::{Hash, PrivateKey};
+    use serde_json::json;
+    use tokio::sync::broadcast;
 
     use crate::{
-        node::extensions::StreamName,
+        messages::{ChannelEvent, NetworkEvent},
+        node::{
+            extensions::{CalendarId, StreamName, StreamType},
+            stream::{EventData, EventMeta},
+            StreamEvent,
+        },
         topic::{NetworkTopic, TopicType},
     };
 
@@ -450,17 +462,24 @@ mod tests {
         let node_private_key = context.lock().await.node.private_key.clone();
         let rpc = Rpc { context };
 
-        let channel = Channel::new(|channel_event| {
-            println!("{:#?}", channel_event);
-            Ok(())
-        });
-        let result = rpc.init(channel).await;
+        let (channel_tx, _channel_rx) = broadcast::channel(10);
+        let result = rpc.init(channel_tx).await;
         assert!(result.is_ok());
 
         let result = rpc.public_key().await;
         assert!(result.is_ok());
         let public_key = result.unwrap();
         assert_eq!(public_key, node_private_key.public_key());
+    }
+
+    #[tokio::test]
+    async fn subscribe() {
+        let context = Service::run().await;
+        let rpc = Rpc { context };
+
+        let (channel_tx, mut channel_rx) = broadcast::channel(10);
+        let result = rpc.init(channel_tx).await;
+        assert!(result.is_ok());
 
         let private_key = PrivateKey::new();
         let calendar_stream = StreamName {
@@ -472,5 +491,74 @@ mod tests {
             .subscribe(calendar_stream.hash().into(), TopicType::Data)
             .await;
         assert!(result.is_ok());
+
+        let event = channel_rx.recv().await.unwrap();
+        match event {
+            ChannelEvent::SubscribedToCalendar(calendar_id, topic_type) => {
+                let expected_calendar_id: CalendarId = calendar_stream.hash().into();
+                assert_eq!(expected_calendar_id, calendar_id);
+                assert_eq!(topic_type, TopicType::Data);
+            }
+            _ => panic!(),
+        }
+    }
+
+    #[tokio::test]
+    async fn publish() {
+        let context = Service::run().await;
+        let private_key = context.lock().await.node.private_key.clone();
+        let rpc = Rpc { context };
+
+        let (channel_tx, mut channel_rx) = broadcast::channel(10);
+        let result = rpc.init(channel_tx).await;
+        assert!(result.is_ok());
+
+        let calendar_stream = StreamName {
+            owner: private_key.public_key(),
+            name: "my_unique_calendar".to_string(),
+        };
+
+        let result = rpc.select_calendar(calendar_stream.hash().into()).await;
+        assert!(result.is_ok());
+        let _event = channel_rx.recv().await.unwrap();
+
+        let payload = json!({
+            "message": "organize!"
+        });
+
+        let result = rpc
+            .publish(
+                serde_json::to_vec(&payload).unwrap(),
+                TopicType::Data,
+                Some(calendar_stream.hash().into()),
+                Some(calendar_stream),
+                Some(StreamType::Calendar),
+            )
+            .await;
+        assert!(result.is_ok());
+        let event = channel_rx.recv().await.unwrap();
+        match event {
+            ChannelEvent::Stream(stream_event) => {
+                let EventMeta {
+                    author,
+                    calendar_id,
+                    stream_type,
+                    stream_name,
+                    ..
+                } = stream_event.meta;
+
+                assert_eq!(author, private_key.public_key());
+                assert_eq!(calendar_id, CalendarId::from(stream_name.hash()));
+                assert_eq!(stream_name, stream_name);
+                assert_eq!(stream_type, StreamType::Calendar);
+
+                let EventData::Application(value) = stream_event.data else {
+                    panic!();
+                };
+
+                assert_eq!(value, payload);
+            }
+            _ => panic!(),
+        }
     }
 }

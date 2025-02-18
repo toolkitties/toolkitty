@@ -101,7 +101,7 @@ impl StreamController {
                         }
                         None => break,
                     }
-                }
+                };
             });
         }
 

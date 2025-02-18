@@ -1,17 +1,27 @@
 use p2panda_core::{Hash, PublicKey};
 use tauri::{ipc::Channel, State};
+use tokio::sync::broadcast;
 use tracing::debug;
 
 use crate::app::{Rpc, RpcError};
 use crate::messages::ChannelEvent;
-use crate::node::extensions::{CalendarId, StreamName};
+use crate::node::extensions::{CalendarId, StreamName, StreamType};
 use crate::topic::TopicType;
 
 /// Initialize the app by passing it a channel from the frontend.
 #[tauri::command]
 pub async fn init(rpc: State<'_, Rpc>, channel: Channel<ChannelEvent>) -> Result<(), RpcError> {
     debug!(command.name = "init", "RPC request received");
-    rpc.init(channel).await?;
+
+    let (channel_tx, mut channel_rx) = broadcast::channel(128);
+
+    tokio::spawn(async move {
+        while let Ok(event) = channel_rx.recv().await {
+            channel.send(event).expect("send on channel");
+        }
+    });
+
+    rpc.init(channel_tx).await?;
     Ok(())
 }
 
@@ -105,6 +115,7 @@ pub async fn publish(
     topic_type: TopicType,
     calendar_id: Option<CalendarId>,
     stream_name: Option<StreamName>,
+    stream_type: Option<StreamType>,
 ) -> Result<Hash, RpcError> {
     debug!(
         command.name = "publish",
@@ -114,7 +125,7 @@ pub async fn publish(
     );
     let payload = serde_json::to_vec(&payload)?;
     let hash = rpc
-        .publish(payload, topic_type, calendar_id, stream_name)
+        .publish(payload, topic_type, calendar_id, stream_name, stream_type)
         .await?;
     Ok(hash)
 }

@@ -1,7 +1,7 @@
 mod actor;
 pub mod extensions;
 pub mod operation;
-mod stream;
+pub mod stream;
 
 use std::collections::HashMap;
 

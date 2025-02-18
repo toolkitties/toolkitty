@@ -10,8 +10,8 @@ use tokio_stream::wrappers::ReceiverStream;
 use tokio_stream::StreamExt;
 use tracing::{error, trace, warn};
 
-use crate::node::operation::decode_gossip_message;
 use crate::node::extensions::Extensions;
+use crate::node::operation::decode_gossip_message;
 pub enum ToNodeActor<T> {
     SubscribeProcessed {
         topic: T,
