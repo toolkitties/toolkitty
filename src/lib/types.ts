@@ -634,8 +634,16 @@ type VirtualLocation = string;
 
 type SpaceRequest = {
   id: Hash;
-  eventId: Hash;
-  spaceId: Hash;
+  space: {
+    id: Hash;
+    name: string;
+  }
+  event: {
+    id: Hash;
+    name: string;
+    startDate: Date;
+    endDate: Date;
+  }
   message: string;
   timeSpan: TimeSpan;
   response: SpaceResponse | null;
@@ -659,8 +667,17 @@ type Resource = FlattenField<
 
 type ResourceRequest = {
   id: Hash;
-  resourceId: Hash;
-  eventId: Hash;
+  resource: {
+    id: Hash;
+    name: string
+  }
+  event: {
+    id: Hash;
+    name: string;
+    startDate: Date;
+    endDate: Date;
+    location: string;
+  }
   message: string;
   timeSpan: TimeSpan;
   response: ResourceResponse | null;
@@ -686,7 +703,15 @@ type BookedTimeSpan = TimeSpan & {
 type Settings = {
   name: string;
   value: Hash | string;
-};
+}
+
+type CalendarAccessRequest = {
+  calendarId: Hash;
+  name: string;
+  message: string;
+}
+
+type RequestEvent = SpaceRequest | ResourceRequest | CalendarAccessRequest;
 
 /**
  * The different subscription types which exist for a calendar. Each represents a logical set of
