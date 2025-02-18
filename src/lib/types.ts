@@ -649,7 +649,6 @@ type CalendarEvent = {
   id: Hash;
   calendarId: Hash;
   ownerId: PublicKey;
-  fields: EventFields;
 } & EventFields;
 
 type Space = {
@@ -680,7 +679,6 @@ type Resource = {
   calendarId: Hash;
   ownerId: PublicKey;
   booked: BookedTimeSpan[];
-  fields: ResourceFields;
 } & ResourceFields;
 
 type ResourceRequest = {
