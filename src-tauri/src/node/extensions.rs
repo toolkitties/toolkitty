@@ -33,16 +33,6 @@ impl StreamName {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, StdHash, Serialize, Deserialize)]
-pub enum StreamType {
-    Inbox,
-    #[default]
-    Calendar,
-    Space,
-    Event,
-    Resource,
-}
-
 #[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
 pub struct LogId {
     pub calendar_id: CalendarId,
@@ -54,9 +44,6 @@ pub struct Extensions {
     #[serde(rename = "c")]
     pub calendar_id: Option<CalendarId>,
 
-    #[serde(rename = "t")]
-    pub stream_type: Option<StreamType>,
-
     #[serde(rename = "s")]
     pub stream_name: Option<StreamName>,
 
@@ -66,16 +53,6 @@ pub struct Extensions {
         default = "PruneFlag::default"
     )]
     pub prune_flag: PruneFlag,
-}
-
-impl Extension<StreamType> for Extensions {
-    fn extract(header: &Header<Self>) -> Option<StreamType> {
-        let Some(ref extensions) = header.extensions else {
-            return None;
-        };
-
-        extensions.stream_type.clone()
-    }
 }
 
 impl Extension<StreamName> for Extensions {
@@ -100,12 +77,11 @@ impl Extension<CalendarId> for Extensions {
             return None;
         };
 
-        let stream_type: StreamType = header.extension().unwrap_or_default();
         let stream_name: StreamName = header.extension().expect("extract stream name");
 
-        match stream_type {
-            StreamType::Calendar => Some(CalendarId(stream_name.hash())),
-            _ => extensions.calendar_id.clone(),
+        match extensions.calendar_id.clone() {
+            Some(calendar_id) => Some(calendar_id),
+            None => Some(stream_name.hash().into()),
         }
     }
 }

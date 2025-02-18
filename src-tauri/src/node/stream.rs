@@ -16,7 +16,7 @@ use tracing::debug;
 
 use crate::node::extensions::{CalendarId, Extensions, LogId};
 
-use super::extensions::{StreamName, StreamType};
+use super::extensions::StreamName;
 
 #[allow(clippy::large_enum_variant, dead_code)]
 pub enum ToStreamController {
@@ -101,7 +101,7 @@ impl StreamController {
                         }
                         None => break,
                     }
-                };
+                }
             });
         }
 
@@ -208,7 +208,6 @@ pub struct EventMeta {
     pub operation_id: Hash,
     pub author: PublicKey,
     pub calendar_id: CalendarId,
-    pub stream_type: StreamType,
     pub stream_name: StreamName,
 }
 
@@ -218,10 +217,6 @@ impl From<Header<Extensions>> for EventMeta {
             .extension()
             .expect("header to have calendar id extension");
 
-        let stream_type = header
-            .extension()
-            .expect("header to have stream type extension");
-
         let stream_name = header
             .extension()
             .expect("header to have stream name extension");
@@ -230,7 +225,6 @@ impl From<Header<Extensions>> for EventMeta {
             operation_id: header.hash(),
             author: header.public_key,
             calendar_id,
-            stream_type,
             stream_name,
         }
     }
@@ -415,7 +409,7 @@ mod tests {
     use serde_json::json;
     use tokio::sync::oneshot;
 
-    use crate::node::extensions::{CalendarId, Extensions, LogId, StreamName, StreamType};
+    use crate::node::extensions::{CalendarId, Extensions, LogId, StreamName};
     use crate::node::operation::{self};
     use crate::node::StreamEvent;
 
@@ -425,12 +419,10 @@ mod tests {
         operation_store: &mut MemoryStore<LogId, Extensions>,
         private_key: &PrivateKey,
         calendar_id: Option<CalendarId>,
-        stream_type: StreamType,
         stream_name: Option<StreamName>,
     ) -> (Header<Extensions>, Body, Vec<u8>, Hash) {
         let extensions = Extensions {
             calendar_id,
-            stream_type: Some(stream_type),
             stream_name,
             prune_flag: PruneFlag::default(),
         };
@@ -462,11 +454,9 @@ mod tests {
         let private_key = PrivateKey::new();
         let public_key = private_key.public_key();
 
-        let stream_type = StreamType::Calendar;
-
         // Create and ingest operation 0.
         let (header_0, body_0, header_bytes_0, operation_id_0) =
-            create_operation(&mut operation_store, &private_key, None, stream_type, None).await;
+            create_operation(&mut operation_store, &private_key, None, None).await;
 
         tx.send(ToStreamController::Ingest {
             header: header_0.clone(),
@@ -506,7 +496,6 @@ mod tests {
             &mut operation_store,
             &private_key,
             header_0.extension(),
-            StreamType::Calendar,
             header_0.extension(),
         )
         .await;
@@ -528,7 +517,6 @@ mod tests {
             &mut operation_store,
             &private_key,
             header_0.extension(),
-            StreamType::Calendar,
             header_0.extension(),
         )
         .await;

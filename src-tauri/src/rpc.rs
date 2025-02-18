@@ -5,7 +5,7 @@ use tracing::debug;
 
 use crate::app::{Rpc, RpcError};
 use crate::messages::ChannelEvent;
-use crate::node::extensions::{CalendarId, StreamName, StreamType};
+use crate::node::extensions::{CalendarId, StreamName};
 use crate::topic::TopicType;
 
 /// Initialize the app by passing it a channel from the frontend.
@@ -115,7 +115,6 @@ pub async fn publish(
     topic_type: TopicType,
     calendar_id: Option<CalendarId>,
     stream_name: Option<StreamName>,
-    stream_type: Option<StreamType>,
 ) -> Result<Hash, RpcError> {
     debug!(
         command.name = "publish",
@@ -125,7 +124,7 @@ pub async fn publish(
     );
     let payload = serde_json::to_vec(&payload)?;
     let hash = rpc
-        .publish(payload, topic_type, calendar_id, stream_name, stream_type)
+        .publish(payload, topic_type, calendar_id, stream_name)
         .await?;
     Ok(hash)
 }

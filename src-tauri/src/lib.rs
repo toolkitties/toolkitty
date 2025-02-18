@@ -7,8 +7,8 @@ mod topic;
 use tauri::Builder;
 
 use crate::rpc::{
-    ack, add_topic_log, init, public_key, publish,
-    publish_to_invite_code_overlay, select_calendar, subscribe,
+    ack, add_topic_log, init, public_key, publish, publish_to_invite_code_overlay, select_calendar,
+    subscribe,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -19,11 +19,12 @@ pub fn run() {
 
     Builder::default()
         .setup(|app| {
-            let app_handle = app.handle().clone();
-
             #[cfg(not(test))]
-            app::Service::run(app_handle);
-            
+            {
+                let app_handle = app.handle().clone();
+                app::Service::run(app_handle);
+            }
+
             Ok(())
         })
         .plugin(logger)

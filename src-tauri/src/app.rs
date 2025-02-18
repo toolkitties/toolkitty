@@ -8,14 +8,14 @@ use p2panda_net::{FromNetwork, SystemEvent, TopicId};
 use p2panda_store::MemoryStore;
 use p2panda_sync::log_sync::TopicLogMap;
 use serde::Serialize;
-use tauri::ipc::Channel;
+#[cfg(not(test))]
 use tauri::{AppHandle, Manager};
 use thiserror::Error;
 use tokio::sync::{broadcast, mpsc, oneshot, Mutex};
 use tracing::debug;
 
 use crate::messages::{ChannelEvent, NetworkEvent};
-use crate::node::extensions::{CalendarId, Extensions, LogId, StreamName, StreamType};
+use crate::node::extensions::{CalendarId, Extensions, LogId, StreamName};
 use crate::node::operation::create_operation;
 use crate::node::{Node, StreamEvent};
 use crate::topic::{NetworkTopic, TopicMap, TopicType};
@@ -360,7 +360,6 @@ impl Rpc {
         topic_type: TopicType,
         calendar_id: Option<CalendarId>,
         stream_name: Option<StreamName>,
-        stream_type: Option<StreamType>,
     ) -> Result<Hash, RpcError> {
         let mut context = self.context.lock().await;
         let private_key = context.node.private_key.clone();
@@ -368,7 +367,6 @@ impl Rpc {
         let extensions = Extensions {
             calendar_id,
             stream_name,
-            stream_type,
             ..Default::default()
         };
 
@@ -440,18 +438,17 @@ impl Serialize for RpcError {
 
 #[cfg(test)]
 mod tests {
-    use p2panda_core::{Hash, PrivateKey};
+    use p2panda_core::PrivateKey;
     use serde_json::json;
     use tokio::sync::broadcast;
 
     use crate::{
-        messages::{ChannelEvent, NetworkEvent},
+        messages::ChannelEvent,
         node::{
-            extensions::{CalendarId, StreamName, StreamType},
+            extensions::{CalendarId, StreamName},
             stream::{EventData, EventMeta},
-            StreamEvent,
         },
-        topic::{NetworkTopic, TopicType},
+        topic::TopicType,
     };
 
     use super::{Rpc, Service};
@@ -532,7 +529,6 @@ mod tests {
                 TopicType::Data,
                 Some(calendar_stream.hash().into()),
                 Some(calendar_stream),
-                Some(StreamType::Calendar),
             )
             .await;
         assert!(result.is_ok());
@@ -542,7 +538,6 @@ mod tests {
                 let EventMeta {
                     author,
                     calendar_id,
-                    stream_type,
                     stream_name,
                     ..
                 } = stream_event.meta;
@@ -550,7 +545,6 @@ mod tests {
                 assert_eq!(author, private_key.public_key());
                 assert_eq!(calendar_id, CalendarId::from(stream_name.hash()));
                 assert_eq!(stream_name, stream_name);
-                assert_eq!(stream_type, StreamType::Calendar);
 
                 let EventData::Application(value) = stream_event.data else {
                     panic!();
