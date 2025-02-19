@@ -1,153 +1,42 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { findMany as findSpaces } from "$lib/api/spaces";
-  import { findMany as findResources } from "$lib/api/resources";
-  import AvailabilityViewer from "../../../../components/availability-viewer.svelte";
+    import type { DateValue } from "@internationalized/date";
+    import { CalendarDate } from "@internationalized/date";
+    import CustomCalendar from '../../../../components/CustomCalendar.svelte';
 
-  let spaces: Space[] = $state<Space[]>([]);
-  let resources: Resource[] = $state<Resource[]>([]);
+    // placeholder data
+    const festivalDates: DateValue[] = [
+        new CalendarDate(2024, 12, 11),
+        new CalendarDate(2024, 12, 12),
+        new CalendarDate(2024, 12, 13),
+        new CalendarDate(2024, 12, 14),
+        new CalendarDate(2024, 12, 15),
+        new CalendarDate(2024, 12, 16),
+    ];
 
-  let selectedSpace: Space | null = $state<Space | null>(null);
-  let currentlySelectedResourceId = $state("");
+    const availableDates: DateValue[] = [
+        new CalendarDate(2024, 12, 14),
+        new CalendarDate(2024, 12, 15),
+    ]
 
-  onMount(async () => {
-    try {
-      const [fetchedSpaces, fetchedResources] = await Promise.all([
-        findSpaces(),
-        findResources(),
-      ]);
-      spaces = [...fetchedSpaces];
-
-      resources = [...fetchedResources];
-
-      if (resources.length > 0) {
-        currentlySelectedResourceId = resources[0].id;
-      }
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    }
-  });
-
-  function handleSpaceSelection(space: Space) {
-    selectedSpace = space;
-  }
+    const availableTimes: Object[] = [
+        {
+            date: new CalendarDate(2024, 12, 14),
+            times: ["12:00 - 13:00", "17:00 - 18:00", "18:00 - 19:00"]
+        },
+        {
+            date: new CalendarDate(2024, 12, 15),
+            times: ["10:00 - 11:00", "1:00 - 12:00", "12:00 - 13:00", "20:00 - 21:00", "21:00 - 22:00"]
+        },
+    ]
 </script>
 
-<p>Hello organisers! Fill this form to upload your event to the program.</p>
-
-<form>
-  <label for="name">Event name*</label>
-  <input type="text" name="name" required />
-
-  <label for="description">Event description*</label>
-  <textarea name="description" required></textarea>
-
-  <p>🎫 Ticket Link</p>
-  <div class="flex flex-row">
-    <div>
-      <label for="ticket-link-text">Link text</label>
-      <input type="text" name="ticket-link-text" />
-    </div>
-    <div>
-      <label for="ticket-link-url">URL</label>
-      <input type="url" name="ticket-link-url" />
-    </div>
-  </div>
-
-  <p>🔗 Additional Link</p>
-  <div class="flex flex-row">
-    <div>
-      <label for="additional-link-text">Link text</label>
-      <input type="text" name="additional-link-text" />
-    </div>
-    <div>
-      <label for="additional-link-url">URL</label>
-      <input type="url" name="additional-link-url" />
-    </div>
-  </div>
-
-  {#if spaces.length > 0}
-    <p>Select a space:</p>
-    <ul>
-      {#each spaces as space}
-        <li>
-          <input
-            type="radio"
-            id={space.id}
-            name="selected-space"
-            onchange={() => handleSpaceSelection(space)}
-          />
-          <label for={space.id}>{space.name}</label>
-        </li>
-      {/each}
-    </ul>
-
-    {#if selectedSpace}
-      <div class="space-availability">
-        <p>View availability</p>
-        <AvailabilityViewer
-          availability={Array.isArray(selectedSpace.availability)
-            ? selectedSpace.availability
-            : []}
-          multiBookable={selectedSpace.multiBookable}
-        />
-      </div>
-    {/if}
-    <p>Request selected space</p>
-    <div class="flex flex-row">
-      <p>Access from:</p>
-      <label for="event-start-date">Date *</label>
-      <input name="event-start-date" type="date" required />
-      <label for="event-start-time">Time *</label>
-      <input name="event-start-time" type="time" required />
-    </div>
-
-    <div class="flex flex-row">
-      <p>Leave by:</p>
-      <label for="event-end-date">Date *</label>
-      <input name="event-end-date" type="date" required />
-      <label for="event-end-time">Time *</label>
-      <input name="event-end-time" type="time" required />
-    </div>
-  {:else}
-    <p>No spaces found.</p>
-  {/if}
-
-  <p>Event time (excluding set-up)</p>
-  <div class="flex flex-row">
-    <p>Event start</p>
-    <label for="event-start-date">Date *</label>
-    <input name="event-start-date" type="date" required />
-    <label for="event-start-time">Time *</label>
-    <input name="event-start-time" type="time" required />
-  </div>
-
-  <div class="flex flex-row">
-    <p>Event end</p>
-    <label for="event-end-date">Date *</label>
-    <input name="event-end-date" type="date" required />
-    <label for="event-end-time">Time *</label>
-    <input name="event-end-time" type="time" required />
-  </div>
-
-  <!-- @TODO - validate against space availability -->
-  {#if resources.length > 0}
-    <label for="resource-list">Select resources</label>
-    <ul id="resource-list">
-      {#each resources as resource}
-        <li>
-          <input
-            type="checkbox"
-            id="resource-{resource.id}"
-            value={resource.id}
-          />
-          <label for="resource-{resource.id}">{resource.name}</label>
-        </li>
-      {/each}
-    </ul>
-  {:else}
-    <p>No resources available.</p>
-  {/if}
-
-  <button type="submit">Publish</button>
-</form>
+<h1>Create event</h1>
+    
+<CustomCalendar 
+    use={"resource management"}
+    canSelectMultiple={false} 
+    hasTimePicker={true} 
+    festivalDates={festivalDates} 
+    availableDates={availableDates}
+    availableTimes={availableTimes}
+/>

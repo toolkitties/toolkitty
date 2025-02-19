@@ -1,6 +1,23 @@
 export const seedMessages: ApplicationMessage[] = [
   {
-
+    meta: {
+      calendarId: "0",
+      operationId: "A",
+      publicKey: "ALICE",
+    },
+    event: "application",
+    data: {
+      type: "calendar_created",
+      data: {
+        fields: {
+          name: "Antiuniversity",
+          dates: [
+            {
+              start: new Date("2025-01-20T00:00:00Z"),
+              end: new Date("2025-01-27T00:00:00Z"),
+            },
+          ],
+        },
       },
     },
   },
@@ -10,7 +27,35 @@ export const seedMessages: ApplicationMessage[] = [
       operationId: "B",
       publicKey: "ALICE",
     },
-
+    event: "application",
+    data: {
+      type: "space_created",
+      data: {
+        fields: {
+          type: "physical",
+          name: "1",
+          location: "123 Street Street",
+          capacity: 0,
+          accessibility: "Wheelchair accessible",
+          description: "A stage, a main one",
+          contact: "Message on Signal",
+          link: {
+            type: "custom",
+            title: "Venue website",
+            url: "www.somewebsite.com",
+          },
+          images: [
+            "https://placecats.com/neo_banana/300/200",
+            "https://placecats.com/neo_2/300/200",
+          ],
+          availability: [
+            {
+              start: new Date("2025-01-01T00:00:00Z"),
+              end: new Date("2025-02-30T00:00:00Z"),
+            },
+          ],
+          multiBookable: false,
+        },
       },
     },
   },
@@ -20,12 +65,71 @@ export const seedMessages: ApplicationMessage[] = [
       operationId: "C",
       publicKey: "ALICE",
     },
-
+    event: "application",
+    data: {
+      type: "space_created",
+      data: {
+        fields: {
+          type: "physical",
+          name: "Recording Studio",
+          location: "34 Road Avenue",
+          capacity: 20,
+          accessibility: "www.website.com/accessibility",
+          description:
+            "A small recording studio with lots of equipment, that sounds good.",
+          contact: "Message via email",
+          link: {
+            type: "custom",
+            title: "Venue website",
+            url: "www.somewebsite.com",
+          },
+          images: [
+            "https://placecats.com/neo_banana/300/200",
+            "https://placecats.com/neo_2/300/200",
+          ],
+          availability: [
+            {
+              start: new Date("2025-01-01T00:00:00Z"),
+              end: new Date("2025-02-30T00:00:00Z"),
+            },
+          ],
+          multiBookable: false,
+        },
       },
     },
   },
   {
-
+    meta: {
+      calendarId: "0",
+      operationId: "D",
+      publicKey: "ALICE",
+    },
+    event: "application",
+    data: {
+      type: "resource_created",
+      data: {
+        fields: {
+          name: "Projector",
+          description: "Epson CO-FH01 Full HD Projector",
+          contact: "Signal @beamer",
+          link: {
+            type: "custom",
+            title: null,
+            url: "",
+          },
+          images: [],
+          availability: [
+            {
+              start: new Date("2025-01-20T00:00:00Z"),
+              end: new Date("2025-01-22T00:00:00Z"),
+            },
+            {
+              start: new Date("2025-01-24T00:00:00Z"),
+              end: new Date("2025-01-26T00:00:00Z"),
+            },
+          ],
+          multiBookable: false,
+        },
       },
     },
   },

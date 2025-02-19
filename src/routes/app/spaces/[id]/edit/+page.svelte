@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { DateValue } from "@internationalized/date";
     import { CalendarDate } from "@internationalized/date";
-    import Calendar from '../../../../../components/calendar.svelte';
+    import CustomCalendar from '../../../../../components/CustomCalendar.svelte';
 
     // placeholder data
     const festivalDates: DateValue[] = [
@@ -16,7 +16,7 @@
 
 <h1>Edit space</h1>
     
-<Calendar 
+<CustomCalendar 
     use={"resource management"}
     canSelectMultiple={true} 
     hasTimePicker={true} 
