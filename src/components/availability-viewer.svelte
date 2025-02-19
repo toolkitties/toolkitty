@@ -118,6 +118,6 @@
   </Calendar.Root>
 
   {#if timeAvailability}
-    <TimeAvailability bind:availability={timeAvailability} />
+    <TimeAvailability availability={timeAvailability} />
   {/if}
 {/if}

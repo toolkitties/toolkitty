@@ -1,6 +1,6 @@
 <script lang="ts">
   // booked eventually becomes prop.
-  let { availability = $bindable() } = $props();
+  let { availability } = $props();
   // for now placing data below so its easier to understand
 
   // const availability = {
