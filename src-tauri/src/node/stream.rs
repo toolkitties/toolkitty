@@ -14,7 +14,9 @@ use tokio_stream::wrappers::ReceiverStream;
 use tokio_stream::StreamExt;
 use tracing::debug;
 
-use crate::node::operation::{CalendarId, Extensions, LogId};
+use crate::node::extensions::{Extensions, LogId};
+
+use super::extensions::{Stream, StreamName};
 
 #[allow(clippy::large_enum_variant, dead_code)]
 pub enum ToStreamController {
@@ -204,20 +206,18 @@ impl Serialize for StreamEvent {
 #[serde(rename_all = "camelCase")]
 pub struct EventMeta {
     pub operation_id: Hash,
-    pub calendar_id: CalendarId,
-    pub public_key: PublicKey,
+    pub author: PublicKey,
+    pub stream: Stream,
 }
 
 impl From<Header<Extensions>> for EventMeta {
     fn from(header: Header<Extensions>) -> Self {
-        let calendar_id: CalendarId = header
-            .extension()
-            .expect("header to have calendar id extension");
+        let stream: Stream = header.clone().into();
 
         Self {
             operation_id: header.hash(),
-            calendar_id,
-            public_key: header.public_key,
+            author: header.public_key,
+            stream,
         }
     }
 }
@@ -396,12 +396,13 @@ mod tests {
     use std::collections::HashMap;
 
     use futures_util::FutureExt;
-    use p2panda_core::{Body, Hash, Header, PrivateKey, PruneFlag};
+    use p2panda_core::{Body, Hash, Header, PrivateKey, PruneFlag, PublicKey};
     use p2panda_store::MemoryStore;
-    use serde_json::json;
+    use serde_json::{json, Value};
     use tokio::sync::oneshot;
 
-    use crate::node::operation::{self, CalendarId, Extensions, LogId, LogType};
+    use crate::node::extensions::{Extensions, LogId, StreamId, StreamName, StreamOwner};
+    use crate::node::operation::{self};
     use crate::node::StreamEvent;
 
     use super::{StreamController, ToStreamController};
@@ -409,11 +410,14 @@ mod tests {
     async fn create_operation(
         operation_store: &mut MemoryStore<LogId, Extensions>,
         private_key: &PrivateKey,
-        calendar_id: &CalendarId,
+        stream_name: StreamName,
+        stream_id: Option<StreamId>,
+        stream_owner: Option<StreamOwner>,
     ) -> (Header<Extensions>, Body, Vec<u8>, Hash) {
         let extensions = Extensions {
-            log_type: Some(LogType::Data),
-            calendar_id: Some(*calendar_id),
+            stream_id,
+            stream_owner,
+            stream_name: Some(stream_name),
             prune_flag: PruneFlag::default(),
         };
 
@@ -443,12 +447,17 @@ mod tests {
 
         let private_key = PrivateKey::new();
         let public_key = private_key.public_key();
-
-        let calendar_id: CalendarId = Hash::new(b"Penguin's Pyjama Party").into();
+        let stream_name: StreamName = json!("my_cool_stream").into();
 
         // Create and ingest operation 0.
-        let (header_0, body_0, header_bytes_0, operation_id_0) =
-            create_operation(&mut operation_store, &private_key, &calendar_id).await;
+        let (header_0, body_0, header_bytes_0, operation_id_0) = create_operation(
+            &mut operation_store,
+            &private_key,
+            stream_name.clone(),
+            None,
+            None,
+        )
+        .await;
 
         tx.send(ToStreamController::Ingest {
             header: header_0.clone(),
@@ -457,7 +466,10 @@ mod tests {
         })
         .await
         .unwrap();
-        assert_eq!(rx.recv().await.unwrap(), StreamEvent::new(header_0, body_0));
+        assert_eq!(
+            rx.recv().await.unwrap(),
+            StreamEvent::new(header_0.clone(), body_0)
+        );
 
         // Acknowledge operation 0.
         let (reply, reply_rx) = oneshot::channel();
@@ -472,13 +484,7 @@ mod tests {
         // Ask to replay log, but don't expect anything to be sent.
         let (reply, reply_rx) = oneshot::channel();
         tx.send(ToStreamController::Replay {
-            logs: HashMap::from([(
-                public_key,
-                vec![LogId {
-                    calendar_id,
-                    log_type: LogType::default(),
-                }],
-            )]),
+            logs: HashMap::from([(public_key, vec![header_0.extension().unwrap()])]),
             reply,
         })
         .await
@@ -487,8 +493,14 @@ mod tests {
         assert_eq!(rx.recv().now_or_never(), None);
 
         // Create and ingest operation 1.
-        let (header_1, body_1, header_bytes_1, operation_id_1) =
-            create_operation(&mut operation_store, &private_key, &calendar_id).await;
+        let (header_1, body_1, header_bytes_1, operation_id_1) = create_operation(
+            &mut operation_store,
+            &private_key,
+            stream_name.clone(),
+            header_0.extension(),
+            header_0.extension(),
+        )
+        .await;
 
         tx.send(ToStreamController::Ingest {
             header: header_1.clone(),
@@ -503,8 +515,14 @@ mod tests {
         );
 
         // Create and ingest operation 2.
-        let (header_2, body_2, header_bytes_2, operation_id_2) =
-            create_operation(&mut operation_store, &private_key, &calendar_id).await;
+        let (header_2, body_2, header_bytes_2, operation_id_2) = create_operation(
+            &mut operation_store,
+            &private_key,
+            stream_name,
+            header_0.extension(),
+            header_0.extension(),
+        )
+        .await;
 
         tx.send(ToStreamController::Ingest {
             header: header_2.clone(),
@@ -521,13 +539,7 @@ mod tests {
         // Ask to replay log, expect operation 1 and 2 to be sent again.
         let (reply, reply_rx) = oneshot::channel();
         tx.send(ToStreamController::Replay {
-            logs: HashMap::from([(
-                public_key,
-                vec![LogId {
-                    calendar_id,
-                    log_type: LogType::default(),
-                }],
-            )]),
+            logs: HashMap::from([(public_key, vec![header_0.extension().unwrap()])]),
             reply,
         })
         .await
@@ -558,13 +570,7 @@ mod tests {
         // Ask to replay log, but don't expect anything to be sent.
         let (reply, reply_rx) = oneshot::channel();
         tx.send(ToStreamController::Replay {
-            logs: HashMap::from([(
-                public_key,
-                vec![LogId {
-                    calendar_id,
-                    log_type: LogType::default(),
-                }],
-            )]),
+            logs: HashMap::from([(public_key, vec![header_0.extension().unwrap()])]),
             reply,
         })
         .await

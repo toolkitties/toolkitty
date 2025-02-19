@@ -4,6 +4,8 @@ import { promiseResult } from "$lib/promiseMap";
 import { liveQuery } from "dexie";
 import { publicKey } from "./identity";
 import { topics } from ".";
+import { CALENDAR_STREAM_NAME, StreamFactory } from "./streams";
+import { TopicFactory } from "./topics";
 
 /*
  * Queries
@@ -54,28 +56,35 @@ export const getActiveCalendar = liveQuery(async () => {
  */
 
 export async function create(data: CalendarCreated["data"]): Promise<Hash> {
+  const myPublicKey = await publicKey();
+
   // Define the "calendar created" application event.
   const payload: CalendarCreated = {
     type: "calendar_created",
     data,
   };
 
-  // Call the "command" on the backend. We receive the hash of the created
-  // p2panda operation from the backend. We can use this now as an unique
-  // identifier for the application event.
-  const hash: Hash = await invoke("create_calendar", { payload });
+  const hash: Hash = await invoke("publish", {
+    payload,
+    streamArgs: { name: CALENDAR_STREAM_NAME },
+  });
 
-  // Subscribe to all calendar topics.
-  await topics.subscribe(hash, "inbox");
-  await topics.subscribe(hash, "data");
+  const stream = new StreamFactory(hash, myPublicKey);
+  const topic = new TopicFactory(hash);
+  await topics.addCalendarAuthor(
+    myPublicKey,
+    topic.calendar(),
+    stream.calendar(),
+  );
+  await topics.subscribe(topic.calendar());
+  await topics.addCalendarAuthor(
+    myPublicKey,
+    topic.calendarInbox(),
+    stream.calendarInbox(),
+  );
+  await topics.subscribe(topic.calendarInbox());
 
-  // Add our public key to the topic map on the backend.
-  let myPublicKey = await publicKey();
-  await topics.addCalendarAuthor(hash, myPublicKey, "inbox");
-  await topics.addCalendarAuthor(hash, myPublicKey, "data");
-
-  // Select this calendar.
-  await select(hash);
+  await invoke("replay", { topic: topic.calendar() });
 
   // Register this operation hash to wait until it's later resolved by the
   // processor. Like this we can conveniently return from this method as soon as
@@ -88,34 +97,53 @@ export async function create(data: CalendarCreated["data"]): Promise<Hash> {
 }
 
 export async function update(
-  calendar_id: Hash,
+  calendarId: Hash,
   fields: CalendarFields,
 ): Promise<Hash> {
-  let calendar_updated: CalendarUpdated = {
+  let calendar = await db.calendars.get(calendarId);
+  if (!calendar) {
+    throw new Error("tried to update non-existent calendar");
+  }
+
+  let calendarUpdated: CalendarUpdated = {
     type: "calendar_updated",
     data: {
-      id: calendar_id,
+      id: calendarId,
       fields,
     },
   };
-  let hash: Hash = await invoke("publish", {
-    calendar_id,
-    payload: calendar_updated,
+
+  const topic = new TopicFactory(calendarId);
+  const stream = new StreamFactory(calendar.streamId, calendar.streamOwner);
+  const hash: Hash = await invoke("publish", {
+    payload: calendarUpdated,
+    topic: topic.calendar(),
+    streamArgs: stream.calendar(),
   });
   return hash;
 }
 
-export async function deleteCalendar(calendar_id: Hash): Promise<Hash> {
-  let calendar_deleted: CalendarDeleted = {
+export async function deleteCalendar(calendarId: Hash): Promise<Hash> {
+  const calendar = await db.calendars.get(calendarId);
+  if (!calendar) {
+    throw Error("tried to delete non-existent calendar");
+  }
+
+  const calendarDeleted: CalendarDeleted = {
     type: "calendar_deleted",
     data: {
-      id: calendar_id,
+      id: calendarId,
     },
   };
-  let hash: Hash = await invoke("publish", {
-    calendar_id,
-    payload: calendar_deleted,
+
+  const topic = new TopicFactory(calendarId);
+  const stream = new StreamFactory(calendar.streamId, calendar.streamOwner);
+  const hash: Hash = await invoke("publish", {
+    payload: calendarDeleted,
+    topic: topic.calendar(),
+    streamArgs: stream.calendar(),
   });
+
   return hash;
 }
 
@@ -124,16 +152,6 @@ export async function setActiveCalendar(id: Hash) {
     name: "activeCalendar",
     value: id,
   });
-}
-
-/**
- * Select a new calendar. This tells the backend to only forward events
- * associated with the passed calendar to the frontend. Events for any other
- * calendar we are subscribed to will not be processed by the frontend.
- */
-export async function select(calendarId: Hash) {
-  await setActiveCalendar(calendarId);
-  await invoke("select_calendar", { calendarId });
 }
 
 /*
@@ -164,8 +182,11 @@ async function onCalendarCreated(
   let timeSpan = dates[0];
 
   await db.calendars.add({
-    id: meta.calendarId,
-    ownerId: meta.publicKey,
+    id: meta.operationId,
+    ownerId: meta.author,
+    streamId: meta.stream.id,
+    streamOwner: meta.stream.owner,
+    streamName: meta.stream.name,
     name,
     startDate: timeSpan.start,
     endDate: timeSpan.end,
@@ -173,8 +194,18 @@ async function onCalendarCreated(
 
   // Add the calendar creator to the list of authors who's data we want to
   // sync for this calendar.
-  await topics.addCalendarAuthor(meta.calendarId, meta.publicKey, "inbox");
-  await topics.addCalendarAuthor(meta.calendarId, meta.publicKey, "data");
+  const topic = new TopicFactory(meta.operationId);
+  const stream = new StreamFactory(meta.stream.id, meta.stream.owner);
+  await topics.addCalendarAuthor(
+    meta.author,
+    topic.calendarInbox(),
+    stream.calendarInbox(),
+  );
+  await topics.addCalendarAuthor(
+    meta.author,
+    topic.calendar(),
+    stream.calendar(),
+  );
 }
 
 async function onCalendarUpdated(
@@ -182,7 +213,7 @@ async function onCalendarUpdated(
   data: CalendarUpdated["data"],
 ) {
   validateFields(data.fields);
-  await validateUpdateDelete(meta.publicKey, data.id);
+  await validateUpdateDelete(meta.author, data.id);
 
   let { name, dates } = data.fields;
   let timeSpan = dates[0];
@@ -198,7 +229,7 @@ async function onCalendarDeleted(
   meta: StreamMessageMeta,
   data: CalendarDeleted["data"],
 ) {
-  await validateUpdateDelete(meta.publicKey, data.id);
+  await validateUpdateDelete(meta.author, data.id);
   await db.calendars.delete(data.id);
 }
 

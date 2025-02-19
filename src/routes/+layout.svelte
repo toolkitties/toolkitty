@@ -3,8 +3,8 @@
   import { onMount } from "svelte";
   import Toasts from "../components/toasts.svelte";
   import { topics } from "$lib/api";
-    import { seedMessages } from "$lib/api/data";
-    import { process } from "$lib/processor";
+  import { seedMessages } from "$lib/api/data";
+  import { process } from "$lib/processor";
 
   onMount(() => {
     // Hacky workaround to only call "init" once in a Svelte HMR life-cycle.

@@ -1,10 +1,12 @@
 mod actor;
+pub mod extensions;
 pub mod operation;
-mod stream;
+pub mod stream;
 
 use std::collections::HashMap;
 
 use anyhow::Result;
+use extensions::{Extensions, LogId};
 use futures_util::future::{MapErr, Shared};
 use futures_util::{FutureExt, TryFutureExt};
 use p2panda_core::{Body, Hash, Header, PrivateKey, PublicKey};
@@ -21,7 +23,7 @@ use tokio_util::task::AbortOnDropHandle;
 use tracing::error;
 
 use crate::node::actor::{NodeActor, ToNodeActor};
-use crate::node::operation::{encode_gossip_message, Extensions, LogId};
+use crate::node::operation::encode_gossip_message;
 use crate::node::stream::{StreamController, ToStreamController};
 pub use crate::node::stream::{StreamControllerError, StreamEvent};
 
@@ -217,9 +219,9 @@ where
         Ok(())
     }
 
-    pub async fn subscribe(
+    pub async fn subscribe_ephemeral(
         &self,
-        topic: T,
+        topic: &T,
     ) -> Result<(mpsc::Receiver<FromNetwork>, oneshot::Receiver<()>)> {
         let (reply_tx, reply_rx) = oneshot::channel();
         self.network_actor_tx

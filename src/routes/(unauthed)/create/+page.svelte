@@ -1,9 +1,8 @@
 
 <script lang="ts">
-  import CustomCalendar from "../../../components/CustomCalendar.svelte";
-  import Select from "../../../components/select.svelte";
   import { calendars } from "$lib/api";
   import { goto } from "$app/navigation";
+    import FestivalCalendar from "../../../components/festival-calendar.svelte";
 
   let themes = [
     { value: "friendly", label: "Friendly (default)", default: true },
@@ -18,8 +17,9 @@
     const name = data.get("name") as string;
 
     try {
+      console.log("call calendars.create");
       await calendars.create({ fields: {
-          name: name,
+          name,
           dates: [{start: new Date(), end: new Date()}]
       } });
     } catch (err) {
