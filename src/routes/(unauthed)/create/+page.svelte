@@ -17,8 +17,9 @@
     const name = data.get("name") as string;
 
     try {
+      console.log("call calendars.create");
       await calendars.create({ fields: {
-          name: name,
+          name,
           dates: [{start: new Date(), end: new Date()}]
       } });
     } catch (err) {

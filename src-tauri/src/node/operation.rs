@@ -20,27 +20,13 @@ pub async fn create_operation(
         .expect("time from operation system")
         .as_secs();
 
-    let latest_operation = match extensions.calendar_id {
-        Some(ref calendar_id) => {
-            let stream_name = extensions
-                .stream_name
-                .clone()
-                .expect("stream name");
+    let stream_name = extensions.stream_name.clone().expect("stream name");
 
-            let log_id = LogId {
-                calendar_id: calendar_id.clone(),
-                stream_name,
-            };
+    let log_id = LogId { stream_name };
 
-            // @TODO(adz): Memory stores are infallible right now but we'll switch to a SQLite-based one
-            // soon and then we need to handle this error here:
-            let Ok(latest_operation) = store.latest_operation(&public_key, &log_id).await;
-            latest_operation
-        }
-        // If no log id was present on the extensions we can assume this is the first operation in
-        // a new log.
-        None => None,
-    };
+    // @TODO(adz): Memory stores are infallible right now but we'll switch to a SQLite-based one
+    // soon and then we need to handle this error here:
+    let Ok(latest_operation) = store.latest_operation(&public_key, &log_id).await;
 
     let (seq_num, backlink) = match latest_operation {
         Some((header, _)) => (header.seq_num + 1, Some(header.hash())),

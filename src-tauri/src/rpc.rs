@@ -5,7 +5,7 @@ use tracing::debug;
 
 use crate::app::{Rpc, RpcError};
 use crate::messages::ChannelEvent;
-use crate::node::extensions::{CalendarId, StreamName};
+use crate::node::extensions::StreamName;
 use crate::topic::Topic;
 
 /// Initialize the app by passing it a channel from the frontend.
@@ -50,7 +50,7 @@ pub async fn ack(rpc: State<'_, Rpc>, operation_id: Hash) -> Result<(), RpcError
 pub async fn replay(rpc: State<'_, Rpc>, topic: Topic) -> Result<(), RpcError> {
     debug!(
         command.name = "replay",
-        // command.topic = topic.to_hex(),
+        command.topic = topic.to_string(),
         "RPC request received"
     );
 
@@ -65,19 +65,17 @@ pub async fn replay(rpc: State<'_, Rpc>, topic: Topic) -> Result<(), RpcError> {
 pub async fn add_topic_log(
     rpc: State<'_, Rpc>,
     public_key: PublicKey,
-    calendar_id: CalendarId,
     topic: Topic,
     stream_name: StreamName,
 ) -> Result<(), RpcError> {
     debug!(
         command.name = "add_topic_log",
         command.public_key = public_key.to_hex(),
-        // command.topic_type = topic.to_string(),
+        command.topic = topic.to_string(),
         "RPC request received"
     );
 
-    rpc.add_topic_log(public_key, calendar_id, topic, stream_name)
-        .await?;
+    rpc.add_topic_log(public_key, topic, stream_name).await?;
     Ok(())
 }
 
@@ -86,7 +84,7 @@ pub async fn add_topic_log(
 pub async fn subscribe(rpc: State<'_, Rpc>, topic: Topic) -> Result<(), RpcError> {
     debug!(
         command.name = "subscribe",
-        // command.topic_type = topic.to_string(),
+        command.topic = topic.to_string(),
         "RPC request received"
     );
 
@@ -99,7 +97,7 @@ pub async fn subscribe(rpc: State<'_, Rpc>, topic: Topic) -> Result<(), RpcError
 pub async fn subscribe_ephemeral(rpc: State<'_, Rpc>, topic: Topic) -> Result<(), RpcError> {
     debug!(
         command.name = "subscribe_ephemeral",
-        // command.topic_type = topic.to_string(),
+        command.topic = topic.to_string(),
         "RPC request received"
     );
 
@@ -133,19 +131,27 @@ pub async fn publish(
     rpc: State<'_, Rpc>,
     payload: serde_json::Value,
     topic: Topic,
-    calendar_id: Option<CalendarId>,
     stream_name: Option<StreamName>,
 ) -> Result<Hash, RpcError> {
     debug!(
         command.name = "publish",
-        command.calendar_id = calendar_id.as_ref().map(ToString::to_string),
-        // command.topic = topic.to_string(),
+        command.topic = topic.to_string(),
         "RPC request received"
     );
     let payload = serde_json::to_vec(&payload)?;
-    let hash = rpc
-        .publish(payload, topic, calendar_id, stream_name)
-        .await?;
+    let hash = rpc.publish(payload, topic, stream_name).await?;
+    Ok(hash)
+}
+
+#[tauri::command]
+pub async fn create(
+    rpc: State<'_, Rpc>,
+    payload: serde_json::Value,
+    stream_name: Option<StreamName>,
+) -> Result<Hash, RpcError> {
+    debug!(command.name = "create", "RPC request received");
+    let payload = serde_json::to_vec(&payload)?;
+    let hash = rpc.create(payload, stream_name).await?;
     Ok(hash)
 }
 

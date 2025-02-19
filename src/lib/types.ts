@@ -102,9 +102,9 @@ type ApplicationMessage = {
  * Additional data we've received from the processed p2panda operation.
  */
 type StreamMessageMeta = {
-  calendarId: Hash;
   operationId: Hash;
   publicKey: PublicKey;
+  streamName: StreamName;
 };
 
 /**
@@ -569,6 +569,8 @@ type User = {
 type Calendar = {
   id: Hash;
   ownerId: PublicKey;
+  streamId: string;
+  streamOwner: PublicKey;
   name: string;
   // TODO: Should we support non-consecutive dates? It could be arrays of TimeSpan? The
   // `CalendarCreated` fields contains a TimeSpan[] so it's possible to encode non-consecutive
@@ -637,13 +639,13 @@ type SpaceRequest = {
   space: {
     id: Hash;
     name: string;
-  }
+  };
   event: {
     id: Hash;
     name: string;
     startDate: Date;
     endDate: Date;
-  }
+  };
   message: string;
   timeSpan: TimeSpan;
   response: SpaceResponse | null;
@@ -669,15 +671,15 @@ type ResourceRequest = {
   id: Hash;
   resource: {
     id: Hash;
-    name: string
-  }
+    name: string;
+  };
   event: {
     id: Hash;
     name: string;
     startDate: Date;
     endDate: Date;
     location: string;
-  }
+  };
   message: string;
   timeSpan: TimeSpan;
   response: ResourceResponse | null;
@@ -703,23 +705,20 @@ type BookedTimeSpan = TimeSpan & {
 type Settings = {
   name: string;
   value: Hash | string;
-}
+};
 
 type CalendarAccessRequest = {
   calendarId: Hash;
   name: string;
   message: string;
-}
+};
 
 type RequestEvent = SpaceRequest | ResourceRequest | CalendarAccessRequest;
 
-/**
- * The different subscription types which exist for a calendar. Each represents a logical set of
- * data which can be subscribed to independently.
- */
-type TopicType = "inbox" | "data";
-
-type Subscription = {
-  calendarId: Hash;
-  type: TopicType;
+type StreamName = {
+  uuid: string;
+  owner: PublicKey;
+  type: "inbox" | "data";
 };
+
+type TopicName = string;

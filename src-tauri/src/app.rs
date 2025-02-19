@@ -13,7 +13,7 @@ use tokio::sync::{broadcast, mpsc, Mutex};
 use tracing::debug;
 
 use crate::messages::{ChannelEvent, NetworkEvent};
-use crate::node::extensions::{CalendarId, Extensions, LogId, StreamName};
+use crate::node::extensions::{Extensions, LogId, StreamName};
 use crate::node::operation::create_operation;
 use crate::node::{Node, StreamEvent};
 use crate::topic::{Topic, TopicMap};
@@ -228,15 +228,11 @@ impl Rpc {
     pub async fn add_topic_log(
         &self,
         public_key: PublicKey,
-        calendar_id: CalendarId,
         topic: Topic,
         stream_name: StreamName,
     ) -> Result<(), RpcError> {
         let context = self.context.lock().await;
-        let log_id = LogId {
-            calendar_id,
-            stream_name,
-        };
+        let log_id = LogId { stream_name };
 
         context.topic_map.add_log(topic, public_key, log_id).await;
         Ok(())
@@ -330,14 +326,12 @@ impl Rpc {
         &self,
         payload: Vec<u8>,
         topic: Topic,
-        calendar_id: Option<CalendarId>,
         stream_name: Option<StreamName>,
     ) -> Result<Hash, RpcError> {
         let mut context = self.context.lock().await;
         let private_key = context.node.private_key.clone();
 
         let extensions = Extensions {
-            calendar_id,
             stream_name,
             ..Default::default()
         };
@@ -356,6 +350,37 @@ impl Rpc {
             .await?;
 
         debug!("publish operation: {}", header.hash());
+
+        Ok(header.hash())
+    }
+
+    /// Publish an event to a calendar topic.
+    ///
+    /// Returns the hash of the operation on which the payload was encoded.
+    pub async fn create(
+        &self,
+        payload: Vec<u8>,
+        stream_name: Option<StreamName>,
+    ) -> Result<Hash, RpcError> {
+        let mut context = self.context.lock().await;
+        let private_key = context.node.private_key.clone();
+
+        let extensions = Extensions {
+            stream_name,
+            ..Default::default()
+        };
+
+        let (header, body) = create_operation(
+            &mut context.node.store,
+            &private_key,
+            extensions,
+            Some(&payload),
+        )
+        .await;
+
+        context.node.ingest(&header, body.as_ref()).await?;
+
+        debug!("ingest operation: {}", header.hash());
 
         Ok(header.hash())
     }
@@ -407,7 +432,7 @@ mod tests {
     use crate::{
         messages::ChannelEvent,
         node::{
-            extensions::{CalendarId, StreamName},
+            extensions::StreamName,
             stream::{EventData, EventMeta},
         },
         topic::Topic,
@@ -441,12 +466,14 @@ mod tests {
         assert!(result.is_ok());
 
         let private_key = PrivateKey::new();
-        let calendar_stream = StreamName {
-            owner: private_key.public_key(),
-            name: "my_unique_calendar".to_string(),
-        };
 
-        let topic: Topic = calendar_stream.hash().to_hex().into();
+        let stream_name: StreamName = json!({
+            "owner": private_key.public_key().to_hex(),
+            "uuid": "my_unique_calendar"
+        })
+        .into();
+
+        let topic: Topic = stream_name.hash().to_hex().into();
         let result = rpc.subscribe(topic.clone()).await;
         assert!(result.is_ok());
 
@@ -469,22 +496,22 @@ mod tests {
         let result = rpc.init(channel_tx).await;
         assert!(result.is_ok());
 
-        let calendar_stream = StreamName {
-            owner: private_key.public_key(),
-            name: "my_unique_calendar".to_string(),
-        };
+        let stream_name: StreamName = json!({
+            "owner": private_key.public_key().to_hex(),
+            "uuid": "my_unique_calendar"
+        })
+        .into();
 
         let payload = json!({
             "message": "organize!"
         });
 
-        let topic: Topic = calendar_stream.hash().to_hex().into();
+        let topic: Topic = stream_name.hash().to_hex().into();
         let result = rpc
             .publish(
                 serde_json::to_vec(&payload).unwrap(),
                 topic,
-                Some(calendar_stream.hash().into()),
-                Some(calendar_stream),
+                Some(stream_name),
             )
             .await;
         assert!(result.is_ok());
@@ -493,13 +520,11 @@ mod tests {
             ChannelEvent::Stream(stream_event) => {
                 let EventMeta {
                     author,
-                    calendar_id,
                     stream_name,
-                    ..
+                    operation_id,
                 } = stream_event.meta;
 
                 assert_eq!(author, private_key.public_key());
-                assert_eq!(calendar_id, CalendarId::from(stream_name.hash()));
                 assert_eq!(stream_name, stream_name);
 
                 let EventData::Application(value) = stream_event.data else {

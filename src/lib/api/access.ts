@@ -1,8 +1,10 @@
-import { calendars, inviteCodes, topics } from "$lib/api";
+import { calendars, inviteCodes, topics } from "./";
 import type { ResolvedCalendar } from "$lib/api/inviteCodes";
 import { invoke } from "@tauri-apps/api/core";
 import { publicKey } from "./identity";
 import { db } from "$lib/db";
+import { Topic } from "./topics";
+import { Stream } from "./streams";
 
 /**
  * Resolve an invite code to a `ResolvedCalendar`.
@@ -85,6 +87,7 @@ export async function checkHasAccess(
 export async function requestAccess(
   data: CalendarAccessRequested["data"],
 ): Promise<Hash> {
+  let calendar = await db.calendars.get(data.calendarId);
   const payload: CalendarAccessRequested = {
     type: "calendar_access_requested",
     data,
@@ -92,8 +95,7 @@ export async function requestAccess(
 
   return await invoke("publish", {
     payload,
-    calendarId: data.calendarId,
-    topicType: "inbox",
+    streamName: {},
   });
 }
 
@@ -209,7 +211,7 @@ async function onCalendarAccessRequested(
     }
   }
 
-  await handleRequestOrResponse(meta.calendarId, meta.publicKey);
+  await handleRequestOrResponse(data.calendarId, meta.publicKey);
 }
 
 async function onCalendarAccessAccepted(
@@ -228,7 +230,7 @@ async function onCalendarAccessAccepted(
   );
 
   if (request != undefined) {
-    await handleRequestOrResponse(meta.calendarId, request.publicKey);
+    await handleRequestOrResponse(request.calendarId, request.publicKey);
   }
 }
 
@@ -259,9 +261,24 @@ async function handleRequestOrResponse(
     return;
   }
 
+  let calendar = await db.calendars.get(calendarId);
+  if (!calendar) {
+    return;
+  }
+
   // Inform the backend that there is a new author who may contribute to the calendar.
-  await topics.addCalendarAuthor(calendarId, requesterPublicKey, "inbox");
-  await topics.addCalendarAuthor(calendarId, requesterPublicKey, "data");
+  const topic = new Topic(calendar.id);
+  const stream = new Stream(calendar.streamOwner, calendar.streamId);
+  await topics.addCalendarAuthor(
+    requesterPublicKey,
+    topic.data(),
+    stream.data(),
+  );
+  await topics.addCalendarAuthor(
+    requesterPublicKey,
+    topic.inbox(),
+    stream.inbox(),
+  );
 
   let myPublicKey = await publicKey();
   if (myPublicKey != requesterPublicKey) {
@@ -272,5 +289,5 @@ async function handleRequestOrResponse(
   // data overlay so we subscribe to the data topic now finally. This will mean we receive the
   // "calendar_created" event on the stream, which in turn means the calendar will be inserted
   // into our database.
-  await topics.subscribe(calendarId, "data");
+  await topics.subscribe(topic.data());
 }

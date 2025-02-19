@@ -29,9 +29,7 @@ export async function findMine(): Promise<Space[]> {
  * Get one event by its ID
  */
 export async function findById(id: Hash): Promise<Space | undefined> {
-  let space = (await db.spaces.toArray()).filter(
-    (space) => space.id == id,
-  );
+  let space = (await db.spaces.toArray()).filter((space) => space.id == id);
 
   if (space.length == 0) {
     return;
@@ -45,9 +43,14 @@ export async function findById(id: Hash): Promise<Space | undefined> {
  */
 
 export async function create(
-  calendar_id: Hash,
+  calendarId: Hash,
   fields: SpaceFields,
 ): Promise<Hash> {
+  let calendar = await db.calendars.get(calendarId);
+  if (!calendar) {
+    throw new Error("calendar not found");
+  }
+
   let space_created: SpaceCreated = {
     type: "space_created",
     data: {
@@ -55,44 +58,67 @@ export async function create(
     },
   };
   let hash: Hash = await invoke("publish", {
-    calendar_id,
     payload: space_created,
+    streamName: {
+      owner: calendar.streamOwner,
+      uuid: calendar.streamId,
+      type: "data",
+    },
   });
   return hash;
 }
 
 export async function update(
-  calendar_id: Hash,
-  space_id: Hash,
+  calendarId: Hash,
+  spaceId: Hash,
   fields: SpaceFields,
 ): Promise<Hash> {
-  let space_updated: SpaceUpdated = {
+  let calendar = await db.calendars.get(calendarId);
+  if (!calendar) {
+    throw new Error("calendar not found");
+  }
+
+  let spaceUpdated: SpaceUpdated = {
     type: "space_updated",
     data: {
-      id: space_id,
+      id: spaceId,
       fields,
     },
   };
   let hash: Hash = await invoke("publish", {
-    calendar_id,
-    payload: space_updated,
+    payload: spaceUpdated,
+    streamName: {
+      owner: calendar.streamOwner,
+      uuid: calendar.streamId,
+      type: "data",
+    },
   });
   return hash;
 }
 
 export async function deleteSpace(
-  calendar_id: Hash,
-  space_id: Hash,
+  calendarId: Hash,
+  spaceId: Hash,
 ): Promise<Hash> {
+  let calendar = await db.calendars.get(calendarId);
+  if (!calendar) {
+    throw new Error("calendar not found");
+  }
+
   let space_deleted: SpaceDeleted = {
     type: "space_deleted",
     data: {
-      id: space_id,
+      id: spaceId,
     },
   };
+
   let hash: Hash = await invoke("publish", {
-    calendar_id,
     payload: space_deleted,
+    streamName: {
+      owner: calendar.streamOwner,
+      uuid: calendar.streamId,
+      type: "data",
+    },
   });
   return hash;
 }

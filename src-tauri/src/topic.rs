@@ -1,6 +1,6 @@
-use std::collections::HashMap;
 use std::hash::Hash as StdHash;
 use std::sync::Arc;
+use std::{collections::HashMap, fmt::Display};
 
 use async_trait::async_trait;
 use p2panda_core::{Hash, PublicKey};
@@ -14,6 +14,12 @@ use crate::node::extensions::LogId;
 
 #[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
 pub struct Topic(String);
+
+impl Display for Topic {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
 
 impl From<&str> for Topic {
     fn from(value: &str) -> Self {

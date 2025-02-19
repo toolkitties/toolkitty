@@ -1,9 +1,13 @@
 export const seedMessages: ApplicationMessage[] = [
   {
     meta: {
-      calendarId: "0",
+      streamName: {
+        owner: "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
+        uuid: "0",
+        type: "data",
+      },
       operationId: "A",
-      publicKey: "ALICE",
+      publicKey: "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
     },
     event: "application",
     data: {
@@ -23,9 +27,13 @@ export const seedMessages: ApplicationMessage[] = [
   },
   {
     meta: {
-      calendarId: "0",
+      streamName: {
+        owner: "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
+        uuid: "0",
+        type: "data",
+      },
       operationId: "B",
-      publicKey: "ALICE",
+      publicKey: "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
     },
     event: "application",
     data: {
@@ -61,9 +69,13 @@ export const seedMessages: ApplicationMessage[] = [
   },
   {
     meta: {
-      calendarId: "0",
+      streamName: {
+        owner: "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
+        uuid: "0",
+        type: "data",
+      },
       operationId: "C",
-      publicKey: "ALICE",
+      publicKey: "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
     },
     event: "application",
     data: {
@@ -100,9 +112,13 @@ export const seedMessages: ApplicationMessage[] = [
   },
   {
     meta: {
-      calendarId: "0",
+      streamName: {
+        owner: "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
+        uuid: "0",
+        type: "data",
+      },
       operationId: "D",
-      publicKey: "ALICE",
+      publicKey: "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
     },
     event: "application",
     data: {
@@ -135,9 +151,13 @@ export const seedMessages: ApplicationMessage[] = [
   },
   {
     meta: {
-      calendarId: "0",
+      streamName: {
+        owner: "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
+        uuid: "0",
+        type: "data",
+      },
       operationId: "E",
-      publicKey: "ALICE",
+      publicKey: "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
     },
     event: "application",
     data: {
@@ -165,7 +185,7 @@ export const seedMessages: ApplicationMessage[] = [
     },
   },
 ];
-// 
+//
 // export const events: CalendarEvent[] = [
 //   {
 //     id: "1",
@@ -206,7 +226,7 @@ export const seedMessages: ApplicationMessage[] = [
 //     tags: ["dancing", "anarchism", "improvisation"],
 //   },
 // ];
-// 
+//
 // export const requests: SpaceRequest[] = [
 //   {
 //     id: "1",

@@ -14,7 +14,7 @@ use tokio_stream::wrappers::ReceiverStream;
 use tokio_stream::StreamExt;
 use tracing::debug;
 
-use crate::node::extensions::{CalendarId, Extensions, LogId};
+use crate::node::extensions::{Extensions, LogId};
 
 use super::extensions::StreamName;
 
@@ -207,15 +207,15 @@ impl Serialize for StreamEvent {
 pub struct EventMeta {
     pub operation_id: Hash,
     pub author: PublicKey,
-    pub calendar_id: CalendarId,
+    // pub calendar_id: CalendarId,
     pub stream_name: StreamName,
 }
 
 impl From<Header<Extensions>> for EventMeta {
     fn from(header: Header<Extensions>) -> Self {
-        let calendar_id = header
-            .extension()
-            .expect("header to have calendar id extension");
+        // let calendar_id = header
+        //     .extension()
+        //     .expect("header to have calendar id extension");
 
         let stream_name = header
             .extension()
@@ -224,7 +224,7 @@ impl From<Header<Extensions>> for EventMeta {
         Self {
             operation_id: header.hash(),
             author: header.public_key,
-            calendar_id,
+            // calendar_id,
             stream_name,
         }
     }
@@ -409,7 +409,7 @@ mod tests {
     use serde_json::json;
     use tokio::sync::oneshot;
 
-    use crate::node::extensions::{CalendarId, Extensions, LogId, StreamName};
+    use crate::node::extensions::{Extensions, LogId, StreamName};
     use crate::node::operation::{self};
     use crate::node::StreamEvent;
 
@@ -418,11 +418,9 @@ mod tests {
     async fn create_operation(
         operation_store: &mut MemoryStore<LogId, Extensions>,
         private_key: &PrivateKey,
-        calendar_id: Option<CalendarId>,
         stream_name: Option<StreamName>,
     ) -> (Header<Extensions>, Body, Vec<u8>, Hash) {
         let extensions = Extensions {
-            calendar_id,
             stream_name,
             prune_flag: PruneFlag::default(),
         };
@@ -456,7 +454,7 @@ mod tests {
 
         // Create and ingest operation 0.
         let (header_0, body_0, header_bytes_0, operation_id_0) =
-            create_operation(&mut operation_store, &private_key, None, None).await;
+            create_operation(&mut operation_store, &private_key, None).await;
 
         tx.send(ToStreamController::Ingest {
             header: header_0.clone(),
@@ -492,13 +490,8 @@ mod tests {
         assert_eq!(rx.recv().now_or_never(), None);
 
         // Create and ingest operation 1.
-        let (header_1, body_1, header_bytes_1, operation_id_1) = create_operation(
-            &mut operation_store,
-            &private_key,
-            header_0.extension(),
-            header_0.extension(),
-        )
-        .await;
+        let (header_1, body_1, header_bytes_1, operation_id_1) =
+            create_operation(&mut operation_store, &private_key, header_0.extension()).await;
 
         tx.send(ToStreamController::Ingest {
             header: header_1.clone(),
@@ -513,13 +506,8 @@ mod tests {
         );
 
         // Create and ingest operation 2.
-        let (header_2, body_2, header_bytes_2, operation_id_2) = create_operation(
-            &mut operation_store,
-            &private_key,
-            header_0.extension(),
-            header_0.extension(),
-        )
-        .await;
+        let (header_2, body_2, header_bytes_2, operation_id_2) =
+            create_operation(&mut operation_store, &private_key, header_0.extension()).await;
 
         tx.send(ToStreamController::Ingest {
             header: header_2.clone(),
