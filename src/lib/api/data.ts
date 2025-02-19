@@ -1,13 +1,15 @@
 export const seedMessages: ApplicationMessage[] = [
   {
     meta: {
-      streamName: {
-        owner: "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
-        uuid: "0",
-        type: "data",
+      stream: {
+        owner:
+          "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
+        id: "0",
+        name: "calendar",
       },
       operationId: "A",
-      publicKey: "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
+      author:
+        "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
     },
     event: "application",
     data: {
@@ -27,13 +29,15 @@ export const seedMessages: ApplicationMessage[] = [
   },
   {
     meta: {
-      streamName: {
-        owner: "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
-        uuid: "0",
-        type: "data",
+      stream: {
+        owner:
+          "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
+        id: "0",
+        name: "calendar",
       },
       operationId: "B",
-      publicKey: "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
+      author:
+        "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
     },
     event: "application",
     data: {
@@ -69,13 +73,15 @@ export const seedMessages: ApplicationMessage[] = [
   },
   {
     meta: {
-      streamName: {
-        owner: "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
-        uuid: "0",
-        type: "data",
+      stream: {
+        owner:
+          "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
+        id: "0",
+        name: "calendar",
       },
       operationId: "C",
-      publicKey: "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
+      author:
+        "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
     },
     event: "application",
     data: {
@@ -112,13 +118,15 @@ export const seedMessages: ApplicationMessage[] = [
   },
   {
     meta: {
-      streamName: {
-        owner: "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
-        uuid: "0",
-        type: "data",
+      stream: {
+        owner:
+          "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
+        id: "0",
+        name: "calendar",
       },
       operationId: "D",
-      publicKey: "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
+      author:
+        "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
     },
     event: "application",
     data: {
@@ -151,13 +159,15 @@ export const seedMessages: ApplicationMessage[] = [
   },
   {
     meta: {
-      streamName: {
-        owner: "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
-        uuid: "0",
-        type: "data",
+      stream: {
+        owner:
+          "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
+        id: "0",
+        name: "calendar",
       },
       operationId: "E",
-      publicKey: "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
+      author:
+        "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
     },
     event: "application",
     data: {

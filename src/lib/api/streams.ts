@@ -1,29 +1,20 @@
-export class Stream {
-  private uuid: string;
+export const CALENDAR_STREAM_NAME = "calendar";
+export const CALENDAR_INBOX_STREAM_NAME = "calendar/inbox";
+
+export class StreamFactory {
+  private id: Hash;
   private owner: PublicKey;
 
-  public constructor(owner: PublicKey, uuid?: string) {
-    if (!uuid) {
-      const crypto = new Crypto();
-      uuid = crypto.randomUUID();
-    }
-    this.uuid = crypto.randomUUID();
+  public constructor(id: Hash, owner: PublicKey) {
+    this.id = id;
     this.owner = owner;
   }
 
-  public inbox(): StreamName {
-    return {
-      owner: this.owner,
-      uuid: this.uuid,
-      type: "inbox",
-    };
+  public calendar(): Stream {
+    return { id: this.id, owner: this.owner, name: CALENDAR_STREAM_NAME };
   }
 
-  public data(): StreamName {
-    return {
-      owner: this.owner,
-      uuid: this.uuid,
-      type: "data",
-    };
+  public calendarInbox(): Stream {
+    return { id: this.id, owner: this.owner, name: CALENDAR_INBOX_STREAM_NAME };
   }
 }

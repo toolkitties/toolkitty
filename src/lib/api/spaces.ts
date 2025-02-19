@@ -1,6 +1,8 @@
 import { db } from "$lib/db";
 import { invoke } from "@tauri-apps/api/core";
 import { publicKey } from "./identity";
+import { TopicFactory } from "./topics";
+import { StreamFactory } from "./streams";
 
 /**
  * Queries
@@ -51,19 +53,20 @@ export async function create(
     throw new Error("calendar not found");
   }
 
+  const topic = new TopicFactory(calendar.id);
+  const stream = new StreamFactory(calendar.streamId, calendar.streamOwner);
+
   let space_created: SpaceCreated = {
     type: "space_created",
     data: {
       fields,
     },
   };
+
   let hash: Hash = await invoke("publish", {
     payload: space_created,
-    streamName: {
-      owner: calendar.streamOwner,
-      uuid: calendar.streamId,
-      type: "data",
-    },
+    stream: stream.calendar(),
+    topic: topic.calendar(),
   });
   return hash;
 }
@@ -78,6 +81,9 @@ export async function update(
     throw new Error("calendar not found");
   }
 
+  const topic = new TopicFactory(calendar.id);
+  const stream = new StreamFactory(calendar.streamId, calendar.streamOwner);
+
   let spaceUpdated: SpaceUpdated = {
     type: "space_updated",
     data: {
@@ -87,11 +93,8 @@ export async function update(
   };
   let hash: Hash = await invoke("publish", {
     payload: spaceUpdated,
-    streamName: {
-      owner: calendar.streamOwner,
-      uuid: calendar.streamId,
-      type: "data",
-    },
+    stream: stream.calendar(),
+    topic: topic.calendar(),
   });
   return hash;
 }
@@ -105,6 +108,9 @@ export async function deleteSpace(
     throw new Error("calendar not found");
   }
 
+  const topic = new TopicFactory(calendar.id);
+  const stream = new StreamFactory(calendar.streamId, calendar.streamOwner);
+
   let space_deleted: SpaceDeleted = {
     type: "space_deleted",
     data: {
@@ -114,11 +120,8 @@ export async function deleteSpace(
 
   let hash: Hash = await invoke("publish", {
     payload: space_deleted,
-    streamName: {
-      owner: calendar.streamOwner,
-      uuid: calendar.streamId,
-      type: "data",
-    },
+    streamArgs: stream.calendar(),
+    topic: topic.calendar(),
   });
   return hash;
 }
@@ -164,7 +167,7 @@ async function onSpaceCreated(
 
   await db.spaces.add({
     id: meta.operationId,
-    ownerId: meta.publicKey,
+    ownerId: meta.author,
     booked: [],
     type,
     name,
@@ -184,7 +187,7 @@ async function onSpaceUpdated(
   meta: StreamMessageMeta,
   data: SpaceUpdated["data"],
 ) {
-  await validateUpdateDelete(meta.publicKey, data.id);
+  await validateUpdateDelete(meta.author, data.id);
 
   let {
     type,
@@ -219,7 +222,7 @@ async function onSpaceDeleted(
   meta: StreamMessageMeta,
   data: SpaceDeleted["data"],
 ) {
-  await validateUpdateDelete(meta.publicKey, data.id);
+  await validateUpdateDelete(meta.author, data.id);
   await db.spaces.delete(data.id);
 }
 

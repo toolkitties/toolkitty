@@ -103,8 +103,8 @@ type ApplicationMessage = {
  */
 type StreamMessageMeta = {
   operationId: Hash;
-  publicKey: PublicKey;
-  streamName: StreamName;
+  author: PublicKey;
+  stream: Stream;
 };
 
 /**
@@ -569,8 +569,9 @@ type User = {
 type Calendar = {
   id: Hash;
   ownerId: PublicKey;
-  streamId: string;
+  streamId: Hash;
   streamOwner: PublicKey;
+  streamName: StreamName;
   name: string;
   // TODO: Should we support non-consecutive dates? It could be arrays of TimeSpan? The
   // `CalendarCreated` fields contains a TimeSpan[] so it's possible to encode non-consecutive
@@ -715,10 +716,12 @@ type CalendarAccessRequest = {
 
 type RequestEvent = SpaceRequest | ResourceRequest | CalendarAccessRequest;
 
-type StreamName = {
-  uuid: string;
+type StreamName = "calendar" | "calendar/inbox";
+
+type Stream = {
+  id: Hash;
   owner: PublicKey;
-  type: "inbox" | "data";
+  name: StreamName;
 };
 
-type TopicName = string;
+type Topic = string;

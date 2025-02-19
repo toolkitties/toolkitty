@@ -4,8 +4,8 @@ use tokio::sync::broadcast;
 use tracing::debug;
 
 use crate::app::{Rpc, RpcError};
-use crate::messages::ChannelEvent;
-use crate::node::extensions::StreamName;
+use crate::messages::{ChannelEvent, StreamArgs};
+use crate::node::extensions::{Stream, StreamName};
 use crate::topic::Topic;
 
 /// Initialize the app by passing it a channel from the frontend.
@@ -66,7 +66,7 @@ pub async fn add_topic_log(
     rpc: State<'_, Rpc>,
     public_key: PublicKey,
     topic: Topic,
-    stream_name: StreamName,
+    stream: Stream,
 ) -> Result<(), RpcError> {
     debug!(
         command.name = "add_topic_log",
@@ -75,7 +75,7 @@ pub async fn add_topic_log(
         "RPC request received"
     );
 
-    rpc.add_topic_log(public_key, topic, stream_name).await?;
+    rpc.add_topic_log(public_key, topic, stream).await?;
     Ok(())
 }
 
@@ -88,7 +88,7 @@ pub async fn subscribe(rpc: State<'_, Rpc>, topic: Topic) -> Result<(), RpcError
         "RPC request received"
     );
 
-    rpc.subscribe(topic).await?;
+    rpc.subscribe(&topic).await?;
     Ok(())
 }
 
@@ -105,24 +105,6 @@ pub async fn subscribe_ephemeral(rpc: State<'_, Rpc>, topic: Topic) -> Result<()
     Ok(())
 }
 
-/// Select a calendar we have already subscribed to.
-///
-/// Calling this method causes all events for calendars other than the selected one to be filtered
-/// out of the channel stream. The frontend will only receive events of the selected calendar.
-///
-/// Any operations which arrived at the node since we last selected this calendar will be replayed.
-// #[tauri::command]
-// pub async fn select_calendar(rpc: State<'_, Rpc>, calendar_id: CalendarId) -> Result<(), RpcError> {
-//     debug!(
-//         command.name = "select_calendar",
-//         command.calendar_id = calendar_id.to_string(),
-//         "RPC request received"
-//     );
-//
-//     rpc.select_calendar(calendar_id).await?;
-//     Ok(())
-// }
-
 /// Publish an event to a calendar topic.
 ///
 /// Returns the hash of the operation on which the payload was encoded.
@@ -130,28 +112,16 @@ pub async fn subscribe_ephemeral(rpc: State<'_, Rpc>, topic: Topic) -> Result<()
 pub async fn publish(
     rpc: State<'_, Rpc>,
     payload: serde_json::Value,
-    topic: Topic,
-    stream_name: Option<StreamName>,
+    stream_args: StreamArgs,
+    topic: Option<Topic>,
 ) -> Result<Hash, RpcError> {
     debug!(
         command.name = "publish",
-        command.topic = topic.to_string(),
+        command.topic = topic.as_ref().map(ToString::to_string),
         "RPC request received"
     );
     let payload = serde_json::to_vec(&payload)?;
-    let hash = rpc.publish(payload, topic, stream_name).await?;
-    Ok(hash)
-}
-
-#[tauri::command]
-pub async fn create(
-    rpc: State<'_, Rpc>,
-    payload: serde_json::Value,
-    stream_name: Option<StreamName>,
-) -> Result<Hash, RpcError> {
-    debug!(command.name = "create", "RPC request received");
-    let payload = serde_json::to_vec(&payload)?;
-    let hash = rpc.create(payload, stream_name).await?;
+    let hash = rpc.publish(&payload, &stream_args, topic.as_ref()).await?;
     Ok(hash)
 }
 

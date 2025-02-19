@@ -12,8 +12,8 @@ use thiserror::Error;
 use tokio::sync::{broadcast, mpsc, Mutex};
 use tracing::debug;
 
-use crate::messages::{ChannelEvent, NetworkEvent};
-use crate::node::extensions::{Extensions, LogId, StreamName};
+use crate::messages::{ChannelEvent, NetworkEvent, StreamArgs};
+use crate::node::extensions::{Extensions, LogId, Stream, StreamName};
 use crate::node::operation::create_operation;
 use crate::node::{Node, StreamEvent};
 use crate::topic::{Topic, TopicMap};
@@ -229,17 +229,18 @@ impl Rpc {
         &self,
         public_key: PublicKey,
         topic: Topic,
-        stream_name: StreamName,
+        stream: Stream,
     ) -> Result<(), RpcError> {
         let context = self.context.lock().await;
-        let log_id = LogId { stream_name };
-
-        context.topic_map.add_log(topic, public_key, log_id).await;
+        context
+            .topic_map
+            .add_log(topic, public_key, stream.into())
+            .await;
         Ok(())
     }
 
     /// Subscribe to a specific calendar by it's id.
-    pub async fn subscribe(&self, topic: Topic) -> Result<(), RpcError> {
+    pub async fn subscribe(&self, topic: &Topic) -> Result<(), RpcError> {
         let mut context = self.context.lock().await;
 
         if context
@@ -249,13 +250,13 @@ impl Rpc {
         {
             context
                 .node
-                .subscribe_processed(&topic)
+                .subscribe_processed(topic)
                 .await
                 .expect("can subscribe to topic");
 
             context
                 .to_app_tx
-                .send(ChannelEvent::SubscribedToTopic(topic))?;
+                .send(ChannelEvent::SubscribedToTopic(topic.clone()))?;
         }
 
         Ok(())
@@ -283,56 +284,22 @@ impl Rpc {
         Ok(())
     }
 
-    //
-    //     /// Select a calendar we have already subscribed to.
-    //     ///
-    //     /// Calling this method causes all events for calendars other than the selected one to be filtered
-    //     /// out of the channel stream. The frontend will only receive events of the selected calendar.
-    //     ///
-    //     /// Any operations which arrived at the node since we last selected this calendar will be replayed.
-    //     pub async fn select_calendar(&self, calendar_id: CalendarId) -> Result<(), RpcError> {
-    //         let mut context = self.context.lock().await;
-    //         context.selected_calendar = Some(calendar_id);
-    //
-    //         context
-    //             .to_app_tx
-    //             .send(ChannelEvent::CalendarSelected(calendar_id))?;
-    //
-    //         // Ask stream controller to re-play all operations from logs inside this topic which haven't
-    //         // been acknowledged yet by the frontend.
-    //         if let Some(logs) = context
-    //             .topic_map
-    //             .get(&NetworkTopic::CalendarInbox { calendar_id })
-    //             .await
-    //         {
-    //             context.node.replay(logs).await?;
-    //         }
-    //
-    //         if let Some(logs) = context
-    //             .topic_map
-    //             .get(&NetworkTopic::CalendarData { calendar_id })
-    //             .await
-    //         {
-    //             context.node.replay(logs).await?;
-    //         }
-    //
-    //         Ok(())
-    //     }
-
     /// Publish an event to a calendar topic.
     ///
     /// Returns the hash of the operation on which the payload was encoded.
     pub async fn publish(
         &self,
-        payload: Vec<u8>,
-        topic: Topic,
-        stream_name: Option<StreamName>,
+        payload: &[u8],
+        stream_args: &StreamArgs,
+        topic: Option<&Topic>,
     ) -> Result<Hash, RpcError> {
         let mut context = self.context.lock().await;
         let private_key = context.node.private_key.clone();
 
         let extensions = Extensions {
-            stream_name,
+            stream_id: stream_args.id.map(Into::into),
+            stream_owner: stream_args.owner.map(Into::into),
+            stream_name: Some(stream_args.name.clone().into()),
             ..Default::default()
         };
 
@@ -344,43 +311,19 @@ impl Rpc {
         )
         .await;
 
-        context
-            .node
-            .publish_to_stream(&topic, &header, body.as_ref())
-            .await?;
+        match topic {
+            Some(topic) => {
+                context
+                    .node
+                    .publish_to_stream(topic, &header, body.as_ref())
+                    .await?;
+            }
+            None => {
+                context.node.ingest(&header, body.as_ref()).await?;
+            }
+        }
 
         debug!("publish operation: {}", header.hash());
-
-        Ok(header.hash())
-    }
-
-    /// Publish an event to a calendar topic.
-    ///
-    /// Returns the hash of the operation on which the payload was encoded.
-    pub async fn create(
-        &self,
-        payload: Vec<u8>,
-        stream_name: Option<StreamName>,
-    ) -> Result<Hash, RpcError> {
-        let mut context = self.context.lock().await;
-        let private_key = context.node.private_key.clone();
-
-        let extensions = Extensions {
-            stream_name,
-            ..Default::default()
-        };
-
-        let (header, body) = create_operation(
-            &mut context.node.store,
-            &private_key,
-            extensions,
-            Some(&payload),
-        )
-        .await;
-
-        context.node.ingest(&header, body.as_ref()).await?;
-
-        debug!("ingest operation: {}", header.hash());
 
         Ok(header.hash())
     }
@@ -430,9 +373,9 @@ mod tests {
     use tokio::sync::broadcast;
 
     use crate::{
-        messages::ChannelEvent,
+        messages::{ChannelEvent, StreamArgs},
         node::{
-            extensions::StreamName,
+            extensions::{StreamId, StreamName, StreamOwner},
             stream::{EventData, EventMeta},
         },
         topic::Topic,
@@ -466,15 +409,8 @@ mod tests {
         assert!(result.is_ok());
 
         let private_key = PrivateKey::new();
-
-        let stream_name: StreamName = json!({
-            "owner": private_key.public_key().to_hex(),
-            "uuid": "my_unique_calendar"
-        })
-        .into();
-
-        let topic: Topic = stream_name.hash().to_hex().into();
-        let result = rpc.subscribe(topic.clone()).await;
+        let topic = "some_topic".into();
+        let result = rpc.subscribe(&topic).await;
         assert!(result.is_ok());
 
         let event = channel_rx.recv().await.unwrap();
@@ -496,36 +432,45 @@ mod tests {
         let result = rpc.init(channel_tx).await;
         assert!(result.is_ok());
 
-        let stream_name: StreamName = json!({
+        let stream_name = json!({
             "owner": private_key.public_key().to_hex(),
             "uuid": "my_unique_calendar"
-        })
-        .into();
+        });
 
         let payload = json!({
             "message": "organize!"
         });
 
-        let topic: Topic = stream_name.hash().to_hex().into();
+        let stream_args = StreamArgs {
+            id: None,
+            owner: None,
+            name: stream_name.clone(),
+        };
+
+        let topic: Topic = "some_topic".into();
         let result = rpc
             .publish(
-                serde_json::to_vec(&payload).unwrap(),
-                topic,
-                Some(stream_name),
+                &serde_json::to_vec(&payload).unwrap(),
+                &stream_args,
+                Some(&topic),
             )
             .await;
+
         assert!(result.is_ok());
         let event = channel_rx.recv().await.unwrap();
         match event {
             ChannelEvent::Stream(stream_event) => {
                 let EventMeta {
                     author,
-                    stream_name,
+                    stream,
                     operation_id,
                 } = stream_event.meta;
 
                 assert_eq!(author, private_key.public_key());
-                assert_eq!(stream_name, stream_name);
+
+                assert_eq!(stream.id, StreamId::from(operation_id));
+                assert_eq!(stream.owner, StreamOwner::from(author));
+                assert_eq!(stream.name, StreamName::from(stream_name));
 
                 let EventData::Application(value) = stream_event.data else {
                     panic!();

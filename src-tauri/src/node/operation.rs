@@ -4,7 +4,7 @@ use p2panda_core::cbor::{decode_cbor, encode_cbor, DecodeError, EncodeError};
 use p2panda_core::{Body, Header, PrivateKey};
 use p2panda_store::{LocalLogStore, MemoryStore};
 
-use super::extensions::{Extensions, LogId};
+use super::extensions::{Extensions, LogId, Stream};
 
 pub async fn create_operation(
     store: &mut MemoryStore<LogId, Extensions>,
@@ -20,19 +20,21 @@ pub async fn create_operation(
         .expect("time from operation system")
         .as_secs();
 
-    let stream_name = extensions.stream_name.clone().expect("stream name");
-
-    let log_id = LogId { stream_name };
+    // Attempt to extract a Stream from the passed extensions, if this fails it means this is the
+    // first operation in a new stream (and therefore log).
+    let (seq_num, backlink) = match Stream::try_from(extensions.clone()) {
+        Ok(stream) => {
+            let Ok(latest_operation) = store.latest_operation(&public_key, &stream.into()).await;
+            match latest_operation {
+                Some((header, _)) => (header.seq_num + 1, Some(header.hash())),
+                None => (0, None),
+            }
+        }
+        Err(_) => (0, None),
+    };
 
     // @TODO(adz): Memory stores are infallible right now but we'll switch to a SQLite-based one
     // soon and then we need to handle this error here:
-    let Ok(latest_operation) = store.latest_operation(&public_key, &log_id).await;
-
-    let (seq_num, backlink) = match latest_operation {
-        Some((header, _)) => (header.seq_num + 1, Some(header.hash())),
-        None => (0, None),
-    };
-
     let mut header = Header {
         version: 1,
         public_key,

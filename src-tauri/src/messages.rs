@@ -1,8 +1,17 @@
+use p2panda_core::{Hash, PublicKey};
 use serde::ser::SerializeStruct;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 use crate::node::StreamEvent;
 use crate::topic::Topic;
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct StreamArgs {
+    pub(crate) id: Option<Hash>,
+    pub(crate) owner: Option<PublicKey>,
+    pub(crate) name: Value,
+}
 
 #[derive(Clone, Debug)]
 pub enum ChannelEvent {

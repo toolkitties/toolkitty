@@ -7,7 +7,7 @@ mod topic;
 use tauri::Builder;
 
 use crate::rpc::{
-    ack, add_topic_log, create, init, public_key, publish, publish_ephemeral, replay, subscribe,
+    ack, add_topic_log, init, public_key, publish, publish_ephemeral, replay, subscribe,
     subscribe_ephemeral,
 };
 
@@ -32,7 +32,6 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             init,
             ack,
-            create,
             public_key,
             add_topic_log,
             publish,

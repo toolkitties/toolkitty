@@ -4,8 +4,8 @@ import { promiseResult } from "$lib/promiseMap";
 import { liveQuery } from "dexie";
 import { publicKey } from "./identity";
 import { topics } from ".";
-import { Stream } from "./streams";
-import { Topic } from "./topics";
+import { CALENDAR_STREAM_NAME, StreamFactory } from "./streams";
+import { TopicFactory } from "./topics";
 
 /*
  * Queries
@@ -59,27 +59,32 @@ export async function create(data: CalendarCreated["data"]): Promise<Hash> {
   const myPublicKey = await publicKey();
 
   // Define the "calendar created" application event.
-  console.log("construct payload");
   const payload: CalendarCreated = {
     type: "calendar_created",
     data,
   };
 
-  console.log("construct stream");
-  const stream = new Stream(myPublicKey);
-  console.log("invoke create command");
-  const hash: Hash = await invoke("create", {
+  const hash: Hash = await invoke("publish", {
     payload,
-    streamName: stream.data(),
+    streamArgs: { name: CALENDAR_STREAM_NAME },
   });
 
-  const topic = new Topic(hash);
-  await topics.addCalendarAuthor(myPublicKey, topic.data(), stream.data());
-  await topics.subscribe(topic.data());
-  await topics.addCalendarAuthor(myPublicKey, topic.inbox(), stream.inbox());
-  await topics.subscribe(topic.inbox());
+  const stream = new StreamFactory(hash, myPublicKey);
+  const topic = new TopicFactory(hash);
+  await topics.addCalendarAuthor(
+    myPublicKey,
+    topic.calendar(),
+    stream.calendar(),
+  );
+  await topics.subscribe(topic.calendar());
+  await topics.addCalendarAuthor(
+    myPublicKey,
+    topic.calendarInbox(),
+    stream.calendarInbox(),
+  );
+  await topics.subscribe(topic.calendarInbox());
 
-  await invoke("replay", { topic: topic.data() });
+  await invoke("replay", { topic: topic.calendar() });
 
   // Register this operation hash to wait until it's later resolved by the
   // processor. Like this we can conveniently return from this method as soon as
@@ -108,12 +113,12 @@ export async function update(
     },
   };
 
-  const topic = new Topic(calendarId);
-  const stream = new Stream(calendar.streamOwner, calendar.streamId);
+  const topic = new TopicFactory(calendarId);
+  const stream = new StreamFactory(calendar.streamId, calendar.streamOwner);
   const hash: Hash = await invoke("publish", {
     payload: calendarUpdated,
-    topic: topic.data(),
-    streamName: stream.data(),
+    topic: topic.calendar(),
+    streamArgs: stream.calendar(),
   });
   return hash;
 }
@@ -131,12 +136,12 @@ export async function deleteCalendar(calendarId: Hash): Promise<Hash> {
     },
   };
 
-  const topic = new Topic(calendarId);
-  const stream = new Stream(calendar.streamOwner, calendar.streamId);
+  const topic = new TopicFactory(calendarId);
+  const stream = new StreamFactory(calendar.streamId, calendar.streamOwner);
   const hash: Hash = await invoke("publish", {
     payload: calendarDeleted,
-    topic: topic.data(),
-    streamName: stream.data(),
+    topic: topic.calendar(),
+    streamArgs: stream.calendar(),
   });
 
   return hash;
@@ -178,9 +183,10 @@ async function onCalendarCreated(
 
   await db.calendars.add({
     id: meta.operationId,
-    ownerId: meta.publicKey,
-    streamId: meta.streamName.uuid,
-    streamOwner: meta.streamName.owner,
+    ownerId: meta.author,
+    streamId: meta.stream.id,
+    streamOwner: meta.stream.owner,
+    streamName: meta.stream.name,
     name,
     startDate: timeSpan.start,
     endDate: timeSpan.end,
@@ -188,10 +194,18 @@ async function onCalendarCreated(
 
   // Add the calendar creator to the list of authors who's data we want to
   // sync for this calendar.
-  const topic = new Topic(meta.operationId);
-  const stream = new Stream(meta.streamName.owner, meta.streamName.uuid);
-  await topics.addCalendarAuthor(meta.publicKey, topic.inbox(), stream.inbox());
-  await topics.addCalendarAuthor(meta.publicKey, topic.data(), stream.data());
+  const topic = new TopicFactory(meta.operationId);
+  const stream = new StreamFactory(meta.stream.id, meta.stream.owner);
+  await topics.addCalendarAuthor(
+    meta.author,
+    topic.calendarInbox(),
+    stream.calendarInbox(),
+  );
+  await topics.addCalendarAuthor(
+    meta.author,
+    topic.calendar(),
+    stream.calendar(),
+  );
 }
 
 async function onCalendarUpdated(
@@ -199,7 +213,7 @@ async function onCalendarUpdated(
   data: CalendarUpdated["data"],
 ) {
   validateFields(data.fields);
-  await validateUpdateDelete(meta.publicKey, data.id);
+  await validateUpdateDelete(meta.author, data.id);
 
   let { name, dates } = data.fields;
   let timeSpan = dates[0];
@@ -215,7 +229,7 @@ async function onCalendarDeleted(
   meta: StreamMessageMeta,
   data: CalendarDeleted["data"],
 ) {
-  await validateUpdateDelete(meta.publicKey, data.id);
+  await validateUpdateDelete(meta.author, data.id);
   await db.calendars.delete(data.id);
 }
 

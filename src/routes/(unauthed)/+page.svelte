@@ -1,10 +1,10 @@
 <script lang="ts">
   import { PinInput, Toggle } from "bits-ui";
   import { goto } from "$app/navigation";
-  import { calendars, topics } from "$lib/api";
+  import { topics } from "$lib/api";
   import { toast } from "$lib/toast.svelte";
   import { resolveInviteCode } from "$lib/api/access";
-  import { Topic } from "$lib/api/topics";
+  import { TopicFactory } from "$lib/api/topics";
 
   let value: string[] | undefined = [];
 
@@ -25,8 +25,8 @@
     try {
       progress = "pending";
       calendar = await resolveInviteCode(value.join(""));
-      const topic = new Topic(calendar.id);
-      await topics.subscribe(topic.inbox());
+      const topic = new TopicFactory(calendar.id);
+      await topics.subscribe(topic.calendarInbox());
     } catch (err) {
       timedOut = true;
       progress = "dormant";

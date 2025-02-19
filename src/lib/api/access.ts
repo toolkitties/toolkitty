@@ -3,8 +3,8 @@ import type { ResolvedCalendar } from "$lib/api/inviteCodes";
 import { invoke } from "@tauri-apps/api/core";
 import { publicKey } from "./identity";
 import { db } from "$lib/db";
-import { Topic } from "./topics";
-import { Stream } from "./streams";
+import { TopicFactory } from "./topics";
+import { StreamFactory } from "./streams";
 
 /**
  * Resolve an invite code to a `ResolvedCalendar`.
@@ -88,6 +88,13 @@ export async function requestAccess(
   data: CalendarAccessRequested["data"],
 ): Promise<Hash> {
   let calendar = await db.calendars.get(data.calendarId);
+  if (!calendar) {
+    throw new Error("calendar not found");
+  }
+
+  const topic = new TopicFactory(calendar.id);
+  const stream = new StreamFactory(calendar.streamId, calendar.streamOwner);
+
   const payload: CalendarAccessRequested = {
     type: "calendar_access_requested",
     data,
@@ -95,7 +102,8 @@ export async function requestAccess(
 
   return await invoke("publish", {
     payload,
-    streamName: {},
+    streamArgs: stream.calendarInbox(),
+    topic: topic.calendarInbox(),
   });
 }
 
@@ -106,6 +114,14 @@ export async function acceptAccessRequest(
   calendarId: Hash,
   data: CalendarAccessAccepted["data"],
 ) {
+  let calendar = await db.calendars.get(calendarId);
+  if (!calendar) {
+    throw new Error("calendar not found");
+  }
+
+  const topic = new TopicFactory(calendar.id);
+  const stream = new StreamFactory(calendar.streamId, calendar.streamOwner);
+
   const payload: CalendarAccessAccepted = {
     type: "calendar_access_accepted",
     data,
@@ -113,8 +129,8 @@ export async function acceptAccessRequest(
 
   await invoke("publish", {
     payload,
-    calendarId,
-    topicType: "inbox",
+    stream: stream.calendarInbox(),
+    topic: topic.calendarInbox(),
   });
 }
 
@@ -125,6 +141,14 @@ export async function rejectAccessRequest(
   calendarId: Hash,
   data: CalendarAccessAccepted["data"],
 ) {
+  let calendar = await db.calendars.get(calendarId);
+  if (!calendar) {
+    throw new Error("calendar not found");
+  }
+
+  const topic = new TopicFactory(calendar.id);
+  const stream = new StreamFactory(calendar.streamId, calendar.streamOwner);
+
   const payload: CalendarAccessRejected = {
     type: "calendar_access_rejected",
     data,
@@ -132,8 +156,8 @@ export async function rejectAccessRequest(
 
   await invoke("publish", {
     payload,
-    calendarId,
-    topicType: "inbox",
+    stream: stream.calendarInbox(),
+    topic: topic.calendarInbox(),
   });
 }
 
@@ -195,12 +219,12 @@ async function onCalendarAccessRequested(
   await db.accessRequests.add({
     id: meta.operationId,
     calendarId: data.calendarId,
-    publicKey: meta.publicKey,
+    publicKey: meta.author,
   });
   //@TODO: For testing purposes only, we accept any requests for festivals where we are the
   //owner.
   let myPublicKey = await publicKey();
-  let hasAccess = await checkHasAccess(meta.publicKey, data.calendarId);
+  let hasAccess = await checkHasAccess(meta.author, data.calendarId);
   if (!hasAccess) {
     let calendar = await calendars.findOne(data.calendarId);
     if (calendar?.ownerId == myPublicKey) {
@@ -211,7 +235,7 @@ async function onCalendarAccessRequested(
     }
   }
 
-  await handleRequestOrResponse(data.calendarId, meta.publicKey);
+  await handleRequestOrResponse(data.calendarId, meta.author);
 }
 
 async function onCalendarAccessAccepted(
@@ -220,7 +244,7 @@ async function onCalendarAccessAccepted(
 ) {
   await db.accessResponses.add({
     id: meta.operationId,
-    from: meta.publicKey,
+    from: meta.author,
     requestId: data.requestId,
     accept: true,
   });
@@ -240,7 +264,7 @@ async function onCalendarAccessRejected(
 ) {
   await db.accessResponses.add({
     id: meta.operationId,
-    from: meta.publicKey,
+    from: meta.author,
     requestId: data.requestId,
     accept: false,
   });
@@ -267,17 +291,17 @@ async function handleRequestOrResponse(
   }
 
   // Inform the backend that there is a new author who may contribute to the calendar.
-  const topic = new Topic(calendar.id);
-  const stream = new Stream(calendar.streamOwner, calendar.streamId);
+  const topic = new TopicFactory(calendar.id);
+  const stream = new StreamFactory(calendar.streamOwner, calendar.streamId);
   await topics.addCalendarAuthor(
     requesterPublicKey,
-    topic.data(),
-    stream.data(),
+    topic.calendar(),
+    stream.calendar(),
   );
   await topics.addCalendarAuthor(
     requesterPublicKey,
-    topic.inbox(),
-    stream.inbox(),
+    topic.calendarInbox(),
+    stream.calendarInbox(),
   );
 
   let myPublicKey = await publicKey();
@@ -289,5 +313,5 @@ async function handleRequestOrResponse(
   // data overlay so we subscribe to the data topic now finally. This will mean we receive the
   // "calendar_created" event on the stream, which in turn means the calendar will be inserted
   // into our database.
-  await topics.subscribe(topic.data());
+  await topics.subscribe(topic.calendar());
 }
