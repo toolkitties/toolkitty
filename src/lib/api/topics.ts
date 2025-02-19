@@ -99,13 +99,13 @@ export async function subscribeToAll() {
     const topic = new TopicFactory(calendar.id);
     const stream = new StreamFactory(calendar.streamOwner, calendar.streamId);
     await maybeSubscribe(
-      request.publicKey,
+      request.from,
       topic.calendarInbox(),
       stream.calendarInbox(),
     );
 
     const hasAccess = await access.checkHasAccess(
-      request.publicKey,
+      request.from,
       calendar.id,
     );
     if (!hasAccess) {

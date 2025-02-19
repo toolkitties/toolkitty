@@ -1,3 +1,4 @@
+
 import { db } from "$lib/db";
 import { invoke } from "@tauri-apps/api/core";
 import { publicKey } from "./identity";
@@ -31,7 +32,9 @@ export async function findMine(): Promise<Space[]> {
  * Get one event by its ID
  */
 export async function findById(id: Hash): Promise<Space | undefined> {
-  let space = (await db.spaces.toArray()).filter((space) => space.id == id);
+  let space = (await db.spaces.toArray()).filter(
+    (space) => space.id == id,
+  );
 
   if (space.length == 0) {
     return;
@@ -40,9 +43,11 @@ export async function findById(id: Hash): Promise<Space | undefined> {
   return space[0];
 }
 
+
 /**
  * Commands
  */
+
 
 export async function create(
   calendarId: Hash,
@@ -133,6 +138,7 @@ export { deleteSpace as delete };
  * Processor
  */
 
+
 export async function process(message: ApplicationMessage) {
   const meta = message.meta;
   const { data, type } = message.data;
@@ -167,6 +173,7 @@ async function onSpaceCreated(
 
   await db.spaces.add({
     id: meta.operationId,
+    calendarId: meta.stream.id,
     ownerId: meta.author,
     booked: [],
     type,
@@ -182,6 +189,7 @@ async function onSpaceCreated(
     multiBookable,
   });
 }
+
 
 async function onSpaceUpdated(
   meta: StreamMessageMeta,

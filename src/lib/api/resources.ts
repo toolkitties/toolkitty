@@ -162,6 +162,7 @@ async function onResourceCreated(
   } = data.fields;
 
   await db.resources.add({
+    calendarId: meta.stream.id,
     id: meta.operationId,
     ownerId: meta.author,
     booked: [],

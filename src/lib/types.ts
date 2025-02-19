@@ -246,6 +246,39 @@ type ApplicationEvent =
 type SpaceRequestId = Hash;
 type ResourceRequestId = Hash;
 
+type Link = {
+  type: "ticket" | "custom";
+  title: null | string;
+  url: string;
+};
+
+type TimeSpan = {
+  start: Date;
+  end: Date;
+};
+
+type BookedTimeSpan = TimeSpan & {
+  event: Hash;
+};
+
+// TODO: TBC from open street maps
+type PhysicalLocation = {
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+  country: string; // TODO: ISO 3166
+};
+
+type GPSLocation = {
+  lat: string;
+  lon: string;
+};
+
+type VirtualLocation = string;
+
+type Answer = "approve" | "reject";
+
 type CalendarFields = {
   name: string;
   dates: TimeSpan[];
@@ -554,12 +587,25 @@ type UserRoleAssigned = {
   };
 };
 
+
+/**
+ * The different subscription types which exist for a calendar. Each represents a logical set of
+ * data which can be subscribed to independently.
+ */
+type TopicType = "inbox" | "data";
+
+type Subscription = {
+  calendarId: Hash;
+  type: TopicType;
+};
+
+
 /**
  * (´ヮ´)八(*ﾟ▽ﾟ*)
- * Application Data
+ * Database Schema
+ * 
+ * How the data looks that we store in the frontend indexed db.
  */
-
-type FlattenField<T, K extends keyof T> = Omit<T, K> & T[K];
 
 type User = {
   id: PublicKey;
@@ -584,69 +630,36 @@ type Calendar = {
 type AccessRequest = {
   id: Hash;
   calendarId: Hash;
-  publicKey: PublicKey;
+  from: PublicKey;
+  name: string;
+  message: string;
 };
 
 type AccessResponse = {
   id: Hash;
+  calendarId: Hash;
   from: PublicKey;
   requestId: Hash;
   accept: boolean;
 };
 
-type CalendarEvent = FlattenField<
-  {
-    id: Hash;
-    ownerId: PublicKey;
-    fields: EventFields;
-  },
-  "fields"
->;
+type CalendarEvent = {
+  id: Hash;
+  calendarId: Hash;
+  ownerId: PublicKey;
+} & EventFields;
 
-type Link = {
-  type: "ticket" | "custom";
-  title: null | string;
-  url: string;
-};
-
-type Space = FlattenField<
-  {
-    id: Hash;
-    ownerId: PublicKey;
-    booked: BookedTimeSpan[];
-    fields: SpaceFields;
-  },
-  "fields"
->;
-
-// TODO: TBC from open street maps
-type PhysicalLocation = {
-  street: string;
-  city: string;
-  state: string;
-  zip: string;
-  country: string; // TODO: ISO 3166
-};
-
-type GPSLocation = {
-  lat: string;
-  lon: string;
-};
-
-type VirtualLocation = string;
+type Space = {
+  id: Hash;
+  calendarId: Hash;
+  ownerId: PublicKey;
+  booked: BookedTimeSpan[];
+} & SpaceFields;
 
 type SpaceRequest = {
   id: Hash;
-  space: {
-    id: Hash;
-    name: string;
-  };
-  event: {
-    id: Hash;
-    name: string;
-    startDate: Date;
-    endDate: Date;
-  };
+  spaceId: Hash;
+  eventId: Hash;
   message: string;
   timeSpan: TimeSpan;
   response: SpaceResponse | null;
@@ -654,33 +667,22 @@ type SpaceRequest = {
 
 type SpaceResponse = {
   id: Hash;
+  calendarId: Hash;
   request: SpaceRequest;
   answer: Answer;
 };
 
-type Resource = FlattenField<
-  {
-    id: Hash;
-    ownerId: PublicKey;
-    booked: BookedTimeSpan[];
-    fields: ResourceFields;
-  },
-  "fields"
->;
+type Resource = {
+  id: Hash;
+  calendarId: Hash;
+  ownerId: PublicKey;
+  booked: BookedTimeSpan[];
+} & ResourceFields;
 
 type ResourceRequest = {
   id: Hash;
-  resource: {
-    id: Hash;
-    name: string;
-  };
-  event: {
-    id: Hash;
-    name: string;
-    startDate: Date;
-    endDate: Date;
-    location: string;
-  };
+  resourceId: Hash;
+  eventId: Hash;
   message: string;
   timeSpan: TimeSpan;
   response: ResourceResponse | null;
@@ -688,19 +690,9 @@ type ResourceRequest = {
 
 type ResourceResponse = {
   id: Hash;
+  calendarId: Hash;
   request: ResourceRequest;
   answer: Answer;
-};
-
-type Answer = "approve" | "reject";
-
-type TimeSpan = {
-  start: Date;
-  end: Date;
-};
-
-type BookedTimeSpan = TimeSpan & {
-  event: Hash;
 };
 
 type Settings = {
@@ -708,13 +700,13 @@ type Settings = {
   value: Hash | string;
 };
 
-type CalendarAccessRequest = {
-  calendarId: Hash;
-  name: string;
-  message: string;
-};
 
-type RequestEvent = SpaceRequest | ResourceRequest | CalendarAccessRequest;
+/**
+ * (´ヮ´)八(*ﾟ▽ﾟ*)
+ * Application Data
+ */
+
+type RequestEvent = SpaceRequest | ResourceRequest | AccessRequest;
 
 type StreamName = "calendar" | "calendar/inbox";
 
