@@ -2,7 +2,7 @@
   // TODO: Define the type of the event prop
   // @ts-ignore
   let { event } = $props();
-  
+
   // TODO: possibly need to convert date to nice format from ISO 8601. TBC.
 
   // tag colour possibly comes from event rather than hard coded light this.
@@ -18,7 +18,7 @@
   <div class="flex flex-col gap-1 p-2">
     <h3>{event.title}</h3>
     <span>🗓️ {event.date}</span>
-    <span>🕣 {event.start_time}</span>
+    <span>🕣 {event.time}</span>
     <span>📍 {event.location}</span>
     <div class="flex flex-wrap gap-1">
       {#each event.tags as tag, index}

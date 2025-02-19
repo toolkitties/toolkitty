@@ -37,16 +37,6 @@
       icon: "lucide:share-2",
     },
   ];
-<<<<<<< HEAD
-
-  let topLevelPage = $derived(
-    menu.some((item) => item.url.includes($page.url.pathname)),
-  );
-</script>
-
-<Header />
-<main class="h-dvh mt-16">
-=======
 </script>
 
 <svelte:head>
@@ -58,7 +48,6 @@
 <Header title={page.data.title} />
 
 <main class="h-dvh">
->>>>>>> main
   <div class="p-8">
     <slot />
   </div>

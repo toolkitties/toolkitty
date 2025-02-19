@@ -1,10 +1,6 @@
-<<<<<<< HEAD
-import { spaces } from "$lib/api/data";
-=======
 import { db } from "$lib/db";
 import { invoke } from "@tauri-apps/api/core";
 import { publicKey } from "./identity";
->>>>>>> main
 
 /**
  * Queries
@@ -14,12 +10,7 @@ import { publicKey } from "./identity";
  * Get spaces that are associated with the currently active calendar
  */
 export async function findMany(): Promise<Space[]> {
-<<<<<<< HEAD
-  //TODO: Return spaces from db as liveQuery and add params
-  // return test data.
-=======
   let spaces = await db.spaces.toArray();
->>>>>>> main
   return spaces;
 }
 
@@ -27,16 +18,10 @@ export async function findMany(): Promise<Space[]> {
  * Get all spaces that I am the owner of.
  */
 export async function findMine(): Promise<Space[]> {
-<<<<<<< HEAD
-  //TODO: Return spaces from db with ownerId that is equal to users public key.
-
-  // return test data.
-=======
   let myPublicKey = await publicKey();
   let spaces = (await db.spaces.toArray()).filter(
     (space) => space.ownerId == myPublicKey,
   );
->>>>>>> main
   return spaces;
 }
 
@@ -44,47 +29,19 @@ export async function findMine(): Promise<Space[]> {
  * Get one event by its ID
  */
 export async function findById(id: Hash): Promise<Space | undefined> {
-  let space = (await db.spaces.toArray()).filter(
-    (space) => space.id == id,
-  );
+  let space = (await db.spaces.toArray()).filter((space) => space.id == id);
 
-<<<<<<< HEAD
-  // return test data.
-  return spaces[0];
-=======
   if (space.length == 0) {
     return;
   }
 
   return space[0];
->>>>>>> main
 }
 
 /**
  * Commands
  */
 
-<<<<<<< HEAD
-export async function create(data: Space) {
-  //TODO: send to backend for processing, add to promise map and await.
-
-  // for now we are just returning a hash.
-  return "123";
-}
-
-export async function update(data: Space) {
-  //TODO: send to backend for processing, add to promise map and await.
-
-  // for now we are just returning a hash.
-  return "123";
-}
-
-export async function deleteSpace(id: Hash) {
-  //TODO: send to backend for processing, add to promise map and await.
-
-  // for now we are just returning a hash.
-  return "123";
-=======
 export async function create(
   calendar_id: Hash,
   fields: SpaceFields,
@@ -136,15 +93,11 @@ export async function deleteSpace(
     payload: space_deleted,
   });
   return hash;
->>>>>>> main
 }
 
 //TODO: Move to class so we don't have to export as an alias
 export { deleteSpace as delete };
 
-<<<<<<< HEAD
-//TODO: Add processor
-=======
 /*
  * Processor
  */
@@ -259,4 +212,3 @@ async function validateUpdateDelete(publicKey: PublicKey, spaceId: Hash) {
     throw new Error("non-owner update or delete");
   }
 }
->>>>>>> main
