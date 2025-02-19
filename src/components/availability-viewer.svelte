@@ -44,13 +44,13 @@
   };
 
   const handleDateSelect = (value: DateValue | DateValue[] | undefined) => {
-    if (!value) return;
-
     if (Array.isArray(value)) {
       value = value[0];
     }
 
-    if ("year" in value && "month" in value && "day" in value) {
+    if (!value) {
+      timeAvailability = null;
+    } else if ("year" in value && "month" in value && "day" in value) {
       const selectedDate = new Date(value.year, value.month - 1, value.day);
       timeAvailability = null;
 
