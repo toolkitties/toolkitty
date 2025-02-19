@@ -4,12 +4,11 @@ mod node;
 mod rpc;
 mod topic;
 
-use rpc::add_calendar_author;
 use tauri::Builder;
 
 use crate::rpc::{
-    ack, create_calendar, init, publish_calendar_event, publish_to_invite_code_overlay,
-    select_calendar, subscribe_to_calendar,
+    ack, add_calendar_author, create_calendar, init, public_key, publish,
+    publish_to_invite_code_overlay, select_calendar, subscribe,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -29,12 +28,13 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             init,
             ack,
+            public_key,
             add_calendar_author,
             create_calendar,
-            publish_calendar_event,
+            publish,
             publish_to_invite_code_overlay,
             select_calendar,
-            subscribe_to_calendar,
+            subscribe,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

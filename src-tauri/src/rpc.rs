@@ -9,8 +9,8 @@ use tracing::debug;
 
 use crate::app::Context;
 use crate::messages::ChannelEvent;
-use crate::node::operation::{create_operation, CalendarId, Extensions};
-use crate::topic::NetworkTopic;
+use crate::node::operation::{create_operation, CalendarId, Extensions, LogType};
+use crate::topic::{NetworkTopic, TopicType};
 
 /// Initialize the app by passing it a channel from the frontend.
 #[tauri::command]
@@ -22,14 +22,24 @@ pub async fn init(
 
     let state = state.lock().await;
     if state.channel_set {
-        return Err(RpcError::SetStreamChannelError);
+        return Err(RpcError::SetStreamChannel);
     }
 
     if state.channel_tx.send(channel).await.is_err() {
-        return Err(RpcError::OneshotChannelError);
+        return Err(RpcError::OneshotChannel);
     };
 
     Ok(())
+}
+
+/// The public key of the local node.
+#[tauri::command]
+pub async fn public_key(state: State<'_, Mutex<Context>>) -> Result<PublicKey, RpcError> {
+    debug!(command.name = "public_key", "RPC request received");
+
+    let state = state.lock().await;
+    let public_key = state.node.private_key.public_key();
+    Ok(public_key)
 }
 
 /// Acknowledge operations to mark them as successfully processed in the stream controller.
@@ -54,32 +64,45 @@ pub async fn add_calendar_author(
     state: State<'_, Mutex<Context>>,
     public_key: PublicKey,
     calendar_id: CalendarId,
+    topic_type: TopicType,
 ) -> Result<(), RpcError> {
     debug!(
         command.name = "add_calendar_author",
-        command.operation_id = public_key.to_hex(),
+        command.public_key = public_key.to_hex(),
+        command.topic_type = topic_type.to_string(),
         "RPC request received"
     );
 
     let state = state.lock().await;
-    state.topic_map.add_author(public_key, calendar_id).await;
+
+    let topic = match topic_type {
+        TopicType::Inbox => NetworkTopic::CalendarInbox { calendar_id },
+        TopicType::Data => NetworkTopic::CalendarData { calendar_id },
+    };
+    state.topic_map.add_author(public_key, topic).await;
     Ok(())
 }
 
 /// Subscribe to a specific calendar by it's id.
 #[tauri::command]
-pub async fn subscribe_to_calendar(
+pub async fn subscribe(
     state: State<'_, Mutex<Context>>,
     calendar_id: CalendarId,
+    topic_type: TopicType,
 ) -> Result<(), RpcError> {
     debug!(
-        command.name = "subscribe_to_calendar",
+        command.name = "subscribe",
         command.calendar_id = calendar_id.0.to_hex(),
+        command.topic_type = topic_type.to_string(),
         "RPC request received"
     );
 
     let mut state = state.lock().await;
-    let topic = NetworkTopic::CalendarData { calendar_id };
+
+    let topic = match topic_type {
+        TopicType::Inbox => NetworkTopic::CalendarInbox { calendar_id },
+        TopicType::Data => NetworkTopic::CalendarData { calendar_id },
+    };
 
     if state
         .subscriptions
@@ -94,7 +117,7 @@ pub async fn subscribe_to_calendar(
 
         state
             .to_app_tx
-            .send(ChannelEvent::SubscribedToCalendar(calendar_id))?;
+            .send(ChannelEvent::SubscribedToCalendar(calendar_id, topic_type))?;
     }
 
     Ok(())
@@ -120,8 +143,20 @@ pub async fn select_calendar(
     let mut state = state.lock().await;
     state.selected_calendar = Some(calendar_id);
 
+    state
+        .to_app_tx
+        .send(ChannelEvent::CalendarSelected(calendar_id))?;
+
     // Ask stream controller to re-play all operations from logs inside this topic which haven't
     // been acknowledged yet by the frontend.
+    if let Some(logs) = state
+        .topic_map
+        .get(&NetworkTopic::CalendarInbox { calendar_id })
+        .await
+    {
+        state.node.replay(logs).await?;
+    }
+
     if let Some(logs) = state
         .topic_map
         .get(&NetworkTopic::CalendarData { calendar_id })
@@ -129,10 +164,6 @@ pub async fn select_calendar(
     {
         state.node.replay(logs).await?;
     }
-
-    state
-        .to_app_tx
-        .send(ChannelEvent::CalendarSelected(calendar_id))?;
 
     Ok(())
 }
@@ -173,18 +204,20 @@ pub async fn create_calendar(
     Ok(hash)
 }
 
-/// Publish an event to the calendar topic.
+/// Publish an event to a calendar topic.
 ///
 /// Returns the hash of the operation on which the payload was encoded.
 #[tauri::command]
-pub async fn publish_calendar_event(
+pub async fn publish(
     state: State<'_, Mutex<Context>>,
     payload: serde_json::Value,
     calendar_id: CalendarId,
+    topic_type: TopicType,
 ) -> Result<Hash, RpcError> {
     debug!(
-        command.name = "publish_calendar_event",
+        command.name = "publish",
         command.calendar_id = calendar_id.0.to_hex(),
+        command.topic_type = topic_type.to_string(),
         "RPC request received"
     );
 
@@ -193,8 +226,14 @@ pub async fn publish_calendar_event(
 
     let payload = serde_json::to_vec(&payload)?;
 
+    let (log_type, topic) = match topic_type {
+        TopicType::Inbox => (LogType::Inbox, NetworkTopic::CalendarInbox { calendar_id }),
+        TopicType::Data => (LogType::Data, NetworkTopic::CalendarData { calendar_id }),
+    };
+
     let extensions = Extensions {
         calendar_id: Some(calendar_id),
+        log_type: Some(log_type),
         ..Default::default()
     };
 
@@ -206,12 +245,12 @@ pub async fn publish_calendar_event(
     )
     .await;
 
-    let topic = NetworkTopic::CalendarData { calendar_id };
-
     state
         .node
         .publish_to_stream(&topic, &header, body.as_ref())
         .await?;
+
+    debug!("publish operation: {}", header.hash());
 
     Ok(header.hash())
 }
@@ -240,22 +279,22 @@ pub async fn publish_to_invite_code_overlay(
 #[derive(Debug, Error)]
 pub enum RpcError {
     #[error("oneshot channel receiver closed")]
-    OneshotChannelError,
+    OneshotChannel,
 
     #[error("stream channel already set")]
-    SetStreamChannelError,
+    SetStreamChannel,
 
     #[error(transparent)]
-    StreamControllerError(#[from] crate::node::StreamControllerError),
+    StreamController(#[from] crate::node::StreamControllerError),
 
     #[error(transparent)]
-    PublishError(#[from] crate::node::PublishError),
+    Publish(#[from] crate::node::PublishError),
 
     #[error("payload decoding failed")]
-    SerdeError(#[from] serde_json::Error),
+    Serde(#[from] serde_json::Error),
 
     #[error("sending message on channel failed")]
-    ChannelSenderError(#[from] tokio::sync::broadcast::error::SendError<ChannelEvent>),
+    ChannelSender(#[from] tokio::sync::broadcast::error::SendError<ChannelEvent>),
 }
 
 impl Serialize for RpcError {

@@ -1,7 +1,7 @@
 <script lang="ts">
   import "../../app.css";
   import Icon from "@iconify/svelte";
-  import { page } from "$app/stores";
+  import { page } from "$app/state";
   import Header from "../../components/header.svelte";
 
   interface MenuItem {
@@ -38,13 +38,6 @@
     },
   ];
 
-  let topLevelPage = $derived(
-    menu.some((item) => item.url.includes($page.url.pathname)),
-  );
-</script>
-
-<Header />
-<main class="h-dvh mt-16">
   <div class="p-8">
     <slot />
   </div>
@@ -55,7 +48,7 @@
           <a
             href={item.url}
             class="block"
-            class:active={$page.url.pathname.includes(item.url)}
+            class:active={page.url.pathname.includes(item.url)}
           >
             <Icon icon={item.icon} class="h-6 w-6" />
             <span class="sr-only">{item.name}</span>
