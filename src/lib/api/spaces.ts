@@ -1,3 +1,4 @@
+
 import { db } from "$lib/db";
 import { invoke } from "@tauri-apps/api/core";
 import { publicKey } from "./identity";
@@ -10,7 +11,7 @@ import { publicKey } from "./identity";
  * Get spaces that are associated with the currently active calendar
  */
 export async function findMany(): Promise<Space[]> {
-  let spaces = await db.spaces.toArray();
+
   return spaces;
 }
 
@@ -18,10 +19,7 @@ export async function findMany(): Promise<Space[]> {
  * Get all spaces that I am the owner of.
  */
 export async function findMine(): Promise<Space[]> {
-  let myPublicKey = await publicKey();
-  let spaces = (await db.spaces.toArray()).filter(
-    (space) => space.ownerId == myPublicKey,
-  );
+
   return spaces;
 }
 
@@ -33,16 +31,11 @@ export async function findById(id: Hash): Promise<Space | undefined> {
     (space) => space.id == id,
   );
 
-  if (space.length == 0) {
-    return;
-  }
-
-  return space[0];
-}
 
 /**
  * Commands
  */
+
 
 export async function create(
   calendar_id: Hash,
@@ -104,6 +97,7 @@ export { deleteSpace as delete };
  * Processor
  */
 
+
 export async function process(message: ApplicationMessage) {
   const meta = message.meta;
   const { data, type } = message.data;
@@ -154,6 +148,7 @@ async function onSpaceCreated(
   });
 }
 
+
 async function onSpaceUpdated(
   meta: StreamMessageMeta,
   data: SpaceUpdated["data"],
@@ -203,6 +198,7 @@ async function onSpaceDeleted(
 
 async function validateUpdateDelete(publicKey: PublicKey, spaceId: Hash) {
   let space = await db.spaces.get(spaceId);
+
 
   // The space must already exist.
   if (!space) {

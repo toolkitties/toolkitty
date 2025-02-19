@@ -37,17 +37,7 @@
       icon: "lucide:share-2",
     },
   ];
-</script>
 
-<svelte:head>
-  <title>
-    {page.data.title ? `${page.data.title} | toolkitty` : "toolkitty"}
-  </title>
-</svelte:head>
-
-<Header title={page.data.title} />
-
-<main class="h-dvh">
   <div class="p-8">
     <slot />
   </div>
