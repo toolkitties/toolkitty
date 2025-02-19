@@ -89,6 +89,7 @@
           availability={Array.isArray(selectedSpace.availability)
             ? selectedSpace.availability
             : []}
+          multiBookable={selectedSpace.multiBookable}
         />
       </div>
     {/if}

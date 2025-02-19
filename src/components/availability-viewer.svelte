@@ -5,7 +5,7 @@
   import TimeAvailability from "./time-availability.svelte";
   import type { DateValue } from "@internationalized/date";
 
-  let { availability = [] } = $props();
+  let { availability = [], multiBookable } = $props();
   let availableDays: DateValue[] = $state([]);
   let alwaysAvailable: boolean = $state(false);
   let timeAvailability: TimeSpan | null = $state(null);
@@ -118,6 +118,9 @@
     {/each}
   </Calendar.Root>
 
+  {#if multiBookable}
+    <p>This space can have mutiple bookings at the same time.</p>
+  {/if}
   {#if timeAvailability}
     <TimeAvailability availability={timeAvailability} />
   {/if}
