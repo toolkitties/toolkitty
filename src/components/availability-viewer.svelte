@@ -107,6 +107,7 @@
                             data-[selected]:text-white
                             ${isAvailableDay(date) ? "bg-green-300" : ""}
                             ${!isAvailableDay(date) ? "text-gray-400 pointer-events-none" : ""}`}
+                    aria-disabled={!isAvailableDay(date) ? "true" : undefined}
                   />
                 </Calendar.Cell>
               {/each}

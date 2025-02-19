@@ -73,6 +73,7 @@
                     data-[selected]:text-white
                     ${!isFestivalDate(date) ? "text-gray-400 pointer-events-none" : ""}
                     ${isFestivalDate(date) ? "bg-black text-white font-bold" : ""}`}
+                  aria-disabled={!isFestivalDate(date) ? "true" : undefined}
                 />
               </Calendar.Cell>
             {/each}
