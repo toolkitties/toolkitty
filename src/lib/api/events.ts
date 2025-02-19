@@ -1,4 +1,4 @@
-import { events } from '$lib/api/data'
+// import { events } from '$lib/api/data'
 
 /**
  * Queries
@@ -11,7 +11,7 @@ import { events } from '$lib/api/data'
 export async function findMany(): Promise<CalendarEvent[]> {
   //TODO: Return events from db as liveQuery and add params
   // return test data.
-  return events
+  return []
 }
 
 /**
@@ -20,17 +20,17 @@ export async function findMany(): Promise<CalendarEvent[]> {
 export async function findMine(): Promise<CalendarEvent[]> {
   //TODO: Return events from db with ownerId that is equal to users public key.
   // return test data.
-  return events
+  return []
 }
 
 /**
  * Get one event via its id
  */
-export async function findById(id: Hash): Promise<CalendarEvent> {
+export async function findById(id: Hash): Promise<CalendarEvent | undefined> {
   //TODO: Return events from db
 
   // return test data.
-  return events[0]
+  return;
 }
 
 

@@ -7,27 +7,38 @@ class Toast {
   id: number;
   type: ToastType;
   link?: string;
+  request?: RequestEvent; // opens a modal for the user to respond to the request quickly
 
-  constructor(message: string, id: number, type: ToastType) {
+  constructor(message: string, id: number, type: ToastType, link: string, request: RequestEvent) {
     this.message = message;
     this.id = id;
     this.type = type;
-    this.link = "";
+    this.link = link;
+    this.request = request;
   }
 }
 
 /**
+ * ```
  *  _   __   
  * ( `︶` )) 
  * |     ||  
  * |     || 
  * '-----'`
+ * ```
  * Toasts are temporary messages shown to the user when certain events happen.
  * They can contain a link which will direct the user to another page.
  * 
  */
 
 class Toasts {
+  /**
+   * Determines if toasts disappear automatically, false when dialog is open so user doesn't miss any new toasts
+   */
+  autoDismiss: boolean = $state(true)
+  /**
+   * Array of toasts to show the user
+   */
   toasts: Toast[] = $state([]);
 
   constructor() {
@@ -35,19 +46,24 @@ class Toasts {
   }
 
   // Public methods to create new toasts
-  success(message: string, link?: string) {
-    this.addToast("success", message, link);
+  success(message: string, options?: { link?: string }) {
+    this.addToast("success", message, options);
   }
 
-  error(message: string, link?: string) {
-    this.addToast("error", message, link);
+  error(message: string, options?: { link?: string }) {
+    this.addToast("error", message, options);
   }
 
-  info(message: string, link?: string) {
-    this.addToast("info", message, link)
+  info(message: string, options?: { link?: string, request?: RequestEvent }) {
+    this.addToast("info", message, options)
   }
 
-  private addToast(type: ToastType, message: string, link?: string) {
+  dismissToast(id: number) {
+    this.toasts = this.toasts.filter((toast) => toast.id !== id);
+  }
+
+  //TODO: Only show new toasts to the user when dialog is closed
+  private addToast(type: ToastType, message: string, options?: { link?: string, request?: RequestEvent }) {
 
     // Create unique id for toast so it can be easily removed.
     const id = Math.floor(Math.random() * 1000000);
@@ -56,18 +72,31 @@ class Toasts {
       id,
       message,
       type,
-      link,
+      link: options?.link,
+      request: options?.request
     }
 
     // Push new toast to top of list
     this.toasts.push(toast)
 
-    // Remove toast after certain amount of time
-    setTimeout(() => this.dismissToast(id), TOAST_TIMEOUT);
+    this.dismissToastTimeout(toast.id)
   }
 
-  private dismissToast(id: number) {
-    this.toasts = this.toasts.filter((toast) => toast.id !== id);
+  /**
+   * Timeout function that either dismissed the toast
+   * or calls itself if dismissing toasts is paused
+   */
+  private dismissToastTimeout(id: number) {
+    const timeout = setTimeout(() => {
+      console.log('dismissing toast: ' + this.autoDismiss)
+      if (this.autoDismiss) {
+        clearTimeout(timeout);
+        this.dismissToast(id);
+      } else {
+        clearTimeout(timeout);
+        this.dismissToastTimeout(id);
+      }
+    }, TOAST_TIMEOUT)
   }
 }
 

@@ -7,19 +7,19 @@ use p2panda_core::{Body, Extension, Hash, Header, PrivateKey, PruneFlag};
 use p2panda_store::{LocalLogStore, MemoryStore};
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
-pub enum MessageType {
-    Calendar,
-    Event,
-    Resource,
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, StdHash, Serialize, Deserialize)]
+pub enum LogType {
+    Inbox,
+
+    #[default]
+    Data,
 }
 
-impl Display for MessageType {
+impl Display for LogType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let message_type = match self {
-            MessageType::Calendar => "calendar",
-            MessageType::Event => "event",
-            MessageType::Resource => "resource",
+            LogType::Inbox => "inbox",
+            LogType::Data => "data",
         };
         write!(f, "{message_type}")
     }
@@ -53,12 +53,17 @@ pub struct LogId {
     // @TODO(adz): Currently we store everything in one log per calendar, later we want to list all
     // possible "log types" here, for example for all events, resources, messages etc.
     pub calendar_id: CalendarId,
+
+    pub log_type: LogType,
 }
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 pub struct Extensions {
     #[serde(rename = "c")]
     pub calendar_id: Option<CalendarId>,
+
+    #[serde(rename = "t")]
+    pub log_type: Option<LogType>,
 
     #[serde(
         rename = "p",
@@ -68,9 +73,22 @@ pub struct Extensions {
     pub prune_flag: PruneFlag,
 }
 
+impl Extension<LogType> for Extensions {
+    fn extract(header: &Header<Self>) -> Option<LogType> {
+        match &header.extensions {
+            Some(extensions) => extensions.log_type,
+            None => None,
+        }
+    }
+}
+
 impl Extension<LogId> for Extensions {
     fn extract(header: &Header<Self>) -> Option<LogId> {
-        Extension::<CalendarId>::extract(header).map(|calendar_id| LogId { calendar_id })
+        let log_type = header.extension().unwrap_or_default();
+        Extension::<CalendarId>::extract(header).map(|calendar_id| LogId {
+            calendar_id,
+            log_type,
+        })
     }
 }
 
@@ -117,7 +135,10 @@ pub async fn create_operation(
 
     let latest_operation = match extensions.calendar_id {
         Some(calendar_id) => {
-            let log_id = LogId { calendar_id };
+            let log_id = LogId {
+                calendar_id,
+                log_type: extensions.log_type.unwrap_or_default(),
+            };
 
             // @TODO(adz): Memory stores are infallible right now but we'll switch to a SQLite-based one
             // soon and then we need to handle this error here:

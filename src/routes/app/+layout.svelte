@@ -1,7 +1,7 @@
 <script lang="ts">
   import "../../app.css";
   import Icon from "@iconify/svelte";
-  import { page } from "$app/stores";
+  import { page } from "$app/state";
   import Header from "../../components/header.svelte";
 
   interface MenuItem {
@@ -37,6 +37,7 @@
       icon: "lucide:share-2",
     },
   ];
+<<<<<<< HEAD
 
   let topLevelPage = $derived(
     menu.some((item) => item.url.includes($page.url.pathname)),
@@ -45,6 +46,19 @@
 
 <Header />
 <main class="h-dvh mt-16">
+=======
+</script>
+
+<svelte:head>
+  <title>
+    {page.data.title ? `${page.data.title} | toolkitty` : "toolkitty"}
+  </title>
+</svelte:head>
+
+<Header title={page.data.title} />
+
+<main class="h-dvh">
+>>>>>>> main
   <div class="p-8">
     <slot />
   </div>
@@ -55,7 +69,7 @@
           <a
             href={item.url}
             class="block"
-            class:active={$page.url.pathname.includes(item.url)}
+            class:active={page.url.pathname.includes(item.url)}
           >
             <Icon icon={item.icon} class="h-6 w-6" />
             <span class="sr-only">{item.name}</span>
