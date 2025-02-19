@@ -1,5 +1,5 @@
 <script lang="ts">
-  import CustomCalendar from "../../../components/CustomCalendar.svelte";
+  import FestivalCalendar from "../../../components/festival-calendar.svelte";
   import Select from "../../../components/select.svelte";
   import { calendars } from "$lib/api";
   import { goto } from "$app/navigation";
@@ -17,10 +17,12 @@
     const name = data.get("name") as string;
 
     try {
-      await calendars.create({ fields: {
+      await calendars.create({
+        fields: {
           name: name,
-          dates: [{start: new Date(), end: new Date()}]
-      } });
+          dates: [{ start: new Date(), end: new Date() }],
+        },
+      });
     } catch (err) {
       // Toasty!
     }
@@ -62,11 +64,7 @@
   ></textarea>
 
   <label>Programme running time</label>
-  <CustomCalendar
-    use={"festival creation"}
-    canSelectMultiple={true}
-    hasTimePicker={false}
-  />
+  <FestivalCalendar />
 
   <Select name="style" items={themes} />
 
