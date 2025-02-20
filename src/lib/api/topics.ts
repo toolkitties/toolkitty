@@ -1,12 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { publicKey } from "./identity";
 import { db } from "$lib/db";
-import { access } from ".";
-import { StreamFactory } from "./streams";
-
-export const INVITE_TOPIC: string = "invite";
-const CALENDAR_TOPIC_PREFIX: string = "calendar";
-const CALENDAR_INBOX_TOPIC_PREFIX: string = "calendar/inbox";
+import { access, publish } from ".";
 
 const subscriptions: Set<string> = new Set();
 const topicStreams: Map<Topic, Set<Stream>> = new Map();
@@ -19,11 +14,11 @@ export class TopicFactory {
   }
 
   public calendar(): string {
-    return `${CALENDAR_TOPIC_PREFIX}/${this.id}`;
+    return `${publish.CALENDAR_TOPIC_PREFIX}/${this.id}`;
   }
 
   public calendarInbox(): string {
-    return `${CALENDAR_INBOX_TOPIC_PREFIX}/${this.id}`;
+    return `${publish.CALENDAR_INBOX_TOPIC_PREFIX}/${this.id}`;
   }
 }
 
@@ -39,9 +34,9 @@ export class TopicFactory {
 export async function addCalendarAuthor(
   publicKey: PublicKey,
   topic: Topic,
-  stream: Stream,
+  logPath: LogPath,
 ) {
-  await invoke("add_topic_log", { publicKey, topic: topic, stream });
+  await invoke("add_topic_log", { publicKey, topic: topic, logPath });
 }
 
 /**
@@ -83,7 +78,6 @@ export async function subscribe_ephemeral(topic: Topic) {
  */
 export async function subscribeToAll() {
   const myPublicKey = await publicKey();
-  console.log(myPublicKey);
   const allRequests = await db.accessRequests.toArray();
   const allMyCalendars = (await db.calendars.toArray()).filter(
     (calendar) => calendar.ownerId == myPublicKey,
@@ -96,34 +90,43 @@ export async function subscribeToAll() {
       continue;
     }
 
+    const stream = await db.streams.get(calendar.id);
     const topic = new TopicFactory(calendar.id);
-    const stream = new StreamFactory(calendar.streamOwner, calendar.streamId);
     await maybeSubscribe(
-      request.publicKey,
+      request.from,
       topic.calendarInbox(),
-      stream.calendarInbox(),
+      stream!,
+      publish.CALENDAR_INBOX_LOG_PATH,
     );
 
-    const hasAccess = await access.checkHasAccess(
-      request.publicKey,
-      calendar.id,
-    );
+    const hasAccess = await access.checkHasAccess(request.from, calendar.id);
     if (!hasAccess) {
       continue;
     }
 
-    await maybeSubscribe(myPublicKey, topic.calendar(), stream.calendar());
+    await maybeSubscribe(
+      myPublicKey,
+      topic.calendar(),
+      stream!,
+      publish.CALENDAR_LOG_PATH,
+    );
   }
 
   for (const calendar of allMyCalendars) {
-    const stream = new StreamFactory(calendar.streamId, calendar.streamOwner);
     const topic = new TopicFactory(calendar.id);
+    const stream = await db.streams.get(calendar.id);
     await maybeSubscribe(
       myPublicKey,
       topic.calendarInbox(),
-      stream.calendarInbox(),
+      stream!,
+      publish.CALENDAR_INBOX_LOG_PATH,
     );
-    await maybeSubscribe(myPublicKey, topic.calendar(), stream.calendar());
+    await maybeSubscribe(
+      myPublicKey,
+      topic.calendar(),
+      stream!,
+      publish.CALENDAR_LOG_PATH,
+    );
   }
 }
 
@@ -131,6 +134,7 @@ async function maybeSubscribe(
   publicKey: PublicKey,
   topic: Topic,
   stream: Stream,
+  logPath: LogPath,
 ) {
   if (!subscriptions.has(topic)) {
     subscriptions.add(topic);
@@ -145,6 +149,6 @@ async function maybeSubscribe(
 
   if (!streams?.has(stream)) {
     streams?.add(stream);
-    await addCalendarAuthor(publicKey, topic, stream);
+    await addCalendarAuthor(publicKey, topic, logPath);
   }
 }

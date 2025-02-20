@@ -5,8 +5,9 @@ export const seedMessages: ApplicationMessage[] = [
         owner:
           "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
         id: "0",
-        name: "calendar",
+        rootHash: "A"
       },
+      logPath: "calendar",
       operationId: "A",
       author:
         "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
@@ -33,8 +34,9 @@ export const seedMessages: ApplicationMessage[] = [
         owner:
           "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
         id: "0",
-        name: "calendar",
+        rootHash: "A"
       },
+      logPath: "calendar",
       operationId: "B",
       author:
         "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
@@ -77,8 +79,9 @@ export const seedMessages: ApplicationMessage[] = [
         owner:
           "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
         id: "0",
-        name: "calendar",
+        rootHash: "A"
       },
+      logPath: "calendar",
       operationId: "C",
       author:
         "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
@@ -122,8 +125,9 @@ export const seedMessages: ApplicationMessage[] = [
         owner:
           "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
         id: "0",
-        name: "calendar",
+        rootHash: "A"
       },
+      logPath: "calendar",
       operationId: "D",
       author:
         "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
@@ -163,8 +167,9 @@ export const seedMessages: ApplicationMessage[] = [
         owner:
           "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
         id: "0",
-        name: "calendar",
+        rootHash: "A"
       },
+      logPath: "calendar",
       operationId: "E",
       author:
         "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",

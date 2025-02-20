@@ -105,6 +105,7 @@ type StreamMessageMeta = {
   operationId: Hash;
   author: PublicKey;
   stream: Stream;
+  logPath: LogPath;
 };
 
 /**
@@ -587,7 +588,6 @@ type UserRoleAssigned = {
   };
 };
 
-
 /**
  * The different subscription types which exist for a calendar. Each represents a logical set of
  * data which can be subscribed to independently.
@@ -599,11 +599,10 @@ type Subscription = {
   type: TopicType;
 };
 
-
 /**
  * (´ヮ´)八(*ﾟ▽ﾟ*)
  * Database Schema
- * 
+ *
  * How the data looks that we store in the frontend indexed db.
  */
 
@@ -615,9 +614,6 @@ type User = {
 type Calendar = {
   id: Hash;
   ownerId: PublicKey;
-  streamId: Hash;
-  streamOwner: PublicKey;
-  streamName: StreamName;
   name: string;
   // TODO: Should we support non-consecutive dates? It could be arrays of TimeSpan? The
   // `CalendarCreated` fields contains a TimeSpan[] so it's possible to encode non-consecutive
@@ -700,7 +696,6 @@ type Settings = {
   value: Hash | string;
 };
 
-
 /**
  * (´ヮ´)八(*ﾟ▽ﾟ*)
  * Application Data
@@ -708,12 +703,14 @@ type Settings = {
 
 type RequestEvent = SpaceRequest | ResourceRequest | AccessRequest;
 
-type StreamName = "calendar" | "calendar/inbox";
+type LogPath = "calendar" | "calendar/inbox";
+
+type StreamId = Hash;
 
 type Stream = {
   id: Hash;
+  rootHash: Hash;
   owner: PublicKey;
-  name: StreamName;
 };
 
 type Topic = string;

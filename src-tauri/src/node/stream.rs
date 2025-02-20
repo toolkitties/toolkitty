@@ -16,7 +16,7 @@ use tracing::debug;
 
 use crate::node::extensions::{Extensions, LogId};
 
-use super::extensions::StreamId;
+use super::extensions::{LogPath, Stream, StreamOwner, StreamRootHash};
 
 #[allow(clippy::large_enum_variant, dead_code)]
 pub enum ToStreamController {
@@ -204,23 +204,41 @@ impl Serialize for StreamEvent {
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct StreamMeta {
+    pub(crate) id: Hash,
+    pub(crate) root_hash: StreamRootHash,
+    pub(crate) owner: StreamOwner,
+}
+
+impl From<Stream> for StreamMeta {
+    fn from(stream: Stream) -> Self {
+        StreamMeta {
+            id: stream.id(),
+            root_hash: stream.root_hash,
+            owner: stream.owner,
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct EventMeta {
     pub operation_id: Hash,
     pub author: PublicKey,
-    pub stream_id: StreamId,
-    pub log_id: LogId,
+    pub stream: StreamMeta,
+    pub log_path: Option<LogPath>,
 }
 
 impl From<Header<Extensions>> for EventMeta {
     fn from(header: Header<Extensions>) -> Self {
-        let stream_id: StreamId = header.extension().expect("extract stream id extensions");
+        let stream: Stream = header.extension().expect("extract stream id extensions");
         let log_id: LogId = header.extension().expect("extract log id extensions");
 
         Self {
             operation_id: header.hash(),
             author: header.public_key,
-            stream_id,
-            log_id,
+            stream: stream.into(),
+            log_path: log_id.log_path,
         }
     }
 }
@@ -401,7 +419,7 @@ mod tests {
     use futures_util::FutureExt;
     use p2panda_core::{Body, Hash, Header, PrivateKey, PruneFlag};
     use p2panda_store::MemoryStore;
-    use serde_json::{json};
+    use serde_json::json;
     use tokio::sync::oneshot;
 
     use crate::node::extensions::{Extensions, LogId, LogPath, StreamOwner, StreamRootHash};

@@ -8,9 +8,9 @@ use crate::topic::Topic;
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct StreamArgs {
+    pub(crate) id: Option<Hash>,
     pub(crate) root_hash: Option<Hash>,
     pub(crate) owner: Option<PublicKey>,
-    pub(crate) log_path: Option<Value>,
 }
 
 #[derive(Clone, Debug)]

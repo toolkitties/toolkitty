@@ -105,6 +105,7 @@ pub async fn publish(
     rpc: State<'_, Rpc>,
     payload: serde_json::Value,
     stream_args: StreamArgs,
+    log_path: Option<serde_json::Value>,
     topic: Option<Topic>,
 ) -> Result<Hash, RpcError> {
     debug!(
@@ -113,7 +114,14 @@ pub async fn publish(
         "RPC request received"
     );
     let payload = serde_json::to_vec(&payload)?;
-    let hash = rpc.publish(&payload, &stream_args, topic.as_ref()).await?;
+    let hash = rpc
+        .publish(
+            &payload,
+            &stream_args,
+            log_path.map(Into::into).as_ref(),
+            topic.as_ref(),
+        )
+        .await?;
     Ok(hash)
 }
 

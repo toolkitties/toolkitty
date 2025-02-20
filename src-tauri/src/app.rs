@@ -13,7 +13,7 @@ use tokio::sync::{broadcast, mpsc, Mutex};
 use tracing::debug;
 
 use crate::messages::{ChannelEvent, NetworkEvent, StreamArgs};
-use crate::node::extensions::{Extensions, LogId, LogPath, StreamId};
+use crate::node::extensions::{Extensions, LogId, LogPath, Stream};
 use crate::node::operation::create_operation;
 use crate::node::{Node, StreamEvent};
 use crate::topic::{Topic, TopicMap};
@@ -288,6 +288,7 @@ impl Rpc {
         &self,
         payload: &[u8],
         stream_args: &StreamArgs,
+        log_path: Option<&LogPath>,
         topic: Option<&Topic>,
     ) -> Result<Hash, RpcError> {
         let mut context = self.context.lock().await;
@@ -296,7 +297,7 @@ impl Rpc {
         let extensions = Extensions {
             stream_root_hash: stream_args.root_hash.map(Into::into),
             stream_owner: stream_args.owner.map(Into::into),
-            log_path: stream_args.log_path.clone().map(Into::into),
+            log_path: log_path.cloned(),
             ..Default::default()
         };
 
@@ -427,19 +428,16 @@ mod tests {
         let result = rpc.init(channel_tx).await;
         assert!(result.is_ok());
 
-        let log_path = json!({
-            "owner": private_key.public_key().to_hex(),
-            "uuid": "my_unique_calendar"
-        });
+        let log_path = json!("calendar/inbox");
 
         let payload = json!({
             "message": "organize!"
         });
 
         let stream_args = StreamArgs {
+            id: None,
             root_hash: None,
             owner: None,
-            log_path: Some(log_path.clone()),
         };
 
         let topic: Topic = "some_topic".into();
@@ -447,26 +445,28 @@ mod tests {
             .publish(
                 &serde_json::to_vec(&payload).unwrap(),
                 &stream_args,
+                Some(&log_path.clone().into()),
                 Some(&topic),
             )
             .await;
 
         assert!(result.is_ok());
+
+        let expected_log_path = log_path;
         let event = channel_rx.recv().await.unwrap();
         match event {
             ChannelEvent::Stream(stream_event) => {
                 let EventMeta {
                     operation_id,
                     author,
-                    stream_id,
-                    log_id,
+                    stream,
+                    log_path,
                 } = stream_event.meta;
 
                 assert_eq!(author, private_key.public_key());
-
-                assert_eq!(stream_id.root_hash, StreamRootHash::from(operation_id));
-                assert_eq!(stream_id.owner, StreamOwner::from(author));
-                assert_eq!(log_id.log_path, Some(LogPath::from(log_path)));
+                assert_eq!(stream.root_hash, StreamRootHash::from(operation_id));
+                assert_eq!(stream.owner, StreamOwner::from(private_key.public_key()));
+                assert_eq!(log_path, Some(LogPath::from(expected_log_path)));
 
                 let EventData::Application(value) = stream_event.data else {
                     panic!();

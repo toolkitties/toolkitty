@@ -6,11 +6,13 @@ use p2panda_core::{Extension, Hash, Header, PruneFlag, PublicKey};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-/// Identifier for a collection of logs.
-///
-/// StreamId is a universally unique identifier which associates many logs, from one or many authors, into one
-/// collection. The semantic meaning of the collection is defined on the application level, it
-/// might be a single chat group containing many threads, or a blog page with posts from many contributors.
+/// Globally unique stream identified derived from hashing over the bytes of a streams' `root_hash`
+/// and `owner` fields.
+type StreamId = Hash;
+
+/// Conceptually a stream is a collection of logs, from one or many authors. The semantic meaning of the 
+/// collection is defined on the application level, it might be a single chat group containing many threads, 
+/// or a blog page with posts from many contributors.
 ///
 /// Crucially, the included logs can be from one or many authors, but the stream itself is "owned"
 /// by the public key in the `owner` field. This ownership relationship is required when defining
@@ -20,12 +22,22 @@ use serde_json::Value;
 /// stream id.
 #[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct StreamId {
+pub struct Stream {
+    /// The hash of the first operation in the stream. 
     pub(crate) root_hash: StreamRootHash,
+
+    /// The public key of the stream owner.
     pub(crate) owner: StreamOwner,
 }
 
-impl TryFrom<Extensions> for StreamId {
+impl Stream {
+    pub fn id(&self) -> StreamId {
+        let bytes = vec![*self.root_hash.0.as_bytes(), *self.owner.0.as_bytes()].concat();
+        StreamId::new(&bytes)
+    }
+}
+
+impl TryFrom<Extensions> for Stream {
     type Error = anyhow::Error;
 
     fn try_from(extensions: Extensions) -> Result<Self, Self::Error> {
@@ -84,7 +96,7 @@ impl Display for StreamOwner {
 /// application layer itself to design how logs are layed out within a stream.
 #[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
 pub struct LogId {
-    pub(crate) stream_id: StreamId,
+    pub(crate) stream_id: Stream,
     pub(crate) log_path: Option<LogPath>,
 }
 
@@ -103,7 +115,7 @@ impl TryFrom<Extensions> for LogId {
     type Error = anyhow::Error;
 
     fn try_from(extensions: Extensions) -> Result<Self, Self::Error> {
-        let stream_id = StreamId::try_from(extensions.clone())?;
+        let stream_id = Stream::try_from(extensions.clone())?;
         let log_path = extensions.log_path.clone();
 
         Ok(Self {
@@ -164,11 +176,11 @@ impl Extension<StreamOwner> for Extensions {
     }
 }
 
-impl Extension<StreamId> for Extensions {
-    fn extract(header: &Header<Self>) -> Option<StreamId> {
+impl Extension<Stream> for Extensions {
+    fn extract(header: &Header<Self>) -> Option<Stream> {
         let root_hash = header.extension().expect("extract root hash extension");
         let owner = header.extension().expect("extract owner extension");
-        Some(StreamId { root_hash, owner })
+        Some(Stream { root_hash, owner })
     }
 }
 

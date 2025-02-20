@@ -3,8 +3,7 @@ import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
 import { liveQuery } from "dexie";
 import { publicKey } from "./identity";
-import { topics } from ".";
-import { CALENDAR_STREAM_NAME, StreamFactory } from "./streams";
+import { publish, topics } from ".";
 import { TopicFactory } from "./topics";
 
 /*
@@ -59,28 +58,24 @@ export async function create(data: CalendarCreated["data"]): Promise<Hash> {
   const myPublicKey = await publicKey();
 
   // Define the "calendar created" application event.
-  const payload: CalendarCreated = {
+  const calendarCreated: CalendarCreated = {
     type: "calendar_created",
     data,
   };
 
-  const hash: Hash = await invoke("publish", {
-    payload,
-    streamArgs: { name: CALENDAR_STREAM_NAME },
-  });
+  const hash = await publish.createCalendar(calendarCreated);
 
-  const stream = new StreamFactory(hash, myPublicKey);
   const topic = new TopicFactory(hash);
   await topics.addCalendarAuthor(
     myPublicKey,
     topic.calendar(),
-    stream.calendar(),
+    publish.CALENDAR_LOG_PATH,
   );
   await topics.subscribe(topic.calendar());
   await topics.addCalendarAuthor(
     myPublicKey,
     topic.calendarInbox(),
-    stream.calendarInbox(),
+    publish.CALENDAR_INBOX_LOG_PATH,
   );
   await topics.subscribe(topic.calendarInbox());
 
@@ -100,11 +95,6 @@ export async function update(
   calendarId: Hash,
   fields: CalendarFields,
 ): Promise<Hash> {
-  let calendar = await db.calendars.get(calendarId);
-  if (!calendar) {
-    throw new Error("tried to update non-existent calendar");
-  }
-
   let calendarUpdated: CalendarUpdated = {
     type: "calendar_updated",
     data: {
@@ -113,22 +103,10 @@ export async function update(
     },
   };
 
-  const topic = new TopicFactory(calendarId);
-  const stream = new StreamFactory(calendar.streamId, calendar.streamOwner);
-  const hash: Hash = await invoke("publish", {
-    payload: calendarUpdated,
-    topic: topic.calendar(),
-    streamArgs: stream.calendar(),
-  });
-  return hash;
+  return await publish.toCalendar(calendarId, calendarUpdated);
 }
 
 export async function deleteCalendar(calendarId: Hash): Promise<Hash> {
-  const calendar = await db.calendars.get(calendarId);
-  if (!calendar) {
-    throw Error("tried to delete non-existent calendar");
-  }
-
   const calendarDeleted: CalendarDeleted = {
     type: "calendar_deleted",
     data: {
@@ -136,15 +114,7 @@ export async function deleteCalendar(calendarId: Hash): Promise<Hash> {
     },
   };
 
-  const topic = new TopicFactory(calendarId);
-  const stream = new StreamFactory(calendar.streamId, calendar.streamOwner);
-  const hash: Hash = await invoke("publish", {
-    payload: calendarDeleted,
-    topic: topic.calendar(),
-    streamArgs: stream.calendar(),
-  });
-
-  return hash;
+  return await publish.toCalendar(calendarId, calendarDeleted);
 }
 
 export async function setActiveCalendar(id: Hash) {
@@ -182,29 +152,31 @@ async function onCalendarCreated(
   let timeSpan = dates[0];
 
   await db.calendars.add({
-    id: meta.operationId,
-    ownerId: meta.author,
-    streamId: meta.stream.id,
-    streamOwner: meta.stream.owner,
-    streamName: meta.stream.name,
+    id: meta.stream.id,
+    ownerId: meta.stream.owner,
     name,
     startDate: timeSpan.start,
     endDate: timeSpan.end,
   });
 
+  await db.streams.add({
+    id: meta.stream.id,
+    rootHash: meta.stream.rootHash,
+    owner: meta.stream.owner,
+  });
+
   // Add the calendar creator to the list of authors who's data we want to
   // sync for this calendar.
   const topic = new TopicFactory(meta.operationId);
-  const stream = new StreamFactory(meta.stream.id, meta.stream.owner);
   await topics.addCalendarAuthor(
     meta.author,
     topic.calendarInbox(),
-    stream.calendarInbox(),
+    publish.CALENDAR_INBOX_LOG_PATH,
   );
   await topics.addCalendarAuthor(
     meta.author,
     topic.calendar(),
-    stream.calendar(),
+    publish.CALENDAR_LOG_PATH,
   );
 }
 
