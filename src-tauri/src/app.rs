@@ -13,7 +13,7 @@ use tokio::sync::{broadcast, mpsc, Mutex};
 use tracing::debug;
 
 use crate::messages::{ChannelEvent, NetworkEvent, StreamArgs};
-use crate::node::extensions::{Extensions, LogId, Stream, StreamName};
+use crate::node::extensions::{Extensions, LogId, LogPath, StreamId};
 use crate::node::operation::create_operation;
 use crate::node::{Node, StreamEvent};
 use crate::topic::{Topic, TopicMap};
@@ -229,13 +229,10 @@ impl Rpc {
         &self,
         public_key: PublicKey,
         topic: Topic,
-        stream: Stream,
+        log_id: LogId,
     ) -> Result<(), RpcError> {
         let context = self.context.lock().await;
-        context
-            .topic_map
-            .add_log(topic, public_key, stream.into())
-            .await;
+        context.topic_map.add_log(topic, public_key, log_id).await;
         Ok(())
     }
 
@@ -297,9 +294,9 @@ impl Rpc {
         let private_key = context.node.private_key.clone();
 
         let extensions = Extensions {
-            stream_id: stream_args.id.map(Into::into),
+            stream_root_hash: stream_args.root_hash.map(Into::into),
             stream_owner: stream_args.owner.map(Into::into),
-            stream_name: Some(stream_args.name.clone().into()),
+            log_path: stream_args.log_path.clone().map(Into::into),
             ..Default::default()
         };
 
@@ -368,14 +365,13 @@ impl Serialize for RpcError {
 
 #[cfg(test)]
 mod tests {
-    use p2panda_core::PrivateKey;
     use serde_json::json;
     use tokio::sync::broadcast;
 
     use crate::{
         messages::{ChannelEvent, StreamArgs},
         node::{
-            extensions::{StreamId, StreamName, StreamOwner},
+            extensions::{LogPath, StreamOwner, StreamRootHash},
             stream::{EventData, EventMeta},
         },
         topic::Topic,
@@ -408,7 +404,6 @@ mod tests {
         let result = rpc.init(channel_tx).await;
         assert!(result.is_ok());
 
-        let private_key = PrivateKey::new();
         let topic = "some_topic".into();
         let result = rpc.subscribe(&topic).await;
         assert!(result.is_ok());
@@ -432,7 +427,7 @@ mod tests {
         let result = rpc.init(channel_tx).await;
         assert!(result.is_ok());
 
-        let stream_name = json!({
+        let log_path = json!({
             "owner": private_key.public_key().to_hex(),
             "uuid": "my_unique_calendar"
         });
@@ -442,9 +437,9 @@ mod tests {
         });
 
         let stream_args = StreamArgs {
-            id: None,
+            root_hash: None,
             owner: None,
-            name: stream_name.clone(),
+            log_path: Some(log_path.clone()),
         };
 
         let topic: Topic = "some_topic".into();
@@ -461,16 +456,17 @@ mod tests {
         match event {
             ChannelEvent::Stream(stream_event) => {
                 let EventMeta {
-                    author,
-                    stream,
                     operation_id,
+                    author,
+                    stream_id,
+                    log_id,
                 } = stream_event.meta;
 
                 assert_eq!(author, private_key.public_key());
 
-                assert_eq!(stream.id, StreamId::from(operation_id));
-                assert_eq!(stream.owner, StreamOwner::from(author));
-                assert_eq!(stream.name, StreamName::from(stream_name));
+                assert_eq!(stream_id.root_hash, StreamRootHash::from(operation_id));
+                assert_eq!(stream_id.owner, StreamOwner::from(author));
+                assert_eq!(log_id.log_path, Some(LogPath::from(log_path)));
 
                 let EventData::Application(value) = stream_event.data else {
                     panic!();

@@ -5,7 +5,7 @@ use tracing::debug;
 
 use crate::app::{Rpc, RpcError};
 use crate::messages::{ChannelEvent, StreamArgs};
-use crate::node::extensions::{Stream, StreamName};
+use crate::node::extensions::LogId;
 use crate::topic::Topic;
 
 /// Initialize the app by passing it a channel from the frontend.
@@ -58,15 +58,12 @@ pub async fn replay(rpc: State<'_, Rpc>, topic: Topic) -> Result<(), RpcError> {
     Ok(())
 }
 
-/// Add an author to a calendar.
-///
-/// This means that we will actively sync operations from this author for the specific calendar.
 #[tauri::command]
 pub async fn add_topic_log(
     rpc: State<'_, Rpc>,
     public_key: PublicKey,
     topic: Topic,
-    stream: Stream,
+    log_id: LogId,
 ) -> Result<(), RpcError> {
     debug!(
         command.name = "add_topic_log",
@@ -75,11 +72,10 @@ pub async fn add_topic_log(
         "RPC request received"
     );
 
-    rpc.add_topic_log(public_key, topic, stream).await?;
+    rpc.add_topic_log(public_key, topic, log_id).await?;
     Ok(())
 }
 
-/// Subscribe to a specific calendar by it's id.
 #[tauri::command]
 pub async fn subscribe(rpc: State<'_, Rpc>, topic: Topic) -> Result<(), RpcError> {
     debug!(
@@ -92,7 +88,6 @@ pub async fn subscribe(rpc: State<'_, Rpc>, topic: Topic) -> Result<(), RpcError
     Ok(())
 }
 
-/// Subscribe to a specific calendar by it's id.
 #[tauri::command]
 pub async fn subscribe_ephemeral(rpc: State<'_, Rpc>, topic: Topic) -> Result<(), RpcError> {
     debug!(
@@ -105,9 +100,6 @@ pub async fn subscribe_ephemeral(rpc: State<'_, Rpc>, topic: Topic) -> Result<()
     Ok(())
 }
 
-/// Publish an event to a calendar topic.
-///
-/// Returns the hash of the operation on which the payload was encoded.
 #[tauri::command]
 pub async fn publish(
     rpc: State<'_, Rpc>,
@@ -125,7 +117,6 @@ pub async fn publish(
     Ok(hash)
 }
 
-/// Publish an invite code to onto the invite overlay network.
 #[tauri::command]
 pub async fn publish_ephemeral(
     rpc: State<'_, Rpc>,

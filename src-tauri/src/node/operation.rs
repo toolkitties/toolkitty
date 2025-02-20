@@ -4,7 +4,7 @@ use p2panda_core::cbor::{decode_cbor, encode_cbor, DecodeError, EncodeError};
 use p2panda_core::{Body, Header, PrivateKey};
 use p2panda_store::{LocalLogStore, MemoryStore};
 
-use super::extensions::{Extensions, LogId, Stream};
+use super::extensions::{Extensions, LogId};
 
 pub async fn create_operation(
     store: &mut MemoryStore<LogId, Extensions>,
@@ -20,11 +20,11 @@ pub async fn create_operation(
         .expect("time from operation system")
         .as_secs();
 
-    // Attempt to extract a Stream from the passed extensions, if this fails it means this is the
+    // Attempt to extract a LogId from the passed extensions, if this fails it means this is the
     // first operation in a new stream (and therefore log).
-    let (seq_num, backlink) = match Stream::try_from(extensions.clone()) {
-        Ok(stream) => {
-            let Ok(latest_operation) = store.latest_operation(&public_key, &stream.into()).await;
+    let (seq_num, backlink) = match LogId::try_from(extensions.clone()) {
+        Ok(log_id) => {
+            let Ok(latest_operation) = store.latest_operation(&public_key, &log_id).await;
             match latest_operation {
                 Some((header, _)) => (header.seq_num + 1, Some(header.hash())),
                 None => (0, None),
