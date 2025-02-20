@@ -323,7 +323,9 @@ impl Rpc {
 
         debug!("publish operation: {}", header.hash());
 
-        Ok(header.hash())
+        let stream: Stream = header.extension().expect("extract stream extension");
+
+        Ok(stream.id())
     }
 
     /// Publish an invite code to onto the invite overlay network.
@@ -429,7 +431,7 @@ mod tests {
         assert!(result.is_ok());
 
         let log_path = json!("calendar/inbox");
-
+ 
         let payload = json!({
             "message": "organize!"
         });
@@ -451,6 +453,7 @@ mod tests {
             .await;
 
         assert!(result.is_ok());
+        let stream_id = result.unwrap();
 
         let expected_log_path = log_path;
         let event = channel_rx.recv().await.unwrap();
@@ -464,6 +467,7 @@ mod tests {
                 } = stream_event.meta;
 
                 assert_eq!(author, private_key.public_key());
+                assert_eq!(stream.id, stream_id);
                 assert_eq!(stream.root_hash, StreamRootHash::from(operation_id));
                 assert_eq!(stream.owner, StreamOwner::from(private_key.public_key()));
                 assert_eq!(log_path, Some(LogPath::from(expected_log_path)));
