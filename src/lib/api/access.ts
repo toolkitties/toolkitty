@@ -89,7 +89,11 @@ export async function requestAccess(
     data,
   };
 
-  return await publish.toInbox(data.calendarId, calendarAccessRequested);
+  const [operationId, streamId]: [Hash, Hash] = await publish.toInbox(
+    data.calendarId,
+    calendarAccessRequested,
+  );
+  return operationId;
 }
 
 /**
@@ -104,7 +108,11 @@ export async function acceptAccessRequest(
     data,
   };
 
-  return await publish.toInbox(calendarId, calendarAccessAccepted);
+  const [operationId, streamId]: [Hash, Hash] = await publish.toInbox(
+    calendarId,
+    calendarAccessAccepted,
+  );
+  return operationId;
 }
 
 /**
@@ -119,7 +127,11 @@ export async function rejectAccessRequest(
     data,
   };
 
-  return await publish.toInbox(calendarId, calendarAccessRejected);
+  const [operationId, streamId]: [Hash, Hash] = await publish.toInbox(
+    calendarId,
+    calendarAccessRejected,
+  );
+  return operationId;
 }
 
 /**

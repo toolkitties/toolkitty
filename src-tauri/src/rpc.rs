@@ -107,14 +107,14 @@ pub async fn publish(
     stream_args: StreamArgs,
     log_path: Option<serde_json::Value>,
     topic: Option<Topic>,
-) -> Result<Hash, RpcError> {
+) -> Result<(Hash, Hash), RpcError> {
     debug!(
         command.name = "publish",
         command.topic = topic.as_ref().map(ToString::to_string),
         "RPC request received"
     );
     let payload = serde_json::to_vec(&payload)?;
-    let hash = rpc
+    let result = rpc
         .publish(
             &payload,
             &stream_args,
@@ -122,7 +122,7 @@ pub async fn publish(
             topic.as_ref(),
         )
         .await?;
-    Ok(hash)
+    Ok(result)
 }
 
 #[tauri::command]

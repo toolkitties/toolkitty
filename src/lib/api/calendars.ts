@@ -54,7 +54,9 @@ export const getActiveCalendar = liveQuery(async () => {
  * Commands
  */
 
-export async function create(data: CalendarCreated["data"]): Promise<Hash> {
+export async function create(
+  data: CalendarCreated["data"],
+): Promise<[Hash, Hash]> {
   const myPublicKey = await publicKey();
 
   // Define the "calendar created" application event.
@@ -63,9 +65,10 @@ export async function create(data: CalendarCreated["data"]): Promise<Hash> {
     data,
   };
 
-  const hash = await publish.createCalendar(calendarCreated);
+  const [operationId, streamId]: [Hash, Hash] =
+    await publish.createCalendar(calendarCreated);
 
-  const topic = new TopicFactory(hash);
+  const topic = new TopicFactory(streamId);
   await topics.addCalendarAuthor(
     myPublicKey,
     topic.calendar(),
@@ -86,9 +89,9 @@ export async function create(data: CalendarCreated["data"]): Promise<Hash> {
   // this application event has actually been processed. This allows us to build
   // UI where we can for example hide a spinner or redirect the user to another
   // page as soon as the state has changed.
-  await promiseResult(hash);
+  await promiseResult(operationId);
 
-  return hash;
+  return [operationId, streamId];
 }
 
 export async function update(
@@ -103,7 +106,11 @@ export async function update(
     },
   };
 
-  return await publish.toCalendar(calendarId, calendarUpdated);
+  const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
+    calendarId,
+    calendarUpdated,
+  );
+  return operationId;
 }
 
 export async function deleteCalendar(calendarId: Hash): Promise<Hash> {
@@ -114,7 +121,11 @@ export async function deleteCalendar(calendarId: Hash): Promise<Hash> {
     },
   };
 
-  return await publish.toCalendar(calendarId, calendarDeleted);
+  const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
+    calendarId,
+    calendarDeleted,
+  );
+  return operationId;
 }
 
 export async function setActiveCalendar(id: Hash) {

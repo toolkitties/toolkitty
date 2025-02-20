@@ -53,7 +53,11 @@ export async function create(
     },
   };
 
-  return await publish.toCalendar(calendarId, spaceCreated);
+  const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
+    calendarId,
+    spaceCreated,
+  );
+  return operationId;
 }
 
 export async function update(
@@ -68,7 +72,11 @@ export async function update(
       fields,
     },
   };
-  return await publish.toCalendar(calendarId, spaceUpdated);
+  const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
+    calendarId,
+    spaceUpdated,
+  );
+  return operationId;
 }
 
 export async function deleteSpace(
@@ -82,7 +90,11 @@ export async function deleteSpace(
     },
   };
 
-  return await publish.toCalendar(calendarId, spaceDeleted);
+  const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
+    calendarId,
+    spaceDeleted,
+  );
+  return operationId;
 }
 
 //TODO: Move to class so we don't have to export as an alias
