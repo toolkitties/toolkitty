@@ -83,13 +83,13 @@ export async function checkHasAccess(
  */
 export async function requestAccess(
   data: CalendarAccessRequested["data"],
-): Promise<Hash> {
+): Promise<OperationId> {
   const calendarAccessRequested: CalendarAccessRequested = {
     type: "calendar_access_requested",
     data,
   };
 
-  const [operationId, streamId]: [Hash, Hash] = await publish.toInbox(
+  const [operationId, streamId] = await publish.toInbox(
     data.calendarId,
     calendarAccessRequested,
   );
@@ -102,13 +102,13 @@ export async function requestAccess(
 export async function acceptAccessRequest(
   calendarId: Hash,
   data: CalendarAccessAccepted["data"],
-) {
+): Promise<OperationId> {
   const calendarAccessAccepted: CalendarAccessAccepted = {
     type: "calendar_access_accepted",
     data,
   };
 
-  const [operationId, streamId]: [Hash, Hash] = await publish.toInbox(
+  const [operationId, streamId] = await publish.toInbox(
     calendarId,
     calendarAccessAccepted,
   );
@@ -127,7 +127,7 @@ export async function rejectAccessRequest(
     data,
   };
 
-  const [operationId, streamId]: [Hash, Hash] = await publish.toInbox(
+  const [operationId, streamId] = await publish.toInbox(
     calendarId,
     calendarAccessRejected,
   );

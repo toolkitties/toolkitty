@@ -9,6 +9,36 @@
 type Hash = string;
 
 /**
+ * The hash identifier of a stream.
+ */
+type StreamId = Hash;
+
+/**
+ * The hash identifier of a single operation.
+ */
+type OperationId = Hash;
+
+
+/**
+ * A topic which can be subscribed to on the network layer.
+ */
+type Topic = string;
+
+/**
+ * A long-lived "owned" data stream.
+ */
+type Stream = {
+  id: StreamId;
+  rootHash: Hash;
+  owner: PublicKey;
+};
+
+/**
+ * The path portion of a log id.
+ */
+type LogPath = "calendar" | "calendar/inbox";
+
+/**
  * Hexadecimal-encoded Ed25519 public key.
  */
 type PublicKey = string;
@@ -344,6 +374,7 @@ type UserProfileUpdated = {
 type CalendarAccessRequested = {
   type: "calendar_access_requested";
   data: {
+    // @TODO(sam): we should switch to using the streamId as the "access reference" for a calendar.
     calendarId: Hash;
     name: string;
     message: string;
@@ -613,6 +644,7 @@ type User = {
 
 type Calendar = {
   id: Hash;
+  streamId: Hash;
   ownerId: PublicKey;
   name: string;
   // TODO: Should we support non-consecutive dates? It could be arrays of TimeSpan? The
@@ -701,16 +733,6 @@ type Settings = {
  * Application Data
  */
 
+type CalendarId = Hash;
+
 type RequestEvent = SpaceRequest | ResourceRequest | AccessRequest;
-
-type LogPath = "calendar" | "calendar/inbox";
-
-type StreamId = Hash;
-
-type Stream = {
-  id: Hash;
-  rootHash: Hash;
-  owner: PublicKey;
-};
-
-type Topic = string;

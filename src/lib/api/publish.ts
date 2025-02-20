@@ -9,19 +9,19 @@ export const CALENDAR_INBOX_TOPIC_PREFIX: string = "calendar/inbox";
 
 export async function createCalendar(
   payload: ApplicationEvent,
-): Promise<[Hash, Hash]> {
-  const [operationId, streamId]: Hash[] = await invoke("publish", {
+): Promise<[OperationId, StreamId]> {
+  const result: [OperationId, StreamId] = await invoke("publish", {
     payload,
     logPath: CALENDAR_LOG_PATH,
   });
 
-  return [operationId, streamId];
+  return result;
 }
 
 export async function toCalendar(
   calendarId: Hash,
   payload: ApplicationEvent,
-): Promise<[Hash, Hash]> {
+): Promise<[OperationId, StreamId]> {
   const calendar = await db.calendars.get(calendarId);
   if (!calendar) {
     throw Error("calendar not found");
@@ -29,33 +29,33 @@ export async function toCalendar(
 
   let stream = await db.streams.get(calendarId);
 
-  const [operationId, streamId]: Hash[] = await invoke("publish", {
+  const result: [OperationId, StreamId] = await invoke("publish", {
     payload,
     streamArgs: { rootHash: stream?.rootHash, owner: stream?.owner },
     logPath: CALENDAR_LOG_PATH,
     topic: `${CALENDAR_TOPIC_PREFIX}/${calendarId}`,
   });
 
-  return [operationId, streamId];
+  return result;
 }
 
 export async function toInbox(
   calendarId: Hash,
   payload: ApplicationEvent,
-): Promise<[Hash, Hash]> {
-    const calendar = await db.calendars.get(calendarId);
+): Promise<[OperationId, StreamId]> {
+  const calendar = await db.calendars.get(calendarId);
   if (!calendar) {
     throw Error("calendar not found");
   }
 
   let stream = await db.streams.get(calendarId);
 
-  const [operationId, streamId]: Hash[] =  await invoke("publish", {
+  const result: [OperationId, StreamId] = await invoke("publish", {
     payload,
     streamArgs: { rootHash: stream?.rootHash, owner: stream?.owner },
     logPath: CALENDAR_INBOX_LOG_PATH,
     topic: `${CALENDAR_INBOX_TOPIC_PREFIX}/${calendarId}`,
   });
 
-  return [operationId, streamId];
+  return result;
 }

@@ -56,7 +56,7 @@ export const getActiveCalendar = liveQuery(async () => {
 
 export async function create(
   data: CalendarCreated["data"],
-): Promise<[Hash, Hash]> {
+): Promise<[OperationId, StreamId]> {
   const myPublicKey = await publicKey();
 
   // Define the "calendar created" application event.
@@ -65,8 +65,7 @@ export async function create(
     data,
   };
 
-  const [operationId, streamId]: [Hash, Hash] =
-    await publish.createCalendar(calendarCreated);
+  const [operationId, streamId] = await publish.createCalendar(calendarCreated);
 
   const topic = new TopicFactory(streamId);
   await topics.addCalendarAuthor(
@@ -106,7 +105,7 @@ export async function update(
     },
   };
 
-  const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
+  const [operationId, streamId] = await publish.toCalendar(
     calendarId,
     calendarUpdated,
   );
@@ -121,7 +120,7 @@ export async function deleteCalendar(calendarId: Hash): Promise<Hash> {
     },
   };
 
-  const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
+  const [operationId, streamId] = await publish.toCalendar(
     calendarId,
     calendarDeleted,
   );
@@ -163,7 +162,8 @@ async function onCalendarCreated(
   let timeSpan = dates[0];
 
   await db.calendars.add({
-    id: meta.stream.id,
+    id: meta.operationId,
+    streamId: meta.stream.id,
     ownerId: meta.stream.owner,
     name,
     startDate: timeSpan.start,
