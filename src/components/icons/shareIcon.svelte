@@ -9,6 +9,7 @@
   viewBox="0 0 28 28"
   fill="none"
   xmlns="http://www.w3.org/2000/svg"
+  class="icon"
 >
   <rect x="5.25" width="1.75" height="1.75" fill="black" />
   <rect x="7" width="1.75" height="1.75" fill="black" />

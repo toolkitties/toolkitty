@@ -9,6 +9,7 @@
   viewBox="0 0 28 28"
   fill="none"
   xmlns="http://www.w3.org/2000/svg"
+  class="icon"
 >
   <g clip-path="url(#clip0_1757_74505)">
     <rect x="26.25" y="1.75" width="1.75" height="1.75" fill="black" />
