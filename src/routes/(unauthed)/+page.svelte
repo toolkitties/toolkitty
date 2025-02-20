@@ -7,6 +7,8 @@
   import { joinWithInviteCode } from "$lib/api/onboarding";
   import { toast } from "$lib/toast.svelte";
   import { resolveInviteCode } from "$lib/api/access";
+  import ArrowIcon from "../../components/icons/arrowIcon.svelte";
+  import BasketIcon from "../../components/icons/basketIcon.svelte";
 
   let value: string[] | undefined = [];
 
@@ -44,6 +46,8 @@
 <h1 class="text-3xl text-center">Toolkitty 🐈</h1>
 
 <form class="flex flex-col gap-4 grow justify-center mx-auto" onsubmit={join}>
+  <ArrowIcon />
+  <BasketIcon />
   {#if progress == "dormant"}
     <PinInput.Root
       bind:value

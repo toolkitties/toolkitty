@@ -92,4 +92,12 @@ html {
   h5 {
     font-size: 1.25rem;
   }
+
+  .theme-dark .icon rect:not([fill="black"]) {
+    fill: transparent;
+  }
+
+  .theme-dark .icon rect[fill="black"] {
+    fill: var(--text-color);
+  }
 }
