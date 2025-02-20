@@ -1,42 +1,31 @@
 <script lang="ts">
-    import type { DateValue } from "@internationalized/date";
-    import { CalendarDate } from "@internationalized/date";
-    import CustomCalendar from '../../../../components/CustomCalendar.svelte';
+  import { onMount } from "svelte";
+  import { findMany as findSpaces } from "$lib/api/spaces";
+  import { findMany as findResources } from "$lib/api/resources";
+  import EventForm from "../../../../components/event-form.svelte";
 
-    // placeholder data
-    const festivalDates: DateValue[] = [
-        new CalendarDate(2024, 12, 11),
-        new CalendarDate(2024, 12, 12),
-        new CalendarDate(2024, 12, 13),
-        new CalendarDate(2024, 12, 14),
-        new CalendarDate(2024, 12, 15),
-        new CalendarDate(2024, 12, 16),
-    ];
+  let spaces: Space[] = $state<Space[]>([]);
+  let resources: Resource[] = $state<Resource[]>([]);
 
-    const availableDates: DateValue[] = [
-        new CalendarDate(2024, 12, 14),
-        new CalendarDate(2024, 12, 15),
-    ]
+  onMount(async () => {
+    try {
+      const [fetchedSpaces, fetchedResources] = await Promise.all([
+        findSpaces(),
+        findResources(),
+      ]);
+      spaces = [...fetchedSpaces];
 
-    const availableTimes: Object[] = [
-        {
-            date: new CalendarDate(2024, 12, 14),
-            times: ["12:00 - 13:00", "17:00 - 18:00", "18:00 - 19:00"]
-        },
-        {
-            date: new CalendarDate(2024, 12, 15),
-            times: ["10:00 - 11:00", "1:00 - 12:00", "12:00 - 13:00", "20:00 - 21:00", "21:00 - 22:00"]
-        },
-    ]
+      resources = [...fetchedResources];
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  });
 </script>
 
-<h1>Create event</h1>
-    
-<CustomCalendar 
-    use={"resource management"}
-    canSelectMultiple={false} 
-    hasTimePicker={true} 
-    festivalDates={festivalDates} 
-    availableDates={availableDates}
-    availableTimes={availableTimes}
-/>
+<br />
+<br />
+<br />
+<br />
+<!-- just temp until layout properly set  -->
+<p>Hello organisers! Fill this form to upload your event to the program.</p>
+<EventForm formType="create" {spaces} {resources} />

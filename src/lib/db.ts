@@ -46,13 +46,15 @@ const db = new Dexie("CalendarDatabase") as Dexie & {
  * For each new table we can specify a primary key and then any fields we want to index for faster queries.
  * Not all fields need to be listed here, as we declared them when creating the database.
  * For example we don't want to index images!!
+ * 
+ * & symbol denotes that the primary key must be unique.
  */
 db.version(1).stores({
-  accessRequests: "&id",
-  accessResponses: "&id",
-  calendars: "&id, name",
-  spaces: "&id",
-  resources: "&id",
+  accessRequests: "&id, calendarId",
+  accessResponses: "&id, calendarId",
+  calendars: "&id, name, calendarId",
+  spaces: "&id, calendarId",
+  resources: "&id, calendarId",
   events: "&id, name, date, calendarId",
   settings: "&name",
 });
