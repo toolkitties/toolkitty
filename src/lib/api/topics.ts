@@ -34,9 +34,9 @@ export class TopicFactory {
 export async function addCalendarAuthor(
   publicKey: PublicKey,
   topic: Topic,
-  logPath: LogPath,
+  logId: LogId,
 ) {
-  await invoke("add_topic_log", { publicKey, topic: topic, logPath });
+  await invoke("add_topic_log", { publicKey, topic: topic, logId });
 }
 
 /**
@@ -149,6 +149,7 @@ async function maybeSubscribe(
 
   if (!streams?.has(stream)) {
     streams?.add(stream);
-    await addCalendarAuthor(publicKey, topic, logPath);
+    let logId = { stream, logPath };
+    await addCalendarAuthor(publicKey, topic, logId);
   }
 }

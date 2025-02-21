@@ -33,6 +33,11 @@ type Stream = {
   owner: PublicKey;
 };
 
+type LogId = {
+  stream: Stream,
+  logPath: LogPath
+}
+
 /**
  * The path portion of a log id.
  */

@@ -66,19 +66,8 @@ export async function create(
   };
 
   const [operationId, streamId] = await publish.createCalendar(calendarCreated);
-
-  const topic = new TopicFactory(streamId);
-  await topics.addCalendarAuthor(
-    myPublicKey,
-    topic.calendar(),
-    publish.CALENDAR_LOG_PATH,
-  );
+  const topic = new TopicFactory(operationId);
   await topics.subscribe(topic.calendar());
-  await topics.addCalendarAuthor(
-    myPublicKey,
-    topic.calendarInbox(),
-    publish.CALENDAR_INBOX_LOG_PATH,
-  );
   await topics.subscribe(topic.calendarInbox());
 
   await invoke("replay", { topic: topic.calendar() });
@@ -170,25 +159,24 @@ async function onCalendarCreated(
     endDate: timeSpan.end,
   });
 
-  await db.streams.add({
+  let stream = {
     id: meta.stream.id,
     rootHash: meta.stream.rootHash,
     owner: meta.stream.owner,
-  });
+  };
+  await db.streams.add(stream);
 
   // Add the calendar creator to the list of authors who's data we want to
   // sync for this calendar.
   const topic = new TopicFactory(meta.operationId);
-  await topics.addCalendarAuthor(
-    meta.author,
-    topic.calendarInbox(),
-    publish.CALENDAR_INBOX_LOG_PATH,
-  );
-  await topics.addCalendarAuthor(
-    meta.author,
-    topic.calendar(),
-    publish.CALENDAR_LOG_PATH,
-  );
+  await topics.addCalendarAuthor(meta.author, topic.calendarInbox(), {
+    stream,
+    logPath: publish.CALENDAR_INBOX_LOG_PATH,
+  });
+  await topics.addCalendarAuthor(meta.author, topic.calendar(), {
+    stream,
+    logPath: publish.CALENDAR_LOG_PATH,
+  });
 }
 
 async function onCalendarUpdated(

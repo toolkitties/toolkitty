@@ -12,6 +12,7 @@ export async function createCalendar(
 ): Promise<[OperationId, StreamId]> {
   const result: [OperationId, StreamId] = await invoke("publish", {
     payload,
+    streamArgs: {},
     logPath: CALENDAR_LOG_PATH,
   });
 

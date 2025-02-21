@@ -96,7 +96,7 @@ impl Display for StreamOwner {
 /// application layer itself to design how logs are layed out within a stream.
 #[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
 pub struct LogId {
-    pub(crate) stream_id: Stream,
+    pub(crate) stream: Stream,
     pub(crate) log_path: Option<LogPath>,
 }
 
@@ -115,11 +115,11 @@ impl TryFrom<Extensions> for LogId {
     type Error = anyhow::Error;
 
     fn try_from(extensions: Extensions) -> Result<Self, Self::Error> {
-        let stream_id = Stream::try_from(extensions.clone())?;
+        let stream = Stream::try_from(extensions.clone())?;
         let log_path = extensions.log_path.clone();
 
         Ok(Self {
-            stream_id,
+            stream,
             log_path,
         })
     }
@@ -196,10 +196,10 @@ impl Extension<LogPath> for Extensions {
 
 impl Extension<LogId> for Extensions {
     fn extract(header: &Header<Self>) -> Option<LogId> {
-        let stream_id = header.extension().expect("extract stream id extension");
+        let stream = header.extension().expect("extract stream id extension");
         let log_path = header.extension();
         Some(LogId {
-            stream_id,
+            stream,
             log_path,
         })
     }

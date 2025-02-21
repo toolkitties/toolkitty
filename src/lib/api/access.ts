@@ -267,18 +267,18 @@ async function handleRequestOrResponse(
     return;
   }
 
+  let stream = await db.streams.get(calendar.streamId);
+
   // Inform the backend that there is a new author who may contribute to the calendar.
   const topic = new TopicFactory(calendar.id);
-  await topics.addCalendarAuthor(
-    requesterPublicKey,
-    topic.calendar(),
-    publish.CALENDAR_LOG_PATH,
-  );
-  await topics.addCalendarAuthor(
-    requesterPublicKey,
-    topic.calendarInbox(),
-    publish.CALENDAR_INBOX_LOG_PATH,
-  );
+  await topics.addCalendarAuthor(requesterPublicKey, topic.calendar(), {
+    stream: stream!,
+    logPath: publish.CALENDAR_LOG_PATH,
+  });
+  await topics.addCalendarAuthor(requesterPublicKey, topic.calendarInbox(), {
+    stream: stream!,
+    logPath: publish.CALENDAR_INBOX_LOG_PATH,
+  });
 
   let myPublicKey = await publicKey();
   if (myPublicKey != requesterPublicKey) {
