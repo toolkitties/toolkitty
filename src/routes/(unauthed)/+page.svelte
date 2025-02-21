@@ -9,6 +9,38 @@
   import { resolveInviteCode } from "$lib/api/access";
   import ArrowIcon from "../../components/icons/arrowIcon.svelte";
   import BasketIcon from "../../components/icons/basketIcon.svelte";
+  import BinIcon from "../../components/icons/binIcon.svelte";
+  import CalendarIcon from "../../components/icons/calendarIcon.svelte";
+  import ChatBubbleIcon from "../../components/icons/chatBubbleIcon.svelte";
+  import CheckIcon from "../../components/icons/checkIcon.svelte";
+  import ChevronFilledRightIcon from "../../components/icons/chevronFilledRightIcon.svelte";
+  import ChevronIcon from "../../components/icons/chevronIcon.svelte";
+  import ChevronLeftIcon from "../../components/icons/chevronLeftIcon.svelte";
+  import ChevronRightIcon from "../../components/icons/chevronRightIcon.svelte";
+  import ClockIcon from "../../components/icons/clockIcon.svelte";
+  import CrayonIcon from "../../components/icons/crayonIcon.svelte";
+  import CrossIcon from "../../components/icons/crossIcon.svelte";
+  import DashboardIcon from "../../components/icons/dashboardIcon.svelte";
+  import DotdotdotIcon from "../../components/icons/dotdotdotIcon.svelte";
+  import ExclamationIcon from "../../components/icons/exclamationIcon.svelte";
+  import FootstepsIcon from "../../components/icons/footstepsIcon.svelte";
+  import HideIcon from "../../components/icons/hideIcon.svelte";
+  import HouseIcon from "../../components/icons/houseIcon.svelte";
+  import ImageIcon from "../../components/icons/imageIcon.svelte";
+  import LinkIcon from "../../components/icons/linkIcon.svelte";
+  import LockIcon from "../../components/icons/lockIcon.svelte";
+  import MailIcon from "../../components/icons/mailIcon.svelte";
+  import PinIcon from "../../components/icons/pinIcon.svelte";
+  import PlusIcon from "../../components/icons/plusIcon.svelte";
+  import QuestionIcon from "../../components/icons/questionIcon.svelte";
+  import RefreshIcon from "../../components/icons/refreshIcon.svelte";
+  import ShareIcon from "../../components/icons/shareIcon.svelte";
+  import SuitcaseIcon from "../../components/icons/suitcaseIcon.svelte";
+  import TicketIcon from "../../components/icons/ticketIcon.svelte";
+  import UploadIcon from "../../components/icons/uploadIcon.svelte";
+  import WatchIcon from "../../components/icons/watchIcon.svelte";
+  import BubbleIcon from "../../components/icons/bubbleIcon.svelte";
+  import ChestIcon from "../../components/icons/chestIcon.svelte";
 
   let value: string[] | undefined = [];
 
@@ -46,8 +78,43 @@
 <h1 class="text-3xl text-center">Toolkitty 🐈</h1>
 
 <form class="flex flex-col gap-4 grow justify-center mx-auto" onsubmit={join}>
-  <ArrowIcon />
-  <BasketIcon />
+  <div class="grid grid-cols-10 gap-4">
+    <ArrowIcon />
+    <BasketIcon />
+    <BinIcon />
+    <BubbleIcon />
+    <CalendarIcon />
+    <ChatBubbleIcon />
+    <CheckIcon />
+    <ChestIcon />
+    <ChevronFilledRightIcon />
+    <ChevronIcon />
+    <ChevronLeftIcon />
+    <ChevronRightIcon />
+    <ClockIcon />
+    <CrayonIcon />
+    <CrossIcon />
+    <DashboardIcon />
+    <DotdotdotIcon />
+    <ExclamationIcon />
+    <FootstepsIcon />
+    <HideIcon />
+    <HouseIcon />
+    <ImageIcon />
+    <LinkIcon />
+    <LockIcon />
+    <MailIcon />
+    <PinIcon />
+    <PlusIcon />
+    <QuestionIcon />
+    <RefreshIcon />
+    <ShareIcon />
+    <SuitcaseIcon />
+    <TicketIcon />
+    <UploadIcon />
+    <WatchIcon />
+  </div>
+
   {#if progress == "dormant"}
     <PinInput.Root
       bind:value
