@@ -10,6 +10,7 @@
   fill="none"
   xmlns="http://www.w3.org/2000/svg"
   class="icon"
+  aria-hidden="true"
 >
   <g clip-path="url(#clip0_1757_75327)">
     <rect y="12.25" width="1.75" height="1.75" fill="#020202" />

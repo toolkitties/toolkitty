@@ -10,6 +10,7 @@
   fill="none"
   xmlns="http://www.w3.org/2000/svg"
   class="icon"
+  aria-hidden="true"
 >
   <rect x="3.5" y="14" width="1.75" height="1.75" fill="#020202" />
   <rect x="22.75" y="14" width="1.75" height="1.75" fill="#020202" />
