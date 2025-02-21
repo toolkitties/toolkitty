@@ -105,4 +105,16 @@ html {
   .theme-dark .icon rect[fill="#020202"] {
     fill: var(--text-color);
   }
+
+  /* style menu icons when not active */
+  nav .not-active .icon rect:not([fill="black"]) {
+    fill: transparent;
+  }
+
+  /* TODO: Make footsteps icon change colour when active */
+
+  /* style menu icons when active in dark mode */
+  .theme-dark nav .active .icon rect[fill="black"] {
+    @apply fill-pink-hot;
+  }
 }
