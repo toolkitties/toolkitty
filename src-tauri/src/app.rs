@@ -222,9 +222,6 @@ impl Rpc {
         Ok(())
     }
 
-    /// Add an author to a calendar.
-    ///
-    /// This means that we will actively sync operations from this author for the specific calendar.
     pub async fn add_topic_log(
         &self,
         public_key: PublicKey,
@@ -236,7 +233,6 @@ impl Rpc {
         Ok(())
     }
 
-    /// Subscribe to a specific calendar by it's id.
     pub async fn subscribe(&self, topic: &Topic) -> Result<(), RpcError> {
         let mut context = self.context.lock().await;
 
@@ -281,7 +277,6 @@ impl Rpc {
         Ok(())
     }
 
-    /// Publish an event to a calendar topic.
     pub async fn publish(
         &self,
         payload: &[u8],
