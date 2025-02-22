@@ -14,6 +14,7 @@
     // fully and calls "init" again.
     if (!("isInit" in window)) {
       init().then(async () => {
+        
         // TODO(sam): just for now we populate the database with some seed data.
         for (const message of seedMessages) {
           await process(message);

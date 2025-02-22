@@ -321,7 +321,6 @@ impl Rpc {
         Ok((header.hash(), stream.id()))
     }
 
-    /// Publish an invite code to onto the invite overlay network.
     pub async fn publish_ephemeral(&self, topic: Topic, payload: Vec<u8>) -> Result<(), RpcError> {
         let mut context = self.context.lock().await;
         context.node.publish_ephemeral(&topic, &payload).await?;
