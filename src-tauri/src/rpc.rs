@@ -132,7 +132,7 @@ pub async fn publish_ephemeral(
     payload: serde_json::Value,
 ) -> Result<(), RpcError> {
     debug!(
-        command.name = "publish_to_invite_code_overlay",
+        command.name = "publish_ephemeral",
         "RPC request received"
     );
 

@@ -60,3 +60,7 @@ export async function toInbox(
 
   return result;
 }
+
+export async function toInviteOverlay(payload: InviteCodesMessage) {
+  await invoke("publish_ephemeral", { topic: INVITE_TOPIC, payload });
+}

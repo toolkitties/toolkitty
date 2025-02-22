@@ -48,12 +48,7 @@ export async function subscribe(topic: Topic) {
   await invoke("subscribe", { topic });
 }
 
-/**
- * Subscribe to a calendar. This tells the backend to subscribe to a particular topic type for
- * this calendar, enter gossip overlays and sync with any discovered peers. It does not effect
- * which calendar events are forwarded to the frontend.
- */
-export async function subscribe_ephemeral(topic: Topic) {
+export async function subscribeEphemeral(topic: Topic) {
   await invoke("subscribe_ephemeral", { topic });
 }
 
@@ -68,21 +63,26 @@ export async function subscribe_ephemeral(topic: Topic) {
  * method does that while de-duplicating in order to avoid repeat calls to the backend.
  *
  * These are the subscriptions we want to make:
- * - "calendar/inbox"             for all calendars we requested access to
+ * - "calendar/inbox"                 for all calendars we requested access to
  * - "calendar/inbox" + "calendar"    for all calendars we have access to
  *
  * These are the authors we want to add to a calendar topic:
- * - "calendar/inbox"             authors who have requested access to a calendar
+ * - "calendar/inbox"                 authors who have requested access to a calendar
  * - "calendar/inbox" + "calendar"    authors who have access to a calendar
  *
  */
 export async function subscribeToAll() {
+  // Subscribe to the global invite topic.
+  await subscribeEphemeral(publish.INVITE_TOPIC);
+
   const myPublicKey = await publicKey();
   const allRequests = await db.accessRequests.toArray();
   const allMyCalendars = (await db.calendars.toArray()).filter(
     (calendar) => calendar.ownerId == myPublicKey,
   );
 
+  // Subscribe to all calendars we requested access for and add any relevant public keys + logs to the
+  // topic map.
   for (const request of allRequests) {
     const calendar = await db.calendars.get(request.calendarId);
     if (!calendar) {
@@ -112,6 +112,7 @@ export async function subscribeToAll() {
     );
   }
 
+  // Subscribe to all calendars we created and add our public key and logs to the topic map.
   for (const calendar of allMyCalendars) {
     const topic = new TopicFactory(calendar.id);
     const stream = await db.streams.get(calendar.id);
