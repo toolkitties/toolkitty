@@ -147,12 +147,13 @@ async function onCalendarCreated(
 ) {
   validateFields(data.fields);
 
+  // @TODO(sam): validate that header hash and owner match those contained in stream.
+
   let { name, dates } = data.fields;
   let timeSpan = dates[0];
 
   await db.calendars.add({
-    id: meta.operationId,
-    streamId: meta.stream.id,
+    id: meta.stream.id,
     ownerId: meta.stream.owner,
     name,
     startDate: timeSpan.start,

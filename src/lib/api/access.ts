@@ -267,7 +267,7 @@ async function handleRequestOrResponse(
     return;
   }
 
-  let stream = await db.streams.get(calendar.streamId);
+  let stream = await db.streams.get(calendar.id);
 
   // Inform the backend that there is a new author who may contribute to the calendar.
   const topic = new TopicFactory(calendar.id);

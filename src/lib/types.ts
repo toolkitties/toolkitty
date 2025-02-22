@@ -649,7 +649,6 @@ type User = {
 
 type Calendar = {
   id: Hash;
-  streamId: Hash;
   ownerId: PublicKey;
   name: string;
   // TODO: Should we support non-consecutive dates? It could be arrays of TimeSpan? The
