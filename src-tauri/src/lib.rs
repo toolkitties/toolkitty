@@ -7,8 +7,8 @@ mod topic;
 use tauri::Builder;
 
 use crate::rpc::{
-    ack, add_calendar_author, create_calendar, init, public_key, publish,
-    publish_to_invite_code_overlay, select_calendar, subscribe,
+    ack, add_topic_log, init, public_key, publish, publish_ephemeral, replay, subscribe,
+    subscribe_ephemeral,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -19,8 +19,12 @@ pub fn run() {
 
     Builder::default()
         .setup(|app| {
-            let app_handle = app.handle().clone();
-            app::Service::run(app_handle);
+            #[cfg(not(test))]
+            {
+                let app_handle = app.handle().clone();
+                app::Service::run(app_handle);
+            }
+
             Ok(())
         })
         .plugin(logger)
@@ -29,12 +33,12 @@ pub fn run() {
             init,
             ack,
             public_key,
-            add_calendar_author,
-            create_calendar,
+            add_topic_log,
             publish,
-            publish_to_invite_code_overlay,
-            select_calendar,
+            publish_ephemeral,
+            replay,
             subscribe,
+            subscribe_ephemeral
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

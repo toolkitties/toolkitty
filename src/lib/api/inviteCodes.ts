@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { calendars } from "$lib/api";
+import { calendars, publish } from "$lib/api";
 
 type InviteCodesState = {
   inviteCode: string | null;
@@ -69,13 +69,15 @@ function reset() {
 }
 
 async function sendRequest(inviteCode: string) {
-  const payload: ResolveInviteCodeRequest = {
-    messageType: "request",
-    timestamp: Date.now(),
-    inviteCode,
+  let payload: InviteCodesMessage = {
+    event: "invite_codes",
+    data: {
+      messageType: "request",
+      timestamp: Date.now(),
+      inviteCode,
+    },
   };
-
-  await invoke("publish_to_invite_code_overlay", { payload });
+  await publish.toInviteOverlay(payload);
 }
 
 /*
@@ -103,14 +105,17 @@ async function onRequest(inviteCode: string) {
     return;
   }
 
-  const payload: ResolveInviteCodeResponse = {
-    messageType: "response",
-    timestamp: Date.now(),
-    inviteCode,
-    calendarId: calendar.id,
-    calendarName: calendar.name,
+  let payload: InviteCodesMessage = {
+    event: "invite_codes",
+    data: {
+      messageType: "response",
+      timestamp: Date.now(),
+      inviteCode,
+      calendarId: calendar.id,
+      calendarName: calendar.name,
+    },
   };
-  await invoke("publish_to_invite_code_overlay", { payload });
+  await publish.toInviteOverlay(payload);
 }
 
 async function onResponse(response: ResolveInviteCodeResponse) {

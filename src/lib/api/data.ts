@@ -1,9 +1,16 @@
 export const seedMessages: ApplicationMessage[] = [
   {
     meta: {
-      calendarId: "0",
+      stream: {
+        owner:
+          "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
+        id: "0",
+        rootHash: "A"
+      },
+      logPath: "calendar",
       operationId: "A",
-      publicKey: "ALICE",
+      author:
+        "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
     },
     event: "application",
     data: {
@@ -23,9 +30,16 @@ export const seedMessages: ApplicationMessage[] = [
   },
   {
     meta: {
-      calendarId: "0",
+      stream: {
+        owner:
+          "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
+        id: "0",
+        rootHash: "A"
+      },
+      logPath: "calendar",
       operationId: "B",
-      publicKey: "ALICE",
+      author:
+        "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
     },
     event: "application",
     data: {
@@ -61,9 +75,16 @@ export const seedMessages: ApplicationMessage[] = [
   },
   {
     meta: {
-      calendarId: "0",
+      stream: {
+        owner:
+          "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
+        id: "0",
+        rootHash: "A"
+      },
+      logPath: "calendar",
       operationId: "C",
-      publicKey: "ALICE",
+      author:
+        "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
     },
     event: "application",
     data: {
@@ -100,9 +121,16 @@ export const seedMessages: ApplicationMessage[] = [
   },
   {
     meta: {
-      calendarId: "0",
+      stream: {
+        owner:
+          "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
+        id: "0",
+        rootHash: "A"
+      },
+      logPath: "calendar",
       operationId: "D",
-      publicKey: "ALICE",
+      author:
+        "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
     },
     event: "application",
     data: {
@@ -135,9 +163,16 @@ export const seedMessages: ApplicationMessage[] = [
   },
   {
     meta: {
-      calendarId: "0",
+      stream: {
+        owner:
+          "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
+        id: "0",
+        rootHash: "A"
+      },
+      logPath: "calendar",
       operationId: "E",
-      publicKey: "ALICE",
+      author:
+        "42f0cc8da959a263973a6a8fadec5c44ea679d89adee05027331670e6694727a",
     },
     event: "application",
     data: {
@@ -165,7 +200,7 @@ export const seedMessages: ApplicationMessage[] = [
     },
   },
 ];
-// 
+//
 // export const events: CalendarEvent[] = [
 //   {
 //     id: "1",
@@ -206,7 +241,7 @@ export const seedMessages: ApplicationMessage[] = [
 //     tags: ["dancing", "anarchism", "improvisation"],
 //   },
 // ];
-// 
+//
 // export const requests: SpaceRequest[] = [
 //   {
 //     id: "1",

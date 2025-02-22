@@ -9,6 +9,41 @@
 type Hash = string;
 
 /**
+ * The hash identifier of a stream.
+ */
+type StreamId = Hash;
+
+/**
+ * The hash identifier of a single operation.
+ */
+type OperationId = Hash;
+
+
+/**
+ * A topic which can be subscribed to on the network layer.
+ */
+type Topic = string;
+
+/**
+ * A long-lived "owned" data stream.
+ */
+type Stream = {
+  id: StreamId;
+  rootHash: Hash;
+  owner: PublicKey;
+};
+
+type LogId = {
+  stream: Stream,
+  logPath: LogPath
+}
+
+/**
+ * The path portion of a log id.
+ */
+type LogPath = "calendar" | "calendar/inbox";
+
+/**
  * Hexadecimal-encoded Ed25519 public key.
  */
 type PublicKey = string;
@@ -102,9 +137,10 @@ type ApplicationMessage = {
  * Additional data we've received from the processed p2panda operation.
  */
 type StreamMessageMeta = {
-  calendarId: Hash;
   operationId: Hash;
-  publicKey: PublicKey;
+  author: PublicKey;
+  stream: Stream;
+  logPath: LogPath;
 };
 
 /**
@@ -343,6 +379,7 @@ type UserProfileUpdated = {
 type CalendarAccessRequested = {
   type: "calendar_access_requested";
   data: {
+    // @TODO(sam): we should switch to using the streamId as the "access reference" for a calendar.
     calendarId: Hash;
     name: string;
     message: string;
@@ -587,7 +624,6 @@ type UserRoleAssigned = {
   };
 };
 
-
 /**
  * The different subscription types which exist for a calendar. Each represents a logical set of
  * data which can be subscribed to independently.
@@ -599,11 +635,10 @@ type Subscription = {
   type: TopicType;
 };
 
-
 /**
  * (´ヮ´)八(*ﾟ▽ﾟ*)
  * Database Schema
- * 
+ *
  * How the data looks that we store in the frontend indexed db.
  */
 
@@ -697,11 +732,11 @@ type Settings = {
   value: Hash | string;
 };
 
-
 /**
  * (´ヮ´)八(*ﾟ▽ﾟ*)
  * Application Data
  */
 
-type RequestEvent = SpaceRequest | ResourceRequest | AccessRequest;
+type CalendarId = Hash;
 
+type RequestEvent = SpaceRequest | ResourceRequest | AccessRequest;
