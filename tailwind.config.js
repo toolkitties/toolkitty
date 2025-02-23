@@ -32,6 +32,9 @@ export default {
         pink: {
           hot: '#FF00E5'
         },
+        blue: {
+          light: '#baceff'
+        }
       },
       fontFamily: {
         sans: ['Atkinson-Hyperlegible', 'sans-serif'],
