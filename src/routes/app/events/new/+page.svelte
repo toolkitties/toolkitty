@@ -1,5 +1,5 @@
 <script>
-  import Select from "../../../../components/select.svelte";
+  import Select from "$lib/components/Select.svelte";
 
   const resources = [
     { value: "1", label: "Projector" },

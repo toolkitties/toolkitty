@@ -2,7 +2,7 @@
   import { toast } from "$lib/toast.svelte";
   import { fly } from "svelte/transition";
   import * as Dialog from "./dialog";
-  import Request from "./dialog/request.svelte";
+  import Request from "./dialog/Request.svelte";
   import { tick } from "svelte";
 
   /**

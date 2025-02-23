@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { findMany as findSpaces } from "$lib/api/spaces";
   import { findMany as findResources } from "$lib/api/resources";
-  import EventForm from "../../../../components/event-form.svelte";
+  import EventForm from "$lib/components/EventForm.svelte";
 
   let spaces: Space[] = $state<Space[]>([]);
   let resources: Resource[] = $state<Resource[]>([]);

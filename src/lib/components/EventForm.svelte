@@ -1,5 +1,5 @@
 <script lang="ts">
-  import AvailabilityViewer from "./availability-viewer.svelte";
+  import AvailabilityViewer from "./AvailabilityViewer.svelte";
 
   let { formType, spaces, resources } = $props();
 

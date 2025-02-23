@@ -1,12 +1,12 @@
 <script lang="ts">
   import "../../app.css";
   import { page } from "$app/state";
-  import Header from "../../components/header.svelte";
-  import CalendarIcon from "$lib/components/icons/calendarIcon.svelte";
-  import FootstepsIcon from "$lib/components/icons/footstepsIcon.svelte";
-  import ChestIcon from "$lib/components/icons/chestIcon.svelte";
-  import DashboardIcon from "$lib/components/icons/dashboardIcon.svelte";
-  import ShareIcon from "$lib/components/icons/shareIcon.svelte";
+  import Header from "$lib/components/Header.svelte";
+  import CalendarIcon from "$lib/components/icons/CalendarIcon.svelte";
+  import FootstepsIcon from "$lib/components/icons/FootstepsIcon.svelte";
+  import ChestIcon from "$lib/components/icons/ChestIcon.svelte";
+  import DashboardIcon from "$lib/components/icons/DashboardIcon.svelte";
+  import ShareIcon from "$lib/components/icons/ShareIcon.svelte";
 
   interface MenuItem {
     name: string;

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import FestivalCalendar from "../../../components/festival-calendar.svelte";
-  import Select from "../../../components/select.svelte";
+  import FestivalCalendar from "$lib/components/FestivalCalendar.svelte";
+  import Select from "$lib/components/Select.svelte";
   import { calendars } from "$lib/api";
   import { goto } from "$app/navigation";
 

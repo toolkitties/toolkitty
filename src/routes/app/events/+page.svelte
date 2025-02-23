@@ -1,5 +1,5 @@
 <script>
-  import EventRow from "../../../components/event-row.svelte";
+  import EventRow from "$lib/components/EventRow.svelte";
 
   let events = [
     {

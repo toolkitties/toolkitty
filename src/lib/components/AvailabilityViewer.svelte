@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { Calendar } from "bits-ui";
   import { fromDate } from "@internationalized/date";
-  import Bookings from "./bookings.svelte";
+  import Bookings from "./Bookings.svelte";
   import type { DateValue } from "@internationalized/date";
 
   let { availability = [], multiBookable } = $props();

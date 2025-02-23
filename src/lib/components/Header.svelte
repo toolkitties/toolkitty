@@ -1,6 +1,6 @@
 <script>
   import { onMount } from "svelte";
-  import Back from "./back.svelte";
+  import Back from "./Back.svelte";
   import { calendars } from "$lib/api";
 
   // TODO: change or remove default title once we have a name.
