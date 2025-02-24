@@ -4,7 +4,7 @@ import { db } from "$lib/db";
 import { access, publish } from ".";
 
 const subscriptions: Set<string> = new Set();
-const topicStreams: Map<Topic, Set<Stream>> = new Map();
+const topicLogs: Map<Topic, Set<LogId>> = new Map();
 
 export class TopicFactory {
   private id: Hash;
@@ -142,15 +142,15 @@ async function maybeSubscribe(
     await subscribe(topic);
   }
 
-  let streams = topicStreams.get(topic);
-  if (!streams) {
-    topicStreams.set(topic, new Set());
-    streams = topicStreams.get(topic);
+  let logs = topicLogs.get(topic);
+  if (!logs) {
+    topicLogs.set(topic, new Set());
+    logs = topicLogs.get(topic);
   }
 
-  if (!streams?.has(stream)) {
-    streams?.add(stream);
-    let logId = { stream, logPath };
+  let logId = { stream, logPath };
+  if (!logs?.has(logId)) {
+    logs?.add(logId);
     await addCalendarAuthor(publicKey, topic, logId);
   }
 }
