@@ -61,6 +61,8 @@ export async function toInbox(
   return result;
 }
 
-export async function toInviteOverlay(payload: InviteCodesMessage) {
+export async function toInviteOverlay(
+  payload: ResolveInviteCodeRequest | ResolveInviteCodeResponse,
+) {
   await invoke("publish_ephemeral", { topic: INVITE_TOPIC, payload });
 }

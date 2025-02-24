@@ -69,13 +69,10 @@ function reset() {
 }
 
 async function sendRequest(inviteCode: string) {
-  let payload: InviteCodesMessage = {
-    event: "invite_codes",
-    data: {
-      messageType: "request",
-      timestamp: Date.now(),
-      inviteCode,
-    },
+  let payload: ResolveInviteCodeRequest = {
+    messageType: "request",
+    timestamp: Date.now(),
+    inviteCode,
   };
   await publish.toInviteOverlay(payload);
 }
@@ -85,16 +82,12 @@ async function sendRequest(inviteCode: string) {
  */
 
 export async function process(
-  message: InviteCodesReadyMessage | InviteCodesMessage,
+  message: ResolveInviteCodeRequest | ResolveInviteCodeResponse,
 ) {
-  if (message.event === "invite_codes_ready") {
-    // Do nothing for now
-  } else if (message.event === "invite_codes") {
-    if (message.data.messageType === "request") {
-      onRequest(message.data.inviteCode);
-    } else if (message.data.messageType === "response") {
-      onResponse(message.data);
-    }
+  if (message.messageType === "request") {
+    onRequest(message.inviteCode);
+  } else if (message.messageType === "response") {
+    onResponse(message);
   }
 }
 
@@ -105,15 +98,12 @@ async function onRequest(inviteCode: string) {
     return;
   }
 
-  let payload: InviteCodesMessage = {
-    event: "invite_codes",
-    data: {
-      messageType: "response",
-      timestamp: Date.now(),
-      inviteCode,
-      calendarId: calendar.id,
-      calendarName: calendar.name,
-    },
+  let payload: ResolveInviteCodeResponse = {
+    messageType: "response",
+    timestamp: Date.now(),
+    inviteCode,
+    calendarId: calendar.id,
+    calendarName: calendar.name,
   };
   await publish.toInviteOverlay(payload);
 }

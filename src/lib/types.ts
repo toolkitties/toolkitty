@@ -73,8 +73,7 @@ type Image = string;
  */
 type ChannelMessage =
   | StreamMessage
-  | InviteCodesReadyMessage
-  | InviteCodesMessage
+  | EphemeralMessage
   | SystemMessage;
 
 /**
@@ -187,21 +186,10 @@ type NetworkEvent = {
  */
 
 /**
- * We've successfully entered the p2p gossip overlay and are ready now to
- * request resolved "invite codes" or resolve them for others.
- *
- * We can only enter a gossip overlay if at least one other peer has been
- * discovered. This event indicates that we've found this first peer!
- */
-type InviteCodesReadyMessage = {
-  event: "invite_codes_ready";
-};
-
-/**
  * We've received an "invite codes" request or response from the network.
  */
-type InviteCodesMessage = {
-  event: "invite_codes";
+type EphemeralMessage = {
+  event: "ephemeral";
   data: ResolveInviteCodeRequest | ResolveInviteCodeResponse;
 };
 
