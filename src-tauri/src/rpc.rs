@@ -96,7 +96,7 @@ pub async fn subscribe_ephemeral(rpc: State<'_, Rpc>, topic: Topic) -> Result<()
         "RPC request received"
     );
 
-    rpc.subscribe_ephemeral(topic).await?;
+    rpc.subscribe_ephemeral(&topic).await?;
     Ok(())
 }
 
@@ -137,6 +137,6 @@ pub async fn publish_ephemeral(
     );
 
     let payload = serde_json::to_vec(&payload)?;
-    rpc.publish_ephemeral(topic, payload).await?;
+    rpc.publish_ephemeral(&topic, &payload).await?;
     Ok(())
 }

@@ -1,7 +1,6 @@
 use p2panda_core::{Hash, PublicKey};
 use serde::ser::SerializeStruct;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 
 use crate::node::StreamEvent;
 use crate::topic::Topic;

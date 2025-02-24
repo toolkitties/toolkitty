@@ -255,7 +255,7 @@ impl Rpc {
         Ok(())
     }
 
-    pub async fn subscribe_ephemeral(&self, topic: Topic) -> Result<(), RpcError> {
+    pub async fn subscribe_ephemeral(&self, topic: &Topic) -> Result<(), RpcError> {
         let mut context = self.context.lock().await;
 
         if context
@@ -271,7 +271,7 @@ impl Rpc {
 
             context
                 .to_app_tx
-                .send(ChannelEvent::SubscribedToTopic(topic))?;
+                .send(ChannelEvent::SubscribedToTopic(topic.clone()))?;
         }
 
         Ok(())
@@ -321,7 +321,7 @@ impl Rpc {
         Ok((header.hash(), stream.id()))
     }
 
-    pub async fn publish_ephemeral(&self, topic: Topic, payload: Vec<u8>) -> Result<(), RpcError> {
+    pub async fn publish_ephemeral(&self, topic: &Topic, payload: &[u8]) -> Result<(), RpcError> {
         let mut context = self.context.lock().await;
         context.node.publish_ephemeral(&topic, &payload).await?;
         Ok(())
@@ -360,6 +360,8 @@ impl Serialize for RpcError {
 
 #[cfg(test)]
 mod tests {
+    use std::time::Duration;
+
     use serde_json::json;
     use tokio::sync::broadcast;
 
@@ -368,6 +370,7 @@ mod tests {
         node::{
             extensions::{LogPath, StreamOwner, StreamRootHash},
             stream::{EventData, EventMeta},
+            StreamEvent,
         },
         topic::Topic,
     };
@@ -401,6 +404,28 @@ mod tests {
 
         let topic = "some_topic".into();
         let result = rpc.subscribe(&topic).await;
+        assert!(result.is_ok());
+
+        let event = channel_rx.recv().await.unwrap();
+        match event {
+            ChannelEvent::SubscribedToTopic(received_topic) => {
+                assert_eq!(received_topic, topic);
+            }
+            _ => panic!(),
+        }
+    }
+
+    #[tokio::test]
+    async fn subscribe_ephemeral() {
+        let context = Service::run().await;
+        let rpc = Rpc { context };
+
+        let (channel_tx, mut channel_rx) = broadcast::channel(10);
+        let result = rpc.init(channel_tx).await;
+        assert!(result.is_ok());
+
+        let topic = "some_topic".into();
+        let result = rpc.subscribe_ephemeral(&topic).await;
         assert!(result.is_ok());
 
         let event = channel_rx.recv().await.unwrap();
@@ -456,7 +481,7 @@ mod tests {
                     author,
                     stream,
                     log_path,
-                } = stream_event.meta;
+                } = stream_event.meta.unwrap();
 
                 assert_eq!(author, private_key.public_key());
                 assert_eq!(operation_id, operation_hash);
@@ -473,5 +498,61 @@ mod tests {
             }
             _ => panic!(),
         }
+    }
+
+    #[tokio::test]
+    async fn two_peers_subscribe() {
+        let peer_a = Rpc {
+            context: Service::run().await,
+        };
+        let peer_b = Rpc {
+            context: Service::run().await,
+        };
+
+        let (peer_a_tx, _peer_a_rx) = broadcast::channel(100);
+        let (peer_b_tx, mut peer_b_rx) = broadcast::channel(100);
+
+        let result = peer_a.init(peer_a_tx).await;
+        assert!(result.is_ok());
+
+        let result = peer_b.init(peer_b_tx).await;
+        assert!(result.is_ok());
+
+        let topic = "some_topic".into();
+        let result = peer_a.subscribe_ephemeral(&topic).await;
+        assert!(result.is_ok());
+
+        let result = peer_b.subscribe_ephemeral(&topic).await;
+        assert!(result.is_ok());
+
+        let send_payload = json!({
+            "message": "organize!"
+        });
+
+        {
+            let send_payload = send_payload.clone();
+            tokio::spawn(async move {
+                loop {
+                    tokio::time::sleep(Duration::from_secs(1)).await;
+                    let result = peer_a
+                        .publish_ephemeral(&topic, &serde_json::to_vec(&send_payload).unwrap())
+                        .await;
+                    assert!(result.is_ok());
+                }
+            });
+        }
+
+        let mut message_received = false;
+        while let Ok(event) = peer_b_rx.recv().await {
+            if let ChannelEvent::Stream(StreamEvent { data, .. }) = event {
+                if let EventData::Ephemeral(payload) = data {
+                    assert_eq!(send_payload, payload);
+                    message_received = true;
+                    break;
+                }
+            }
+        }
+
+        assert!(message_received);
     }
 }

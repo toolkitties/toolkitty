@@ -11,7 +11,7 @@ use futures_util::future::{MapErr, Shared};
 use futures_util::{FutureExt, TryFutureExt};
 use p2panda_core::{Body, Hash, Header, PrivateKey, PublicKey};
 use p2panda_discovery::mdns::LocalDiscovery;
-use p2panda_net::{FromNetwork, NetworkBuilder, SyncConfiguration, SystemEvent, TopicId};
+use p2panda_net::{NetworkBuilder, SyncConfiguration, SystemEvent, TopicId};
 use p2panda_store::MemoryStore;
 use p2panda_sync::log_sync::{LogSyncProtocol, TopicLogMap};
 use p2panda_sync::TopicQuery;
@@ -58,6 +58,8 @@ where
         let rt = tokio::runtime::Handle::current();
 
         let (stream, stream_tx, stream_rx) = StreamController::new(store.clone());
+        let (ephemeral_tx, mut ephemeral_rx) = mpsc::channel(1024);
+
         let (network_tx, mut network_rx) = mpsc::channel(1024);
 
         {
@@ -70,6 +72,18 @@ where
                             body,
                             header_bytes,
                         })
+                        .await
+                        .expect("send stream_tx");
+                }
+            });
+        }
+
+        {
+            let stream_tx = stream_tx.clone();
+            rt.spawn(async move {
+                while let Some(bytes) = ephemeral_rx.recv().await {
+                    stream_tx
+                        .send(ToStreamController::Ephemeral { bytes })
                         .await
                         .expect("send stream_tx");
                 }
@@ -91,7 +105,7 @@ where
         let system_events_rx = network.events().await?;
 
         let (network_actor_tx, network_actor_rx) = mpsc::channel(64);
-        let actor = NodeActor::new(network, network_tx, network_actor_rx);
+        let actor = NodeActor::new(network, network_tx, ephemeral_tx, network_actor_rx);
 
         let actor_handle = rt.spawn(async {
             if let Err(err) = actor.run().await {
@@ -219,19 +233,13 @@ where
         Ok(())
     }
 
-    pub async fn subscribe_ephemeral(
-        &self,
-        topic: &T,
-    ) -> Result<(mpsc::Receiver<FromNetwork>, oneshot::Receiver<()>)> {
-        let (reply_tx, reply_rx) = oneshot::channel();
+    pub async fn subscribe_ephemeral(&self, topic: &T) -> Result<()> {
         self.network_actor_tx
             .send(ToNodeActor::Subscribe {
                 topic: topic.clone(),
-                reply: reply_tx,
             })
             .await?;
-        let (_tx, rx, ready) = reply_rx.await?;
-        Ok((rx, ready))
+        Ok(())
     }
 }
 

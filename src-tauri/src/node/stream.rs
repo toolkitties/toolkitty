@@ -20,6 +20,9 @@ use super::extensions::{LogPath, Stream, StreamOwner, StreamRootHash};
 
 #[allow(clippy::large_enum_variant, dead_code)]
 pub enum ToStreamController {
+    Ephemeral {
+        bytes: Vec<u8>,
+    },
     Ingest {
         header: Header<Extensions>,
         body: Option<Body>,
@@ -63,10 +66,17 @@ impl StreamController {
 
         {
             let controller_store = controller_store.clone();
+            let app_tx = app_tx.clone();
 
             rt.spawn(async move {
                 loop {
                     match stream_rx.recv().await {
+                        Some(ToStreamController::Ephemeral { bytes }) => {
+                            app_tx
+                                .send(StreamEvent::from_bytes(bytes))
+                                .await
+                                .expect("send on app_tx");
+                        }
                         Some(ToStreamController::Ingest {
                             header,
                             body,
@@ -137,7 +147,7 @@ impl StreamController {
                             // layer as it might contain more information relevant for it.
                             if let Some(body) = operation.body {
                                 app_tx
-                                    .send(StreamEvent::new(operation.header, body))
+                                    .send(StreamEvent::from_operation(operation.header, body))
                                     .await
                                     .expect("app_tx send");
                             }
@@ -166,24 +176,33 @@ impl StreamController {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct StreamEvent {
-    pub meta: EventMeta,
+    pub meta: Option<EventMeta>,
     pub data: EventData,
 }
 
 impl StreamEvent {
-    pub fn new(header: Header<Extensions>, body: Body) -> Self {
+    pub fn from_operation(header: Header<Extensions>, body: Body) -> Self {
         let json = serde_json::from_slice(&body.to_bytes()).unwrap();
 
         Self {
-            meta: header.into(),
+            meta: Some(header.into()),
             data: EventData::Application(json),
+        }
+    }
+
+    pub fn from_bytes(payload: Vec<u8>) -> Self {
+        let json = serde_json::from_slice(&payload).unwrap();
+
+        Self {
+            meta: None,
+            data: EventData::Ephemeral(json),
         }
     }
 
     #[allow(dead_code)]
     pub fn from_error(error: StreamError, header: Header<Extensions>) -> Self {
         Self {
-            meta: header.into(),
+            meta: Some(header.into()),
             data: EventData::Error(error),
         }
     }
@@ -248,6 +267,7 @@ impl From<Header<Extensions>> for EventMeta {
 #[serde(untagged)]
 pub enum EventData {
     Application(serde_json::Value),
+    Ephemeral(serde_json::Value),
     Error(StreamError),
 }
 
@@ -255,6 +275,7 @@ impl EventData {
     fn tag(&self) -> &'static str {
         match self {
             EventData::Application(_) => "application",
+            EventData::Ephemeral(_) => "ephemeral",
             EventData::Error(_) => "error",
         }
     }
@@ -482,7 +503,7 @@ mod tests {
         .unwrap();
         assert_eq!(
             rx.recv().await.unwrap(),
-            StreamEvent::new(header_0.clone(), body_0)
+            StreamEvent::from_operation(header_0.clone(), body_0)
         );
 
         // Acknowledge operation 0.
@@ -525,7 +546,7 @@ mod tests {
         .unwrap();
         assert_eq!(
             rx.recv().await.unwrap(),
-            StreamEvent::new(header_1.clone(), body_1.clone())
+            StreamEvent::from_operation(header_1.clone(), body_1.clone())
         );
 
         // Create and ingest operation 2.
@@ -547,7 +568,7 @@ mod tests {
         .unwrap();
         assert_eq!(
             rx.recv().await.unwrap(),
-            StreamEvent::new(header_2.clone(), body_2.clone())
+            StreamEvent::from_operation(header_2.clone(), body_2.clone())
         );
 
         // Ask to replay log, expect operation 1 and 2 to be sent again.
@@ -559,8 +580,14 @@ mod tests {
         .await
         .unwrap();
         assert!(reply_rx.await.is_ok());
-        assert_eq!(rx.recv().await.unwrap(), StreamEvent::new(header_1, body_1));
-        assert_eq!(rx.recv().await.unwrap(), StreamEvent::new(header_2, body_2));
+        assert_eq!(
+            rx.recv().await.unwrap(),
+            StreamEvent::from_operation(header_1, body_1)
+        );
+        assert_eq!(
+            rx.recv().await.unwrap(),
+            StreamEvent::from_operation(header_2, body_2)
+        );
 
         // Acknowledge operation 1 and 2.
         let (reply, reply_rx) = oneshot::channel();
