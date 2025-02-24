@@ -104,6 +104,14 @@
                     ($availableDates.has(date.toString())
                       ? "bg-green-500 text-white"
                       : "")}
+                  aria-label={"Date " +
+                    date.toString() +
+                    ($availableDates.has(date.toString())
+                      ? " - Availability set"
+                      : " - No availability")}
+                  title={$availableDates.has(date.toString())
+                    ? "Availability set"
+                    : "No availability"}
                 />
               </Calendar.Cell>
             {/each}
