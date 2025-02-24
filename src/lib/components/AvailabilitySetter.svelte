@@ -112,6 +112,7 @@
                   title={$availableDates.has(date.toString())
                     ? "Availability set"
                     : "No availability"}
+                  aria-disabled={"outside-month" in date}
                 />
               </Calendar.Cell>
             {/each}
@@ -143,19 +144,17 @@
   {/if}
 
   {#if availability.length > 0}
-    <h3 class="mt-4">Current Availability:</h3>
     <ul>
       {#each availability as entry, index}
         {#if entry.date.toString() === currentlySelectedDate.toString()}
-          <li class="flex items-center space-x-4 mt-2">
-            <span>{entry.startTime} - {entry.endTime}</span>
-            <button
-              on:click={() => handleRemoveAvailability(index)}
-              class="bg-red-500 text-white px-2 py-1 rounded"
-            >
-              Remove
-            </button>
-          </li>
+          <h3 class="mt-4">Current Availability:</h3>
+          <span>{entry.startTime} - {entry.endTime}</span>
+          <button
+            on:click={() => handleRemoveAvailability(index)}
+            class="bg-red-500 text-white px-2 py-1 rounded"
+          >
+            Remove
+          </button>
         {/if}
       {/each}
     </ul>
