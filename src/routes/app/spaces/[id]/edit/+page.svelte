@@ -1,16 +1,8 @@
 <script lang="ts">
-  import type { DateValue } from "@internationalized/date";
-  import { CalendarDate } from "@internationalized/date";
-
-  // placeholder data
-  const festivalDates: DateValue[] = [
-    new CalendarDate(2024, 12, 11),
-    new CalendarDate(2024, 12, 12),
-    new CalendarDate(2024, 12, 13),
-    new CalendarDate(2024, 12, 14),
-    new CalendarDate(2024, 12, 15),
-    new CalendarDate(2024, 12, 16),
-  ];
+  import SpaceForm from "$lib/components/SpaceForm.svelte";
 </script>
 
-<h1>Edit space</h1>
+<br />
+<br />
+<br />
+<SpaceForm formType="edit" />
