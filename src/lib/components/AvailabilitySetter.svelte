@@ -135,24 +135,16 @@
       <label for="availability-end-time">End *</label>
       <input name="availability-end-time" type="time" required />
     </div>
-    <button
-      on:click={handleAddAvailability}
-      class="bg-blue-500 text-white px-4 py-2 rounded"
-    >
-      Add
-    </button>
+    <button on:click={handleAddAvailability}> Add </button>
   {/if}
 
   {#if availability.length > 0}
     <ul>
       {#each availability as entry, index}
         {#if entry.date.toString() === currentlySelectedDate.toString()}
-          <h3 class="mt-4">Current Availability:</h3>
+          <h3>Current Availability:</h3>
           <span>{entry.startTime} - {entry.endTime}</span>
-          <button
-            on:click={() => handleRemoveAvailability(index)}
-            class="bg-red-500 text-white px-2 py-1 rounded"
-          >
+          <button on:click={() => handleRemoveAvailability(index)}>
             Remove
           </button>
         {/if}
