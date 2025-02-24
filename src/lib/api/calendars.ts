@@ -66,7 +66,7 @@ export async function create(
   };
 
   const [operationId, streamId] = await publish.createCalendar(calendarCreated);
-  const topic = new TopicFactory(operationId);
+  const topic = new TopicFactory(streamId);
   await topics.subscribe(topic.calendar());
   await topics.subscribe(topic.calendarInbox());
 
@@ -169,7 +169,7 @@ async function onCalendarCreated(
 
   // Add the calendar creator to the list of authors who's data we want to
   // sync for this calendar.
-  const topic = new TopicFactory(meta.operationId);
+  const topic = new TopicFactory(meta.stream.id);
   await topics.addCalendarAuthor(meta.author, topic.calendarInbox(), {
     stream,
     logPath: publish.CALENDAR_INBOX_LOG_PATH,
