@@ -10,4 +10,4 @@
   event organisers will be able to book your space for their events. Manage
   requests in your dashboard.
 </p>
-<SpaceForm />
+<SpaceForm formType="create" />

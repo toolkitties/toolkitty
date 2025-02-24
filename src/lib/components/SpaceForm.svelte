@@ -1,3 +1,9 @@
+<script>
+  import AvailabilitySetter from "./AvailabilitySetter.svelte";
+  let { formType } = $props();
+  console.log(formType);
+</script>
+
 <form>
   <fieldset>
     <label for="physical">Physical Location</label>
@@ -34,4 +40,12 @@
     name="space-message"
     placeholder="Please let me know in advance if..."
   />
+  <p>Space availability</p>
+  <AvailabilitySetter />
+  {#if formType === "create"}
+    <button type="submit">Create Space</button>
+  {/if}
+  {#if formType === "edit"}
+    <button type="submit">Update Space</button>
+  {/if}
 </form>
