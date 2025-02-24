@@ -4,6 +4,8 @@
 
   let dateSelected = false;
   let currentlySelectedDate: DateValue | DateValue[] | undefined;
+  let availability: { date: DateValue; startTime: string; endTime: string }[] =
+    [];
 
   const handleDateSelect = (value: DateValue | DateValue[] | undefined) => {
     dateSelected = true;
@@ -13,6 +15,43 @@
     }
 
     currentlySelectedDate = value;
+  };
+
+  const handleAddAvailability = () => {
+    if (!currentlySelectedDate || Array.isArray(currentlySelectedDate)) {
+      alert("Please select a single date first.");
+      return;
+    }
+
+    const startTimeInput = document.querySelector<HTMLInputElement>(
+      'input[name="availability-start-time"]',
+    );
+    const endTimeInput = document.querySelector<HTMLInputElement>(
+      'input[name="availability-end-time"]',
+    );
+
+    if (!startTimeInput || !endTimeInput) {
+      alert("Time inputs not found.");
+      return;
+    }
+
+    const startTime = startTimeInput.value;
+    const endTime = endTimeInput.value;
+
+    if (!startTime || !endTime) {
+      alert("Please enter both start and end times.");
+      return;
+    }
+
+    const newAvailability = {
+      date: currentlySelectedDate,
+      startTime,
+      endTime,
+    };
+
+    availability = [...availability, newAvailability];
+
+    console.log("Updated Availability:", availability);
   };
 </script>
 
@@ -62,7 +101,7 @@
     <label for="availability-end-time">End *</label>
     <input name="availability-end-time" type="time" required />
   </div>
-  <button>add</button>
+  <button onclick={handleAddAvailability}>add</button>
 {/if}
 <br />
 <br />
