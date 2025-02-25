@@ -1,19 +1,28 @@
 <script lang="ts">
+  import type { PageProps } from "./$types";
   import { PinInput, Toggle } from "bits-ui";
   import { goto } from "$app/navigation";
   import { topics } from "$lib/api";
   import { toast } from "$lib/toast.svelte";
   import { resolveInviteCode } from "$lib/api/access";
   import { TopicFactory } from "$lib/api/topics";
-    import { setActiveCalendar } from "$lib/api/calendars";
+  import { calendars } from "$lib/api";
 
-  let value: string[] | undefined = [];
+  let { data }: PageProps = $props();
 
-  let unlocked = true;
-  let progress: "dormant" | "pending" = "dormant";
-  let timedOut: boolean = false;
-  let pinInputType: "text" | "password" = "password";
-  $: pinInputType = unlocked ? "text" : "password";
+  // if we already have an active calendar then go to it.
+  if (data.activeCalendarId) {
+    goto("/app/events");
+  }
+
+  let value: string[] | undefined = $state([]);
+
+  let unlocked = $state(true);
+  let progress: "dormant" | "pending" = $state("dormant");
+  let timedOut: boolean = $state(false);
+  let pinInputType: "text" | "password" = $derived(
+    unlocked ? "text" : "password",
+  );
 
   // db.delete({ disableAutoOpen: false });
 
@@ -28,7 +37,7 @@
       calendar = await resolveInviteCode(value.join(""));
       const topic = new TopicFactory(calendar.stream.id);
       await topics.subscribe(topic.calendarInbox());
-      await setActiveCalendar(calendar.stream.id);
+      await calendars.setActiveCalendar(calendar.stream.id);
     } catch (err) {
       timedOut = true;
       progress = "dormant";

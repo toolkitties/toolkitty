@@ -17,8 +17,6 @@ export async function getPending() {
   let activeCalendarId = calendars.getActiveCalendarId()
   let accessRequests = await db.accessRequests.where({ calendarId: activeCalendarId }).toArray()
 
-  // TODO: get users from db and compare to accessRequests/responses.
-
   return accessRequests
 }
 
@@ -213,6 +211,7 @@ async function onCalendarAccessRequested(
     from: meta.author,
     name: data.name,
     message: data.message,
+    accepted: false,
   });
   //@TODO: For testing purposes only, we accept any requests for festivals where we are the
   //owner.
@@ -248,6 +247,9 @@ async function onCalendarAccessAccepted(
   );
 
   if (request != undefined) {
+    // set request to approved.
+    await db.accessRequests.update(request.id, { accepted: true })
+
     await handleRequestOrResponse(meta.stream.id, request.from);
   }
 }
