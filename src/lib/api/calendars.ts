@@ -117,7 +117,8 @@ export async function deleteCalendar(calendarId: Hash): Promise<Hash> {
     calendarDeleted,
   );
 
-  
+  await promiseResult(operationId);
+
   return operationId;
 }
 
