@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { calendars, inviteCodes, access, spaces, resources } from "$lib/api";
+import { calendars, inviteCodes, access, spaces, resources, events } from "$lib/api";
 import { rejectPromise, resolvePromise } from "$lib/promiseMap";
 
 /**
@@ -145,8 +145,9 @@ export async function process(message: ChannelMessage) {
 
 async function onApplicationMessage(message: ApplicationMessage) {
   try {
-    await calendars.process(message);
     await access.process(message);
+    await calendars.process(message);
+    await events.process(message);
     await spaces.process(message);
     await resources.process(message);
 
