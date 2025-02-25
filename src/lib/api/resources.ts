@@ -2,6 +2,7 @@ import { db } from "$lib/db";
 import { publicKey } from "./identity";
 import { publish } from ".";
 import { getActiveCalendarId } from "./calendars";
+import { promiseResult } from "$lib/promiseMap";
 
 /**
  * Queries
@@ -57,6 +58,9 @@ export async function create(fields: ResourceFields): Promise<Hash> {
     calendarId!,
     resourceCreated,
   );
+
+  await promiseResult(operationId);
+
   return operationId;
 }
 
@@ -76,12 +80,13 @@ export async function update(
     calendarId!,
     resourceUpdated,
   );
+
+  await promiseResult(operationId);
+
   return operationId;
 }
 
-export async function deleteResource(
-  resourceId: Hash,
-): Promise<Hash> {
+export async function deleteResource(resourceId: Hash): Promise<Hash> {
   const calendarId = await getActiveCalendarId();
   let resourceDeleted: ResourceDeleted = {
     type: "resource_deleted",
@@ -94,6 +99,9 @@ export async function deleteResource(
     calendarId!,
     resourceDeleted,
   );
+
+  await promiseResult(operationId);
+
   return operationId;
 }
 

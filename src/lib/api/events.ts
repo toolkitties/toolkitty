@@ -1,6 +1,7 @@
 // import { events } from '$lib/api/data'
 
 import { db } from "$lib/db";
+import { promiseResult } from "$lib/promiseMap";
 import { publish } from ".";
 import { getActiveCalendarId } from "./calendars";
 import { publicKey } from "./identity";
@@ -20,21 +21,18 @@ export async function findMany(): Promise<CalendarEvent[]> {
  * Get all events that I am the owner of.
  */
 export async function findMine(): Promise<CalendarEvent[]> {
-    let myPublicKey = await publicKey();
-    let events = (await db.events.toArray()).filter(
-      (resource) => resource.ownerId == myPublicKey,
-    );
-    return events;
-  
+  let myPublicKey = await publicKey();
+  let events = (await db.events.toArray()).filter(
+    (resource) => resource.ownerId == myPublicKey,
+  );
+  return events;
 }
 
 /**
  * Get one event via its id
  */
 export async function findById(id: Hash): Promise<CalendarEvent | undefined> {
-  let events = (await db.events.toArray()).filter(
-    (events) => events.id == id,
-  );
+  let events = (await db.events.toArray()).filter((events) => events.id == id);
 
   if (events.length == 0) {
     return;
@@ -59,6 +57,9 @@ export async function create(fields: EventFields) {
     calendarId!,
     eventCreated,
   );
+
+  await promiseResult(operationId);
+
   return operationId;
 }
 
@@ -75,6 +76,9 @@ export async function update(eventId: Hash, fields: EventFields) {
     calendarId!,
     eventUpdated,
   );
+
+  await promiseResult(operationId);
+
   return operationId;
 }
 
@@ -90,6 +94,9 @@ async function deleteEvent(eventId: Hash) {
     calendarId!,
     eventDeleted,
   );
+
+  await promiseResult(operationId);
+
   return operationId;
 }
 
