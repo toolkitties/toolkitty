@@ -4,6 +4,24 @@ import { invoke } from "@tauri-apps/api/core";
 import { publicKey } from "./identity";
 import { db } from "$lib/db";
 
+
+/*
+ * Queries
+ */
+
+
+/*
+ * Get pending access requests that have not been accepted yet.
+ */
+export async function getPending() {
+  let activeCalendarId = calendars.getActiveCalendarId()
+  let accessRequests = await db.accessRequests.where({ calendarId: activeCalendarId }).toArray()
+
+  // TODO: get users from db and compare to accessRequests/responses.
+
+  return accessRequests
+}
+
 /**
  * Resolve an invite code to a `ResolvedCalendar`.
  *
@@ -117,7 +135,7 @@ export async function acceptAccessRequest(
 }
 
 /**
- * Accept a calendar access request.
+ * Reject a calendar access request.
  */
 export async function rejectAccessRequest(
   calendarId: Hash,

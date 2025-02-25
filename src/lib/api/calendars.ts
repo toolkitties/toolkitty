@@ -50,6 +50,15 @@ export const getActiveCalendar = liveQuery(async () => {
 });
 
 /*
+ * Share code for currently active calendar
+ */
+export async function getShareCode() {
+  const activeCalendarId = await db.settings.get("activeCalendar");
+  if (!activeCalendarId) return '';
+  return activeCalendarId.value.slice(0, 4);
+}
+
+/*
  * Commands
  */
 
