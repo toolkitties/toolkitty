@@ -3,6 +3,7 @@
 import { db } from "$lib/db";
 import { publish } from ".";
 import { getActiveCalendarId } from "./calendars";
+import { publicKey } from "./identity";
 
 /**
  * Queries
@@ -12,28 +13,34 @@ import { getActiveCalendarId } from "./calendars";
  * Get events that are associated with the currently active calendar
  */
 export async function findMany(): Promise<CalendarEvent[]> {
-  //TODO: Return events from db as liveQuery and add params
-  // return test data.
-  return [];
+  return await db.events.toArray();
 }
 
 /**
  * Get all events that I am the owner of.
  */
 export async function findMine(): Promise<CalendarEvent[]> {
-  //TODO: Return events from db with ownerId that is equal to users public key.
-  // return test data.
-  return [];
+    let myPublicKey = await publicKey();
+    let events = (await db.events.toArray()).filter(
+      (resource) => resource.ownerId == myPublicKey,
+    );
+    return events;
+  
 }
 
 /**
  * Get one event via its id
  */
 export async function findById(id: Hash): Promise<CalendarEvent | undefined> {
-  //TODO: Return events from db
+  let events = (await db.events.toArray()).filter(
+    (events) => events.id == id,
+  );
 
-  // return test data.
-  return;
+  if (events.length == 0) {
+    return;
+  }
+
+  return events[0];
 }
 
 /**
