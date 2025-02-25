@@ -213,7 +213,6 @@ impl Rpc {
         Ok(())
     }
 
-    /// Acknowledge operations to mark them as successfully processed in the stream controller.
     pub async fn replay(&self, topic: Topic) -> Result<(), RpcError> {
         let mut context = self.context.lock().await;
         if let Some(logs) = context.topic_map.get(&topic).await {
