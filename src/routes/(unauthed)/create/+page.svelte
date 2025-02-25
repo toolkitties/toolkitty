@@ -3,6 +3,7 @@
   import Select from "$lib/components/Select.svelte";
   import { calendars } from "$lib/api";
   import { goto } from "$app/navigation";
+    import { setActiveCalendar } from "$lib/api/calendars";
 
   let themes = [
     { value: "friendly", label: "Friendly (default)", default: true },
@@ -17,13 +18,15 @@
     const name = data.get("name") as string;
 
     try {
-      await calendars.create({
+      let [operationId, calendarId] = await calendars.create({
         fields: {
           name: name,
           dates: [{ start: new Date(), end: new Date() }],
         },
       });
+      await setActiveCalendar(calendarId);
     } catch (err) {
+      console.log(err)
       // Toasty!
     }
 

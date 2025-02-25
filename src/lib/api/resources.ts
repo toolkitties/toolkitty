@@ -1,6 +1,6 @@
 import { db } from "$lib/db";
-import { invoke } from "@tauri-apps/api/core";
 import { publicKey } from "./identity";
+import { publish } from ".";
 
 /**
  * Queries
@@ -45,56 +45,57 @@ export async function findById(id: Hash): Promise<Resource | undefined> {
  */
 
 export async function create(
-  calendar_id: Hash,
+  calendarId: Hash,
   fields: ResourceFields,
 ): Promise<Hash> {
-  let resource_created: ResourceCreated = {
+  let resourceCreated: ResourceCreated = {
     type: "resource_created",
     data: {
       fields,
     },
   };
-  let hash: Hash = await invoke("publish", {
-    calendar_id,
-    payload: resource_created,
-  });
-  return hash;
+  const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
+    calendarId,
+    resourceCreated,
+  );
+  return operationId;
 }
 
 export async function update(
-  calendar_id: Hash,
-  resource_id: Hash,
+  calendarId: Hash,
+  resourceId: Hash,
   fields: ResourceFields,
 ): Promise<Hash> {
-  let resource_updated: ResourceUpdated = {
+  let resourceUpdated: ResourceUpdated = {
     type: "resource_updated",
     data: {
-      id: resource_id,
+      id: resourceId,
       fields,
     },
   };
-  let hash: Hash = await invoke("publish", {
-    calendar_id,
-    payload: resource_updated,
-  });
-  return hash;
+  const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
+    calendarId,
+    resourceUpdated,
+  );
+  return operationId;
 }
 
 export async function deleteResource(
-  calendar_id: Hash,
-  resource_id: Hash,
+  calendarId: Hash,
+  resourceId: Hash,
 ): Promise<Hash> {
-  let resource_deleted: ResourceDeleted = {
+  let resourceDeleted: ResourceDeleted = {
     type: "resource_deleted",
     data: {
-      id: resource_id,
+      id: resourceId,
     },
   };
-  let hash: Hash = await invoke("publish", {
-    calendar_id,
-    payload: resource_deleted,
-  });
-  return hash;
+
+  const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
+    calendarId,
+    resourceDeleted,
+  );
+  return operationId;
 }
 
 //TODO: Move to class so we don't have to export as an alias
@@ -134,7 +135,8 @@ async function onResourceCreated(
 
   await db.resources.add({
     id: meta.operationId,
-    ownerId: meta.publicKey,
+    calendarId: meta.stream.id,
+    ownerId: meta.author,
     booked: [],
     name,
     description,
@@ -150,7 +152,7 @@ async function onResourceUpdated(
   meta: StreamMessageMeta,
   data: ResourceUpdated["data"],
 ) {
-  await validateUpdateDelete(meta.publicKey, data.id);
+  await validateUpdateDelete(meta.author, data.id);
 
   let {
     name,
@@ -177,7 +179,7 @@ async function onResourceDeleted(
   meta: StreamMessageMeta,
   data: ResourceDeleted["data"],
 ) {
-  await validateUpdateDelete(meta.publicKey, data.id);
+  await validateUpdateDelete(meta.author, data.id);
   await db.resources.delete(data.id);
 }
 

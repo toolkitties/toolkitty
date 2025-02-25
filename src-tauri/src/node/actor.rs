@@ -10,19 +10,14 @@ use tokio_stream::wrappers::ReceiverStream;
 use tokio_stream::StreamExt;
 use tracing::{error, trace, warn};
 
-use crate::node::operation::{decode_gossip_message, Extensions};
-
+use crate::node::extensions::Extensions;
+use crate::node::operation::decode_gossip_message;
 pub enum ToNodeActor<T> {
     SubscribeProcessed {
         topic: T,
     },
     Subscribe {
         topic: T,
-        reply: oneshot::Sender<(
-            mpsc::Sender<ToNetwork>,
-            mpsc::Receiver<FromNetwork>,
-            oneshot::Receiver<()>,
-        )>,
     },
     Broadcast {
         topic_id: [u8; 32],
@@ -40,12 +35,14 @@ pub struct NodeActor<T> {
     topic_rx: SelectAll<ReceiverStream<FromNetwork>>,
     topic_tx: HashMap<[u8; 32], mpsc::Sender<ToNetwork>>,
     stream_processor_tx: mpsc::Sender<(Header<Extensions>, Option<Body>, Vec<u8>)>,
+    ephemeral_tx: mpsc::Sender<Vec<u8>>,
 }
 
 impl<T: TopicId + TopicQuery + 'static> NodeActor<T> {
     pub fn new(
         network: Network<T>,
         stream_processor_tx: mpsc::Sender<(Header<Extensions>, Option<Body>, Vec<u8>)>,
+        ephemeral_tx: mpsc::Sender<Vec<u8>>,
         inbox: mpsc::Receiver<ToNodeActor<T>>,
     ) -> Self {
         Self {
@@ -54,6 +51,7 @@ impl<T: TopicId + TopicQuery + 'static> NodeActor<T> {
             topic_rx: SelectAll::new(),
             topic_tx: HashMap::new(),
             stream_processor_tx,
+            ephemeral_tx,
         }
     }
 
@@ -112,11 +110,11 @@ impl<T: TopicId + TopicQuery + 'static> NodeActor<T> {
                 self.topic_tx.insert(topic_id, topic_tx);
                 self.topic_rx.push(ReceiverStream::new(topic_rx));
             }
-            ToNodeActor::Subscribe { topic, reply } => {
+            ToNodeActor::Subscribe { topic } => {
                 let topic_id = topic.id();
-                let (topic_tx, topic_rx, ready) = self.network.subscribe(topic).await?;
+                let (topic_tx, topic_rx, _ready) = self.network.subscribe(topic).await?;
                 self.topic_tx.insert(topic_id, topic_tx.clone());
-                reply.send((topic_tx, topic_rx, ready)).ok();
+                self.topic_rx.push(ReceiverStream::new(topic_rx));
             }
             ToNodeActor::Broadcast { topic_id, bytes } => match self.topic_tx.get(&topic_id) {
                 Some(tx) => {
@@ -146,8 +144,12 @@ impl<T: TopicId + TopicQuery + 'static> NodeActor<T> {
                 );
                 match decode_gossip_message(&bytes) {
                     Ok(result) => result,
-                    Err(err) => {
-                        warn!("failed decoding gossip message: {err}");
+                    Err(_err) => {
+                        // @TODO(sam): If decoding into (header, body) tuple we assume this is an ephemeral
+                        // "non-p2panda" message. We need to think of a better solution here. The issue is
+                        // that the node actor can't distinguish between messages arriving from the
+                        // network which are p2panda or not....
+                        self.ephemeral_tx.send(bytes).await?;
                         return Ok(());
                     }
                 }
