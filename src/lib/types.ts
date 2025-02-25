@@ -211,7 +211,7 @@ type ResolveInviteCodeResponse = {
   messageType: "response";
   timestamp: number;
   inviteCode: string;
-  calendarId: Hash;
+  calendarStream: Stream;
   calendarName: string;
 };
 

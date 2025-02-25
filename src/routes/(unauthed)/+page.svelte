@@ -5,6 +5,7 @@
   import { toast } from "$lib/toast.svelte";
   import { resolveInviteCode } from "$lib/api/access";
   import { TopicFactory } from "$lib/api/topics";
+    import { setActiveCalendar } from "$lib/api/calendars";
 
   let value: string[] | undefined = [];
 
@@ -25,8 +26,9 @@
     try {
       progress = "pending";
       calendar = await resolveInviteCode(value.join(""));
-      const topic = new TopicFactory(calendar.id);
+      const topic = new TopicFactory(calendar.stream.id);
       await topics.subscribe(topic.calendarInbox());
+      await setActiveCalendar(calendar.stream.id);
     } catch (err) {
       timedOut = true;
       progress = "dormant";
@@ -35,7 +37,7 @@
       return;
     }
 
-    goto(`/join?code=${calendar.id}`);
+    goto(`/join?code=${calendar.stream.id}`);
   }
 </script>
 

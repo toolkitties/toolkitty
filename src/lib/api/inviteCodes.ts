@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { calendars, publish } from "$lib/api";
+import { calendars, publish, streams } from "$lib/api";
 
 type InviteCodesState = {
   inviteCode: string | null;
@@ -7,7 +7,7 @@ type InviteCodesState = {
 };
 
 export type ResolvedCalendar = {
-  id: Hash;
+  stream: Stream;
   name: string;
 };
 
@@ -29,8 +29,10 @@ export async function resolve(inviteCode: string): Promise<ResolvedCalendar> {
 
   // Check if we already have calendar locally and return before broadcasting
   if (calendar) {
+    // Get the calendar stream
+    const stream = await streams.findById(calendar.id);
     return {
-      id: calendar.id,
+      stream: stream!,
       name: calendar.name,
     };
   }
@@ -98,11 +100,13 @@ async function onRequest(inviteCode: string) {
     return;
   }
 
+  const stream = await streams.findById(calendar.id);
+
   let payload: ResolveInviteCodeResponse = {
     messageType: "response",
     timestamp: Date.now(),
     inviteCode,
-    calendarId: calendar.id,
+    calendarStream: stream!,
     calendarName: calendar.name,
   };
   await publish.toInviteOverlay(payload);
@@ -120,7 +124,7 @@ async function onResponse(response: ResolveInviteCodeResponse) {
   }
 
   pendingInviteCode.onResolved({
-    id: response.calendarId,
+    stream: response.calendarStream,
     name: response.calendarName,
   });
 }

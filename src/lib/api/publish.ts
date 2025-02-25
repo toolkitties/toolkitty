@@ -44,11 +44,6 @@ export async function toInbox(
   calendarId: Hash,
   payload: ApplicationEvent,
 ): Promise<[OperationId, StreamId]> {
-  const calendar = await db.calendars.get(calendarId);
-  if (!calendar) {
-    throw Error("calendar not found");
-  }
-
   let stream = await db.streams.get(calendarId);
 
   const result: [OperationId, StreamId] = await invoke("publish", {
