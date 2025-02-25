@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { calendars } from "$lib/api";
+import { calendars, publish, streams } from "$lib/api";
 
 type InviteCodesState = {
   inviteCode: string | null;
@@ -7,7 +7,7 @@ type InviteCodesState = {
 };
 
 export type ResolvedCalendar = {
-  id: Hash;
+  stream: Stream;
   name: string;
 };
 
@@ -29,8 +29,10 @@ export async function resolve(inviteCode: string): Promise<ResolvedCalendar> {
 
   // Check if we already have calendar locally and return before broadcasting
   if (calendar) {
+    // Get the calendar stream
+    const stream = await streams.findById(calendar.id);
     return {
-      id: calendar.id,
+      stream: stream!,
       name: calendar.name,
     };
   }
@@ -69,13 +71,12 @@ function reset() {
 }
 
 async function sendRequest(inviteCode: string) {
-  const payload: ResolveInviteCodeRequest = {
+  let payload: ResolveInviteCodeRequest = {
     messageType: "request",
     timestamp: Date.now(),
     inviteCode,
   };
-
-  await invoke("publish_to_invite_code_overlay", { payload });
+  await publish.toInviteOverlay(payload);
 }
 
 /*
@@ -83,16 +84,12 @@ async function sendRequest(inviteCode: string) {
  */
 
 export async function process(
-  message: InviteCodesReadyMessage | InviteCodesMessage,
+  message: ResolveInviteCodeRequest | ResolveInviteCodeResponse,
 ) {
-  if (message.event === "invite_codes_ready") {
-    // Do nothing for now
-  } else if (message.event === "invite_codes") {
-    if (message.data.messageType === "request") {
-      onRequest(message.data.inviteCode);
-    } else if (message.data.messageType === "response") {
-      onResponse(message.data);
-    }
+  if (message.messageType === "request") {
+    onRequest(message.inviteCode);
+  } else if (message.messageType === "response") {
+    onResponse(message);
   }
 }
 
@@ -103,14 +100,16 @@ async function onRequest(inviteCode: string) {
     return;
   }
 
-  const payload: ResolveInviteCodeResponse = {
+  const stream = await streams.findById(calendar.id);
+
+  let payload: ResolveInviteCodeResponse = {
     messageType: "response",
     timestamp: Date.now(),
     inviteCode,
-    calendarId: calendar.id,
+    calendarStream: stream!,
     calendarName: calendar.name,
   };
-  await invoke("publish_to_invite_code_overlay", { payload });
+  await publish.toInviteOverlay(payload);
 }
 
 async function onResponse(response: ResolveInviteCodeResponse) {
@@ -125,7 +124,7 @@ async function onResponse(response: ResolveInviteCodeResponse) {
   }
 
   pendingInviteCode.onResolved({
-    id: response.calendarId,
+    stream: response.calendarStream,
     name: response.calendarName,
   });
 }

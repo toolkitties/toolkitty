@@ -7,3 +7,5 @@ export * as requests from "./requests";
 export * as access from "./access";
 export * as topics from "./topics";
 export * as data from "./data";
+export * as streams from "./streams";
+export * as publish from "./publish";

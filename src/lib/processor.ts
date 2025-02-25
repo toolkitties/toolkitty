@@ -127,10 +127,7 @@ export async function process(message: ChannelMessage) {
   if (message.event == "application") {
     console.debug("received application message", message);
     await onApplicationMessage(message);
-  } else if (
-    message.event == "invite_codes_ready" ||
-    message.event == "invite_codes"
-  ) {
+  } else if (message.event == "ephemeral") {
     console.debug("received invite message", message);
     await onInviteCodesMessage(message);
   } else if (
@@ -167,12 +164,12 @@ async function onApplicationMessage(message: ApplicationMessage) {
 }
 
 async function onInviteCodesMessage(
-  message: InviteCodesReadyMessage | InviteCodesMessage,
+  message: EphemeralMessage,
 ) {
   try {
-    await inviteCodes.process(message);
+    await inviteCodes.process(message.data);
   } catch (err) {
-    console.error(`failed processing invite codes message: ${err}`, message);
+    console.error(`failed processing invite codes message: ${err}`, message.data);
   }
 }
 
