@@ -1,6 +1,7 @@
 import { db } from "$lib/db";
 import { publicKey } from "./identity";
 import { publish } from ".";
+import { getActiveCalendarId } from "./calendars";
 
 /**
  * Queries
@@ -43,9 +44,9 @@ export async function findById(id: Hash): Promise<Space | undefined> {
  */
 
 export async function create(
-  calendarId: Hash,
   fields: SpaceFields,
 ): Promise<Hash> {
+  const calendarId = await getActiveCalendarId();
   const spaceCreated: SpaceCreated = {
     type: "space_created",
     data: {
@@ -54,17 +55,17 @@ export async function create(
   };
 
   const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
-    calendarId,
+    calendarId!,
     spaceCreated,
   );
   return operationId;
 }
 
 export async function update(
-  calendarId: Hash,
   spaceId: Hash,
   fields: SpaceFields,
 ): Promise<Hash> {
+  const calendarId = await getActiveCalendarId();
   const spaceUpdated: SpaceUpdated = {
     type: "space_updated",
     data: {
@@ -73,16 +74,16 @@ export async function update(
     },
   };
   const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
-    calendarId,
+    calendarId!,
     spaceUpdated,
   );
   return operationId;
 }
 
 export async function deleteSpace(
-  calendarId: Hash,
   spaceId: Hash,
 ): Promise<Hash> {
+  const calendarId = await getActiveCalendarId();
   const spaceDeleted: SpaceDeleted = {
     type: "space_deleted",
     data: {
@@ -91,7 +92,7 @@ export async function deleteSpace(
   };
 
   const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
-    calendarId,
+    calendarId!,
     spaceDeleted,
   );
   return operationId;

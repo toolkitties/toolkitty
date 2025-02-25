@@ -1,6 +1,7 @@
 import { db } from "$lib/db";
 import { publicKey } from "./identity";
 import { publish } from ".";
+import { getActiveCalendarId } from "./calendars";
 
 /**
  * Queries
@@ -44,10 +45,8 @@ export async function findById(id: Hash): Promise<Resource | undefined> {
  * Commands
  */
 
-export async function create(
-  calendarId: Hash,
-  fields: ResourceFields,
-): Promise<Hash> {
+export async function create(fields: ResourceFields): Promise<Hash> {
+  const calendarId = await getActiveCalendarId();
   let resourceCreated: ResourceCreated = {
     type: "resource_created",
     data: {
@@ -55,17 +54,17 @@ export async function create(
     },
   };
   const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
-    calendarId,
+    calendarId!,
     resourceCreated,
   );
   return operationId;
 }
 
 export async function update(
-  calendarId: Hash,
   resourceId: Hash,
   fields: ResourceFields,
 ): Promise<Hash> {
+  const calendarId = await getActiveCalendarId();
   let resourceUpdated: ResourceUpdated = {
     type: "resource_updated",
     data: {
@@ -74,16 +73,16 @@ export async function update(
     },
   };
   const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
-    calendarId,
+    calendarId!,
     resourceUpdated,
   );
   return operationId;
 }
 
 export async function deleteResource(
-  calendarId: Hash,
   resourceId: Hash,
 ): Promise<Hash> {
+  const calendarId = await getActiveCalendarId();
   let resourceDeleted: ResourceDeleted = {
     type: "resource_deleted",
     data: {
@@ -92,7 +91,7 @@ export async function deleteResource(
   };
 
   const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
-    calendarId,
+    calendarId!,
     resourceDeleted,
   );
   return operationId;
