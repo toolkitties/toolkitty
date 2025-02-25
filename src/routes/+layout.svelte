@@ -3,7 +3,7 @@
   import { onMount } from "svelte";
   import Toasts from "$lib/components/Toasts.svelte";
   import { topics } from "$lib/api";
-  import { seedMessages } from "$lib/api/data";
+  import { seedData } from "$lib/api/data";
   import { process } from "$lib/processor";
 
   onMount(() => {
@@ -15,10 +15,8 @@
     if (!("isInit" in window)) {
       init().then(async () => {
         
-        // TODO(sam): just for now we populate the database with some seed data.
-        for (const message of seedMessages) {
-          await process(message);
-        }
+        // TODO(sam): for testing publish some events to the network.
+        await seedData();
 
         // After init subscribe to all calendars we know about.
         await topics.subscribeToAll();
