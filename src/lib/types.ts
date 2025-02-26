@@ -9,6 +9,40 @@
 type Hash = string;
 
 /**
+ * The hash identifier of a stream.
+ */
+type StreamId = Hash;
+
+/**
+ * The hash identifier of a single operation.
+ */
+type OperationId = Hash;
+
+/**
+ * A topic which can be subscribed to on the network layer.
+ */
+type Topic = string;
+
+/**
+ * A long-lived "owned" data stream.
+ */
+type Stream = {
+  id: StreamId;
+  rootHash: Hash;
+  owner: PublicKey;
+};
+
+type LogId = {
+  stream: Stream;
+  logPath: LogPath;
+};
+
+/**
+ * The path portion of a log id.
+ */
+type LogPath = "calendar" | "calendar/inbox";
+
+/**
  * Hexadecimal-encoded Ed25519 public key.
  */
 type PublicKey = string;
@@ -36,11 +70,7 @@ type Image = string;
  *
  * Read more here: https://v2.tauri.app/develop/calling-frontend/#channels
  */
-type ChannelMessage =
-  | StreamMessage
-  | InviteCodesReadyMessage
-  | InviteCodesMessage
-  | SystemMessage;
+type ChannelMessage = StreamMessage | EphemeralMessage | SystemMessage;
 
 /**
  * ଘ(˵╹-╹)━☆•.,¸.•*
@@ -102,9 +132,10 @@ type ApplicationMessage = {
  * Additional data we've received from the processed p2panda operation.
  */
 type StreamMessageMeta = {
-  calendarId: Hash;
   operationId: Hash;
-  publicKey: PublicKey;
+  author: PublicKey;
+  stream: Stream;
+  logPath: LogPath;
 };
 
 /**
@@ -151,21 +182,10 @@ type NetworkEvent = {
  */
 
 /**
- * We've successfully entered the p2p gossip overlay and are ready now to
- * request resolved "invite codes" or resolve them for others.
- *
- * We can only enter a gossip overlay if at least one other peer has been
- * discovered. This event indicates that we've found this first peer!
- */
-type InviteCodesReadyMessage = {
-  event: "invite_codes_ready";
-};
-
-/**
  * We've received an "invite codes" request or response from the network.
  */
-type InviteCodesMessage = {
-  event: "invite_codes";
+type EphemeralMessage = {
+  event: "ephemeral";
   data: ResolveInviteCodeRequest | ResolveInviteCodeResponse;
 };
 
@@ -187,7 +207,7 @@ type ResolveInviteCodeResponse = {
   messageType: "response";
   timestamp: number;
   inviteCode: string;
-  calendarId: Hash;
+  calendarStream: Stream;
   calendarName: string;
 };
 
@@ -344,6 +364,7 @@ type UserProfileUpdated = {
 type CalendarAccessRequested = {
   type: "calendar_access_requested";
   data: {
+    // @TODO(sam): we should switch to using the streamId as the "access reference" for a calendar.
     calendarId: Hash;
     name: string;
     message: string;
@@ -700,5 +721,7 @@ type Settings = {
  * (´ヮ´)八(*ﾟ▽ﾟ*)
  * Application Data
  */
+
+type CalendarId = Hash;
 
 type RequestEvent = SpaceRequest | ResourceRequest | AccessRequest;

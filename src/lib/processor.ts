@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { calendars, inviteCodes, access, spaces, resources } from "$lib/api";
+import { calendars, inviteCodes, access, spaces, resources, events } from "$lib/api";
 import { rejectPromise, resolvePromise } from "$lib/promiseMap";
 
 /**
@@ -127,10 +127,7 @@ export async function process(message: ChannelMessage) {
   if (message.event == "application") {
     console.debug("received application message", message);
     await onApplicationMessage(message);
-  } else if (
-    message.event == "invite_codes_ready" ||
-    message.event == "invite_codes"
-  ) {
+  } else if (message.event == "ephemeral") {
     console.debug("received invite message", message);
     await onInviteCodesMessage(message);
   } else if (
@@ -148,8 +145,9 @@ export async function process(message: ChannelMessage) {
 
 async function onApplicationMessage(message: ApplicationMessage) {
   try {
-    await calendars.process(message);
     await access.process(message);
+    await calendars.process(message);
+    await events.process(message);
     await spaces.process(message);
     await resources.process(message);
 
@@ -167,12 +165,12 @@ async function onApplicationMessage(message: ApplicationMessage) {
 }
 
 async function onInviteCodesMessage(
-  message: InviteCodesReadyMessage | InviteCodesMessage,
+  message: EphemeralMessage,
 ) {
   try {
-    await inviteCodes.process(message);
+    await inviteCodes.process(message.data);
   } catch (err) {
-    console.error(`failed processing invite codes message: ${err}`, message);
+    console.error(`failed processing invite codes message: ${err}`, message.data);
   }
 }
 
