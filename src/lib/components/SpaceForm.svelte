@@ -74,7 +74,13 @@
     {availability}
     onUpdateAvailability={updateAvailability}
   />
-
+  <p>Can this space have muliple bookings at the same time?</p>
+  <fieldset>
+    <label for="multi-bookable">Yes</label>
+    <input type="radio" name="multi-bookable" value="true" />
+    <label for="multi-bookable">No</label>
+    <input type="radio" name="multi-bookable" value="false" checked />
+  </fieldset>
   {#if formType === "create"}
     <button type="submit">Create Space</button>
   {/if}
