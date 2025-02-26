@@ -1,5 +1,5 @@
 <script lang="ts">
-  import AvailabilitySetter from "$lib/components/AvailabilitySetter.svelte";
+  import { AvailabilitySetter } from "$lib/components/AvailabilitySetter.svelte";
   import { getActiveCalendarId } from "$lib/api/calendars";
   import { create } from "$lib/api/spaces";
 
