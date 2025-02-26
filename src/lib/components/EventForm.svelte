@@ -123,5 +123,10 @@
     <p>No resources available.</p>
   {/if}
 
-  <button type="submit">Publish</button>
+  {#if formType === "create"}
+    <button type="submit">Create Event</button>
+  {/if}
+  {#if formType === "edit"}
+    <button type="submit">Update Event</button>
+  {/if}
 </form>

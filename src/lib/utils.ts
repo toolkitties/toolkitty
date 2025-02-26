@@ -87,13 +87,11 @@ export function parseResourceFormData(
   alwaysAvailable: boolean,
   availability: { date: string; startTime: string; endTime: string }[],
 ) {
-  // Extract form values
   const name = formData.get("name") as string;
   const description = formData.get("description") as string;
   const contact = formData.get("contact") as string;
   const multiBookable = formData.get("multi-bookable") === "true";
 
-  // Parse link
   const linkTitle = formData.get("link-text") as string;
   const linkUrl = formData.get("link-url") as string;
   const link: Link | null =
@@ -101,7 +99,6 @@ export function parseResourceFormData(
       ? { type: "custom" as const, title: linkTitle, url: linkUrl }
       : null;
 
-  // Parse availability
   let parsedAvailability: TimeSpan[] | "always";
   if (alwaysAvailable) {
     parsedAvailability = "always";
@@ -120,4 +117,71 @@ export function parseResourceFormData(
     availability: parsedAvailability,
     multiBookable,
   } as ResourceFields;
+}
+
+// Events
+
+export function parseEventFormData(
+  formData: FormData,
+  selectedSpace: Space | null,
+) {
+  const name = formData.get("name") as string | null;
+  const description = formData.get("description") as string | null;
+
+  const safeName = name ?? "";
+  const safeDescription = description ?? "";
+
+  const ticketLinkTitle = formData.get("ticket-link-text") as string | null;
+  const ticketLinkUrl = formData.get("ticket-link-url") as string | null;
+  const ticketLink =
+    ticketLinkTitle && ticketLinkUrl
+      ? { type: "ticket" as const, title: ticketLinkTitle, url: ticketLinkUrl }
+      : null;
+
+  const additionalLinkTitle = formData.get("additional-link-text") as
+    | string
+    | null;
+  const additionalLinkUrl = formData.get("additional-link-url") as
+    | string
+    | null;
+  const additionalLink =
+    additionalLinkTitle && additionalLinkUrl
+      ? {
+          type: "custom" as const,
+          title: additionalLinkTitle,
+          url: additionalLinkUrl,
+        }
+      : null;
+
+  const spaceId = selectedSpace ? selectedSpace.id : null;
+
+  const startDate = formData.get("event-start-date") as string | null;
+  const startTime = formData.get("event-start-time") as string | null;
+  const endDate = formData.get("event-end-date") as string | null;
+  const endTime = formData.get("event-end-time") as string | null;
+
+  const startDateTime = new Date(`${startDate}T${startTime}`);
+  const endDateTime = new Date(`${endDate}T${endTime}`);
+
+  const selectedResources: string[] = [];
+  formData.forEach((value, key) => {
+    if (key.startsWith("resource-")) {
+      selectedResources.push(value as string);
+    }
+  });
+
+  const links: { type: "custom" | "ticket"; title: string; url: string }[] = [];
+  if (ticketLink) links.push(ticketLink);
+  if (additionalLink) links.push(additionalLink);
+
+  return {
+    name: safeName,
+    description: safeDescription,
+    spaceId,
+    startDate: startDateTime,
+    endDate: endDateTime,
+    links,
+    images: [],
+    resources: selectedResources,
+  };
 }
