@@ -1,6 +1,8 @@
 import { db } from "$lib/db";
-import { invoke } from "@tauri-apps/api/core";
 import { publicKey } from "./identity";
+import { publish } from ".";
+import { getActiveCalendarId } from "./calendars";
+import { promiseResult } from "$lib/promiseMap";
 
 /**
  * Queries
@@ -10,7 +12,7 @@ import { publicKey } from "./identity";
  * Get spaces that are associated with the currently active calendar
  */
 export async function findMany(): Promise<Space[]> {
-  let spaces = await db.spaces.toArray();
+  const spaces = await db.spaces.toArray();
   return spaces;
 }
 
@@ -18,8 +20,8 @@ export async function findMany(): Promise<Space[]> {
  * Get all spaces that I am the owner of.
  */
 export async function findMine(): Promise<Space[]> {
-  let myPublicKey = await publicKey();
-  let spaces = (await db.spaces.toArray()).filter(
+  const myPublicKey = await publicKey();
+  const spaces = (await db.spaces.toArray()).filter(
     (space) => space.ownerId == myPublicKey,
   );
   return spaces;
@@ -29,9 +31,7 @@ export async function findMine(): Promise<Space[]> {
  * Get one event by its ID
  */
 export async function findById(id: Hash): Promise<Space | undefined> {
-  let space = (await db.spaces.toArray()).filter(
-    (space) => space.id == id,
-  );
+  const space = (await db.spaces.toArray()).filter((space) => space.id == id);
 
   if (space.length == 0) {
     return;
@@ -44,57 +44,64 @@ export async function findById(id: Hash): Promise<Space | undefined> {
  * Commands
  */
 
-export async function create(
-  calendar_id: Hash,
-  fields: SpaceFields,
-): Promise<Hash> {
-  let space_created: SpaceCreated = {
+export async function create(fields: SpaceFields): Promise<Hash> {
+  const calendarId = await getActiveCalendarId();
+  const spaceCreated: SpaceCreated = {
     type: "space_created",
     data: {
       fields,
     },
   };
-  let hash: Hash = await invoke("publish", {
-    calendar_id,
-    payload: space_created,
-  });
-  return hash;
+
+  const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
+    calendarId!,
+    spaceCreated,
+  );
+
+  await promiseResult(operationId);
+
+  return operationId;
 }
 
 export async function update(
-  calendar_id: Hash,
-  space_id: Hash,
+  spaceId: Hash,
   fields: SpaceFields,
 ): Promise<Hash> {
-  let space_updated: SpaceUpdated = {
+  const calendarId = await getActiveCalendarId();
+  const spaceUpdated: SpaceUpdated = {
     type: "space_updated",
     data: {
-      id: space_id,
+      id: spaceId,
       fields,
     },
   };
-  let hash: Hash = await invoke("publish", {
-    calendar_id,
-    payload: space_updated,
-  });
-  return hash;
+  const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
+    calendarId!,
+    spaceUpdated,
+  );
+
+  await promiseResult(operationId);
+
+  return operationId;
 }
 
-export async function deleteSpace(
-  calendar_id: Hash,
-  space_id: Hash,
-): Promise<Hash> {
-  let space_deleted: SpaceDeleted = {
+export async function deleteSpace(spaceId: Hash): Promise<Hash> {
+  const calendarId = await getActiveCalendarId();
+  const spaceDeleted: SpaceDeleted = {
     type: "space_deleted",
     data: {
-      id: space_id,
+      id: spaceId,
     },
   };
-  let hash: Hash = await invoke("publish", {
-    calendar_id,
-    payload: space_deleted,
-  });
-  return hash;
+
+  const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
+    calendarId!,
+    spaceDeleted,
+  );
+
+  await promiseResult(operationId);
+
+  return operationId;
 }
 
 //TODO: Move to class so we don't have to export as an alias
@@ -122,7 +129,7 @@ async function onSpaceCreated(
   meta: StreamMessageMeta,
   data: SpaceCreated["data"],
 ) {
-  let {
+  const {
     type,
     name,
     location,
@@ -138,7 +145,8 @@ async function onSpaceCreated(
 
   await db.spaces.add({
     id: meta.operationId,
-    ownerId: meta.publicKey,
+    calendarId: meta.stream.id,
+    ownerId: meta.author,
     booked: [],
     type,
     name,
@@ -158,9 +166,9 @@ async function onSpaceUpdated(
   meta: StreamMessageMeta,
   data: SpaceUpdated["data"],
 ) {
-  await validateUpdateDelete(meta.publicKey, data.id);
+  await validateUpdateDelete(meta.author, data.id);
 
-  let {
+  const {
     type,
     name,
     location,
@@ -193,7 +201,7 @@ async function onSpaceDeleted(
   meta: StreamMessageMeta,
   data: SpaceDeleted["data"],
 ) {
-  await validateUpdateDelete(meta.publicKey, data.id);
+  await validateUpdateDelete(meta.author, data.id);
   await db.spaces.delete(data.id);
 }
 
@@ -202,7 +210,7 @@ async function onSpaceDeleted(
  */
 
 async function validateUpdateDelete(publicKey: PublicKey, spaceId: Hash) {
-  let space = await db.spaces.get(spaceId);
+  const space = await db.spaces.get(spaceId);
 
   // The space must already exist.
   if (!space) {

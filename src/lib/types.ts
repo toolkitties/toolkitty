@@ -292,7 +292,7 @@ type SpaceFields = {
   accessibility: string;
   description: string;
   contact: string;
-  link: Link;
+  link: Link | null;
   message: string;
   images: Image[];
   availability: TimeSpan[] | "always";
