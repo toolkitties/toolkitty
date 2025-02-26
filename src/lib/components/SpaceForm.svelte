@@ -1,6 +1,5 @@
 <script lang="ts">
-  import { AvailabilitySetter } from "$lib/components/AvailabilitySetter.svelte";
-  import { getActiveCalendarId } from "$lib/api/calendars";
+  import AvailabilitySetter from "$lib/components/AvailabilitySetter.svelte";
   import { create } from "$lib/api/spaces";
 
   let { formType } = $props();
@@ -16,7 +15,6 @@
   async function handleCreateSpace(e: Event) {
     e.preventDefault();
 
-    const calendarId = getActiveCalendarId();
     const form = e.currentTarget as HTMLFormElement;
     const formData = new FormData(form);
 
