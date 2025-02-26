@@ -10,14 +10,11 @@
   function updateAvailability(
     newAvailability: { date: string; startTime: string; endTime: string }[],
   ) {
-    console.log("Updated availability:", newAvailability);
     availability = newAvailability;
   }
 
   function handleCreateSpace(e: Event) {
     e.preventDefault();
-
-    console.log("Current availability:", availability); // Debugging step
 
     const calendarId = getActiveCalendarId();
     const form = e.currentTarget as HTMLFormElement;
@@ -43,10 +40,12 @@
     <label for="virtual">Virtual Space</label>
     <input type="radio" name="space-type" value="virtual" />
   </fieldset>
+  <label for="space-name">Space Name*</label>
+  <input type="text" name="space-name" required />
   <label for="address">Address*</label>
   <input type="text" name="address" required />
   <label for="capacity">Capacity*</label>
-  <input type="text" name="capacity" required />
+  <input type="number" name="capacity" required />
   <label for="accessibility-details">Accessibility Details*</label>
   <textarea name="accessibility-details" required></textarea>
   <label for="space-description">Space Description*</label>

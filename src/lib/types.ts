@@ -293,6 +293,7 @@ type SpaceFields = {
   description: string;
   contact: string;
   link: Link;
+  message: string;
   images: Image[];
   availability: TimeSpan[] | "always";
   multiBookable: boolean;
@@ -587,7 +588,6 @@ type UserRoleAssigned = {
   };
 };
 
-
 /**
  * The different subscription types which exist for a calendar. Each represents a logical set of
  * data which can be subscribed to independently.
@@ -599,11 +599,10 @@ type Subscription = {
   type: TopicType;
 };
 
-
 /**
  * (´ヮ´)八(*ﾟ▽ﾟ*)
  * Database Schema
- * 
+ *
  * How the data looks that we store in the frontend indexed db.
  */
 
@@ -697,11 +696,9 @@ type Settings = {
   value: Hash | string;
 };
 
-
 /**
  * (´ヮ´)八(*ﾟ▽ﾟ*)
  * Application Data
  */
 
 type RequestEvent = SpaceRequest | ResourceRequest | AccessRequest;
-
