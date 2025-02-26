@@ -1,9 +1,11 @@
 <script lang="ts">
   import { Calendar } from "bits-ui";
   import type { DateValue } from "@internationalized/date";
+
+  let selectMultiple: boolean = $props();
 </script>
 
-<Calendar.Root let:months let:weekdays>
+<Calendar.Root let:months let:weekdays multiple={selectMultiple}>
   <Calendar.Header class="flex flex-row">
     <Calendar.PrevButton class="w-8 mr-2">←</Calendar.PrevButton>
     <Calendar.Heading />

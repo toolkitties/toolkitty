@@ -3,30 +3,42 @@
   import Select from "$lib/components/Select.svelte";
   import { calendars } from "$lib/api";
   import { goto } from "$app/navigation";
-    import { setActiveCalendar } from "$lib/api/calendars";
+  import { setActiveCalendar, create } from "$lib/api/calendars";
 
+  // not currently a field of CalendarFields
   let themes = [
     { value: "friendly", label: "Friendly (default)", default: true },
     { value: "dark", label: "Dark mode" },
     { value: "moody", label: "Moody" },
   ];
-
   async function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
 
     const data = new FormData(event.target as HTMLFormElement);
     const name = data.get("name") as string;
+    const style = data.get("style") as string;
+
+    // Extract selected dates from the FestivalCalendar component
+    const selectedDatesElements = document.querySelectorAll("[data-selected]");
+    const selectedDates: TimeSpan[] = Array.from(selectedDatesElements).map(
+      (el) => {
+        const date = new Date(el.getAttribute("data-date")!);
+        return { start: date, end: date };
+      },
+    );
 
     try {
       let [operationId, calendarId] = await calendars.create({
         fields: {
           name: name,
-          dates: [{ start: new Date(), end: new Date() }],
+          dates: selectedDates.length
+            ? selectedDates
+            : [{ start: new Date(), end: new Date() }],
         },
       });
       await setActiveCalendar(calendarId);
     } catch (err) {
-      console.log(err)
+      console.log(err);
       // Toasty!
     }
 
@@ -47,7 +59,8 @@
     class="mb-4"
   />
 
-  <label for="username">Your name*</label>
+  <!-- this is already set when requesting access? -->
+  <!-- <label for="username">Your name*</label>
   <input
     id="username"
     name="username"
@@ -55,19 +68,19 @@
     placeholder="Your name"
     required
     class="mb-4"
-  />
+  /> -->
 
-  <label id="description">Programme description</label>
+  <!-- not part of create form -->
+  <!-- <label id="description">Programme description</label>
   <textarea
     id="description"
     name="description"
     rows="4"
     placeholder="Description"
     class="block mb-4"
-  ></textarea>
+  ></textarea> -->
 
-  <label>Programme running time</label>
-  <FestivalCalendar />
+  <FestivalCalendar selectMultiple={true} />
 
   <Select name="style" items={themes} />
 
