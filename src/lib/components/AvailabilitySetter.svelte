@@ -3,12 +3,21 @@
   import type { DateValue } from "@internationalized/date";
   import { writable } from "svelte/store";
 
+  export let availability: {
+    date: string;
+    startTime: string;
+    endTime: string;
+  }[] = [];
+  export let onUpdateAvailability: (
+    newAvailability: typeof availability,
+  ) => void;
+
+  const availabilityStore = writable(availability);
+
   export const availableDates = writable<Set<string>>(new Set());
 
   let dateSelected = false;
   let currentlySelectedDate: DateValue | null = null;
-  let availability: { date: DateValue; startTime: string; endTime: string }[] =
-    [];
 
   const handleDateSelect = (value: DateValue | DateValue[] | undefined) => {
     if (!value || Array.isArray(value)) {
@@ -23,12 +32,11 @@
 
   const handleAddAvailability = () => {
     if (!currentlySelectedDate) {
-      alert("Please select a single date first.");
+      alert("Please select a date first.");
       return;
     }
 
-    const selectedDate = currentlySelectedDate;
-
+    const selectedDate = currentlySelectedDate.toString();
     const startTimeInput = document.querySelector<HTMLInputElement>(
       'input[name="availability-start-time"]',
     );
@@ -49,29 +57,36 @@
       return;
     }
 
-    const newAvailability = { date: selectedDate, startTime, endTime };
+    const newEntry = { date: selectedDate, startTime, endTime };
 
-    availability = [...availability, newAvailability];
+    availabilityStore.update((current) => {
+      const updatedAvailability = [...current, newEntry];
+      onUpdateAvailability(updatedAvailability);
+      return updatedAvailability;
+    });
 
     availableDates.update((dates) => {
       const updatedDates = new Set(dates);
-      updatedDates.add(selectedDate.toString());
+      updatedDates.add(selectedDate);
       return updatedDates;
     });
   };
 
   const handleRemoveAvailability = (index: number) => {
-    const removedDate = availability[index].date.toString();
-    availability = availability.filter((_, i) => i !== index);
+    availabilityStore.update((current) => {
+      const removedDate = current[index].date;
+      const updatedAvailability = current.filter((_, i) => i !== index);
 
-    availableDates.update((dates) => {
-      const updatedDates = new Set(dates);
-      if (
-        !availability.some((entry) => entry.date.toString() === removedDate)
-      ) {
-        updatedDates.delete(removedDate);
-      }
-      return updatedDates;
+      availableDates.update((dates) => {
+        const updatedDates = new Set(dates);
+        if (!updatedAvailability.some((entry) => entry.date === removedDate)) {
+          updatedDates.delete(removedDate);
+        }
+        return updatedDates;
+      });
+
+      onUpdateAvailability(updatedAvailability);
+      return updatedAvailability;
     });
   };
 </script>
@@ -139,14 +154,16 @@
   {/if}
 
   {#if availability.length > 0}
+    <h3>Current Availability:</h3>
     <ul>
       {#each availability as entry, index}
-        {#if entry.date.toString() === currentlySelectedDate.toString()}
-          <h3>Current Availability:</h3>
-          <span>{entry.startTime} - {entry.endTime}</span>
-          <button on:click={() => handleRemoveAvailability(index)}>
-            Remove
-          </button>
+        {#if entry.date === currentlySelectedDate.toString()}
+          <li>
+            <span>{entry.startTime} - {entry.endTime}</span>
+            <button on:click={() => handleRemoveAvailability(index)}>
+              Remove
+            </button>
+          </li>
         {/if}
       {/each}
     </ul>

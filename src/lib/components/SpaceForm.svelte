@@ -1,21 +1,38 @@
 <script lang="ts">
   import AvailabilitySetter from "$lib/components/AvailabilitySetter.svelte";
-  let { formType } = $props();
   import { getActiveCalendarId } from "$lib/api/calendars";
   import { create } from "$lib/api/spaces";
+
+  let { formType } = $props();
+  let availability: { date: string; startTime: string; endTime: string }[] =
+    $state([]);
+
+  function updateAvailability(
+    newAvailability: { date: string; startTime: string; endTime: string }[],
+  ) {
+    console.log("Updated availability:", newAvailability);
+    availability = newAvailability;
+  }
 
   function handleCreateSpace(e: Event) {
     e.preventDefault();
 
-    const calendarId = getActiveCalendarId();
+    console.log("Current availability:", availability); // Debugging step
 
+    const calendarId = getActiveCalendarId();
     const form = e.currentTarget as HTMLFormElement;
-    console.log(form);
     const formData = new FormData(form);
-    console.log(formData);
-    const fields = {};
+
+    formData.append("availability", JSON.stringify(availability));
+
+    console.log("Form Data:");
+    for (let [key, value] of formData.entries()) {
+      console.log(`${key}:`, value);
+    }
   }
 </script>
+
+<AvailabilitySetter {availability} onUpdateAvailability={updateAvailability} />
 
 <form onsubmit={handleCreateSpace}>
   <fieldset>
@@ -54,7 +71,11 @@
     placeholder="Please let me know in advance if..."
   />
   <p>Space availability</p>
-  <AvailabilitySetter />
+  <AvailabilitySetter
+    {availability}
+    onUpdateAvailability={updateAvailability}
+  />
+
   {#if formType === "create"}
     <button type="submit">Create Space</button>
   {/if}
