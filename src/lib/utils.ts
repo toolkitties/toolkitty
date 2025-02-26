@@ -1,5 +1,3 @@
-// file to contain all custom ts utils
-
 /*
 Parsing form data before passing to API
 */
@@ -80,4 +78,46 @@ export function parseSpaceFormData(
     availability: parsedAvailability,
     multiBookable,
   } as SpaceFields;
+}
+
+// Resources
+
+export function parseResourceFormData(
+  formData: FormData,
+  alwaysAvailable: boolean,
+  availability: { date: string; startTime: string; endTime: string }[],
+) {
+  // Extract form values
+  const name = formData.get("name") as string;
+  const description = formData.get("description") as string;
+  const contact = formData.get("contact") as string;
+  const multiBookable = formData.get("multi-bookable") === "true";
+
+  // Parse link
+  const linkTitle = formData.get("link-text") as string;
+  const linkUrl = formData.get("link-url") as string;
+  const link: Link | null =
+    linkTitle && linkUrl
+      ? { type: "custom" as const, title: linkTitle, url: linkUrl }
+      : null;
+
+  // Parse availability
+  let parsedAvailability: TimeSpan[] | "always";
+  if (alwaysAvailable) {
+    parsedAvailability = "always";
+  } else {
+    parsedAvailability = availability.map(({ date, startTime, endTime }) => ({
+      start: new Date(`${date}T${startTime}`),
+      end: new Date(`${date}T${endTime}`),
+    }));
+  }
+
+  return {
+    name,
+    description,
+    contact,
+    link,
+    availability: parsedAvailability,
+    multiBookable,
+  } as ResourceFields;
 }
