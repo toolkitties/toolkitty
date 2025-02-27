@@ -10,8 +10,8 @@ use serde_json::Value;
 /// and `owner` fields.
 type StreamId = Hash;
 
-/// Conceptually a stream is a collection of logs, from one or many authors. The semantic meaning of the 
-/// collection is defined on the application level, it might be a single chat group containing many threads, 
+/// Conceptually a stream is a collection of logs, from one or many authors. The semantic meaning of the
+/// collection is defined on the application level, it might be a single chat group containing many threads,
 /// or a blog page with posts from many contributors.
 ///
 /// Crucially, the included logs can be from one or many authors, but the stream itself is "owned"
@@ -23,7 +23,7 @@ type StreamId = Hash;
 #[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Stream {
-    /// The hash of the first operation in the stream. 
+    /// The hash of the first operation in the stream.
     pub(crate) root_hash: StreamRootHash,
 
     /// The public key of the stream owner.
@@ -118,10 +118,7 @@ impl TryFrom<Extensions> for LogId {
         let stream = Stream::try_from(extensions.clone())?;
         let log_path = extensions.log_path.clone();
 
-        Ok(Self {
-            stream,
-            log_path,
-        })
+        Ok(Self { stream, log_path })
     }
 }
 
@@ -198,10 +195,7 @@ impl Extension<LogId> for Extensions {
     fn extract(header: &Header<Self>) -> Option<LogId> {
         let stream = header.extension().expect("extract stream id extension");
         let log_path = header.extension();
-        Some(LogId {
-            stream,
-            log_path,
-        })
+        Some(LogId { stream, log_path })
     }
 }
 
