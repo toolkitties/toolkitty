@@ -107,6 +107,9 @@ export async function update(
     calendarId,
     calendarUpdated,
   );
+
+  await promiseResult(operationId);
+
   return operationId;
 }
 
@@ -122,6 +125,9 @@ export async function deleteCalendar(calendarId: Hash): Promise<Hash> {
     calendarId,
     calendarDeleted,
   );
+
+  await promiseResult(operationId);
+
   return operationId;
 }
 
