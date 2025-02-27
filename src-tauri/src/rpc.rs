@@ -131,10 +131,7 @@ pub async fn publish_ephemeral(
     topic: Topic,
     payload: serde_json::Value,
 ) -> Result<(), RpcError> {
-    debug!(
-        command.name = "publish_ephemeral",
-        "RPC request received"
-    );
+    debug!(command.name = "publish_ephemeral", "RPC request received");
 
     let payload = serde_json::to_vec(&payload)?;
     rpc.publish_ephemeral(&topic, &payload).await?;
