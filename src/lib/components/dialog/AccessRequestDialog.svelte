@@ -43,11 +43,11 @@
     <AlertDialog.Title>{request.name} requested access</AlertDialog.Title>
     <AlertDialog.Description>{request.message}</AlertDialog.Description>
     <AlertDialog.Action
-      on:click={() => acceptRequest(request.calendarId, request.id)}
+      onclick={() => acceptRequest(request.calendarId, request.id)}
       >accept</AlertDialog.Action
     >
     <AlertDialog.Action
-      on:click={() => rejectRequest(request.calendarId, request.id)}
+      onclick={() => rejectRequest(request.calendarId, request.id)}
       >reject</AlertDialog.Action
     >
     <AlertDialog.Cancel>cancel</AlertDialog.Cancel>
