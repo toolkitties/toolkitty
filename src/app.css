@@ -2,6 +2,71 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom fonts ＼(；￢_￢) */
+@font-face {
+  font-family: "Atkinson-Hyperlegible";
+  src:
+    url("/fonts/Atkinson-Hyperlegible-Regular.woff2") format("woff2"),
+    url("/fonts/Atkinson-Hyperlegible-Regular.woff") format("woff");
+  font-weight: bold;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Atkinson-Hyperlegible";
+  src:
+    url("/fonts/Atkinson-Hyperlegible-Italic.woff2") format("woff2"),
+    url("/fonts/Atkinson-Hyperlegible-Italic.woff") format("woff");
+  font-weight: normal;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Atkinson-Hyperlegible";
+  src:
+    url("/fonts/Atkinson-Hyperlegible-Bold.woff2") format("woff2"),
+    url("/fonts/Atkinson-Hyperlegible-Bold.woff") format("woff");
+  font-weight: bold;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Handjet";
+  src:
+    url("/fonts/Handjet-Regular.woff2") format("woff2"),
+    url("/fonts/Handjet-Regular.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* Theme colors (　＾＾)人(＾＾　) */
+/* Other colours that don't change between themes are declared directly in tailwind  */
+:root {
+  --bg-color: #ffffff;
+  --bg-secondary-color: #c2c2c2;
+  --primary-color: #b4ffb2;
+  --physical-color: #fdffb4;
+  --geo-color: #ffdffa;
+  --virtual-color: #baceff;
+  --text-color: #000000;
+}
+
+.theme-dark {
+  --background-color: #020202;
+  --bg-secondary-color: #3d3d3d;
+  --primary-color: #b4ffb2;
+  --physical-color: #051f07;
+  --geo-color: #010143;
+  --virtual-color: #3b0346;
+  --text-color: #ffffff;
+}
+
+/* Base styles φ(￣ー￣ )ノ */
+html {
+  font-size: 0.9375rem;
+  @apply font-sans;
+}
+
 @layer base {
   input,
   textarea {
@@ -16,4 +81,40 @@
     @apply border border-black rounded-full px-2.5 py-[3px];
   }
 
+  h1,
+  h2 {
+    font-size: 1.375rem;
+    text-transform: capitalize;
+  }
+
+  h3,
+  h4,
+  h5 {
+    font-size: 1.25rem;
+  }
+
+  /* colour icons for dark theme */
+
+  /* make coloured parts transparent */
+  .theme-dark .icon rect:not([fill="black"]) {
+    fill: transparent;
+  }
+
+  /* turn black/dark parts into white */
+  .theme-dark .icon rect[fill="black"],
+  .theme-dark .icon rect[fill="#020202"] {
+    fill: var(--text-color);
+  }
+
+  /* style menu icons when not active */
+  nav .not-active .icon rect:not([fill="black"]) {
+    fill: transparent;
+  }
+
+  /* TODO: Make footsteps icon change colour when active */
+
+  /* style menu icons when active in dark mode */
+  .theme-dark nav .active .icon rect[fill="black"] {
+    @apply fill-pink-hot;
+  }
 }

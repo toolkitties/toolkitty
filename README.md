@@ -1,4 +1,4 @@
-# Toolkitty (working title) 😻
+# Toolkitty 😻
 
 > Autonomous coordination toolkit for collectives, organisers and venues to share resources and organise events in a collaborative calendar.
 

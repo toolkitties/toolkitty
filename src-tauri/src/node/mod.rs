@@ -1,15 +1,17 @@
 mod actor;
+pub mod extensions;
 pub mod operation;
-mod stream;
+pub mod stream;
 
 use std::collections::HashMap;
 
 use anyhow::Result;
+use extensions::{Extensions, LogId};
 use futures_util::future::{MapErr, Shared};
 use futures_util::{FutureExt, TryFutureExt};
 use p2panda_core::{Body, Hash, Header, PrivateKey, PublicKey};
 use p2panda_discovery::mdns::LocalDiscovery;
-use p2panda_net::{FromNetwork, NetworkBuilder, SyncConfiguration, SystemEvent, TopicId};
+use p2panda_net::{NetworkBuilder, SyncConfiguration, SystemEvent, TopicId};
 use p2panda_store::MemoryStore;
 use p2panda_sync::log_sync::{LogSyncProtocol, TopicLogMap};
 use p2panda_sync::TopicQuery;
@@ -21,7 +23,7 @@ use tokio_util::task::AbortOnDropHandle;
 use tracing::error;
 
 use crate::node::actor::{NodeActor, ToNodeActor};
-use crate::node::operation::{encode_gossip_message, Extensions, LogId};
+use crate::node::operation::encode_gossip_message;
 use crate::node::stream::{StreamController, ToStreamController};
 pub use crate::node::stream::{StreamControllerError, StreamEvent};
 
@@ -56,6 +58,8 @@ where
         let rt = tokio::runtime::Handle::current();
 
         let (stream, stream_tx, stream_rx) = StreamController::new(store.clone());
+        let (ephemeral_tx, mut ephemeral_rx) = mpsc::channel(1024);
+
         let (network_tx, mut network_rx) = mpsc::channel(1024);
 
         {
@@ -68,6 +72,18 @@ where
                             body,
                             header_bytes,
                         })
+                        .await
+                        .expect("send stream_tx");
+                }
+            });
+        }
+
+        {
+            let stream_tx = stream_tx.clone();
+            rt.spawn(async move {
+                while let Some(bytes) = ephemeral_rx.recv().await {
+                    stream_tx
+                        .send(ToStreamController::Ephemeral { bytes })
                         .await
                         .expect("send stream_tx");
                 }
@@ -89,7 +105,7 @@ where
         let system_events_rx = network.events().await?;
 
         let (network_actor_tx, network_actor_rx) = mpsc::channel(64);
-        let actor = NodeActor::new(network, network_tx, network_actor_rx);
+        let actor = NodeActor::new(network, network_tx, ephemeral_tx, network_actor_rx);
 
         let actor_handle = rt.spawn(async {
             if let Err(err) = actor.run().await {
@@ -144,6 +160,27 @@ where
         reply_rx.await.expect("receive reply_rx")
     }
 
+    /// Ingest an operation without publishing it.
+    pub async fn ingest(
+        &mut self,
+        header: &Header<Extensions>,
+        body: Option<&Body>,
+    ) -> Result<(), PublishError> {
+        let header_bytes = header.to_bytes();
+
+        self.stream_tx
+            .send(ToStreamController::Ingest {
+                header: header.to_owned(),
+                body: body.cloned(),
+                header_bytes,
+            })
+            .await
+            // @TODO: Handle error.
+            .unwrap();
+
+        Ok(())
+    }
+
     pub async fn publish_ephemeral(
         &mut self,
         topic: &T,
@@ -166,24 +203,19 @@ where
         header: &Header<Extensions>,
         body: Option<&Body>,
     ) -> Result<Hash, PublishError> {
-        let header_bytes = header.to_bytes();
         let operation_id = header.hash();
 
         let bytes = encode_gossip_message(header, body)?;
-        self.network_actor_tx
-            .send(ToNodeActor::Broadcast {
-                topic_id: topic.id(),
-                bytes,
-            })
+
+        self.ingest(&header, body)
             .await
             // @TODO: Handle error.
             .unwrap();
 
-        self.stream_tx
-            .send(ToStreamController::Ingest {
-                header: header.to_owned(),
-                body: body.cloned(),
-                header_bytes,
+        self.network_actor_tx
+            .send(ToNodeActor::Broadcast {
+                topic_id: topic.id(),
+                bytes,
             })
             .await
             // @TODO: Handle error.
@@ -201,19 +233,13 @@ where
         Ok(())
     }
 
-    pub async fn subscribe(
-        &self,
-        topic: T,
-    ) -> Result<(mpsc::Receiver<FromNetwork>, oneshot::Receiver<()>)> {
-        let (reply_tx, reply_rx) = oneshot::channel();
+    pub async fn subscribe_ephemeral(&self, topic: &T) -> Result<()> {
         self.network_actor_tx
             .send(ToNodeActor::Subscribe {
                 topic: topic.clone(),
-                reply: reply_tx,
             })
             .await?;
-        let (_tx, rx, ready) = reply_rx.await?;
-        Ok((rx, ready))
+        Ok(())
     }
 }
 

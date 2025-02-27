@@ -9,6 +9,41 @@
 type Hash = string;
 
 /**
+ * The hash identifier of a stream.
+ */
+type StreamId = Hash;
+
+/**
+ * The hash identifier of a single operation.
+ */
+type OperationId = Hash;
+
+
+/**
+ * A topic which can be subscribed to on the network layer.
+ */
+type Topic = string;
+
+/**
+ * A long-lived "owned" data stream.
+ */
+type Stream = {
+  id: StreamId;
+  rootHash: Hash;
+  owner: PublicKey;
+};
+
+type LogId = {
+  stream: Stream,
+  logPath: LogPath
+}
+
+/**
+ * The path portion of a log id.
+ */
+type LogPath = "calendar" | "calendar/inbox";
+
+/**
  * Hexadecimal-encoded Ed25519 public key.
  */
 type PublicKey = string;
@@ -38,8 +73,7 @@ type Image = string;
  */
 type ChannelMessage =
   | StreamMessage
-  | InviteCodesReadyMessage
-  | InviteCodesMessage
+  | EphemeralMessage
   | SystemMessage;
 
 /**
@@ -102,9 +136,10 @@ type ApplicationMessage = {
  * Additional data we've received from the processed p2panda operation.
  */
 type StreamMessageMeta = {
-  calendarId: Hash;
   operationId: Hash;
-  publicKey: PublicKey;
+  author: PublicKey;
+  stream: Stream;
+  logPath: LogPath;
 };
 
 /**
@@ -118,10 +153,7 @@ type StreamMessageMeta = {
  * backend state change.
  */
 
-type SystemMessage =
-  | CalendarSelected
-  | SubscribedToCalendar
-  | NetworkEvent;
+type SystemMessage = CalendarSelected | SubscribedToCalendar | NetworkEvent;
 
 /**
  * We have selected a new calendar and are ready to receive it's events.
@@ -154,21 +186,10 @@ type NetworkEvent = {
  */
 
 /**
- * We've successfully entered the p2p gossip overlay and are ready now to
- * request resolved "invite codes" or resolve them for others.
- *
- * We can only enter a gossip overlay if at least one other peer has been
- * discovered. This event indicates that we've found this first peer!
- */
-type InviteCodesReadyMessage = {
-  event: "invite_codes_ready";
-};
-
-/**
  * We've received an "invite codes" request or response from the network.
  */
-type InviteCodesMessage = {
-  event: "invite_codes";
+type EphemeralMessage = {
+  event: "ephemeral";
   data: ResolveInviteCodeRequest | ResolveInviteCodeResponse;
 };
 
@@ -190,7 +211,7 @@ type ResolveInviteCodeResponse = {
   messageType: "response";
   timestamp: number;
   inviteCode: string;
-  calendarId: Hash;
+  calendarStream: Stream;
   calendarName: string;
 };
 
@@ -249,9 +270,42 @@ type ApplicationEvent =
 type SpaceRequestId = Hash;
 type ResourceRequestId = Hash;
 
+type Link = {
+  type: "ticket" | "custom";
+  title: null | string;
+  url: string;
+};
+
+type TimeSpan = {
+  start: Date;
+  end: Date;
+};
+
+type BookedTimeSpan = TimeSpan & {
+  event: Hash;
+};
+
+// TODO: TBC from open street maps
+type PhysicalLocation = {
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+  country: string; // TODO: ISO 3166
+};
+
+type GPSLocation = {
+  lat: string;
+  lon: string;
+};
+
+type VirtualLocation = string;
+
+type Answer = "approve" | "reject";
+
 type CalendarFields = {
-  calendarName: string;
-  calendarDates: TimeSpan[];
+  name: string;
+  dates: TimeSpan[];
 };
 
 type SpaceFields = {
@@ -262,7 +316,6 @@ type SpaceFields = {
   accessibility: string;
   description: string;
   contact: string;
-  message: string;
   link: Link;
   images: Image[];
   availability: TimeSpan[] | "always";
@@ -276,7 +329,7 @@ type ResourceFields = {
   link: Link;
   images: Image[];
   availability: TimeSpan[] | "always";
-  multiBookable: boolean; // resource can be booked more than once in the same time span
+  multiBookable: boolean;
 };
 
 type EventFields = {
@@ -314,6 +367,7 @@ type UserProfileUpdated = {
 type CalendarAccessRequested = {
   type: "calendar_access_requested";
   data: {
+    // @TODO(sam): we should switch to using the streamId as the "access reference" for a calendar.
     calendarId: Hash;
     name: string;
     message: string;
@@ -323,14 +377,14 @@ type CalendarAccessRequested = {
 type CalendarAccessAccepted = {
   type: "calendar_access_accepted";
   data: {
-    calendarId: Hash;
+    requestId: Hash;
   };
 };
 
 type CalendarAccessRejected = {
   type: "calendar_access_rejected";
   data: {
-    calendarId: Hash;
+    requestId: Hash;
   };
 };
 
@@ -406,7 +460,7 @@ type ResourceCreated = {
 };
 
 type ResourceUpdated = {
-  type: "space_updated";
+  type: "resource_updated";
   data: {
     id: Hash;
     fields: ResourceFields;
@@ -559,11 +613,22 @@ type UserRoleAssigned = {
 };
 
 /**
- * (´ヮ´)八(*ﾟ▽ﾟ*)
- * Application Data
+ * The different subscription types which exist for a calendar. Each represents a logical set of
+ * data which can be subscribed to independently.
  */
+type TopicType = "inbox" | "data";
 
-// @TODO: some updates required here based on the new protocol message definitions above
+type Subscription = {
+  calendarId: Hash;
+  type: TopicType;
+};
+
+/**
+ * (´ヮ´)八(*ﾟ▽ﾟ*)
+ * Database Schema
+ *
+ * How the data looks that we store in the frontend indexed db.
+ */
 
 type User = {
   id: PublicKey;
@@ -574,118 +639,92 @@ type Calendar = {
   id: Hash;
   ownerId: PublicKey;
   name: string;
-  // TODO: Should we support non-consecutive dates? It could be arrays of TimeSpan?
-  startDate?: Date;
+  // TODO: Should we support non-consecutive dates? It could be arrays of TimeSpan? The
+  // `CalendarCreated` fields contains a TimeSpan[] so it's possible to encode non-consecutive
+  // dates there, but we don't need to support that in the app right now. Here I've left it as a
+  // single time range.
+  startDate: Date;
   endDate?: Date;
+};
+
+type AccessRequest = {
+  id: Hash;
+  calendarId: Hash;
+  from: PublicKey;
+  name: string;
+  message: string;
+};
+
+type AccessResponse = {
+  id: Hash;
+  calendarId: Hash;
+  from: PublicKey;
+  requestId: Hash;
+  accept: boolean;
 };
 
 type CalendarEvent = {
   id: Hash;
+  calendarId: Hash;
   ownerId: PublicKey;
-  name: string;
-  description: string;
-  location: SpaceRequest | null;
-  startDate: Date; // allocated time of a space
-  endDate: Date; // allocated time of a space
-  publicStartDate: Date | null; // public facing
-  publicEndDate: Date | null; // public facing
-  resources: ResourceRequest[];
-  links: Link[];
-  images: Image[];
-};
-
-type Link = {
-  type: "ticket" | "custom";
-  title: null | string;
-  url: string;
-};
+} & EventFields;
 
 type Space = {
   id: Hash;
-  type: "physical" | "gps" | "virtual";
+  calendarId: Hash;
   ownerId: PublicKey;
-  name: string;
-  location: PhysicalLocation | GPSLocation | VirtualLocation; // TODO: change to proper address structure
-  capacity: number;
-  accessibility: string;
-  description: string;
-  contact: string;
-  link: Link;
-  images: Image[];
-  availability: TimeSpan[] | "always";
-  multiBookable: boolean; // Resource can be booked more than once in the same time span
   booked: BookedTimeSpan[];
-};
-
-// TODO: TBC from open street maps
-type PhysicalLocation = {
-  street: string;
-  city: string;
-  state: string;
-  zip: string;
-  country: string; // TODO: ISO 3166
-};
-
-type GPSLocation = {
-  lat: string;
-  lon: string;
-};
-
-type VirtualLocation = string;
+} & SpaceFields;
 
 type SpaceRequest = {
   id: Hash;
-  eventId: Hash;
   spaceId: Hash;
+  eventId: Hash;
   message: string;
+  timeSpan: TimeSpan;
   response: SpaceResponse | null;
 };
 
 type SpaceResponse = {
   id: Hash;
+  calendarId: Hash;
   request: SpaceRequest;
   answer: Answer;
 };
 
 type Resource = {
   id: Hash;
-  name: string;
+  calendarId: Hash;
   ownerId: PublicKey;
-  description: string;
-  contact: string;
-  link: Link;
-  images: Image[];
-  availability: TimeSpan[] | "always";
-  multiBookable: boolean; // resource can be booked more than once in the same time span
   booked: BookedTimeSpan[];
-};
+} & ResourceFields;
 
 type ResourceRequest = {
   id: Hash;
   resourceId: Hash;
   eventId: Hash;
   message: string;
+  timeSpan: TimeSpan;
   response: ResourceResponse | null;
 };
 
 type ResourceResponse = {
   id: Hash;
+  calendarId: Hash;
   request: ResourceRequest;
   answer: Answer;
-};
-
-type Answer = "approve" | "reject";
-
-type TimeSpan = {
-  start: Date;
-  end: Date;
-};
-
-type BookedTimeSpan = TimeSpan & {
-  event: Hash;
 };
 
 type Settings = {
   name: string;
   value: Hash | string;
-}
+};
+
+/**
+ * (´ヮ´)八(*ﾟ▽ﾟ*)
+ * Application Data
+ */
+
+type CalendarId = Hash;
+
+type RequestEvent = SpaceRequest | ResourceRequest | AccessRequest;

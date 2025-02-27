@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { calendars, inviteCodes } from "$lib/api";
+import { calendars, inviteCodes, access, spaces, resources, events } from "$lib/api";
 import { rejectPromise, resolvePromise } from "$lib/promiseMap";
 
 /**
@@ -120,31 +120,36 @@ import { rejectPromise, resolvePromise } from "$lib/promiseMap";
  * the message gets processed a second time.
  */
 export async function process(message: ChannelMessage) {
-  console.debug("received message to process", message);
-
   // @TODO: We need to validate here if the received messages are correctly
   // formatted and contain all the required fields.
   // Related issue: https://github.com/toolkitties/toolkitty/issues/77
 
   if (message.event == "application") {
+    console.debug("received application message", message);
     await onApplicationMessage(message);
-  } else if (
-    message.event == "invite_codes_ready" ||
-    message.event == "invite_codes"
-  ) {
+  } else if (message.event == "ephemeral") {
+    console.debug("received invite message", message);
     await onInviteCodesMessage(message);
   } else if (
     message.event == "calendar_selected" ||
     message.event == "subscribed_to_calendar" ||
     message.event == "network_event"
   ) {
+    // Filter out network events for now.
+    if (message.event != "network_event") {
+      console.debug("received system message", message);
+    }
     await onSystemMessage(message);
   }
 }
 
 async function onApplicationMessage(message: ApplicationMessage) {
   try {
+    await access.process(message);
     await calendars.process(message);
+    await events.process(message);
+    await spaces.process(message);
+    await resources.process(message);
 
     // Mark this operation as "processed", this can be used as a signal for the
     // frontend to change the UI now, for example change the state of a spinner
@@ -160,22 +165,21 @@ async function onApplicationMessage(message: ApplicationMessage) {
 }
 
 async function onInviteCodesMessage(
-  message: InviteCodesReadyMessage | InviteCodesMessage,
+  message: EphemeralMessage,
 ) {
   try {
-    await inviteCodes.process(message);
+    await inviteCodes.process(message.data);
   } catch (err) {
-    console.error(`failed processing invite codes message: ${err}`, message);
+    console.error(`failed processing invite codes message: ${err}`, message.data);
   }
 }
 
 async function onSystemMessage(message: SystemMessage) {
   if (message.event === "calendar_selected") {
-    // @TODO: set selected calendar.
-    console.log("calendar selected: ", message.calendarId);
+    // @TODO
   } else if (message.event === "subscribed_to_calendar") {
-    console.log("subscribed to calendar: ", message.calendarId);
+    // @TODO
   } else if (message.event === "network_event") {
-    // console.log("network system event received: ", message);
+    // @TODO
   }
 }

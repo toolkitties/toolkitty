@@ -1,49 +1,26 @@
-export const resources: Resource[] = [
-  {
-    id: "1",
-    name: "Projector",
-    ownerId: "1",
-    description: "Epson CO-FH01 Full HD Projector",
-    contact: "Signal @beamer",
-    availability: [
-      {
-        start: new Date("2025-01-20T00:00:00Z"),
-        end: new Date("2025-01-22T00:00:00Z"),
-      },
-      {
-        start: new Date("2025-01-24T00:00:00Z"),
-        end: new Date("2025-01-26T00:00:00Z"),
-      },
-    ],
-    quantity: 1,
-    images: [
-      "https://placecats.com/neo_banana/300/200",
-      "https://placecats.com/neo_2/300/200",
-    ],
-  },
-  {
-    id: "2",
-    name: "XLR Cables",
-    description: "as above. Call me to confirm pick up",
-    availability: [
-      {
-        start: new Date("2025-01-01T00:00:00Z"),
-        end: new Date("2025-02-30T00:00:00Z"),
-      },
-    ],
-    quantity: 10,
-    images: [],
-  },
-];
+import { calendars, events, resources, spaces } from ".";
+import { setActiveCalendar } from "./calendars";
 
-export const spaces: Space[] = [
-  {
-    id: "1",
+export async function seedData() {
+  const [operationId, calendarId] = await calendars.create({
+    fields: {
+      name: "Antiuniversity",
+      dates: [
+        {
+          start: new Date("2025-01-20T00:00:00Z"),
+          end: new Date("2025-01-27T00:00:00Z"),
+        },
+      ],
+    },
+  });
+
+  await setActiveCalendar(calendarId);
+
+  const spaceOneId = await spaces.create({
     type: "physical",
-    ownerId: "1",
-    name: "Main Stage",
+    name: "1",
     location: "123 Street Street",
-    capacity: 200,
+    capacity: 0,
     accessibility: "Wheelchair accessible",
     description: "A stage, a main one",
     contact: "Message on Signal",
@@ -63,12 +40,10 @@ export const spaces: Space[] = [
       },
     ],
     multiBookable: false,
-    booked: [],
-  },
-  {
-    id: "2",
+  });
+
+  const spaceTwoId = await spaces.create({
     type: "physical",
-    ownerId: "2",
     name: "Recording Studio",
     location: "34 Road Avenue",
     capacity: 20,
@@ -92,64 +67,80 @@ export const spaces: Space[] = [
       },
     ],
     multiBookable: false,
-    booked: [],
-  },
-];
+  });
 
-export const events: CalendarEvent[] = [
-  {
-    id: "1",
-    title: "Kitty Fest 25",
+  const resourceOneId = await resources.create({
+    name: "Projector",
+    description: "Epson CO-FH01 Full HD Projector",
+    contact: "Signal @beamer",
+    link: {
+      type: "custom",
+      title: null,
+      url: "",
+    },
+    images: [],
+    availability: [
+      {
+        start: new Date("2025-01-20T00:00:00Z"),
+        end: new Date("2025-01-22T00:00:00Z"),
+      },
+      {
+        start: new Date("2025-01-24T00:00:00Z"),
+        end: new Date("2025-01-26T00:00:00Z"),
+      },
+    ],
+    multiBookable: false,
+  });
+
+  const resourceTwoId = await resources.create({
+    name: "XLR Cables",
+    description: "as above. Call me to confirm pick up",
+    contact: "",
+    link: {
+      type: "custom",
+      title: null,
+      url: "",
+    },
+    images: [],
+    availability: [
+      {
+        start: new Date("2025-01-01T00:00:00Z"),
+        end: new Date("2025-02-30T00:00:00Z"),
+      },
+    ],
+    multiBookable: false,
+  });
+
+  await events.create({
+    name: "Kitty Fest 25",
     description: "A grand music festival with various artists.",
-    date: "2025-01-06T14:40:02.536Z",
-    start_time: "19:00",
-    end_time: "21:30",
     startDate: new Date("2025-01-06T14:00:00Z"),
     endDate: new Date("2025-01-06T20:00:00Z"),
-    location: {
-      space: spaces[0],
-      response: {
-        id: "1",
-        answer: "approve",
-      },
-    },
-    image: "https://placecats.com/louie/300/200",
-    tags: ["music", "festival", "cats"],
-  },
-  {
-    id: "2",
-    title: "Art Exhibition",
+    location: `${spaceOneId}`,
+    images: [],
+    resources: [`${resourceOneId}`],
+    links: [],
+  });
+
+  await events.create({
+    name: "Kitty Fest 25",
+    description: "A grand music festival with various artists.",
+    startDate: new Date("2025-01-06T14:00:00Z"),
+    endDate: new Date("2025-01-06T20:00:00Z"),
+    location: "",
+    images: [],
+    resources: [],
+    links: [],
+  });
+
+  await events.create({
+    name: "Art Exhibition",
     description: "An exhibition showcasing modern art.",
-    date: "2025-02-10T10:00:00.000Z",
-    start_time: "10:00",
-    end_time: "17:00",
     startDate: new Date("2025-02-10T10:00:00.000Z"),
     endDate: new Date("2025-02-10T17:00:00.000Z"),
-    location: {
-      space: spaces[1],
-      response: {
-        id: "3",
-        answer: "approve",
-      },
-    },
-    image: "https://placecats.com/bella/300/200",
-    tags: ["dancing", "anarchism", "improvisation"],
-  },
-];
-
-export const requests: SpaceRequest[] = [
-  {
-    id: "1",
-    eventId: "2",
-    spaceId: "2",
-    message: "Require a big main stage for the big band (*-ω-)",
-    response: null,
-  },
-  {
-    id: "2",
-    eventId: "2",
-    spaceId: "2",
-    message: "recording our album and need a good sounding studio ( ＾∇＾)",
-    response: null,
-  },
-];
+    location: "",
+    images: [],
+    resources: [],
+    links: [],
+  });
+}

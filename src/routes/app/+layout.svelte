@@ -1,73 +1,73 @@
 <script lang="ts">
   import "../../app.css";
-  import Icon from "@iconify/svelte";
-  import { page } from "$app/stores";
-  import Header from "../../components/header.svelte";
+  import { page } from "$app/state";
+  import Header from "$lib/components/Header.svelte";
+  import CalendarIcon from "$lib/components/icons/CalendarIcon.svelte";
+  import FootstepsIcon from "$lib/components/icons/FootstepsIcon.svelte";
+  import ChestIcon from "$lib/components/icons/ChestIcon.svelte";
+  import DashboardIcon from "$lib/components/icons/DashboardIcon.svelte";
+  import ShareIcon from "$lib/components/icons/ShareIcon.svelte";
 
   interface MenuItem {
     name: string;
     url: string;
-    icon: string;
+    icon: typeof CalendarIcon;
   }
 
   const menu: MenuItem[] = [
     {
       name: "Calendar",
       url: "/app/events",
-      icon: "lucide:calendar",
+      icon: CalendarIcon,
     },
     {
       name: "Spaces",
       url: "/app/spaces",
-      icon: "lucide:map-pin",
+      icon: FootstepsIcon,
     },
     {
       name: "Resources",
       url: "/app/resources",
-      icon: "lucide:wrench",
+      icon: ChestIcon,
     },
     {
       name: "Dashboard",
       url: "/app/dashboard",
-      icon: "lucide:user",
+      icon: DashboardIcon,
     },
     {
       name: "Admin",
       url: "/app/admin",
-      icon: "lucide:share-2",
+      icon: ShareIcon,
     },
   ];
-
-  let topLevelPage = $derived(
-    menu.some((item) => item.url.includes($page.url.pathname))
-  );
 </script>
 
-<Header />
+<svelte:head>
+  <title>
+    {page.data.title ? `${page.data.title} | toolkitty` : "toolkitty"}
+  </title>
+</svelte:head>
+
+<Header title={page.data.title} />
+
 <main class="h-dvh">
   <div class="p-8">
     <slot />
   </div>
-  <nav class="fixed bottom-0 right-0 w-full p-2 px-4 border-t border-black">
-    <ul class="flex justify-between items-center h-full">
-      {#each menu as item}
+  <nav class="fixed bottom-0 right-0 w-full py-2.5 px-6 border-t border-black">
+    <ul class="flex gap-6 justify-between items-center h-full">
+      {#each menu as { name, url, icon: Icon }}
         <li>
           <a
-            href={item.url}
-            class="block"
-            class:active={$page.url.pathname.includes(item.url)}
+            href={url}
+            class={page.url.pathname.includes(url) ? "active" : "not-active"}
           >
-            <Icon icon={item.icon} class="h-6 w-6" />
-            <span class="sr-only">{item.name}</span>
+            <Icon />
+            <span class="sr-only">{name}</span>
           </a>
         </li>
       {/each}
     </ul>
   </nav>
 </main>
-
-<style>
-  .active {
-    background-color: yellowgreen;
-  }
-</style>
