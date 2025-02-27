@@ -3,7 +3,7 @@ import type { ResolvedCalendar } from "$lib/api/inviteCodes";
 import { publicKey } from "./identity";
 import { db } from "$lib/db";
 import { TopicFactory } from "./topics";
-
+import { toast } from "$lib/toast.svelte";
 
 /*
  * Queries
@@ -205,26 +205,24 @@ async function onCalendarAccessRequested(
   meta: StreamMessageMeta,
   data: CalendarAccessRequested["data"],
 ) {
-  await db.accessRequests.add({
+  const accessRequest = {
     id: meta.operationId,
     calendarId: data.calendarId,
     from: meta.author,
     name: data.name,
     message: data.message,
     accepted: false,
-  });
-  //@TODO: For testing purposes only, we accept any requests for festivals where we are the
-  //owner.
+  }
+
+  await db.accessRequests.add(accessRequest);
+
   let myPublicKey = await publicKey();
   let hasAccess = await checkHasAccess(meta.author, data.calendarId);
-  if (!hasAccess) {
-    let calendar = await calendars.findOne(data.calendarId);
-    if (calendar?.ownerId == myPublicKey) {
-      let message = {
-        requestId: meta.operationId,
-      };
-      await acceptAccessRequest(calendar.id, message);
-    }
+  let isItMe = myPublicKey == meta.author;
+
+  // Show toast to user with request
+  if (!hasAccess && !isItMe) {
+    toast.accessRequest(accessRequest)
   }
 
   await handleRequestOrResponse(data.calendarId, meta.author);

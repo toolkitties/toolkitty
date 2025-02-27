@@ -11,15 +11,15 @@
   let { data }: PageProps = $props();
 
   // if we already have an active calendar then go to it.
-  if (data.activeCalendarId) {
-    goto("/app/events");
-  }
+  // TODO: check if we have access to this calendar and show pending screen if not.
+  // if (data.activeCalendarId) {
+  //   goto("/app/events");
+  // }
 
   let value: string[] | undefined = $state([]);
 
   let unlocked = $state(true);
   let progress: "dormant" | "pending" = $state("dormant");
-  let timedOut: boolean = $state(false);
   let pinInputType: "text" | "password" = $derived(
     unlocked ? "text" : "password",
   );
@@ -39,7 +39,6 @@
       await topics.subscribe(topic.calendarInbox());
       await calendars.setActiveCalendar(calendar.stream.id);
     } catch (err) {
-      timedOut = true;
       progress = "dormant";
       console.error(err);
       toast.error("Calendar not found");
@@ -90,10 +89,6 @@
     <p>Searching for calendar</p>
   {/if}
 </form>
-
-{#if timedOut}
-  <p>Calendar not found</p>
-{/if}
 
 <a
   href="/create"

@@ -728,4 +728,7 @@ type Settings = {
 
 type CalendarId = Hash;
 
-type RequestEvent = SpaceRequest | ResourceRequest | AccessRequest;
+type RequestEvent = {
+  type: 'space_request' | 'resource_request' | 'access_request',
+  data: SpaceRequest | ResourceRequest | AccessRequest
+}

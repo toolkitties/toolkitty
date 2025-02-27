@@ -95,6 +95,7 @@ export async function process(
 
 async function onRequest(inviteCode: string) {
   const calendar = await calendars.findByInviteCode(inviteCode);
+
   if (!calendar) {
     // We can't answer this request, ignore it.
     return;

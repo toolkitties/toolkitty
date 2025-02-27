@@ -9,7 +9,7 @@
 
 <AlertDialog.Portal>
   <AlertDialog.Content>
-    {#if (request.type = "space_request")}
+    {#if request.type == "space_request"}
       <AlertDialog.Title>{request.space.name} requested for:</AlertDialog.Title>
       <AlertDialog.Description>
         {request.event.name}<br />
@@ -17,7 +17,7 @@
       </AlertDialog.Description>
       <AlertDialog.Action>approve</AlertDialog.Action>
       <AlertDialog.Action>reject</AlertDialog.Action>
-    {:else if (request.type = "resource_requested")}
+    {:else if request.type == "resource_request"}
       <AlertDialog.Title
         >{request.resource.name} requested for:</AlertDialog.Title
       >
