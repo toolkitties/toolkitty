@@ -5,7 +5,7 @@
   import { toast } from "$lib/toast.svelte";
   import { resolveInviteCode } from "$lib/api/access";
   import { TopicFactory } from "$lib/api/topics";
-    import { setActiveCalendar } from "$lib/api/calendars";
+  import { setActiveCalendar } from "$lib/api/calendars";
 
   let value: string[] | undefined = [];
 

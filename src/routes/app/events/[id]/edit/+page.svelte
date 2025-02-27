@@ -3,6 +3,9 @@
   import { findMany as findSpaces } from "$lib/api/spaces";
   import { findMany as findResources } from "$lib/api/resources";
   import EventForm from "$lib/components/EventForm.svelte";
+  import type { PageProps } from "./$types";
+
+  let { data }: PageProps = $props();
 
   let spaces: Space[] = $state<Space[]>([]);
   let resources: Resource[] = $state<Resource[]>([]);
@@ -21,6 +24,8 @@
     }
   });
 </script>
+
+<pre>{JSON.stringify(data.event)}</pre>
 
 <br />
 <br />

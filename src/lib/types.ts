@@ -313,7 +313,7 @@ type SpaceFields = {
   description: string;
   contact: string;
   link: Link | null;
-  message: string;
+  messageForRequesters: string;
   images: Image[];
   availability: TimeSpan[] | "always";
   multiBookable: boolean;

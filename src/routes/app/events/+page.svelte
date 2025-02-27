@@ -1,26 +1,19 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import type { PageProps } from "./$types";
   import EventRow from "$lib/components/EventRow.svelte";
-  import { findMany } from "$lib/api/events";
 
-  let events: CalendarEvent[] = [];
-
-  onMount(async () => {
-    try {
-      const fetchedEvents = await findMany();
-      events = [...fetchedEvents];
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    }
-  });
+  let { data }: PageProps = $props();
 </script>
 
 <br />
 <br />
 <br />
-<h1 class="font-pixel">Events page</h1>
+<h1 class="font-pixel">{data.title}</h1>
+<a href="/app/calendars/{data.activeCalendarId}/edit">Edit Calendar</a>
 <a href="/app/events/create">Create event</a>
 
-{#each events as event}
+{#each data.eventsList as event}
   <EventRow {event} />
 {/each}
+
+<p>Invite code: (first 4 chars): {data.activeCalendarId}</p>

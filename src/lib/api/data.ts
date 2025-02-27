@@ -33,6 +33,7 @@ export async function seedData() {
       "https://placecats.com/neo_banana/300/200",
       "https://placecats.com/neo_2/300/200",
     ],
+    messageForRequesters: "Call me after 6pm",
     availability: [
       {
         start: new Date("2025-01-01T00:00:00Z"),
@@ -60,6 +61,7 @@ export async function seedData() {
       "https://placecats.com/neo_banana/300/200",
       "https://placecats.com/neo_2/300/200",
     ],
+    messageForRequesters: "Call me after 6pm",
     availability: [
       {
         start: new Date("2025-01-01T00:00:00Z"),
