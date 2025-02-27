@@ -16,7 +16,7 @@ export function parseSpaceFormData(
   const accessibility = formData.get("accessibility-details") as string;
   const description = formData.get("space-description") as string;
   const contact = formData.get("contact-details") as string;
-  const message = (formData.get("space-message") as string) || "";
+  const messageForRequesters = (formData.get("space-message") as string) || "";
   const multiBookable = formData.get("multi-bookable") === "true";
 
   // Parse location based on type
@@ -73,7 +73,7 @@ export function parseSpaceFormData(
     description,
     contact,
     link,
-    message,
+    messageForRequesters,
     images: [],
     availability: parsedAvailability,
     multiBookable,

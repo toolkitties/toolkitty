@@ -1,9 +1,11 @@
 <script lang="ts">
   import AvailabilitySetter from "$lib/components/AvailabilitySetter.svelte";
-  import { create, update } from "$lib/api/spaces";
+  import { spaces } from "$lib/api";
   import { parseSpaceFormData } from "$lib/utils";
+  import { goto } from "$app/navigation";
+    import { toast } from "$lib/toast.svelte";
 
-  let { formType } = $props();
+  let { formType, space } = $props();
   let selectedSpaceType = $state("physical");
   let availability: { date: string; startTime: string; endTime: string }[] =
     $state([]);
@@ -31,10 +33,12 @@
     const payload = parseSpaceFormData(formData, alwaysAvailable, availability);
 
     try {
-      const response = await create(payload);
-      console.log("Space created with ID:", response);
+      await spaces.create(payload);
+      toast.success("Space created!");
+      goto(`/app/spaces/${space.id}`);
     } catch (error) {
-      console.error("Error creating space:", error);
+      console.error("Error creating space: ", error);
+      toast.error("Error creating space!");
     }
   }
 
@@ -44,20 +48,23 @@
     const form = e.currentTarget as HTMLFormElement;
     const formData = new FormData(form);
 
-    const spaceId = "1"; // @todo - fetch properly
-
     const payload = parseSpaceFormData(formData, alwaysAvailable, availability);
 
     try {
-      const response = await update(spaceId, payload);
-      console.log("Space updated", response);
+      await spaces.update(space.id, payload);
+      toast.success("Space updated!");
+      goto(`/app/spaces/${space.id}`);
     } catch (error) {
-      console.error("Error updating space:", error);
+      console.error("Error updating space: ", error);
+      toast.error("Error updating space!");
     }
   }
 </script>
 
 <form onsubmit={handleSubmit}>
+  {#if space.id}
+    <input type="text" bind:value={space.id}>
+  {/if}
   <fieldset>
     <label for="physical">Physical Location</label>
     <input
