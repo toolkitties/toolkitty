@@ -1,7 +1,7 @@
 <script lang="ts">
   import { toast } from "$lib/toast.svelte";
   import { tick } from "svelte";
-  import AccessRequest from "./dialog/AccessRequest.svelte";
+  import AccessRequestDialog from "./dialog/AccessRequestDialog.svelte";
   import * as AlertDialog from "$lib/components/dialog/index";
 
   let { toastie } = $props();
@@ -31,7 +31,7 @@
   <AlertDialog.Trigger class="button">
     <p>{toastie.message}</p>
     {#if toastie.request.type == "access_request"}
-      <AccessRequest request={toastie.request} bind:open />
+      <AccessRequestDialog request={toastie.request} bind:open />
     {/if}
   </AlertDialog.Trigger>
 </AlertDialog.Root>

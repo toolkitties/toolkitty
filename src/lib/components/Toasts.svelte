@@ -21,7 +21,7 @@
           </a>
         {:else if toastie.request}
           <!-- Action is required so it should open a modal -->
-          <RequestToast toastie />
+          <RequestToast {toastie} />
         {:else}
           <!-- It's just a regular toast so we display the message -->
           {@render toastContent(toastie)}

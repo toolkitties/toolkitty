@@ -11,20 +11,28 @@
    * Accept request for calendar access
    */
   async function acceptRequest(calendarId: Hash, requestId: Hash) {
-    await access.acceptAccessRequest(calendarId, { requestId });
+    try {
+      await access.acceptAccessRequest(calendarId, { requestId });
 
-    // close the dialog
-    open = false;
+      // close the dialog
+      open = false;
+    } catch (error) {
+      console.error("Failed to accept access request:", error);
+    }
   }
 
   /**
    * Reject request for calendar access
    */
   async function rejectRequest(calendarId: Hash, requestId: Hash) {
-    await access.rejectAccessRequest(calendarId, { requestId });
+    try {
+      await access.rejectAccessRequest(calendarId, { requestId });
 
-    // close the dialog
-    open = false;
+      // close the dialog
+      open = false;
+    } catch (error) {
+      console.error("Failed to reject access request:", error);
+    }
   }
 
   // TODO: Handle user actions from requests

@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { PageProps } from "./$types";
-  import Request from "$lib/components/dialog/Request.svelte";
+  import RequestDialog from "./RequestDialog.svelte";
 
   let { data }: PageProps = $props();
 
@@ -41,7 +41,7 @@
   </p>
   {#if data.pendingRequests}
     {#each data.pendingRequests as request}
-      <p>{request.from}</p>
+      <RequestDialog {request} />
     {/each}
   {/if}
 </section>
