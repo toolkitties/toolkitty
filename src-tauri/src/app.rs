@@ -134,8 +134,8 @@ impl Service {
     /// Spawn the service task.
     #[cfg(test)]
     pub async fn run() -> Arc<RwLock<Context>> {
-        let temp_blobs_root_dir = std::env::temp_dir();
-        let mut app = Self::build(temp_blobs_root_dir)
+        let temp_blobs_root_dir = tempfile::tempdir().expect("temp dir");
+        let mut app = Self::build(temp_blobs_root_dir.into_path())
             .await
             .expect("build stream");
         let context = app.context.clone();
