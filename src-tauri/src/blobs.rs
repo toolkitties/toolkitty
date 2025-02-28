@@ -89,7 +89,7 @@ fn parse_blob_hash(uri: &Uri) -> Result<Hash> {
     };
 
     if let Some(path) = uri.path_and_query() {
-        if path.to_string() != "/" {
+        if *path != "/" {
             bail!("suspicious suffix after blob hash");
         }
     }
