@@ -465,7 +465,7 @@ mod tests {
 
         let (header, body) = operation::create_operation(
             operation_store,
-            &private_key,
+            private_key,
             extensions.clone(),
             Some(
                 &serde_json::to_vec(&json!({

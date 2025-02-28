@@ -265,7 +265,7 @@ impl Rpc {
         {
             context
                 .node
-                .subscribe_ephemeral(&topic)
+                .subscribe_ephemeral(topic)
                 .await
                 .expect("can subscribe to topic");
 
@@ -298,7 +298,7 @@ impl Rpc {
             &mut context.node.store,
             &private_key,
             extensions,
-            Some(&payload),
+            Some(payload),
         )
         .await;
 
@@ -323,7 +323,7 @@ impl Rpc {
 
     pub async fn publish_ephemeral(&self, topic: &Topic, payload: &[u8]) -> Result<(), RpcError> {
         let mut context = self.context.lock().await;
-        context.node.publish_ephemeral(&topic, &payload).await?;
+        context.node.publish_ephemeral(topic, payload).await?;
         Ok(())
     }
 }
@@ -538,12 +538,14 @@ mod tests {
 
         let mut message_received = false;
         while let Ok(event) = peer_b_rx.recv().await {
-            if let ChannelEvent::Stream(StreamEvent { data, .. }) = event {
-                if let EventData::Ephemeral(payload) = data {
-                    assert_eq!(send_payload, payload);
-                    message_received = true;
-                    break;
-                }
+            if let ChannelEvent::Stream(StreamEvent {
+                data: EventData::Ephemeral(payload),
+                ..
+            }) = event
+            {
+                assert_eq!(send_payload, payload);
+                message_received = true;
+                break;
             }
         }
 

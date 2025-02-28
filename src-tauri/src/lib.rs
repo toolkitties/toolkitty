@@ -17,16 +17,18 @@ pub fn run() {
         .filter(|metadata| metadata.target().starts_with("toolkitty_lib"))
         .build();
 
-    Builder::default()
-        .setup(|app| {
-            #[cfg(not(test))]
-            {
-                let app_handle = app.handle().clone();
-                app::Service::run(app_handle);
-            }
+    let mut builder = Builder::default();
 
+    #[cfg(not(test))]
+    {
+        builder = builder.setup(|app| {
+            let app_handle = app.handle().clone();
+            app::Service::run(app_handle);
             Ok(())
-        })
+        });
+    };
+
+    builder
         .plugin(logger)
         .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![

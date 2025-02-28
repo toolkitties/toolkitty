@@ -12,6 +12,7 @@ pub struct StreamArgs {
     pub(crate) owner: Option<PublicKey>,
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Clone, Debug)]
 pub enum ChannelEvent {
     Stream(StreamEvent),

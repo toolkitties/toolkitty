@@ -1,0 +1,102 @@
+name: Rust CI
+
+on: push
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_TOOLCHAIN: 1.83.0
+  CARGO_MANIFEST: src-tauri/Cargo.toml
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: moonrepo/setup-rust@v1
+        with:
+          channel: ${{ env.RUST_TOOLCHAIN }}
+
+      - name: install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev webkit2gtk-4.1 libayatana-appindicator3-dev
+
+      - name: Run tests
+        run: |
+          cargo test \
+            --manifest-path ${{ env.CARGO_MANIFEST }} \
+            --all-features
+
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: moonrepo/setup-rust@v1
+        with:
+          channel: ${{ env.RUST_TOOLCHAIN }}
+
+      - name: install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev webkit2gtk-4.1 libayatana-appindicator3-dev
+
+      - name: Check project and dependencies
+        run: |
+          cargo check \
+            --manifest-path ${{ env.CARGO_MANIFEST }}
+
+  fmt:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: moonrepo/setup-rust@v1
+        with:
+          components: rustfmt
+          channel: ${{ env.RUST_TOOLCHAIN }}
+
+      - name: install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev webkit2gtk-4.1 libayatana-appindicator3-dev
+
+      - name: Check formatting
+        run: |
+          cargo fmt \
+            --manifest-path ${{ env.CARGO_MANIFEST }} \
+            -- --check
+
+  clippy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: moonrepo/setup-rust@v1
+        with:
+          components: clippy
+          channel: ${{ env.RUST_TOOLCHAIN }}
+
+      - name: install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev webkit2gtk-4.1 libayatana-appindicator3-dev
+
+      - name: Check code with clippy
+        run: |
+          cargo clippy \
+            --manifest-path ${{ env.CARGO_MANIFEST }} \
+            -- -D warnings --no-deps
