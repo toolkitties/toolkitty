@@ -15,8 +15,7 @@ export async function findMany(): Promise<Calendar[]> {
 }
 
 export async function findOne(id: Hash): Promise<Calendar | undefined> {
-  let calendars = await db.calendars.toArray();
-  return calendars.find((calendar) => calendar.id == id);
+  return await db.calendars.get({ id });
 }
 
 export async function findByInviteCode(

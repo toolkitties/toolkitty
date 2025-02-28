@@ -12,32 +12,22 @@ import { promiseResult } from "$lib/promiseMap";
  * Get spaces that are associated with the currently active calendar
  */
 export async function findMany(): Promise<Space[]> {
-  const spaces = await db.spaces.toArray();
-  return spaces;
+  return await db.spaces.toArray();
 }
 
 /**
  * Get all spaces that I am the owner of.
  */
 export async function findMine(): Promise<Space[]> {
-  const myPublicKey = await publicKey();
-  const spaces = (await db.spaces.toArray()).filter(
-    (space) => space.ownerId == myPublicKey,
-  );
-  return spaces;
+  let myPublicKey = await publicKey();
+  return await db.spaces.where({ ownerId: myPublicKey }).toArray();
 }
 
 /**
  * Get one event by its ID
  */
 export async function findById(id: Hash): Promise<Space | undefined> {
-  const space = (await db.spaces.toArray()).filter((space) => space.id == id);
-
-  if (space.length == 0) {
-    return;
-  }
-
-  return space[0];
+  return await db.spaces.get({ id });
 }
 
 /**

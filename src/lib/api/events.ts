@@ -22,23 +22,14 @@ export async function findMany(): Promise<CalendarEvent[]> {
  */
 export async function findMine(): Promise<CalendarEvent[]> {
   let myPublicKey = await publicKey();
-  let events = (await db.events.toArray()).filter(
-    (resource) => resource.ownerId == myPublicKey,
-  );
-  return events;
+  return await db.events.where({ ownerId: myPublicKey }).toArray();
 }
 
 /**
  * Get one event via its id
  */
 export async function findById(id: Hash): Promise<CalendarEvent | undefined> {
-  let events = (await db.events.toArray()).filter((events) => events.id == id);
-
-  if (events.length == 0) {
-    return;
-  }
-
-  return events[0];
+  return await db.events.get({ id });
 }
 
 /**

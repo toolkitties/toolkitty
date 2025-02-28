@@ -12,8 +12,7 @@ import { promiseResult } from "$lib/promiseMap";
  * Get resources that are associated with the currently active calendar
  */
 export async function findMany(): Promise<Resource[]> {
-  let resources = await db.resources.toArray();
-  return resources;
+  return await db.resources.toArray();
 }
 
 /**
@@ -21,25 +20,14 @@ export async function findMany(): Promise<Resource[]> {
  */
 export async function findMine(): Promise<Resource[]> {
   let myPublicKey = await publicKey();
-  let resources = (await db.resources.toArray()).filter(
-    (resource) => resource.ownerId == myPublicKey,
-  );
-  return resources;
+  return await db.resources.where({ ownerId: myPublicKey }).toArray();
 }
 
 /**
  * Get one event by its ID
  */
 export async function findById(id: Hash): Promise<Resource | undefined> {
-  let resource = (await db.resources.toArray()).filter(
-    (resource) => resource.id == id,
-  );
-
-  if (resource.length == 0) {
-    return;
-  }
-
-  return resource[0];
+  return await db.resources.get({id: id})
 }
 
 /**
