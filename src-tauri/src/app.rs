@@ -10,7 +10,7 @@ use serde::Serialize;
 #[cfg(not(test))]
 use tauri::{AppHandle, Manager};
 use thiserror::Error;
-use tokio::sync::{broadcast, mpsc, Mutex};
+use tokio::sync::{broadcast, mpsc, RwLock};
 use tracing::debug;
 
 use crate::messages::{ChannelEvent, NetworkEvent, StreamArgs};
@@ -65,7 +65,7 @@ impl Context {
 
 pub struct Service {
     /// Handle onto the tauri application. The shared Context can be accessed and modified here.
-    context: Arc<Mutex<Context>>,
+    context: Arc<RwLock<Context>>,
 
     /// Stream where we receive all topic events from the p2panda node.
     stream_rx: mpsc::Receiver<StreamEvent>,
@@ -105,7 +105,7 @@ impl Service {
         let context = Context::new(node, to_app_tx, topic_map, channel_tx);
 
         Ok(Self {
-            context: Arc::new(Mutex::new(context)),
+            context: Arc::new(RwLock::new(context)),
             stream_rx,
             network_events_rx,
             to_app_rx,
@@ -133,7 +133,7 @@ impl Service {
 
     /// Spawn the service task.
     #[cfg(test)]
-    pub async fn run() -> Arc<Mutex<Context>> {
+    pub async fn run() -> Arc<RwLock<Context>> {
         let temp_blobs_root_dir = std::env::temp_dir();
         let mut app = Self::build(temp_blobs_root_dir)
             .await
@@ -190,20 +190,20 @@ impl Service {
             return Err(anyhow::anyhow!("channel tx closed"));
         };
 
-        self.context.lock().await.channel_set = true;
+        self.context.write().await.channel_set = true;
 
         Ok(channel)
     }
 }
 
 pub struct Rpc {
-    context: Arc<Mutex<Context>>,
+    context: Arc<RwLock<Context>>,
 }
 
 impl Rpc {
     /// Initialize the app by passing it a channel from the frontend.
     pub async fn init(&self, channel: broadcast::Sender<ChannelEvent>) -> Result<(), RpcError> {
-        let context = self.context.lock().await;
+        let context = self.context.write().await;
 
         context
             .channel_tx
@@ -215,20 +215,20 @@ impl Rpc {
     }
     /// The public key of the local node.
     pub async fn public_key(&self) -> Result<PublicKey, RpcError> {
-        let context = self.context.lock().await;
+        let context = self.context.read().await;
         let public_key = context.node.private_key.public_key();
         Ok(public_key)
     }
 
     /// Acknowledge operations to mark them as successfully processed in the stream controller.
     pub async fn ack(&self, operation_id: Hash) -> Result<(), RpcError> {
-        let mut context = self.context.lock().await;
+        let mut context = self.context.write().await;
         context.node.ack(operation_id).await?;
         Ok(())
     }
 
     pub async fn replay(&self, topic: Topic) -> Result<(), RpcError> {
-        let mut context = self.context.lock().await;
+        let mut context = self.context.write().await;
         if let Some(logs) = context.topic_map.get(&topic).await {
             context.node.replay(logs).await?;
         };
@@ -241,13 +241,13 @@ impl Rpc {
         topic: Topic,
         log_id: LogId,
     ) -> Result<(), RpcError> {
-        let context = self.context.lock().await;
+        let context = self.context.write().await;
         context.topic_map.add_log(topic, public_key, log_id).await;
         Ok(())
     }
 
     pub async fn subscribe(&self, topic: &Topic) -> Result<(), RpcError> {
-        let mut context = self.context.lock().await;
+        let mut context = self.context.write().await;
 
         if context
             .subscriptions
@@ -269,7 +269,7 @@ impl Rpc {
     }
 
     pub async fn subscribe_ephemeral(&self, topic: &Topic) -> Result<(), RpcError> {
-        let mut context = self.context.lock().await;
+        let mut context = self.context.write().await;
 
         if context
             .subscriptions
@@ -297,7 +297,7 @@ impl Rpc {
         log_path: Option<&LogPath>,
         topic: Option<&Topic>,
     ) -> Result<(Hash, Hash), RpcError> {
-        let mut context = self.context.lock().await;
+        let mut context = self.context.write().await;
         let private_key = context.node.private_key.clone();
 
         let extensions = Extensions {
@@ -335,9 +335,15 @@ impl Rpc {
     }
 
     pub async fn publish_ephemeral(&self, topic: &Topic, payload: &[u8]) -> Result<(), RpcError> {
-        let mut context = self.context.lock().await;
-        context.node.publish_ephemeral(topic, payload).await?;
+        let mut context = self.context.write().await;
+        context.node.publish_ephemeral(&topic, &payload).await?;
         Ok(())
+    }
+
+    pub async fn upload_file(&self, path: PathBuf) -> Result<Hash, RpcError> {
+        let context = self.context.read().await;
+        let file_hash = context.node.upload_file(path).await?;
+        Ok(file_hash)
     }
 }
 
@@ -348,6 +354,9 @@ pub enum RpcError {
 
     #[error(transparent)]
     Publish(#[from] crate::node::PublishError),
+
+    #[error(transparent)]
+    Blob(#[from] crate::node::BlobError),
 
     #[error("payload decoding failed")]
     Serde(#[from] serde_json::Error),
@@ -387,7 +396,7 @@ mod tests {
     #[tokio::test]
     async fn public_key() {
         let context = Service::run().await;
-        let node_private_key = context.lock().await.node.private_key.clone();
+        let node_private_key = context.read().await.node.private_key.clone();
         let rpc = Rpc { context };
 
         let (channel_tx, _channel_rx) = broadcast::channel(10);
@@ -447,7 +456,7 @@ mod tests {
     #[tokio::test]
     async fn publish() {
         let context = Service::run().await;
-        let private_key = context.lock().await.node.private_key.clone();
+        let private_key = context.read().await.node.private_key.clone();
         let rpc = Rpc { context };
 
         let (channel_tx, mut channel_rx) = broadcast::channel(10);
