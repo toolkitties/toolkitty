@@ -1,4 +1,5 @@
 mod app;
+mod blobs;
 mod messages;
 mod node;
 mod rpc;
@@ -29,7 +30,7 @@ pub fn run() {
     };
 
     builder
-        // .register_asynchronous_uri_scheme_protocol(uri_scheme, protocol)
+        .register_asynchronous_uri_scheme_protocol("blobstore", blobs::blobstore_protocol)
         .plugin(logger)
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())

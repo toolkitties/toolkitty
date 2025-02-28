@@ -197,7 +197,7 @@ impl Service {
 }
 
 pub struct Rpc {
-    context: Arc<RwLock<Context>>,
+    pub(crate) context: Arc<RwLock<Context>>,
 }
 
 impl Rpc {
