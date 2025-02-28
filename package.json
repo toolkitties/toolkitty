@@ -7,8 +7,10 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "dev": "vite dev",
-    "lint": "prettier ./src --check",
-    "lint:apply": "prettier ./src --write",
+    "format": "prettier ./src --check",
+    "format:apply": "prettier ./src --write",
+    "lint": "eslint src",
+    "lint:apply": "eslint --fix --quiet src",
     "peer": "./scripts/peer.sh",
     "preview": "vite preview",
     "tauri": "tauri"
