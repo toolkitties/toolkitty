@@ -25,7 +25,7 @@ pub fn run() {
             let app_handle = app.handle().clone();
             app::Service::run(app_handle);
 
-            Ok(());
+            Ok(())
         });
     };
 

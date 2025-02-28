@@ -207,7 +207,7 @@ where
 
         let bytes = encode_gossip_message(header, body)?;
 
-        self.ingest(&header, body)
+        self.ingest(header, body)
             .await
             // @TODO: Handle error.
             .unwrap();

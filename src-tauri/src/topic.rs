@@ -37,7 +37,7 @@ impl TopicQuery for Topic {}
 
 impl TopicId for Topic {
     fn id(&self) -> [u8; 32] {
-        Hash::new(self.0.as_bytes()).as_bytes().clone()
+        *Hash::new(self.0.as_bytes()).as_bytes()
     }
 }
 
@@ -82,6 +82,6 @@ impl TopicMap {
 impl TopicLogMap<Topic, LogId> for TopicMap {
     async fn get(&self, topic: &Topic) -> Option<HashMap<PublicKey, Vec<LogId>>> {
         let lock = self.inner.read().await;
-        lock.topics.get(&topic).cloned()
+        lock.topics.get(topic).cloned()
     }
 }

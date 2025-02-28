@@ -32,7 +32,7 @@ pub struct Stream {
 
 impl Stream {
     pub fn id(&self) -> StreamId {
-        let bytes = vec![*self.root_hash.0.as_bytes(), *self.owner.0.as_bytes()].concat();
+        let bytes = [*self.root_hash.0.as_bytes(), *self.owner.0.as_bytes()].concat();
         StreamId::new(&bytes)
     }
 }
@@ -149,11 +149,9 @@ pub struct Extensions {
 
 impl Extension<StreamRootHash> for Extensions {
     fn extract(header: &Header<Self>) -> Option<StreamRootHash> {
-        let Some(ref extensions) = header.extensions else {
-            return None;
-        };
+        let extensions = header.extensions.as_ref()?;
 
-        match extensions.stream_root_hash.clone() {
+        match extensions.stream_root_hash {
             Some(stream_root_hash) => Some(stream_root_hash),
             None => Some(header.hash().into()),
         }
@@ -162,11 +160,9 @@ impl Extension<StreamRootHash> for Extensions {
 
 impl Extension<StreamOwner> for Extensions {
     fn extract(header: &Header<Self>) -> Option<StreamOwner> {
-        let Some(ref extensions) = header.extensions else {
-            return None;
-        };
+        let extensions = header.extensions.as_ref()?;
 
-        match extensions.stream_owner.clone() {
+        match extensions.stream_owner {
             Some(stream_owner) => Some(stream_owner),
             None => Some(header.public_key.into()),
         }
@@ -183,9 +179,7 @@ impl Extension<Stream> for Extensions {
 
 impl Extension<LogPath> for Extensions {
     fn extract(header: &Header<Self>) -> Option<LogPath> {
-        let Some(ref extensions) = header.extensions else {
-            return None;
-        };
+        let extensions = header.extensions.as_ref()?;
 
         extensions.log_path.clone()
     }
