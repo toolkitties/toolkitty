@@ -31,7 +31,10 @@ pub fn run() {
     };
 
     builder
-        .register_asynchronous_uri_scheme_protocol("blobstore", blobs::blobstore_protocol)
+        .register_asynchronous_uri_scheme_protocol(
+            blobs::BLOBSTORE_URI_SCHEME,
+            blobs::blobstore_protocol,
+        )
         .plugin(logger)
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())

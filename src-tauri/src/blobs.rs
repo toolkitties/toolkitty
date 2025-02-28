@@ -13,17 +13,20 @@ use tokio::time::timeout;
 
 use crate::app::{Context, Rpc};
 
-/// Time limit we give for finding another peer and downloading the blob from them before we give
-/// up and return a "Not found" (404) error.
+/// blobstore://<hash>
+pub const BLOBSTORE_URI_SCHEME: &str = "blobstore";
+
+/// Timelimit for finding another peer and downloading the blob from them before returning a "Not
+/// Found" (404) error.
 const SYNC_TIMEOUT: Duration = Duration::from_secs(5);
 
-/// Handler for the custom blobstore:// URI scheme protocol which will be registered in the Tauri
+/// Handler for the custom `blobstore://` URI scheme protocol which will be registered in the Tauri
 /// WebView.
 ///
 /// This allows the frontend to request a file addressed with it's hash. First we check if the file
 /// exists in our local blob store, if not, we'll request to download the file from other peers.
-/// This might take a while as no peer with that file might be online, the user will receive a
-/// timeout after a while which can be interpreted as a "not found" 404 failure.
+/// This might take a while as no peer with that file might be online, we will receive a timeout
+/// after a while which is interpreted as a "Not Found" 404 failure.
 ///
 /// To make this work in Tauri we need to allow this protocol in the CSP config, for example via:
 ///
@@ -69,10 +72,14 @@ pub fn blobstore_protocol<R: Runtime>(
 /// Extracts the blob's hash from the request URI. The hash is encoded as a 64 hexadecimal
 /// character string.
 ///
-/// blobstore://<hash>
+/// blobstore://<hash>/
 ///               |
 ///           URI "host"
 fn parse_blob_hash(uri: &Uri) -> Result<Hash> {
+    if uri.scheme_str() != Some(BLOBSTORE_URI_SCHEME) {
+        bail!("uri scheme is not blobstore");
+    };
+
     let Some(hash_str) = uri.host() else {
         bail!("blob hash missing");
     };
@@ -80,6 +87,12 @@ fn parse_blob_hash(uri: &Uri) -> Result<Hash> {
     let Ok(hash) = Hash::from_str(hash_str) else {
         bail!("invalid hexadecimal blob hash string");
     };
+
+    if let Some(path) = uri.path_and_query() {
+        if path.to_string() != "/" {
+            bail!("suspicious suffix after blob hash");
+        }
+    }
 
     Ok(hash)
 }
@@ -143,3 +156,49 @@ fn error(status_code: StatusCode, message: String) -> ResponseResult {
 }
 
 type ResponseResult = Result<Response<Vec<u8>>, tauri::http::Error>;
+
+#[cfg(test)]
+mod tests {
+    use tauri::http::Uri;
+
+    use super::parse_blob_hash;
+
+    #[test]
+    fn parse_blobstore_uri() {
+        assert!(parse_blob_hash(&Uri::from_static(
+            "blobstore://3a9ff2cbee2fe12c1c9bd42f9ec18b34fffe42be6d34f4c670fb39cac373d278"
+        ))
+        .is_ok());
+
+        // Trailing slash is ok.
+        assert!(parse_blob_hash(&Uri::from_static(
+            "blobstore://3a9ff2cbee2fe12c1c9bd42f9ec18b34fffe42be6d34f4c670fb39cac373d278/"
+        ))
+        .is_ok());
+
+        // Invalid schema.
+        assert!(parse_blob_hash(&Uri::from_static(
+            "unknown://3a9ff2cbee2fe12c1c9bd42f9ec18b34fffe42be6d34f4c670fb39cac373d278"
+        ))
+        .is_err());
+
+        // Invalid hexadecimal characters.
+        assert!(parse_blob_hash(&Uri::from_static("blobstore://invalidhash")).is_err());
+
+        // Too long hash.
+        assert!(parse_blob_hash(&Uri::from_static(
+            "blobstore://3a9ff2cbee2fe12c1c9bd42f9ec18b34fffe42be6d34f4c670fb39cac373d2781256"
+        ))
+        .is_err());
+
+        // Invalid suffix.
+        assert!(parse_blob_hash(&Uri::from_static(
+            "blobstore://3a9ff2cbee2fe12c1c9bd42f9ec18b34fffe42be6d34f4c670fb39cac373d278/more/things?here"
+        ))
+        .is_err());
+        assert!(parse_blob_hash(&Uri::from_static(
+            "blobstore://3a9ff2cbee2fe12c1c9bd42f9ec18b34fffe42be6d34f4c670fb39cac373d278/?here"
+        ))
+        .is_err());
+    }
+}
