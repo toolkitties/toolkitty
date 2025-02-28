@@ -24,8 +24,7 @@ pub fn run() {
         builder = builder.setup(|app| {
             let app_handle = app.handle().clone();
             app::Service::run(app_handle);
-
-            Ok(())
+            return Ok(());
         });
     };
 
