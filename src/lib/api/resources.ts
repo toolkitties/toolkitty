@@ -8,14 +8,14 @@ import { promiseResult } from "$lib/promiseMap";
  */
 
 /**
- * Get resources that are associated with the currently active calendar
+ * Get resources that are associated with the passed calendar
  */
 export async function findMany(calendarId: Hash): Promise<Resource[]> {
   return await db.resources.where({ calendarId }).toArray();
 }
 
 /**
- * Get all resources that are owned by a certain public key.
+ * Get all calendar resources that are owned by the passed public key.
  */
 export async function findByOwner(
   calendarId: Hash,
@@ -25,7 +25,7 @@ export async function findByOwner(
 }
 
 /**
- * Get one event by its ID
+ * Get one event by its ID.
  */
 export async function findById(id: Hash): Promise<Resource | undefined> {
   return await db.resources.get({ id: id });
@@ -35,6 +35,9 @@ export async function findById(id: Hash): Promise<Resource | undefined> {
  * Commands
  */
 
+/**
+ * Create a calendar resource.
+ */
 export async function create(calendarId: Hash, fields: ResourceFields): Promise<Hash> {
   let resourceCreated: ResourceCreated = {
     type: "resource_created",
@@ -52,6 +55,9 @@ export async function create(calendarId: Hash, fields: ResourceFields): Promise<
   return operationId;
 }
 
+/**
+ * Update a calendar resource.
+ */
 export async function update(
   resourceId: Hash,
   fields: ResourceFields,
@@ -74,6 +80,9 @@ export async function update(
   return operationId;
 }
 
+/**
+ * Delete a calendar resource.
+ */
 export async function deleteResource(resourceId: Hash): Promise<Hash> {
   let resource = await resources.findById(resourceId);
   let resourceDeleted: ResourceDeleted = {

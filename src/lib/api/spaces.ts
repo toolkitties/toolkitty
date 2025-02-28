@@ -7,14 +7,14 @@ import { promiseResult } from "$lib/promiseMap";
  */
 
 /**
- * Get spaces that are associated with the currently active calendar
+ * Get spaces that are associated with the passed calendar
  */
 export async function findMany(calendarId: Hash): Promise<Space[]> {
   return await db.spaces.where({ calendarId }).toArray();
 }
 
 /**
- * Get all spaces that I am the owner of.
+ * Get all calendar spaces that are owned by the passed public key.
  */
 export async function findByOwner(
   calendarId: Hash,
@@ -24,7 +24,7 @@ export async function findByOwner(
 }
 
 /**
- * Get one event by its ID
+ * Get one event by its ID.
  */
 export async function findById(id: Hash): Promise<Space | undefined> {
   return await db.spaces.get({ id });
@@ -34,6 +34,9 @@ export async function findById(id: Hash): Promise<Space | undefined> {
  * Commands
  */
 
+/**
+ * Create a calendar space.
+ */
 export async function create(calendarId: Hash, fields: SpaceFields): Promise<Hash> {
   const spaceCreated: SpaceCreated = {
     type: "space_created",
@@ -52,6 +55,9 @@ export async function create(calendarId: Hash, fields: SpaceFields): Promise<Has
   return operationId;
 }
 
+/**
+ * Update a calendar space.
+ */
 export async function update(
   spaceId: Hash,
   fields: SpaceFields,
@@ -74,6 +80,9 @@ export async function update(
   return operationId;
 }
 
+/**
+ * Delete a calendar space.
+ */
 export async function deleteSpace(spaceId: Hash): Promise<Hash> {
   const space = await spaces.findById(spaceId);
   const spaceDeleted: SpaceDeleted = {

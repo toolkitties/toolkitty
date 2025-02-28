@@ -9,14 +9,14 @@ import { events, publish } from ".";
  */
 
 /**
- * Get events that are associated with the currently active calendar
+ * Get events that are associated with the passed calendar
  */
 export async function findMany(calendarId: Hash): Promise<CalendarEvent[]> {
   return await db.events.where({ calendarId }).toArray();
 }
 
 /**
- * Get all events that are owned by a certain public key.
+ * Get all calendar events owned by the passed public key.
  */
 export async function findByOwner(
   calendarId: Hash,
@@ -36,6 +36,9 @@ export async function findById(id: Hash): Promise<CalendarEvent | undefined> {
  * Commands
  */
 
+/**
+ * Create a calendar event.
+ */
 export async function create(calendarId: Hash, fields: EventFields) {
   let eventCreated: EventCreated = {
     type: "event_created",
@@ -53,6 +56,9 @@ export async function create(calendarId: Hash, fields: EventFields) {
   return operationId;
 }
 
+/**
+ * Update a calendar event.
+ */
 export async function update(eventId: Hash, fields: EventFields) {
   const event = await events.findById(eventId);
   let eventUpdated: EventUpdated = {
@@ -72,6 +78,9 @@ export async function update(eventId: Hash, fields: EventFields) {
   return operationId;
 }
 
+/**
+ * Delete a calendar event.
+ */
 async function deleteEvent(eventId: Hash) {
   const event = await events.findById(eventId);
   let eventDeleted: EventDeleted = {
@@ -92,6 +101,10 @@ async function deleteEvent(eventId: Hash) {
 
 //TODO: Move to class so we don't have to export as an alias
 export { deleteEvent as delete };
+
+/**
+ * Processors
+ */
 
 export async function process(message: ApplicationMessage) {
   const meta = message.meta;
