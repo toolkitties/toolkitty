@@ -8,7 +8,7 @@ use tauri::Builder;
 
 use crate::rpc::{
     ack, add_topic_log, init, public_key, publish, publish_ephemeral, replay, subscribe,
-    subscribe_ephemeral,
+    subscribe_ephemeral, upload_file,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -43,6 +43,7 @@ pub fn run() {
             replay,
             subscribe,
             subscribe_ephemeral,
+            upload_file,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
