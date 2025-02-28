@@ -29,8 +29,10 @@ pub fn run() {
     };
 
     builder
+        // .register_asynchronous_uri_scheme_protocol(uri_scheme, protocol)
         .plugin(logger)
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             init,
             ack,
@@ -40,7 +42,7 @@ pub fn run() {
             publish_ephemeral,
             replay,
             subscribe,
-            subscribe_ephemeral
+            subscribe_ephemeral,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
