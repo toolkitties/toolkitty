@@ -251,18 +251,22 @@ where
         Ok(())
     }
 
-    pub async fn upload_file(&self, path: PathBuf) -> Result<Hash> {
+    pub async fn upload_file(&self, path: PathBuf) -> Result<Hash, BlobError> {
         let progress = self.blobs.import_blob(path).await;
         pin!(progress);
         match progress.next().await {
             Some(ImportBlobEvent::Done(hash)) => Ok(hash),
-            Some(ImportBlobEvent::Abort(err)) => Err(anyhow!(err)),
-            None => Err(anyhow!("upload ended abruptly due to unknown error")),
+            Some(ImportBlobEvent::Abort(err)) => Err(BlobError::Upload(anyhow!(err))),
+            None => Err(BlobError::AbruptlyEnded),
         }
     }
 
-    pub async fn read_file(&self, hash: Hash) -> Result<Option<impl AsyncSliceReader>> {
-        let file_handle = self.blobs.get(hash).await?;
+    pub async fn read_file(&self, hash: Hash) -> Result<Option<impl AsyncSliceReader>, BlobError> {
+        let file_handle = self
+            .blobs
+            .get(hash)
+            .await
+            .map_err(|err| BlobError::InvalidFileHandle(err))?;
         match file_handle {
             Some(handle) => {
                 if !handle.is_complete() {
@@ -275,13 +279,13 @@ where
         }
     }
 
-    pub async fn sync_remote_file(&self, hash: Hash) -> Result<()> {
+    pub async fn sync_remote_file(&self, hash: Hash) -> Result<(), BlobError> {
         let progress = self.blobs.download_blob(hash).await;
         pin!(progress);
         match progress.next().await {
             Some(DownloadBlobEvent::Done) => Ok(()),
-            Some(DownloadBlobEvent::Abort(err)) => Err(anyhow!(err)),
-            None => Err(anyhow!("download ended abruptly due to unknown error")),
+            Some(DownloadBlobEvent::Abort(err)) => Err(BlobError::Download(anyhow!(err))),
+            None => Err(BlobError::AbruptlyEnded),
         }
     }
 }
@@ -290,6 +294,24 @@ where
 pub enum PublishError {
     #[error(transparent)]
     EncodeError(#[from] p2panda_core::cbor::EncodeError),
+}
+
+#[derive(Debug, Error)]
+pub enum BlobError {
+    #[error(transparent)]
+    EncodeError(#[from] p2panda_core::cbor::EncodeError),
+
+    #[error("could not get local blob: {0}")]
+    InvalidFileHandle(anyhow::Error),
+
+    #[error("upload or download ended abruptly due to unknown error")]
+    AbruptlyEnded,
+
+    #[error("blob download aborted due to error: {0}")]
+    Download(anyhow::Error),
+
+    #[error("blob upload aborted due to error: {0}")]
+    Upload(anyhow::Error),
 }
 
 impl Serialize for PublishError {
