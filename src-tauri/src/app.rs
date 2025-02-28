@@ -140,7 +140,7 @@ impl Service {
     /// invite codes channels.
     pub(crate) async fn inner_run(
         mut self,
-        channel: broadcast::Sender<ChannelEvent>,
+        mut channel: broadcast::Sender<ChannelEvent>,
     ) -> anyhow::Result<()> {
         loop {
             tokio::select! {
@@ -152,6 +152,9 @@ impl Service {
                 },
                 Some(event) = self.stream_rx.recv() => {
                     channel.send(ChannelEvent::Stream(event))?;
+                },
+                Some(new_channel) = self.channel_rx.recv() => {
+                    channel = new_channel;
                 },
                 // @TODO(sam): Need a way to handle ephemeral topics in the stream controller as
                 // we now don't have a static topic we can subscribe to on startup.
@@ -188,17 +191,15 @@ impl Rpc {
     /// Initialize the app by passing it a channel from the frontend.
     pub async fn init(&self, channel: broadcast::Sender<ChannelEvent>) -> Result<(), RpcError> {
         let context = self.context.lock().await;
-        if context.channel_set {
-            return Err(RpcError::SetStreamChannel);
-        }
 
-        if context.channel_tx.send(channel).await.is_err() {
-            return Err(RpcError::OneshotChannel);
-        };
+        context
+            .channel_tx
+            .send(channel)
+            .await
+            .expect("send on channel");
 
         Ok(())
     }
-
     /// The public key of the local node.
     pub async fn public_key(&self) -> Result<PublicKey, RpcError> {
         let context = self.context.lock().await;
@@ -329,12 +330,6 @@ impl Rpc {
 
 #[derive(Debug, Error)]
 pub enum RpcError {
-    #[error("oneshot channel receiver closed")]
-    OneshotChannel,
-
-    #[error("stream channel already set")]
-    SetStreamChannel,
-
     #[error(transparent)]
     StreamController(#[from] crate::node::StreamControllerError),
 
