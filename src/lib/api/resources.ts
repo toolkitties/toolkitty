@@ -1,6 +1,5 @@
 import { db } from "$lib/db";
-import { publicKey } from "./identity";
-import { publish } from ".";
+import { publish, resources } from ".";
 import { getActiveCalendarId } from "./calendars";
 import { promiseResult } from "$lib/promiseMap";
 
@@ -11,31 +10,32 @@ import { promiseResult } from "$lib/promiseMap";
 /**
  * Get resources that are associated with the currently active calendar
  */
-export async function findMany(): Promise<Resource[]> {
-  return await db.resources.toArray();
+export async function findMany(calendarId: Hash): Promise<Resource[]> {
+  return await db.resources.where({ calendarId }).toArray();
 }
 
 /**
- * Get all resources that I am the owner of.
+ * Get all resources that are owned by a certain public key.
  */
-export async function findMine(): Promise<Resource[]> {
-  let myPublicKey = await publicKey();
-  return await db.resources.where({ ownerId: myPublicKey }).toArray();
+export async function findByOwner(
+  calendarId: Hash,
+  ownerId: PublicKey,
+): Promise<Resource[]> {
+  return await db.resources.where({ calendarId, ownerId }).toArray();
 }
 
 /**
  * Get one event by its ID
  */
 export async function findById(id: Hash): Promise<Resource | undefined> {
-  return await db.resources.get({id: id})
+  return await db.resources.get({ id: id });
 }
 
 /**
  * Commands
  */
 
-export async function create(fields: ResourceFields): Promise<Hash> {
-  const calendarId = await getActiveCalendarId();
+export async function create(calendarId: Hash, fields: ResourceFields): Promise<Hash> {
   let resourceCreated: ResourceCreated = {
     type: "resource_created",
     data: {
@@ -56,7 +56,7 @@ export async function update(
   resourceId: Hash,
   fields: ResourceFields,
 ): Promise<Hash> {
-  const calendarId = await getActiveCalendarId();
+  let resource = await resources.findById(resourceId);
   let resourceUpdated: ResourceUpdated = {
     type: "resource_updated",
     data: {
@@ -65,7 +65,7 @@ export async function update(
     },
   };
   const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
-    calendarId!,
+    resource!.calendarId,
     resourceUpdated,
   );
 
@@ -75,7 +75,7 @@ export async function update(
 }
 
 export async function deleteResource(resourceId: Hash): Promise<Hash> {
-  const calendarId = await getActiveCalendarId();
+  let resource = await resources.findById(resourceId);
   let resourceDeleted: ResourceDeleted = {
     type: "resource_deleted",
     data: {
@@ -84,7 +84,7 @@ export async function deleteResource(resourceId: Hash): Promise<Hash> {
   };
 
   const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
-    calendarId!,
+    resource!.calendarId,
     resourceDeleted,
   );
 
