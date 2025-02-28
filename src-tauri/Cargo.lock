@@ -7211,6 +7211,7 @@ dependencies = [
  "async-trait",
  "futures-util",
  "iroh-io",
+ "mime",
  "p2panda-blobs",
  "p2panda-core",
  "p2panda-discovery",
