@@ -4,11 +4,14 @@ pub mod operation;
 pub mod stream;
 
 use std::collections::HashMap;
+use std::path::PathBuf;
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use extensions::{Extensions, LogId};
 use futures_util::future::{MapErr, Shared};
 use futures_util::{FutureExt, TryFutureExt};
+use iroh_io::AsyncSliceReader;
+use p2panda_blobs::{Blobs, DownloadBlobEvent, FilesystemStore as BlobsStore, ImportBlobEvent};
 use p2panda_core::{Body, Hash, Header, PrivateKey, PublicKey};
 use p2panda_discovery::mdns::LocalDiscovery;
 use p2panda_net::{NetworkBuilder, SyncConfiguration, SystemEvent, TopicId};
@@ -17,8 +20,10 @@ use p2panda_sync::log_sync::{LogSyncProtocol, TopicLogMap};
 use p2panda_sync::TopicQuery;
 use serde::Serialize;
 use thiserror::Error;
+use tokio::pin;
 use tokio::sync::{broadcast, mpsc, oneshot};
 use tokio::task::JoinError;
+use tokio_stream::StreamExt;
 use tokio_util::task::AbortOnDropHandle;
 use tracing::error;
 
@@ -34,6 +39,7 @@ fn network_id() -> [u8; 32] {
 pub struct Node<T> {
     pub private_key: PrivateKey,
     pub store: MemoryStore<LogId, Extensions>,
+    blobs: Blobs<T, BlobsStore>,
     #[allow(dead_code)]
     stream: StreamController,
     stream_tx: mpsc::Sender<ToStreamController>,
@@ -49,6 +55,7 @@ where
     pub async fn new<TM: TopicLogMap<T, LogId> + 'static>(
         private_key: PrivateKey,
         store: MemoryStore<LogId, Extensions>,
+        blobs_root_dir: PathBuf,
         topic_map: TM,
     ) -> Result<(
         Self,
@@ -95,12 +102,13 @@ where
         let sync_protocol = LogSyncProtocol::new(topic_map, store.clone());
         let sync_config = SyncConfiguration::new(sync_protocol);
 
-        let network = NetworkBuilder::new(network_id())
+        let network_builder = NetworkBuilder::new(network_id())
             .discovery(mdns)
             .sync(sync_config)
-            .private_key(private_key.clone())
-            .build()
-            .await?;
+            .private_key(private_key.clone());
+
+        let blobs_store = BlobsStore::load(blobs_root_dir).await?;
+        let (network, blobs) = Blobs::from_builder(network_builder, blobs_store).await?;
 
         let system_events_rx = network.events().await?;
 
@@ -121,6 +129,7 @@ where
             Self {
                 private_key,
                 store,
+                blobs,
                 stream,
                 stream_tx,
                 network_actor_tx,
@@ -240,6 +249,40 @@ where
             })
             .await?;
         Ok(())
+    }
+
+    pub async fn upload_file(&self, path: PathBuf) -> Result<Hash> {
+        let progress = self.blobs.import_blob(path).await;
+        pin!(progress);
+        match progress.next().await {
+            Some(ImportBlobEvent::Done(hash)) => Ok(hash),
+            Some(ImportBlobEvent::Abort(err)) => Err(anyhow!(err)),
+            None => Err(anyhow!("upload ended abruptly due to unknown error")),
+        }
+    }
+
+    pub async fn read_file(&self, hash: Hash) -> Result<Option<impl AsyncSliceReader>> {
+        let file_handle = self.blobs.get(hash).await?;
+        match file_handle {
+            Some(handle) => {
+                if !handle.is_complete() {
+                    return Ok(None);
+                }
+                let reader = handle.data_reader();
+                Ok(Some(reader))
+            }
+            None => Ok(None),
+        }
+    }
+
+    pub async fn sync_remote_file(&self, hash: Hash) -> Result<()> {
+        let progress = self.blobs.download_blob(hash).await;
+        pin!(progress);
+        match progress.next().await {
+            Some(DownloadBlobEvent::Done) => Ok(()),
+            Some(DownloadBlobEvent::Abort(err)) => Err(anyhow!(err)),
+            None => Err(anyhow!("download ended abruptly due to unknown error")),
+        }
     }
 }
 

@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use p2panda_core::{Hash, PrivateKey, PublicKey};
@@ -85,13 +86,18 @@ impl Service {
     ///
     /// The node and several channel senders are added to the shared app context while channel
     /// receivers are stored on the Service struct for use during the runtime loop.
-    pub async fn build() -> anyhow::Result<Self> {
+    pub async fn build(blobs_base_dir: PathBuf) -> anyhow::Result<Self> {
         let private_key = PrivateKey::new();
         let store = MemoryStore::new();
         let topic_map = TopicMap::new();
 
-        let (node, stream_rx, network_events_rx) =
-            Node::new(private_key.clone(), store.clone(), topic_map.clone()).await?;
+        let (node, stream_rx, network_events_rx) = Node::new(
+            private_key.clone(),
+            store.clone(),
+            blobs_base_dir,
+            topic_map.clone(),
+        )
+        .await?;
 
         let (to_app_tx, to_app_rx) = broadcast::channel(32);
         let (channel_tx, channel_rx) = mpsc::channel(32);
@@ -111,7 +117,11 @@ impl Service {
     #[cfg(not(test))]
     pub fn run(app_handle: AppHandle) {
         tauri::async_runtime::spawn(async move {
-            let mut app = Self::build().await.expect("build stream");
+            let blobs_root_dir = app_handle
+                .path()
+                .app_data_dir()
+                .expect("app data directory");
+            let mut app = Self::build(blobs_root_dir).await.expect("build stream");
             let rpc = Rpc {
                 context: app.context.clone(),
             };
@@ -124,7 +134,10 @@ impl Service {
     /// Spawn the service task.
     #[cfg(test)]
     pub async fn run() -> Arc<Mutex<Context>> {
-        let mut app = Self::build().await.expect("build stream");
+        let temp_blobs_root_dir = std::env::temp_dir();
+        let mut app = Self::build(temp_blobs_root_dir)
+            .await
+            .expect("build stream");
         let context = app.context.clone();
         let rt = tokio::runtime::Handle::current();
 

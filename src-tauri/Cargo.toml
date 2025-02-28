@@ -17,6 +17,8 @@ tauri-build = { version = "2", features = [] }
 anyhow = "1.0.95"
 async-trait = "0.1.85"
 futures-util = "0.3.31"
+iroh-io = "0.6.1"
+p2panda-blobs = { git = "https://github.com/p2panda/p2panda", rev = "3ad402697feaf8287f779735f019fd9431320df0" }
 p2panda-core = { git = "https://github.com/p2panda/p2panda", rev = "3ad402697feaf8287f779735f019fd9431320df0" }
 p2panda-discovery = { git = "https://github.com/p2panda/p2panda", rev = "3ad402697feaf8287f779735f019fd9431320df0", features = ["mdns"] }
 p2panda-net = { git = "https://github.com/p2panda/p2panda", rev = "3ad402697feaf8287f779735f019fd9431320df0" }
