@@ -3,7 +3,7 @@
   import { spaces } from "$lib/api";
   import { parseSpaceFormData } from "$lib/utils";
   import { goto } from "$app/navigation";
-    import { toast } from "$lib/toast.svelte";
+  import { toast } from "$lib/toast.svelte";
 
   let { formType, space } = $props();
   let selectedSpaceType = $state("physical");
@@ -63,7 +63,7 @@
 
 <form onsubmit={handleSubmit}>
   {#if space.id}
-    <input type="text" bind:value={space.id}>
+    <input type="text" bind:value={space.id} />
   {/if}
   <fieldset>
     <label for="physical">Physical Location</label>
