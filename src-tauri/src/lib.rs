@@ -18,7 +18,7 @@ pub fn run() {
         .filter(|metadata| metadata.target().starts_with("toolkitty_lib"))
         .build();
 
-    let mut builder = Builder::default();
+    let builder = Builder::default();
 
     #[cfg(not(test))]
     {

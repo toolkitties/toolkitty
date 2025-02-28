@@ -336,7 +336,7 @@ impl Rpc {
 
     pub async fn publish_ephemeral(&self, topic: &Topic, payload: &[u8]) -> Result<(), RpcError> {
         let mut context = self.context.write().await;
-        context.node.publish_ephemeral(&topic, &payload).await?;
+        context.node.publish_ephemeral(topic, payload).await?;
         Ok(())
     }
 

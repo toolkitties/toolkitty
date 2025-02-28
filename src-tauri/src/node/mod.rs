@@ -266,7 +266,7 @@ where
             .blobs
             .get(hash)
             .await
-            .map_err(|err| BlobError::InvalidFileHandle(err))?;
+            .map_err(BlobError::InvalidFileHandle)?;
         match file_handle {
             Some(handle) => {
                 if !handle.is_complete() {

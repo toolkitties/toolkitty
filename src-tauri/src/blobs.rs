@@ -77,7 +77,7 @@ fn parse_blob_hash(uri: &Uri) -> Result<Hash> {
         bail!("blob hash missing");
     };
 
-    let Ok(hash) = Hash::from_str(&hash_str) else {
+    let Ok(hash) = Hash::from_str(hash_str) else {
         bail!("invalid hexadecimal blob hash string");
     };
 
@@ -129,7 +129,7 @@ async fn try_lazy_sync(context: Arc<RwLock<Context>>, blob_hash: Hash) -> Respon
             StatusCode::NOT_FOUND,
             format!(
                 "could not find a peer to sync blob within time limit: {}",
-                elapsed.to_string()
+                elapsed
             ),
         ),
     }
