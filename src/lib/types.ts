@@ -3,6 +3,8 @@
  * Core Types
  */
 
+import type { DateValue } from "@internationalized/date";
+
 /**
  * Hexadecimal-encoded BLAKE3 hash.
  */

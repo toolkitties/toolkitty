@@ -35,7 +35,7 @@
     try {
       await spaces.create(payload);
       toast.success("Space created!");
-      goto(`/app/spaces/${space.id}`);
+      //goto(`/app/spaces/${space.id}`);
     } catch (error) {
       console.error("Error creating space: ", error);
       toast.error("Error creating space!");
@@ -53,7 +53,7 @@
     try {
       await spaces.update(space.id, payload);
       toast.success("Space updated!");
-      goto(`/app/spaces/${space.id}`);
+      //goto(`/app/spaces/${space.id}`);
     } catch (error) {
       console.error("Error updating space: ", error);
       toast.error("Error updating space!");
@@ -62,7 +62,7 @@
 </script>
 
 <form onsubmit={handleSubmit}>
-  {#if space.id}
+  {#if space}
     <input type="text" bind:value={space.id} />
   {/if}
   <fieldset>

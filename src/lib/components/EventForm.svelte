@@ -3,10 +3,10 @@
 
   let { formType, spaces, resources } = $props();
 
-  let selectedSpace: Space | null = $state<Space | null>(null);
-  function handleSpaceSelection(space: Space) {
-    selectedSpace = space;
-  }
+  // let selectedSpace: Space | null = $state<Space | null>(null);
+  // function handleSpaceSelection(space: Space) {
+  //   selectedSpace = space;
+  // }
 </script>
 
 <form>
@@ -45,18 +45,13 @@
     <ul>
       {#each spaces as space}
         <li>
-          <input
-            type="radio"
-            id={space.id}
-            name="selected-space"
-            onchange={() => handleSpaceSelection(space)}
-          />
+          <input type="radio" id={space.id} name="selected-space" />
           <label for={space.id}>{space.name}</label>
         </li>
       {/each}
     </ul>
 
-    {#if selectedSpace}
+    <!-- {#if selectedSpace}
       <div class="space-availability">
         <p>View availability</p>
         <AvailabilityViewer
@@ -66,7 +61,7 @@
           multiBookable={selectedSpace.multiBookable}
         />
       </div>
-    {/if}
+    {/if} -->
     <p>Request selected space</p>
     <div class="flex flex-row">
       <p>Access from:</p>
