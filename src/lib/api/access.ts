@@ -112,12 +112,12 @@ export async function checkHasAccess(
 export async function checkStatus(
   publicKey: PublicKey,
   calendarId: Hash,
-): Promise<'owner' | 'not requested yet' | 'pending' | 'accepted' | 'rejected'> {
+): Promise<'not requested yet' | 'pending' | 'accepted' | 'rejected'> {
   let calendar = await calendars.findOne(calendarId);
 
   // The owner of the calendar automatically has access.
   if (calendar?.ownerId == publicKey) {
-    return 'owner';
+    return 'accepted';
   }
 
   // Check if peer has requested access.
