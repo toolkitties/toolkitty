@@ -22,7 +22,7 @@
   }
 </script>
 
-<section class="absolute top-8 right-0 p-3 w-full">
+<section class="fixed top-8 right-0 p-3 w-full z-30">
   <ol tabIndex={-1} class="space-y-2">
     {#each toast.toasts as t}
       <li
