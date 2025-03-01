@@ -196,8 +196,6 @@ export async function rejectAccessRequest(
     data,
   };
 
-  console.log(calendarAccessRejected);
-
   const [operationId, streamId] = await publish.toInbox(
     calendarId!,
     calendarAccessRejected,
@@ -294,8 +292,6 @@ async function onCalendarAccessAccepted(
   });
 
   let request = await db.accessRequests.get(data.requestId)
-
-  console.log(request);
 
   if (request != undefined) {
     await handleRequestOrResponse(meta.stream.id, request.from);
