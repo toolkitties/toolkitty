@@ -7,7 +7,8 @@
   import { onDestroy } from "svelte";
 
   let { data }: PageProps = $props();
-  let requestStatus = $state("not yet requested");
+  let requestStatus = $state(data.accessStatus);
+  let interval: number;
 
   async function updateRequestStatus() {
     let accessStatus = await access.accessStatus(
@@ -45,8 +46,12 @@
     await access.requestAccess(request);
     requestStatus = "pending";
 
-    const interval = setInterval(updateRequestStatus, 1000);
+    interval = setInterval(updateRequestStatus, 1000);
   }
+
+  onDestroy(() => {
+    clearInterval(interval);
+  });
 </script>
 
 <h1>Kitty Fest 25</h1>

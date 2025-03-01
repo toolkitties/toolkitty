@@ -14,9 +14,9 @@ import { liveQuery } from "dexie";
 /*
  * Get pending access requests that have not been accepted yet.
  */
-export async function getPending() {
-  let activeCalendarId = calendars.getActiveCalendarId()
+export async function getPending(activeCalendarId: Hash) {
   let accessRequests = await db.accessRequests.where({ calendarId: activeCalendarId }).toArray()
+  // TODO: this function should return a list of users and their respective role/access status
 
   return accessRequests
 }
@@ -121,6 +121,7 @@ export async function accessStatus(
   }
 
   // Check if peer has requested access.
+  // TODO: use where query instead of find.
   let request = (await db.accessRequests.toArray()).find(
     (request) => request.from == publicKey && request.calendarId == calendarId,
   );

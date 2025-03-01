@@ -1,7 +1,6 @@
 import type { PageLoad } from './$types';
 import { access, calendars, identity } from "$lib/api";
 import { goto } from '$app/navigation';
-import { publicKey } from '$lib/api/identity';
 
 export const load: PageLoad = async () => {
   let myPublicKey = await identity.publicKey();
@@ -16,6 +15,7 @@ export const load: PageLoad = async () => {
   return {
     title: 'request access',
     myPublicKey,
-    activeCalendarId
+    activeCalendarId,
+    accessStatus
   };
 }
