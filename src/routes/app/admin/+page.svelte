@@ -1,24 +1,19 @@
 <script lang="ts">
+  import { toast } from "$lib/toast.svelte";
   import type { PageProps } from "./$types";
   import RequestDialog from "./RequestDialog.svelte";
 
   let { data }: PageProps = $props();
 
-  let copyText = $state("copy");
-
   async function copyToClipboard(text: string): Promise<void> {
     if (text)
       try {
         await navigator.clipboard.writeText(text);
-        console.log("Content copied to clipboard");
-        copyText = "copied";
-        setTimeout(() => {
-          copyText = "copy";
-        }, 2000);
+        toast.success("invite code copied!");
       } catch (err) {
         console.error("Failed to copy: ", err);
         // TODO: show toast error message
-        copyText = "error";
+        toast.error("failed to copy invite code!");
       }
   }
 </script>
@@ -27,7 +22,7 @@
   <h2>Share</h2>
   <button class="button" onclick={() => copyToClipboard(data.shareCode)}>
     <span>🔐 calendar code: {data.shareCode}</span>
-    <span>{copyText}</span>
+    <span>copy</span>
   </button>
 </section>
 

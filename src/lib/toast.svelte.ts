@@ -62,7 +62,7 @@ class Toasts {
    * Show access request toast to the user
    */
   accessRequest(data: AccessRequest) {
-    let message = data.name + 'requested access'
+    let message = data.name + ' requested access'
     let request: RequestEvent = {
       type: 'access_request',
       data

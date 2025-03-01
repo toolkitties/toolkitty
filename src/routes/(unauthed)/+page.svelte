@@ -1,5 +1,4 @@
 <script lang="ts">
-  import type { PageProps } from "./$types";
   import { PinInput, Toggle } from "bits-ui";
   import { goto } from "$app/navigation";
   import { topics } from "$lib/api";
@@ -7,14 +6,6 @@
   import { resolveInviteCode } from "$lib/api/access";
   import { TopicFactory } from "$lib/api/topics";
   import { calendars } from "$lib/api";
-
-  let { data }: PageProps = $props();
-
-  // if we already have an active calendar then go to it.
-  // TODO: check if we have access to this calendar and show pending screen if not.
-  // if (data.activeCalendarId) {
-  //   goto("/app/events");
-  // }
 
   let value: string[] | undefined = $state([]);
 

@@ -4,6 +4,7 @@ import { publicKey } from "./identity";
 import { db } from "$lib/db";
 import { TopicFactory } from "./topics";
 import { toast } from "$lib/toast.svelte";
+import { liveQuery } from "dexie";
 
 /*
  * Queries
@@ -18,6 +19,12 @@ export async function getPending() {
   let accessRequests = await db.accessRequests.where({ calendarId: activeCalendarId }).toArray()
 
   return accessRequests
+}
+
+export async function findRequestByid(id: Hash) {
+  let request = liveQuery(() => { db.accessRequests.get(id) })
+
+  return request
 }
 
 /**
@@ -94,6 +101,49 @@ export async function checkHasAccess(
   return true;
 }
 
+
+/**
+ * Check if a peer has access to the calendar. A peer can be understood to "have access"
+ * in two possible ways.
+ *
+ * 1) the peer is owner of the calendar
+ * 2) the peer has been given access by the calendar owner
+ */
+export async function accessStatus(
+  publicKey: PublicKey,
+  calendarId: Hash,
+): Promise<'not requested yet' | 'pending' | 'accepted' | 'rejected'> {
+  let calendar = await calendars.findOne(calendarId);
+
+  // The owner of the calendar automatically has access.
+  if (calendar?.ownerId == publicKey) {
+    return 'accepted';
+  }
+
+  // Check if peer has requested access.
+  let request = (await db.accessRequests.toArray()).find(
+    (request) => request.from == publicKey && request.calendarId == calendarId,
+  );
+
+  // Peer has not requested access yet
+  if (request == undefined) {
+    return 'not requested yet';
+  };
+
+  let response = await db.accessResponses.get({ requestId: request.id })
+  // @TODO: We need to be able to check if the response came from the calendar owner but at
+  // this point we haven't received the "calendar_created" event yet. It will help when the
+  // actual calendar id contains the owner information.
+
+  if (response == undefined) {
+    return 'pending';
+  };
+
+  if (response.accept) {
+    return 'accepted'
+  } else return 'rejected';
+}
+
 /**
  * Request access to a calendar and subscribe to the "inbox" topic so we can wait for the response.
  */
@@ -116,16 +166,17 @@ export async function requestAccess(
  * Accept a calendar access request.
  */
 export async function acceptAccessRequest(
-  calendarId: Hash,
   data: CalendarAccessAccepted["data"],
 ): Promise<OperationId> {
+  const calendarId = await calendars.getActiveCalendarId();
+
   const calendarAccessAccepted: CalendarAccessAccepted = {
     type: "calendar_access_accepted",
     data,
   };
 
   const [operationId, streamId] = await publish.toInbox(
-    calendarId,
+    calendarId!,
     calendarAccessAccepted,
   );
   return operationId;
@@ -135,16 +186,19 @@ export async function acceptAccessRequest(
  * Reject a calendar access request.
  */
 export async function rejectAccessRequest(
-  calendarId: Hash,
   data: CalendarAccessAccepted["data"],
 ) {
+  const calendarId = await calendars.getActiveCalendarId();
+
   const calendarAccessRejected: CalendarAccessRejected = {
     type: "calendar_access_rejected",
     data,
   };
 
+  console.log(calendarAccessRejected);
+
   const [operationId, streamId] = await publish.toInbox(
-    calendarId,
+    calendarId!,
     calendarAccessRejected,
   );
   return operationId;
@@ -211,7 +265,6 @@ async function onCalendarAccessRequested(
     from: meta.author,
     name: data.name,
     message: data.message,
-    accepted: false,
   }
 
   await db.accessRequests.add(accessRequest);
@@ -240,14 +293,11 @@ async function onCalendarAccessAccepted(
     accept: true,
   });
 
-  let request = (await db.accessRequests.toArray()).find(
-    (request) => request.id == data.requestId,
-  );
+  let request = await db.accessRequests.get(data.requestId)
+
+  console.log(request);
 
   if (request != undefined) {
-    // set request to approved.
-    await db.accessRequests.update(request.id, { accepted: true })
-
     await handleRequestOrResponse(meta.stream.id, request.from);
   }
 }
@@ -263,6 +313,10 @@ async function onCalendarAccessRejected(
     requestId: data.requestId,
     accept: false,
   });
+
+  let request = (await db.accessRequests.toArray()).find(
+    (request) => request.id == data.requestId,
+  );
 }
 
 /**

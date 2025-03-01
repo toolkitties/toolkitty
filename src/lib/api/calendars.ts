@@ -132,7 +132,7 @@ export async function deleteCalendar(calendarId: Hash): Promise<Hash> {
 }
 
 export async function setActiveCalendar(id: Hash) {
-  await db.settings.add({
+  await db.settings.put({
     name: "activeCalendar",
     value: id,
   });

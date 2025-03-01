@@ -653,7 +653,6 @@ type AccessRequest = {
   from: PublicKey;
   name: string;
   message: string;
-  accepted: boolean;
 };
 
 type AccessResponse = {

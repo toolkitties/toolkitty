@@ -31,7 +31,7 @@
   <AlertDialog.Trigger class="button">
     <p>{toastie.message}</p>
     {#if toastie.request.type == "access_request"}
-      <AccessRequestDialog request={toastie.request} bind:open />
+      <AccessRequestDialog request={toastie.request.data} bind:open />
     {/if}
   </AlertDialog.Trigger>
 </AlertDialog.Root>
