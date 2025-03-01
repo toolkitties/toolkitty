@@ -5,7 +5,7 @@ import { goto } from '$app/navigation';
 export const load: PageLoad = async () => {
   let myPublicKey = await identity.publicKey();
   let activeCalendarId = await calendars.getActiveCalendarId()
-  let accessStatus = await access.accessStatus(myPublicKey, activeCalendarId!);
+  let accessStatus = await access.checkStatus(myPublicKey, activeCalendarId!);
 
   // if we already have access then go to the calendar
   if (accessStatus == 'accepted') {

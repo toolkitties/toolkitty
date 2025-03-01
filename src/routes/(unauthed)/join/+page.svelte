@@ -11,7 +11,7 @@
   let interval: number;
 
   async function updateRequestStatus() {
-    let accessStatus = await access.accessStatus(
+    let accessStatus = await access.checkStatus(
       data.myPublicKey,
       data.activeCalendarId!,
     );

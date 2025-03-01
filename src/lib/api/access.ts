@@ -1,4 +1,4 @@
-import { calendars, inviteCodes, publish, topics } from "./";
+import { calendars, identity, inviteCodes, publish, topics } from "./";
 import type { ResolvedCalendar } from "$lib/api/inviteCodes";
 import { publicKey } from "./identity";
 import { db } from "$lib/db";
@@ -109,7 +109,7 @@ export async function checkHasAccess(
  * 1) the peer is owner of the calendar
  * 2) the peer has been given access by the calendar owner
  */
-export async function accessStatus(
+export async function checkStatus(
   publicKey: PublicKey,
   calendarId: Hash,
 ): Promise<'not requested yet' | 'pending' | 'accepted' | 'rejected'> {
@@ -269,13 +269,12 @@ async function onCalendarAccessRequested(
   }
 
   await db.accessRequests.add(accessRequest);
-
-  let myPublicKey = await publicKey();
-  let hasAccess = await checkHasAccess(meta.author, data.calendarId);
-  let isItMe = myPublicKey == meta.author;
+  let publicKey = await identity.publicKey()
+  let accessStatus = await checkStatus(publicKey, data.calendarId);
 
   // Show toast to user with request
-  if (!hasAccess && !isItMe) {
+  // TODO: Only show toast to owner of the calendar
+  if (accessStatus == 'accepted') {
     toast.accessRequest(accessRequest)
   }
 
