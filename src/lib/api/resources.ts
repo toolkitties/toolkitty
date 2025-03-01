@@ -10,25 +10,25 @@ import { promiseResult } from "$lib/promiseMap";
 /**
  * Get resources that are associated with the passed calendar
  */
-export async function findMany(calendarId: Hash): Promise<Resource[]> {
-  return await db.resources.where({ calendarId }).toArray();
+export function findMany(calendarId: Hash): Promise<Resource[]> {
+  return db.resources.where({ calendarId }).toArray();
 }
 
 /**
  * Get all calendar resources that are owned by the passed public key.
  */
-export async function findByOwner(
+export function findByOwner(
   calendarId: Hash,
   ownerId: PublicKey,
 ): Promise<Resource[]> {
-  return await db.resources.where({ calendarId, ownerId }).toArray();
+  return db.resources.where({ calendarId, ownerId }).toArray();
 }
 
 /**
  * Get one event by its ID.
  */
-export async function findById(id: Hash): Promise<Resource | undefined> {
-  return await db.resources.get({ id: id });
+export function findById(id: Hash): Promise<Resource | undefined> {
+  return db.resources.get({ id: id });
 }
 
 /**

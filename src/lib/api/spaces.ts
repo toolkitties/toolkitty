@@ -9,25 +9,25 @@ import { promiseResult } from "$lib/promiseMap";
 /**
  * Get spaces that are associated with the passed calendar
  */
-export async function findMany(calendarId: Hash): Promise<Space[]> {
-  return await db.spaces.where({ calendarId }).toArray();
+export function findMany(calendarId: Hash): Promise<Space[]> {
+  return db.spaces.where({ calendarId }).toArray();
 }
 
 /**
  * Get all calendar spaces that are owned by the passed public key.
  */
-export async function findByOwner(
+export function findByOwner(
   calendarId: Hash,
   ownerId: PublicKey,
 ): Promise<Space[]> {
-  return await db.spaces.where({ calendarId, ownerId }).toArray();
+  return db.spaces.where({ calendarId, ownerId }).toArray();
 }
 
 /**
  * Get one event by its ID.
  */
-export async function findById(id: Hash): Promise<Space | undefined> {
-  return await db.spaces.get({ id });
+export function findById(id: Hash): Promise<Space | undefined> {
+  return db.spaces.get({ id });
 }
 
 /**

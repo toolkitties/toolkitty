@@ -11,25 +11,25 @@ import { events, publish } from ".";
 /**
  * Get events that are associated with the passed calendar
  */
-export async function findMany(calendarId: Hash): Promise<CalendarEvent[]> {
-  return await db.events.where({ calendarId }).toArray();
+export function findMany(calendarId: Hash): Promise<CalendarEvent[]> {
+  return db.events.where({ calendarId }).toArray();
 }
 
 /**
  * Get all calendar events owned by the passed public key.
  */
-export async function findByOwner(
+export function findByOwner(
   calendarId: Hash,
   ownerId: PublicKey,
 ): Promise<CalendarEvent[]> {
-  return await db.events.where({ ownerId, calendarId }).toArray();
+  return db.events.where({ ownerId, calendarId }).toArray();
 }
 
 /**
  * Get one event via its id
  */
-export async function findById(id: Hash): Promise<CalendarEvent | undefined> {
-  return await db.events.get({ id });
+export function findById(id: Hash): Promise<CalendarEvent | undefined> {
+  return db.events.get({ id });
 }
 
 /**
