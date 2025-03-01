@@ -8,7 +8,7 @@ export const load: PageLoad = async () => {
   let accessStatus = await access.checkStatus(myPublicKey, activeCalendarId!);
 
   // if we already have access then go to the calendar
-  if (accessStatus == 'accepted') {
+  if (accessStatus == 'accepted' || 'owner') {
     goto("/app/events")
   }
 
