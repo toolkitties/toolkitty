@@ -5,15 +5,15 @@
   import { toast } from "$lib/toast.svelte";
   import { resolveInviteCode } from "$lib/api/access";
   import { TopicFactory } from "$lib/api/topics";
-    import { setActiveCalendar } from "$lib/api/calendars";
+  import { calendars } from "$lib/api";
 
-  let value: string[] | undefined = [];
+  let value: string[] | undefined = $state([]);
 
-  let unlocked = true;
-  let progress: "dormant" | "pending" = "dormant";
-  let timedOut: boolean = false;
-  let pinInputType: "text" | "password" = "password";
-  $: pinInputType = unlocked ? "text" : "password";
+  let unlocked = $state(true);
+  let progress: "dormant" | "pending" = $state("dormant");
+  let pinInputType: "text" | "password" = $derived(
+    unlocked ? "text" : "password",
+  );
 
   // db.delete({ disableAutoOpen: false });
 
@@ -28,9 +28,8 @@
       calendar = await resolveInviteCode(value.join(""));
       const topic = new TopicFactory(calendar.stream.id);
       await topics.subscribe(topic.calendarInbox());
-      await setActiveCalendar(calendar.stream.id);
+      await calendars.setActiveCalendar(calendar.stream.id);
     } catch (err) {
-      timedOut = true;
       progress = "dormant";
       console.error(err);
       toast.error("Calendar not found");
@@ -81,10 +80,6 @@
     <p>Searching for calendar</p>
   {/if}
 </form>
-
-{#if timedOut}
-  <p>Calendar not found</p>
-{/if}
 
 <a
   href="/create"

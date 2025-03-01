@@ -77,9 +77,7 @@ export async function subscribeToAll() {
 
   const myPublicKey = await publicKey();
   const allRequests = await db.accessRequests.toArray();
-  const allMyCalendars = (await db.calendars.toArray()).filter(
-    (calendar) => calendar.ownerId == myPublicKey,
-  );
+  const allMyCalendars = await db.calendars.toArray()
 
   // Subscribe to all calendars we requested access for and add any relevant public keys + logs to the
   // topic map.

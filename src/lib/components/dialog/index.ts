@@ -1,15 +1,16 @@
-import { Dialog as DialogPrimitive } from "bits-ui";
+import { AlertDialog as AlertDialogPrimitive } from "bits-ui";
 
 // import custom components to be styled consistently across the app.
 import Content from "./DialogContent.svelte";
 
 // import default components that remain the unchanged from bits ui.
-const Root = DialogPrimitive.Root;
-const Title = DialogPrimitive.Title;
-const Trigger = DialogPrimitive.Trigger;
-const Close = DialogPrimitive.Close;
-const Portal = DialogPrimitive.Portal
-const Description = DialogPrimitive.Description
+const Root = AlertDialogPrimitive.Root;
+const Title = AlertDialogPrimitive.Title;
+const Trigger = AlertDialogPrimitive.Trigger;
+const Action = AlertDialogPrimitive.Action;
+const Cancel = AlertDialogPrimitive.Cancel;
+const Portal = AlertDialogPrimitive.Portal;
+const Description = AlertDialogPrimitive.Description;
 
 // export both custom and default.
 export {
@@ -18,7 +19,8 @@ export {
   Trigger,
   Content,
   Description,
-  Close,
+  Action,
+  Cancel,
   Portal
 };
 

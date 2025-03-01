@@ -51,6 +51,15 @@ export const getActiveCalendar = liveQuery(async () => {
 });
 
 /*
+ * Share code for currently active calendar
+ */
+export async function getShareCode() {
+  const activeCalendarId = await db.settings.get("activeCalendar");
+  if (!activeCalendarId) return '';
+  return activeCalendarId.value.slice(0, 4);
+}
+
+/*
  * Commands
  */
 
@@ -123,7 +132,7 @@ export async function deleteCalendar(calendarId: Hash): Promise<Hash> {
 }
 
 export async function setActiveCalendar(id: Hash) {
-  await db.settings.add({
+  await db.settings.put({
     name: "activeCalendar",
     value: id,
   });
