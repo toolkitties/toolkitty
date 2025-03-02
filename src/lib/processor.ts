@@ -119,7 +119,7 @@ import { rejectPromise, resolvePromise } from "$lib/promiseMap";
  * a state-change has been performed already before, it is not applied again when
  * the message gets processed a second time.
  */
-export async function process(message: ChannelMessage) {
+export async function processMessage(message: ChannelMessage) {
   // @TODO: We need to validate here if the received messages are correctly
   // formatted and contain all the required fields.
   // Related issue: https://github.com/toolkitties/toolkitty/issues/77
@@ -157,7 +157,9 @@ async function onApplicationMessage(message: ApplicationMessage) {
     resolvePromise(message.meta.operationId);
 
     // Acknowledge that we have received and processed this operation.
-    await invoke("ack", { operationId: message.meta.operationId });
+    if (process.env.NODE_ENV !== 'test') {
+      await invoke("ack", { operationId: message.meta.operationId });      
+    }
   } catch (err) {
     console.error(`failed processing application event: ${err}`, message);
     rejectPromise(message.meta.operationId, err);

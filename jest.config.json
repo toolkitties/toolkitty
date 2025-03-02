@@ -1,5 +1,0 @@
-{
-    "setupFiles": [
-        "fake-indexeddb/auto"
-    ]
-}

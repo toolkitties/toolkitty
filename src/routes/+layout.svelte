@@ -4,7 +4,6 @@
   import Toasts from "$lib/components/Toasts.svelte";
   import { topics } from "$lib/api";
   import { seedData } from "$lib/api/data";
-  import { process } from "$lib/processor";
   import { db } from "$lib/db";
 
   onMount(() => {
