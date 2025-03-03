@@ -70,45 +70,45 @@
 {#if alwaysAvailable}
   <p>Always available</p>
 {:else}
-  <Calendar.Root let:months let:weekdays onValueChange={handleDateSelect}>
-    <Calendar.Header class="flex flex-row">
-      <Calendar.PrevButton class="w-8 mr-2">←</Calendar.PrevButton>
-      <Calendar.Heading />
-      <Calendar.NextButton class="w-8 ml-2">→</Calendar.NextButton>
-    </Calendar.Header>
+  <Calendar.Root onValueChange={handleDateSelect}>
+    {#snippet children({ months, weekdays })}
+      <Calendar.Header class="flex flex-row">
+        <Calendar.PrevButton class="w-8 mr-2">←</Calendar.PrevButton>
+        <Calendar.Heading />
+        <Calendar.NextButton class="w-8 ml-2">→</Calendar.NextButton>
+      </Calendar.Header>
 
-    {#each months as month}
-      <Calendar.Grid>
-        <Calendar.GridHead>
-          <Calendar.GridRow>
-            {#each weekdays as day}
-              <Calendar.HeadCell>{day}</Calendar.HeadCell>
-            {/each}
-          </Calendar.GridRow>
-        </Calendar.GridHead>
-        <Calendar.GridBody>
-          {#each month.weeks as weekDates}
+      {#each months as month}
+        <Calendar.Grid>
+          <Calendar.GridHead>
             <Calendar.GridRow>
-              {#each weekDates as date}
-                <Calendar.Cell {date}>
-                  <Calendar.Day
-                    {date}
-                    month={month.value}
-                    class={`data-[outside-month]:pointer-events-none
+              {#each weekdays as day}
+                <Calendar.HeadCell>{day}</Calendar.HeadCell>
+              {/each}
+            </Calendar.GridRow>
+          </Calendar.GridHead>
+          <Calendar.GridBody>
+            {#each month.weeks as weekDates}
+              <Calendar.GridRow>
+                {#each weekDates as date}
+                  <Calendar.Cell {date} month={month.value}>
+                    <Calendar.Day
+                      class={`data-[outside-month]:pointer-events-none
                               data-[outside-month]:text-gray-300
                               data-[selected]:bg-black
                               data-[selected]:text-white
                               ${isAvailableDay(date) ? "bg-green-300" : ""}
                               ${!isAvailableDay(date) ? "text-gray-400 pointer-events-none" : ""}`}
-                    aria-disabled={!isAvailableDay(date) ? "true" : undefined}
-                  />
-                </Calendar.Cell>
-              {/each}
-            </Calendar.GridRow>
-          {/each}
-        </Calendar.GridBody>
-      </Calendar.Grid>
-    {/each}
+                      aria-disabled={!isAvailableDay(date) ? "true" : undefined}
+                    />
+                  </Calendar.Cell>
+                {/each}
+              </Calendar.GridRow>
+            {/each}
+          </Calendar.GridBody>
+        </Calendar.Grid>
+      {/each}
+    {/snippet}
   </Calendar.Root>
 
   {#if multiBookable}
