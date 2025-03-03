@@ -18,7 +18,6 @@ type StreamId = Hash;
  */
 type OperationId = Hash;
 
-
 /**
  * A topic which can be subscribed to on the network layer.
  */
@@ -34,9 +33,9 @@ type Stream = {
 };
 
 type LogId = {
-  stream: Stream,
-  logPath: LogPath
-}
+  stream: Stream;
+  logPath: LogPath;
+};
 
 /**
  * The path portion of a log id.
@@ -71,10 +70,7 @@ type Image = string;
  *
  * Read more here: https://v2.tauri.app/develop/calling-frontend/#channels
  */
-type ChannelMessage =
-  | StreamMessage
-  | EphemeralMessage
-  | SystemMessage;
+type ChannelMessage = StreamMessage | EphemeralMessage | SystemMessage;
 
 /**
  * ଘ(˵╹-╹)━☆•.,¸.•*
@@ -306,6 +302,9 @@ type Answer = "approve" | "reject";
 type CalendarFields = {
   name: string;
   dates: TimeSpan[];
+  festivalInstructions: string | null;
+  spacePageText: string | null;
+  resourcePageText: string | null;
 };
 
 type SpaceFields = {
@@ -316,7 +315,8 @@ type SpaceFields = {
   accessibility: string;
   description: string;
   contact: string;
-  link: Link;
+  link: Link | null;
+  messageForRequesters: string;
   images: Image[];
   availability: TimeSpan[] | "always";
   multiBookable: boolean;

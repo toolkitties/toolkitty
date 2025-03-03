@@ -1,30 +1,31 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { findMany as findSpaces } from "$lib/api/spaces";
-  import { findMany as findResources } from "$lib/api/resources";
   import EventForm from "$lib/components/EventForm.svelte";
+  import type { PageProps } from "./$types";
+  import { events } from "$lib/api";
+  import { toast } from "$lib/toast.svelte";
+  import { goto } from "$app/navigation";
 
-  let spaces: Space[] = $state<Space[]>([]);
-  let resources: Resource[] = $state<Resource[]>([]);
+  let { data }: PageProps = $props();
 
-  onMount(async () => {
+  const handleDelete = async () => {
     try {
-      const [fetchedSpaces, fetchedResources] = await Promise.all([
-        findSpaces(),
-        findResources(),
-      ]);
-      spaces = [...fetchedSpaces];
-
-      resources = [...fetchedResources];
+      await events.delete(data.event!.id);
+      toast.success("Event deleted!");
+      goto("/app/events");
     } catch (error) {
-      console.error("Error fetching data:", error);
+      console.error("Error deleting event: ", error);
+      toast.error("Error deleting event!");
     }
-  });
+  };
 </script>
 
 <br />
 <br />
 <br />
-<br />
-<!-- ^ just temp until layout properly set  -->
-<EventForm formType="edit" {spaces} {resources} />
+<EventForm
+  formType="edit"
+  spaces={data.spacesList}
+  resources={data.resourcesList}
+  event={data.event}
+/>
+<button onclick={() => handleDelete()}>Delete</button>

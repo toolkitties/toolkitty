@@ -1,9 +1,9 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { Calendar } from "bits-ui";
+  import type { DateValue } from "@internationalized/date";
   import { fromDate } from "@internationalized/date";
   import Bookings from "./Bookings.svelte";
-  import type { DateValue } from "@internationalized/date";
 
   let { availability = [], multiBookable } = $props();
   let availableDays: DateValue[] = $state([]);
@@ -17,10 +17,9 @@
     if (!Array.isArray(availability)) {
       alwaysAvailable = true;
     } else {
-      const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      availableDays = availability.map((span) =>
-        fromDate(span.start, timeZone),
-      );
+      availability.forEach((timeSpan) => {
+        availableDays.push(fromDate(timeSpan.start, "UTC"));
+      });
     }
   }
 
@@ -55,16 +54,10 @@
       timeAvailability = null;
 
       if (Array.isArray(availability)) {
-        {
-          for (let span of availability) {
-            const availabilityDate = new Date(span.start);
-            if (
-              availabilityDate.getFullYear() === selectedDate.getFullYear() &&
-              availabilityDate.getMonth() === selectedDate.getMonth() &&
-              availabilityDate.getDate() === selectedDate.getDate()
-            ) {
-              timeAvailability = span;
-            }
+        for (let timeSpan of availability) {
+          const availabilityDate = timeSpan.start;
+          if (isSameDate(availabilityDate, value)) {
+            timeAvailability = timeSpan;
           }
         }
       } else {
@@ -119,7 +112,7 @@
   </Calendar.Root>
 
   {#if multiBookable}
-    <p>This space can have mutiple bookings at the same time.</p>
+    <p>This space can have multiple bookings at the same time.</p>
   {/if}
   {#if timeAvailability}
     <Bookings availability={timeAvailability} />

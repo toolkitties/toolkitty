@@ -1,16 +1,26 @@
 <script lang="ts">
-  import type { DateValue } from "@internationalized/date";
-  import { CalendarDate } from "@internationalized/date";
+  import { goto } from "$app/navigation";
+  import { resources } from "$lib/api";
+  import ResourceForm from "$lib/components/SpaceForm.svelte";
+  import { toast } from "$lib/toast.svelte";
+  import type { PageProps } from "./$types";
 
-  // placeholder data
-  const festivalDates: DateValue[] = [
-    new CalendarDate(2024, 12, 11),
-    new CalendarDate(2024, 12, 12),
-    new CalendarDate(2024, 12, 13),
-    new CalendarDate(2024, 12, 14),
-    new CalendarDate(2024, 12, 15),
-    new CalendarDate(2024, 12, 16),
-  ];
+  let { data }: PageProps = $props();
+
+  const handleDelete = async () => {
+    try {
+      await resources.delete(data.resource!.id);
+      toast.success("Resource deleted!");
+      goto("/app/resources");
+    } catch (error) {
+      console.error("Error deleting resource: ", error);
+      toast.error("Error deleting resource!");
+    }
+  };
 </script>
 
-<h1>Edit resource</h1>
+<br />
+<br />
+<br />
+<ResourceForm space={data.resource} formType="edit" />
+<button onclick={() => handleDelete()}>Delete</button>
