@@ -2,7 +2,7 @@
 import "fake-indexeddb/auto";
 
 import { processMessage } from "$lib/processor";
-import { LOG_PATH, PUBLIC_KEY, STREAM, bookingTestMessages } from "./data";
+import { CALENDAR_ID, LOG_PATH, PUBLIC_KEY, STREAM, bookingTestMessages } from "./data";
 import { bookings } from "$lib/api";
 import { expect, test } from "vitest";
 import { db } from "$lib/db";
@@ -13,6 +13,11 @@ test("processes resource request and response messages", async () => {
   }
 
   let pendingBookings = await bookings.findPendingForEvent("event_001");
+  expect(pendingBookings).lengthOf(2);
+  pendingBookings = await bookings.findPendingForAuthor(
+    CALENDAR_ID,
+    PUBLIC_KEY,
+  );
   expect(pendingBookings).lengthOf(2);
 
   let requestResponse: ApplicationMessage = {
@@ -35,6 +40,11 @@ test("processes resource request and response messages", async () => {
 
   pendingBookings = await bookings.findPendingForEvent("event_001");
   expect(pendingBookings).lengthOf(1);
+  pendingBookings = await bookings.findPendingForAuthor(
+    CALENDAR_ID,
+    PUBLIC_KEY,
+  );
+  expect(pendingBookings).lengthOf(1);
 
   requestResponse = {
     meta: {
@@ -56,4 +66,14 @@ test("processes resource request and response messages", async () => {
 
   pendingBookings = await bookings.findPendingForEvent("event_001");
   expect(pendingBookings).lengthOf(0);
+  pendingBookings = await bookings.findPendingForAuthor(
+    CALENDAR_ID,
+    PUBLIC_KEY,
+  );
+  expect(pendingBookings).lengthOf(0);
+
+  let allRequests = await bookings.findAllForEvent("event_001", PUBLIC_KEY);
+  expect(allRequests).lengthOf(2);
+  allRequests = await bookings.findAllForAuthor(CALENDAR_ID, PUBLIC_KEY);
+  expect(allRequests).lengthOf(2);
 });
