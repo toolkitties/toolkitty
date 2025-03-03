@@ -5,7 +5,7 @@
   import { goto } from "$app/navigation";
   import { parseCalendarData } from "$lib/utils";
 
-  let { formType, calendar = null } = $props();
+  let { formType, calendarId = null } = $props();
   let noEndDate = $state(false);
 
   function handleSubmit(e: Event) {
@@ -40,7 +40,7 @@
     const payload = parseCalendarData(formData, noEndDate);
 
     try {
-      await calendars.update(calendar.id, payload);
+      await calendars.update(calendarId, payload);
       toast.success("Calendar updated!");
       goto(`/app/events`);
     } catch (error) {
@@ -51,8 +51,8 @@
 </script>
 
 <form onsubmit={handleSubmit}>
-  {#if calendar}
-    <input type="text" bind:value={calendar.id} />
+  {#if calendarId}
+    <input type="text" bind:value={calendarId} />
   {/if}
   <label for="name">Calendar name*</label>
   <input type="text" name="name" required />
