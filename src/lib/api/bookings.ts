@@ -6,11 +6,11 @@ import { publish } from ".";
  * Queries
  */
 
-export async function findAllForAuthor(
+export function findAllForAuthor(
   calendarId: Hash,
   requester: PublicKey,
 ): Promise<ResourceRequest[]> {
-  return await db.requests
+  return db.requests
     .where({
       calendarId,
       requester,
@@ -26,12 +26,24 @@ export async function findPendingForAuthor(
     .where({ calendarId, answer: "approve" })
     .toArray();
 
-  return await db.requests
+  return db.requests
     .where({
       calendarId,
       requester,
     })
     .filter((request) => isPending(request, approvals))
+    .toArray();
+}
+
+export async function findAllForEvent(
+  eventId: Hash,
+  requester: PublicKey,
+): Promise<ResourceRequest[]> {
+  return db.requests
+    .where({
+      eventId,
+      requester,
+    })
     .toArray();
 }
 
@@ -42,14 +54,12 @@ export async function findPendingForEvent(
     .where({ eventId, answer: "approve" })
     .toArray();
 
-  const requests = db.requests
+  return db.requests
     .where({
       eventId,
     })
     .filter((request) => isPending(request, approvals))
     .toArray();
-
-  return requests;
 }
 
 function isPending(
