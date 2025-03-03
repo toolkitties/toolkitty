@@ -54,7 +54,7 @@
     try {
       await spaces.update(space.id, payload);
       toast.success("Space updated!");
-      //goto(`/app/spaces/${space.id}`);
+      goto(`/app/spaces/${space.id}`);
     } catch (error) {
       console.error("Error updating space: ", error);
       toast.error("Error updating space!");

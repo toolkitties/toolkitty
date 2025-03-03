@@ -10,11 +10,11 @@
   const handleDelete = async () => {
     try {
       await calendars.deleteCalendar(data.calendarId);
-      toast.success("Space deleted!");
-      goto("/app/spaces");
+      toast.success("Calendar deleted!");
+      goto("/");
     } catch (error) {
-      console.error("Error deleting space: ", error);
-      toast.error("Error deleting space!");
+      console.error("Error deleting calendar: ", error);
+      toast.error("Error deleting calendar!");
     }
   };
 </script>

@@ -6,5 +6,5 @@ export const load: PageLoad = async ({ params }) => {
 
   const space = await spaces.findById(spaceId);
 
-  return { title: "spaces", space };
+  return { title: "edit space", space };
 };
