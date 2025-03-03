@@ -14,7 +14,13 @@
   let placeholder = `Select a ${name}`;
 </script>
 
-<Select.Root {multiple} open={isOpen} {items} {name} preventScroll={false}>
+<Select.Root
+  type={multiple ? "single" : "multiple"}
+  open={isOpen}
+  {items}
+  {name}
+  bind:value
+>
   <div class="border border-black rounded">
     <button
       onclick={() => (isOpen = !isOpen)}
@@ -24,7 +30,7 @@
       {#if multiple}
         <span>{placeholder}</span>
       {:else}
-        <Select.Value {placeholder} />
+        <p>{value}</p>
       {/if}
       <Icon icon="lucide:chevron-down" class={isOpen ? "rotate-180" : ""} />
     </button>
@@ -39,14 +45,15 @@
           value={item.value}
           label={item.label}
         >
-          {item.label}
-          <Select.ItemIndicator class="ml-auto" asChild={false}>
-            <Icon icon="lucide:check" />
-          </Select.ItemIndicator>
+          {#snippet children({ selected })}
+            {item.label}
+            {#if selected}
+              <Icon icon="lucide:check" />
+            {/if}
+          {/snippet}
         </Select.Item>
       {/each}
     </div>
   </div>
   <!-- </Select.Content> -->
-  <Select.Input bind:value {name} />
 </Select.Root>
