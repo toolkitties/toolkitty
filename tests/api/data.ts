@@ -4,9 +4,9 @@ export const CALENDAR_ID =
   "40aa69dd28f17d1adb55d560b6295c399e2fc03daa49ae015b4f5ccb151b8ac5";
 export const PUBLIC_KEY =
   "94dae7402bdf9049e96e1a02bbae97baa714c498324538f81c7b4ba0a94bf4d7";
-const LOG_PATH = "calendar";
+export const LOG_PATH = "calendar";
 
-const stream = {
+export const STREAM = {
   id: CALENDAR_ID,
   rootHash: STREAM_ROOT_HASH,
   owner: PUBLIC_KEY,
@@ -15,9 +15,9 @@ const stream = {
 export const calendarTestMessages: ChannelMessage[] = [
   {
     meta: {
-      operationId: "OP01",
+      operationId: "calendar_001",
       author: PUBLIC_KEY,
-      stream,
+      stream: STREAM,
       logPath: LOG_PATH,
     },
     event: "application",
@@ -43,7 +43,7 @@ export const bookingTestMessages: ChannelMessage[] = [
     meta: {
       operationId: "calendar_001",
       author: PUBLIC_KEY,
-      stream,
+      stream: STREAM,
       logPath: LOG_PATH,
     },
     event: "application",
@@ -66,7 +66,7 @@ export const bookingTestMessages: ChannelMessage[] = [
     meta: {
       operationId: "event_001",
       author: PUBLIC_KEY,
-      stream,
+      stream: STREAM,
       logPath: LOG_PATH,
     },
     event: "application",
@@ -96,7 +96,7 @@ export const bookingTestMessages: ChannelMessage[] = [
     meta: {
       operationId: "resource_001",
       author: PUBLIC_KEY,
-      stream,
+      stream: STREAM,
       logPath: LOG_PATH,
     },
     event: "application",
@@ -123,7 +123,7 @@ export const bookingTestMessages: ChannelMessage[] = [
     meta: {
       operationId: "space_001",
       author: PUBLIC_KEY,
-      stream,
+      stream: STREAM,
       logPath: LOG_PATH,
     },
     event: "application",
@@ -142,7 +142,8 @@ export const bookingTestMessages: ChannelMessage[] = [
           },
           capacity: 20,
           accessibility: "Wheelchair accessible",
-          description: "Spacious conference room with video conferencing facilities.",
+          description:
+            "Spacious conference room with video conferencing facilities.",
           contact: "admin@example.com",
           link: {
             type: "custom",
@@ -165,7 +166,7 @@ export const bookingTestMessages: ChannelMessage[] = [
     meta: {
       operationId: "resource_request_001",
       author: PUBLIC_KEY,
-      stream,
+      stream: STREAM,
       logPath: LOG_PATH,
     },
     event: "application",
@@ -180,21 +181,28 @@ export const bookingTestMessages: ChannelMessage[] = [
           start: new Date("2025-03-01T09:00:00Z"),
           end: new Date("2025-03-01T17:00:00Z"),
         },
-  }
+      },
     },
   },
   {
     meta: {
-      operationId: "resource_request_response_001",
+      operationId: "resource_request_002",
       author: PUBLIC_KEY,
-      stream,
+      stream: STREAM,
       logPath: LOG_PATH,
     },
     event: "application",
     data: {
-      type: "resource_request_accepted",
+      type: "resource_requested",
       data: {
-        requestId: "resource_request_001",
+        type: "space",
+        resourceId: "space_001",
+        eventId: "event_001",
+        message: "Hi, can I haz your Conference Room A?",
+        timeSpan: {
+          start: new Date("2025-03-01T09:00:00Z"),
+          end: new Date("2025-03-01T17:00:00Z"),
+        },
       },
     },
   },
