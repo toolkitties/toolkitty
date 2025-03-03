@@ -15,7 +15,7 @@
 </script>
 
 <Select.Root
-  type={multiple ? "single" : "multiple"}
+  type={multiple ? "multiple" : "single"}
   open={isOpen}
   {items}
   {name}
