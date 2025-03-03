@@ -1,15 +1,62 @@
 <script lang="ts">
   import AvailabilityViewer from "./AvailabilityViewer.svelte";
+  import { parseEventFormData } from "$lib/utils";
 
-  let { formType, spaces, resources } = $props();
+  let { formType, spaces, resources, event = null } = $props();
 
   // let selectedSpace: Space | null = $state<Space | null>(null);
   // function handleSpaceSelection(space: Space) {
   //   selectedSpace = space;
   // }
+
+  function handleSubmit(e: Event) {
+    if (formType === "create") {
+      handleCreateEvent(e);
+    } else if (formType === "edit") {
+      handleUpdateEvent(e);
+    }
+  }
+
+  async function handleCreateEvent(e: Event) {
+    e.preventDefault();
+
+    const form = e.currentTarget as HTMLFormElement;
+    const formData = new FormData(form);
+
+    const payload = parseEventFormData(formData);
+
+    try {
+      await spaces.create(payload);
+      toast.success("Space created!");
+      goto(`/app/spaces/${space.id}`);
+    } catch (error) {
+      console.error("Error creating space: ", error);
+      toast.error("Error creating space!");
+    }
+  }
+
+  async function handleUpdateEvent(e: Event) {
+    e.preventDefault();
+
+    const form = e.currentTarget as HTMLFormElement;
+    const formData = new FormData(form);
+
+    const payload = const payload = parseEventFormData(formData);;
+
+    try {
+      await spaces.update(space.id, payload);
+      toast.success("Space updated!");
+      goto(`/app/spaces/${space.id}`);
+    } catch (error) {
+      console.error("Error updating space: ", error);
+      toast.error("Error updating space!");
+    }
 </script>
 
-<form>
+<form onsubmit={handleSubmit}>
+  {#if event}
+    <input type="text" bind:value={event.id} />
+  {/if}
   <label for="name">Event name*</label>
   <input type="text" name="name" required />
 
