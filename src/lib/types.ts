@@ -647,7 +647,9 @@ type ResourceType = "space" | "resource";
 type ResourceResponse = {
   id: Hash;
   calendarId: Hash;
+  eventId: Hash;
   requestId: Hash;
+  responder: PublicKey;
   answer: Answer;
 };
 
