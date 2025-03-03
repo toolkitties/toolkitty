@@ -1,6 +1,6 @@
 import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
-import { publish, resources, spaces } from ".";
+import { bookings, publish, resources, spaces } from ".";
 
 /**
  * Queries
@@ -10,50 +10,57 @@ export async function findAllForAuthor(
   calendarId: Hash,
   requester: PublicKey,
 ): Promise<ResourceRequest[]> {
-  return db.transaction("r", db.requests, db.responses, async () => {
-    return await db.requests
-      .where({
-        calendarId,
-        requester,
-      })
-      .filter((request) => isPending(request))
-      .toArray();
-  });
+  return await db.requests
+    .where({
+      calendarId,
+      requester,
+    })
+    .toArray();
 }
 
 export async function findPendingForAuthor(
   calendarId: Hash,
   requester: PublicKey,
 ): Promise<ResourceRequest[]> {
-  return db.transaction("r", db.requests, db.responses, async () => {
-    return await db.requests
-      .where({
-        calendarId,
-        requester,
-      })
-      .filter((request) => isPending(request))
-      .toArray();
-  });
+  const approvals = await db.responses
+    .where({ calendarId, answer: "approve" })
+    .toArray();
+
+  return await db.requests
+    .where({
+      calendarId,
+      requester,
+    })
+    .filter((request) => isPending(request, approvals))
+    .toArray();
 }
 
 export async function findPendingForEvent(
   eventId: Hash,
 ): Promise<ResourceRequest[]> {
-  return db.transaction("r", db.requests, db.responses, async () => {
-    return await db.requests
-      .where({
-        eventId,
-      })
-      .filter((request) => isPending(request))
-      .toArray();
-  });
+  const approvals = await db.responses
+    .where({ eventId, answer: "approve" })
+    .toArray();
+
+  const requests = db.requests
+    .where({
+      eventId,
+    })
+    .filter((request) => isPending(request, approvals))
+    .toArray();
+
+  return requests;
 }
 
-function isPending(request: ResourceRequest): boolean {
-  const response = db.transaction("r", db.responses, async () => {
-    await db.responses.get({ requestId: request.id });
-  });
-  return response != undefined;
+function isPending(
+  request: ResourceRequest,
+  approvals: ResourceResponse[],
+): boolean {
+  return (
+    approvals.find((response) => {
+      return response.requestId == request.id;
+    }) == undefined
+  );
 }
 
 /**
@@ -172,9 +179,17 @@ async function onResourceRequestAccepted(
   meta: StreamMessageMeta,
   data: ResourceRequestAccepted["data"],
 ) {
+  const resourceRequest = await db.requests.get(data.requestId);
+
+  if (!resourceRequest) {
+    throw new Error("resource request does not exist");
+  }
+
   const resourceResponse: ResourceResponse = {
     id: meta.operationId,
     calendarId: meta.stream.id,
+    eventId: resourceRequest.eventId,
+    responder: meta.author,
     requestId: data.requestId,
     answer: "approve",
   };
@@ -185,9 +200,17 @@ async function onResourceRequestRejected(
   meta: StreamMessageMeta,
   data: ResourceRequestRejected["data"],
 ) {
+  const resourceRequest = await db.requests.get(data.requestId);
+
+  if (!resourceRequest) {
+    throw new Error("resource request does not exist");
+  }
+
   const resourceResponse: ResourceResponse = {
     id: meta.operationId,
     calendarId: meta.stream.id,
+    eventId: resourceRequest.eventId,
+    responder: meta.author,
     requestId: data.requestId,
     answer: "reject",
   };
