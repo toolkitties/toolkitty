@@ -5,7 +5,7 @@
   import { goto } from "$app/navigation";
   import { toast } from "$lib/toast.svelte";
 
-  let { formType, space } = $props();
+  let { formType, space = null } = $props();
   let selectedSpaceType = $state("physical");
   let availability: { date: string; startTime: string; endTime: string }[] =
     $state([]);

@@ -1,17 +1,7 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { findMany } from "$lib/api/resources";
+  import type { PageProps } from "./$types";
 
-  let resources: Resource[] = [];
-
-  onMount(async () => {
-    try {
-      const fetchedresources = await findMany();
-      resources = [...fetchedresources];
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    }
-  });
+  let { data }: PageProps = $props();
 </script>
 
 <br />
@@ -20,7 +10,7 @@
 <h1 class="font-pixel">Spaces</h1>
 <a href="/app/resources/create">Create resource</a>
 
-{#each resources as resource}
+{#each data.resourcesList as resource}
   <a
     href={`/app/spaces/${resource.id}`}
     class="flex border-black border event-row"
