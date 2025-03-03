@@ -69,7 +69,7 @@ db.version(1).stores({
   resources: "&id, calendarId",
   events: "&id, name, date, calendarId",
   requests: "&id, eventId, calendarId",
-  responses: "&id, eventId, requestId, calendarId",
+  responses: "&id, eventId, requestId, calendarId, answer",
   streams: "&id",
   settings: "&name",
 });

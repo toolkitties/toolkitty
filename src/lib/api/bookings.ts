@@ -6,58 +6,27 @@ import { publish } from ".";
  * Queries
  */
 
-export function findAllForAuthor(
-  calendarId: Hash,
-  requester: PublicKey,
+export function findAll(
+  filter: BookingQueryFilter,
 ): Promise<ResourceRequest[]> {
-  return db.requests
-    .where({
-      calendarId,
-      requester,
-    })
-    .toArray();
+  return db.requests.where(filter).toArray();
 }
 
-export async function findPendingForAuthor(
-  calendarId: Hash,
-  requester: PublicKey,
+export async function findPending(
+  filter: BookingQueryFilter,
 ): Promise<ResourceRequest[]> {
-  const approvals = await db.responses
-    .where({ calendarId, answer: "approve" })
-    .toArray();
+  let responsesFilter: { [key: string]: any } = {
+    answer: "approve",
+  };
+
+  if (filter.calendarId) {
+    responsesFilter.calendarId = filter.calendarId;
+  }
+
+  const approvals = await db.responses.where(responsesFilter).toArray();
 
   return db.requests
-    .where({
-      calendarId,
-      requester,
-    })
-    .filter((request) => isPending(request, approvals))
-    .toArray();
-}
-
-export async function findAllForEvent(
-  eventId: Hash,
-  requester: PublicKey,
-): Promise<ResourceRequest[]> {
-  return db.requests
-    .where({
-      eventId,
-      requester,
-    })
-    .toArray();
-}
-
-export async function findPendingForEvent(
-  eventId: Hash,
-): Promise<ResourceRequest[]> {
-  const approvals = await db.responses
-    .where({ eventId, answer: "approve" })
-    .toArray();
-
-  return db.requests
-    .where({
-      eventId,
-    })
+    .where(filter)
     .filter((request) => isPending(request, approvals))
     .toArray();
 }
@@ -71,16 +40,6 @@ function isPending(
       return response.requestId == request.id;
     }) == undefined
   );
-}
-
-/**
- * Get one request by its ID
- */
-export async function findById(id: Hash): Promise<ResourceRequest | undefined> {
-  //TODO: Return events from db
-
-  // return test data.
-  return;
 }
 
 export async function request(

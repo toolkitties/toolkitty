@@ -2,7 +2,13 @@
 import "fake-indexeddb/auto";
 
 import { processMessage } from "$lib/processor";
-import { CALENDAR_ID, LOG_PATH, PUBLIC_KEY, STREAM, bookingTestMessages } from "./data";
+import {
+  CALENDAR_ID,
+  LOG_PATH,
+  PUBLIC_KEY,
+  STREAM,
+  bookingTestMessages,
+} from "./data";
 import { bookings } from "$lib/api";
 import { expect, test } from "vitest";
 import { db } from "$lib/db";
@@ -12,12 +18,12 @@ test("processes resource request and response messages", async () => {
     await processMessage(message);
   }
 
-  let pendingBookings = await bookings.findPendingForEvent("event_001");
+  let pendingBookings = await bookings.findPending({ eventId: "event_001" });
   expect(pendingBookings).lengthOf(2);
-  pendingBookings = await bookings.findPendingForAuthor(
-    CALENDAR_ID,
-    PUBLIC_KEY,
-  );
+  pendingBookings = await bookings.findPending({
+    calendarId: CALENDAR_ID,
+    requester: PUBLIC_KEY,
+  });
   expect(pendingBookings).lengthOf(2);
 
   let requestResponse: ApplicationMessage = {
@@ -38,12 +44,12 @@ test("processes resource request and response messages", async () => {
 
   await processMessage(requestResponse);
 
-  pendingBookings = await bookings.findPendingForEvent("event_001");
+  pendingBookings = await bookings.findPending({ eventId: "event_001" });
   expect(pendingBookings).lengthOf(1);
-  pendingBookings = await bookings.findPendingForAuthor(
-    CALENDAR_ID,
-    PUBLIC_KEY,
-  );
+  pendingBookings = await bookings.findPending({
+    calendarId: CALENDAR_ID,
+    requester: PUBLIC_KEY,
+  });
   expect(pendingBookings).lengthOf(1);
 
   requestResponse = {
@@ -64,16 +70,42 @@ test("processes resource request and response messages", async () => {
 
   await processMessage(requestResponse);
 
-  pendingBookings = await bookings.findPendingForEvent("event_001");
+  pendingBookings = await bookings.findPending({ eventId: "event_001" });
   expect(pendingBookings).lengthOf(0);
-  pendingBookings = await bookings.findPendingForAuthor(
-    CALENDAR_ID,
-    PUBLIC_KEY,
-  );
+  pendingBookings = await bookings.findPending({
+    calendarId: CALENDAR_ID,
+    requester: PUBLIC_KEY,
+  });
   expect(pendingBookings).lengthOf(0);
 
-  let allRequests = await bookings.findAllForEvent("event_001", PUBLIC_KEY);
+  let allRequests = await bookings.findAll({ eventId: "event_001" });
   expect(allRequests).lengthOf(2);
-  allRequests = await bookings.findAllForAuthor(CALENDAR_ID, PUBLIC_KEY);
+  let spaceRequests = await bookings.findAll({
+    eventId: "event_001",
+    resourceType: "space",
+  });
+  expect(spaceRequests).lengthOf(1);
+  let resourceRequests = await bookings.findAll({
+    eventId: "event_001",
+    resourceType: "resource",
+  });
+  expect(resourceRequests).lengthOf(1);
+
+  allRequests = await bookings.findAll({
+    calendarId: CALENDAR_ID,
+    requester: PUBLIC_KEY,
+  });
   expect(allRequests).lengthOf(2);
+  spaceRequests = await bookings.findAll({
+    calendarId: CALENDAR_ID,
+    requester: PUBLIC_KEY,
+    resourceType: "space",
+  });
+  expect(spaceRequests).lengthOf(1);
+  resourceRequests = await bookings.findAll({
+    calendarId: CALENDAR_ID,
+    requester: PUBLIC_KEY,
+    resourceType: "resource",
+  });
+  expect(resourceRequests).lengthOf(1);
 });

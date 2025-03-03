@@ -665,3 +665,10 @@ type RequestEvent = {
   type: "resource_request" | "access_request";
   data: ResourceRequest | AccessRequest;
 };
+
+type BookingQueryFilter = {
+  calendarId?: Hash;
+  eventId?: Hash;
+  requester?: PublicKey;
+  resourceType?: ResourceType;
+};
