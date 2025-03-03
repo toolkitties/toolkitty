@@ -6,10 +6,10 @@
 
   let { formType, spaces, resources, event = null } = $props();
 
-  // let selectedSpace: Space | null = $state<Space | null>(null);
-  // function handleSpaceSelection(space: Space) {
-  //   selectedSpace = space;
-  // }
+  let selectedSpace: Space | null = $state<Space | null>(null);
+  function handleSpaceSelection(space: Space) {
+    selectedSpace = space;
+  }
 
   function handleSubmit(e: Event) {
     if (formType === "create") {
@@ -25,16 +25,16 @@
     const form = e.currentTarget as HTMLFormElement;
     const formData = new FormData(form);
 
-    // const payload = parseEventFormData(formData,);
+    const payload = parseEventFormData(formData, selectedSpace);
 
-    // try {
-    //   await spaces.create(payload);
-    //   toast.success("Event created!");
-    //   goto(`/app/events/${event.id}`);
-    // } catch (error) {
-    //   console.error("Error creating event: ", error);
-    //   toast.error("Error creating event!");
-    // }
+    try {
+      await spaces.create(payload);
+      toast.success("Event created!");
+      goto(`/app/events/${event.id}`);
+    } catch (error) {
+      console.error("Error creating event: ", error);
+      toast.error("Error creating event!");
+    }
   }
 
   async function handleUpdateEvent(e: Event) {
@@ -43,15 +43,16 @@
     const form = e.currentTarget as HTMLFormElement;
     const formData = new FormData(form);
 
-    // const payload = const payload = parseEventFormData(formData);;
+    const payload = parseEventFormData(formData, selectedSpace);
 
-    // try {
-    //   await spaces.update(event.id, payload);
-    //   toast.success("Event updated!");
-    //   goto(`/app/events/${event.id}`);
-    // } catch (error) {
-    //   console.error("Error updating event: ", error);
-    //   toast.error("Error updating event!");
+    try {
+      await spaces.update(event.id, payload);
+      toast.success("Event updated!");
+      goto(`/app/events/${event.id}`);
+    } catch (error) {
+      console.error("Error updating event: ", error);
+      toast.error("Error updating event!");
+    }
   }
 </script>
 
@@ -100,7 +101,7 @@
       {/each}
     </ul>
 
-    <!-- {#if selectedSpace}
+    {#if selectedSpace}
       <div class="space-availability">
         <p>View availability</p>
         <AvailabilityViewer
@@ -110,7 +111,7 @@
           multiBookable={selectedSpace.multiBookable}
         />
       </div>
-    {/if} -->
+    {/if}
     <p>Request selected space</p>
     <div class="flex flex-row">
       <p>Access from:</p>

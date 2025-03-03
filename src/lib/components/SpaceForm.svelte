@@ -36,7 +36,7 @@
     try {
       await spaces.create(payload);
       toast.success("Space created!");
-      goto(`/app/spaces/${space.id}`);
+      //goto(`/app/spaces/${space.id}`);
     } catch (error) {
       console.error("Error creating space: ", error);
       toast.error("Error creating space!");
