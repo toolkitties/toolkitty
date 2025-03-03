@@ -9,5 +9,5 @@ export const load: PageLoad = async ({ params }) => {
   const spacesList = await spaces.findMany();
   const resourcesList = await resources.findMany();
 
-  return { title: "edit space", spacesList, resourcesList };
+  return { title: "edit space", spacesList, resourcesList, event };
 };

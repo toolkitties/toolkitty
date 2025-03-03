@@ -1,6 +1,8 @@
 <script lang="ts">
   import AvailabilityViewer from "./AvailabilityViewer.svelte";
   import { parseEventFormData } from "$lib/utils";
+  import { goto } from "$app/navigation";
+  import { toast } from "$lib/toast.svelte";
 
   let { formType, spaces, resources, event = null } = $props();
 
@@ -23,16 +25,16 @@
     const form = e.currentTarget as HTMLFormElement;
     const formData = new FormData(form);
 
-    const payload = parseEventFormData(formData);
+    // const payload = parseEventFormData(formData,);
 
-    try {
-      await spaces.create(payload);
-      toast.success("Space created!");
-      goto(`/app/spaces/${space.id}`);
-    } catch (error) {
-      console.error("Error creating space: ", error);
-      toast.error("Error creating space!");
-    }
+    // try {
+    //   await spaces.create(payload);
+    //   toast.success("Event created!");
+    //   goto(`/app/events/${event.id}`);
+    // } catch (error) {
+    //   console.error("Error creating event: ", error);
+    //   toast.error("Error creating event!");
+    // }
   }
 
   async function handleUpdateEvent(e: Event) {
@@ -41,16 +43,16 @@
     const form = e.currentTarget as HTMLFormElement;
     const formData = new FormData(form);
 
-    const payload = const payload = parseEventFormData(formData);;
+    // const payload = const payload = parseEventFormData(formData);;
 
-    try {
-      await spaces.update(space.id, payload);
-      toast.success("Space updated!");
-      goto(`/app/spaces/${space.id}`);
-    } catch (error) {
-      console.error("Error updating space: ", error);
-      toast.error("Error updating space!");
-    }
+    // try {
+    //   await spaces.update(event.id, payload);
+    //   toast.success("Event updated!");
+    //   goto(`/app/events/${event.id}`);
+    // } catch (error) {
+    //   console.error("Error updating event: ", error);
+    //   toast.error("Error updating event!");
+  }
 </script>
 
 <form onsubmit={handleSubmit}>
