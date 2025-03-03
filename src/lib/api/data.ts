@@ -1,4 +1,4 @@
-import { calendars, events, resources, spaces } from ".";
+import { bookings, calendars, events, resources, spaces } from ".";
 import { setActiveCalendar } from "./calendars";
 
 export async function seedData() {
@@ -111,7 +111,7 @@ export async function seedData() {
     multiBookable: false,
   });
 
-  await events.create({
+  const eventOneId = await events.create({
     name: "Kitty Fest 25",
     description: "A grand music festival with various artists.",
     startDate: new Date("2025-01-06T14:00:00Z"),
@@ -122,18 +122,7 @@ export async function seedData() {
     links: [],
   });
 
-  await events.create({
-    name: "Kitty Fest 25",
-    description: "A grand music festival with various artists.",
-    startDate: new Date("2025-01-06T14:00:00Z"),
-    endDate: new Date("2025-01-06T20:00:00Z"),
-    location: "",
-    images: [],
-    resources: [],
-    links: [],
-  });
-
-  await events.create({
+  const eventTwoId = await events.create({
     name: "Art Exhibition",
     description: "An exhibition showcasing modern art.",
     startDate: new Date("2025-02-10T10:00:00.000Z"),
@@ -143,4 +132,17 @@ export async function seedData() {
     resources: [],
     links: [],
   });
+
+  const resourceRequestId = await bookings.request(
+    eventOneId,
+    resourceOneId,
+    "resource",
+    "please can i haz?",
+    {
+      start: new Date("2025-01-20T00:00:00Z"),
+      end: new Date("2025-01-22T00:00:00Z"),
+    },
+  );
+
+  const resourceResponseId = await bookings.accept(resourceRequestId);
 }
