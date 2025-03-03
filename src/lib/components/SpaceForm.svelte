@@ -16,6 +16,7 @@
   ) {
     availability = newAvailability;
   }
+
   function handleSubmit(e: Event) {
     if (formType === "create") {
       handleCreateSpace(e);
@@ -35,7 +36,7 @@
     try {
       await spaces.create(payload);
       toast.success("Space created!");
-      //goto(`/app/spaces/${space.id}`);
+      goto(`/app/spaces/${space.id}`);
     } catch (error) {
       console.error("Error creating space: ", error);
       toast.error("Error creating space!");

@@ -2,6 +2,36 @@
 Parsing form data before passing to API
 */
 
+// Calendars
+export function parseCalendarData(formData: FormData, noEndDate: boolean) {
+  let endDate;
+  if (noEndDate) {
+    endDate = null;
+  } else {
+    endDate = formData.get("calendar-end-date") as Date | null;
+  }
+  const name = formData.get("name") as string;
+  const dates = [
+    {
+      start: formData.get("calendar-start-date") as Date | null,
+      end: endDate,
+    },
+  ] as TimeSpan[];
+  const festivalInstructions = formData.get("festival-instructions") as
+    | string
+    | null;
+  const spacePageText = formData.get("space-page-text") as string | null;
+  const resourcePageText = formData.get("resource-page=text") as string | null;
+
+  return {
+    name,
+    dates,
+    festivalInstructions,
+    spacePageText,
+    resourcePageText,
+  } as CalendarFields;
+}
+
 // Spaces
 
 export function parseSpaceFormData(
@@ -9,7 +39,6 @@ export function parseSpaceFormData(
   alwaysAvailable: boolean,
   availability: { date: string; startTime: string; endTime: string }[],
 ) {
-  // Extract form values
   const type = formData.get("space-type") as "physical" | "gps" | "virtual";
   const name = formData.get("space-name") as string;
   const capacity = parseInt(formData.get("capacity") as string, 10);
@@ -19,15 +48,13 @@ export function parseSpaceFormData(
   const messageForRequesters = (formData.get("space-message") as string) || "";
   const multiBookable = formData.get("multi-bookable") === "true";
 
-  // Parse location based on type
   let location: PhysicalLocation | GPSLocation | VirtualLocation = {
     street: "",
     city: "",
     state: "",
     zip: "",
     country: "",
-  }; // Default to PhysicalLocation to satisfy TypeScript
-
+  };
   if (type === "physical") {
     location = {
       street: formData.get("address-street") as string,
@@ -45,7 +72,6 @@ export function parseSpaceFormData(
     location = formData.get("address-virtual") as string;
   }
 
-  // Parse link
   const linkTitle = formData.get("space-link-text") as string;
   const linkUrl = formData.get("space-link-url") as string;
   const link: Link | null =
@@ -53,7 +79,6 @@ export function parseSpaceFormData(
       ? { type: "custom" as const, title: linkTitle, url: linkUrl }
       : null;
 
-  // Parse availability
   let parsedAvailability: TimeSpan[] | "always";
   if (alwaysAvailable) {
     parsedAvailability = "always";

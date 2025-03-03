@@ -1,33 +1,84 @@
-<script>
-  import FestivalCalendar from "./FestivalCalendar.svelte";
-  let { formType } = $props();
+<script lang="ts">
+  //   import FestivalCalendar from "./FestivalCalendar.svelte";
+  import { calendars } from "$lib/api";
+  import { toast } from "$lib/toast.svelte";
+  import { goto } from "$app/navigation";
+  import { parseCalendarData } from "$lib/utils";
+
+  let { formType, calendar = null } = $props();
   let noEndDate = $state(false);
+
+  function handleSubmit(e: Event) {
+    if (formType === "create") {
+      handleCreateCalendar(e);
+    } else if (formType === "edit") {
+      handleUpdateCalendar(e);
+    }
+  }
+
+  async function handleCreateCalendar(e: Event) {
+    e.preventDefault();
+
+    const form = e.currentTarget as HTMLFormElement;
+    const formData = new FormData(form);
+    const payload = { fields: parseCalendarData(formData, noEndDate) };
+    try {
+      await calendars.create(payload);
+      toast.success("Calendar created!");
+      goto(`/app/events`);
+    } catch (error) {
+      console.error("Error creating calendar: ", error);
+      toast.error("Error creating calendar!");
+    }
+  }
+
+  async function handleUpdateCalendar(e: Event) {
+    e.preventDefault();
+
+    const form = e.currentTarget as HTMLFormElement;
+    const formData = new FormData(form);
+    const payload = parseCalendarData(formData, noEndDate);
+
+    try {
+      await calendars.update(calendar.id, payload);
+      toast.success("Calendar updated!");
+      goto(`/app/events`);
+    } catch (error) {
+      console.error("Error updating calendar: ", error);
+      toast.error("Error updating calendar!");
+    }
+  }
 </script>
 
-<form>
+<form onsubmit={handleSubmit}>
+  {#if calendar}
+    <input type="text" bind:value={calendar.id} />
+  {/if}
   <label for="name">Calendar name*</label>
   <input type="text" name="name" required />
-  <!-- note for form validation: they need to submit calendar dates, but it can be done either
-  with FestivalCalendar, for non-consecutive dates, or with start and end dates for one 
-  continuous span -->
-  <FestivalCalendar selectMultiple={true} />
+  <!--
+  Not including this yet because non-continuous calendar dates aren't aren't reflected
+  in the calendar fields yet - but you could set them with the FestivalCalendar.
+  Would be a consideration for form validation, we would need to make sure EITHER the
+  dates have been selected in the calendar or as start and end/no end -->
+  <!-- <FestivalCalendar selectMultiple={true} /> -->
   <div class="flex flex-row">
     <div class="start-date">
-      <label for="festival-start-date">Start Date *</label>
-      <input name="festival-start-date" type="date" required />
+      <label for="calendar-start-date">Start Date *</label>
+      <input name="calendar-start-date" type="date" required />
     </div>
     <div class="end-date">
-      <label for="festival-end-date">End Date *</label>
-      <input name="festival-end-date" type="time" required />
+      <label for="calendar-end-date">End Date *</label>
+      <input name="calendar-end-date" type="date" />
       <label>
         <input type="checkbox" bind:checked={noEndDate} />
         no end date
       </label>
     </div>
   </div>
-  <label for="description">Festival instructions</label>
-  <textarea name="description"></textarea>
   {#if formType === "edit"}
+    <label for="description">Festival instructions</label>
+    <textarea name="description"></textarea>
     <label for="description">Spaces page text</label>
     <textarea name="description"></textarea>
     <label for="description">Resources page text</label>

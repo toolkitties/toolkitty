@@ -302,6 +302,9 @@ type Answer = "approve" | "reject";
 type CalendarFields = {
   name: string;
   dates: TimeSpan[];
+  festivalInstructions: string | null;
+  spacePageText: string | null;
+  resourcePageText: string | null;
 };
 
 type SpaceFields = {
