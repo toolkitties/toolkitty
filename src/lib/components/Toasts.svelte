@@ -1,53 +1,30 @@
 <script lang="ts">
   import { toast } from "$lib/toast.svelte";
   import { fly } from "svelte/transition";
-  import * as Dialog from "./dialog";
-  import Request from "./dialog/Request.svelte";
-  import { tick } from "svelte";
-
-  /**
-   * Handle dialog opening and closing.
-   *
-   * When it opens we want to pause dismissal of toasts.
-   * When it closes we want to immediately dismiss the toast that was associated with that dialog
-   */
-  function handleDialogOpenChange(open: boolean, id: number) {
-    toast.autoDismiss = !open;
-    if (!open) {
-      // wait for next tick so dialog can dismiss with a nice transition
-      tick().then(() => {
-        toast.dismissToast(id);
-      });
-    }
-  }
+  import * as AlertDialog from "./dialog";
+  // import Request from "./dialog/Request.svelte";
+  import RequestToast from "./RequestToast.svelte";
 </script>
 
-<section class="absolute top-8 right-0 p-3 w-full">
+<section class="fixed top-8 right-0 p-3 w-full z-30">
   <ol tabIndex={-1} class="space-y-2">
-    {#each toast.toasts as t}
+    {#each toast.toasts as toastie}
       <li
         aria-live="polite"
-        class={`toast ${t.type}`}
+        class={`toast ${toastie.type}`}
         transition:fly={{ y: -50, duration: 500 }}
       >
-        {#if t.link}
+        {#if toastie.link}
           <!-- Its a link so we wrap in an a tag -->
-          <a href={t.link} class="text-center">
-            {@render toastContent(t)}
+          <a href={toastie.link} class="text-center">
+            {@render toastContent(toastie)}
           </a>
-        {:else if t.request}
+        {:else if toastie.request}
           <!-- Action is required so it should open a modal -->
-          <Dialog.Root
-            onOpenChange={(open) => handleDialogOpenChange(open, t.id)}
-          >
-            <Dialog.Trigger class="button">
-              {@render toastContent(t)}
-            </Dialog.Trigger>
-            <Request request={t.request} />
-          </Dialog.Root>
+          <RequestToast {toastie} />
         {:else}
           <!-- It's just a regular toast so we display the message -->
-          {@render toastContent(t)}
+          {@render toastContent(toastie)}
         {/if}
       </li>
     {/each}

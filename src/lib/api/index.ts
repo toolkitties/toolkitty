@@ -9,3 +9,4 @@ export * as topics from "./topics";
 export * as data from "./data";
 export * as streams from "./streams";
 export * as publish from "./publish";
+export * as identity from "./identity"

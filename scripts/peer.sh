@@ -19,6 +19,13 @@ tauri_json_config="{
   \"build\": {
     \"devUrl\": \"http://localhost:$TAURI_CLI_PORT\",
     \"beforeDevCommand\": \"VITE_DISABLE_HMR=1 npm run dev -- --port $TAURI_CLI_PORT\"
+  },
+  \"app\": {
+    \"windows\": [
+      {
+        \"title\": \"Toolkitty •ᴗ• peer $random_port\"
+      }
+    ]
   }
 }"
 

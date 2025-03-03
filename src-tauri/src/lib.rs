@@ -1,4 +1,5 @@
 mod app;
+mod blobs;
 mod messages;
 mod node;
 mod rpc;
@@ -8,7 +9,7 @@ use tauri::Builder;
 
 use crate::rpc::{
     ack, add_topic_log, init, public_key, publish, publish_ephemeral, replay, subscribe,
-    subscribe_ephemeral,
+    subscribe_ephemeral, upload_file,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -17,18 +18,26 @@ pub fn run() {
         .filter(|metadata| metadata.target().starts_with("toolkitty_lib"))
         .build();
 
-    Builder::default()
-        .setup(|app| {
-            #[cfg(not(test))]
-            {
-                let app_handle = app.handle().clone();
-                app::Service::run(app_handle);
-            }
+    #[allow(unused_mut)]
+    let mut builder = Builder::default();
 
+    #[cfg(not(test))]
+    {
+        builder = builder.setup(|app| {
+            let app_handle = app.handle().clone();
+            app::Service::run(app_handle);
             Ok(())
-        })
+        });
+    };
+
+    builder
+        .register_asynchronous_uri_scheme_protocol(
+            blobs::BLOBSTORE_URI_SCHEME,
+            blobs::blobstore_protocol,
+        )
         .plugin(logger)
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             init,
             ack,
@@ -38,7 +47,8 @@ pub fn run() {
             publish_ephemeral,
             replay,
             subscribe,
-            subscribe_ephemeral
+            subscribe_ephemeral,
+            upload_file,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

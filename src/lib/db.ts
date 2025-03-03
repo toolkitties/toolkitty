@@ -55,7 +55,7 @@ const db = new Dexie("Toolkitty") as Dexie & {
  */
 db.version(1).stores({
   accessRequests: "&id, calendarId",
-  accessResponses: "&id, calendarId",
+  accessResponses: "&id, calendarId, requestId",
   calendars: "&id, name, calendarId",
   spaces: "&id, calendarId",
   resources: "&id, calendarId",

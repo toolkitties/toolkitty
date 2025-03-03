@@ -10,8 +10,8 @@ use serde_json::Value;
 /// and `owner` fields.
 type StreamId = Hash;
 
-/// Conceptually a stream is a collection of logs, from one or many authors. The semantic meaning of the 
-/// collection is defined on the application level, it might be a single chat group containing many threads, 
+/// Conceptually a stream is a collection of logs, from one or many authors. The semantic meaning of the
+/// collection is defined on the application level, it might be a single chat group containing many threads,
 /// or a blog page with posts from many contributors.
 ///
 /// Crucially, the included logs can be from one or many authors, but the stream itself is "owned"
@@ -23,7 +23,7 @@ type StreamId = Hash;
 #[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Stream {
-    /// The hash of the first operation in the stream. 
+    /// The hash of the first operation in the stream.
     pub(crate) root_hash: StreamRootHash,
 
     /// The public key of the stream owner.
@@ -32,7 +32,7 @@ pub struct Stream {
 
 impl Stream {
     pub fn id(&self) -> StreamId {
-        let bytes = vec![*self.root_hash.0.as_bytes(), *self.owner.0.as_bytes()].concat();
+        let bytes = [*self.root_hash.0.as_bytes(), *self.owner.0.as_bytes()].concat();
         StreamId::new(&bytes)
     }
 }
@@ -118,10 +118,7 @@ impl TryFrom<Extensions> for LogId {
         let stream = Stream::try_from(extensions.clone())?;
         let log_path = extensions.log_path.clone();
 
-        Ok(Self {
-            stream,
-            log_path,
-        })
+        Ok(Self { stream, log_path })
     }
 }
 
@@ -152,11 +149,9 @@ pub struct Extensions {
 
 impl Extension<StreamRootHash> for Extensions {
     fn extract(header: &Header<Self>) -> Option<StreamRootHash> {
-        let Some(ref extensions) = header.extensions else {
-            return None;
-        };
+        let extensions = header.extensions.as_ref()?;
 
-        match extensions.stream_root_hash.clone() {
+        match extensions.stream_root_hash {
             Some(stream_root_hash) => Some(stream_root_hash),
             None => Some(header.hash().into()),
         }
@@ -165,11 +160,9 @@ impl Extension<StreamRootHash> for Extensions {
 
 impl Extension<StreamOwner> for Extensions {
     fn extract(header: &Header<Self>) -> Option<StreamOwner> {
-        let Some(ref extensions) = header.extensions else {
-            return None;
-        };
+        let extensions = header.extensions.as_ref()?;
 
-        match extensions.stream_owner.clone() {
+        match extensions.stream_owner {
             Some(stream_owner) => Some(stream_owner),
             None => Some(header.public_key.into()),
         }
@@ -186,9 +179,7 @@ impl Extension<Stream> for Extensions {
 
 impl Extension<LogPath> for Extensions {
     fn extract(header: &Header<Self>) -> Option<LogPath> {
-        let Some(ref extensions) = header.extensions else {
-            return None;
-        };
+        let extensions = header.extensions.as_ref()?;
 
         extensions.log_path.clone()
     }
@@ -198,10 +189,7 @@ impl Extension<LogId> for Extensions {
     fn extract(header: &Header<Self>) -> Option<LogId> {
         let stream = header.extension().expect("extract stream id extension");
         let log_path = header.extension();
-        Some(LogId {
-            stream,
-            log_path,
-        })
+        Some(LogId { stream, log_path })
     }
 }
 
