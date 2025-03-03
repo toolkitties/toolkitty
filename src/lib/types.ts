@@ -18,7 +18,6 @@ type StreamId = Hash;
  */
 type OperationId = Hash;
 
-
 /**
  * A topic which can be subscribed to on the network layer.
  */
@@ -34,9 +33,9 @@ type Stream = {
 };
 
 type LogId = {
-  stream: Stream,
-  logPath: LogPath
-}
+  stream: Stream;
+  logPath: LogPath;
+};
 
 /**
  * The path portion of a log id.
@@ -71,10 +70,7 @@ type Image = string;
  *
  * Read more here: https://v2.tauri.app/develop/calling-frontend/#channels
  */
-type ChannelMessage =
-  | StreamMessage
-  | EphemeralMessage
-  | SystemMessage;
+type ChannelMessage = StreamMessage | EphemeralMessage | SystemMessage;
 
 /**
  * ଘ(˵╹-╹)━☆•.,¸.•*
@@ -666,6 +662,6 @@ type Settings = {
 type CalendarId = Hash;
 
 type RequestEvent = {
-  type: 'resource_request' | 'access_request',
-  data: ResourceRequest | AccessRequest
-}
+  type: "resource_request" | "access_request";
+  data: ResourceRequest | AccessRequest;
+};
