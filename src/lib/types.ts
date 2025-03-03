@@ -251,11 +251,11 @@ type ApplicationEvent =
   | EventCreated
   | EventUpdated
   | EventDeleted
-  | BookingRequested
-  | BookingRequestAccepted
-  | BookingRequestRejected
-  | BookingRequestCancelled
-  | BookingRequestAcceptanceRevoked
+  | ResourceRequested
+  | ResourceRequestAccepted
+  | ResourceRequestRejected
+  | ResourceRequestCancelled
+  | ResourceRequestAcceptanceRevoked
   | UserRoleAssigned;
 
 /**
@@ -499,25 +499,26 @@ type EventDeleted = {
  * Requests and responses
  */
 
-type BookingRequested = {
-  type: "booking_requested";
+type ResourceRequested = {
+  type: "resource_requested";
   data: {
-    targetId: Hash;
+    type: "resource" | "space";
+    resourceId: Hash;
     eventId: Hash;
     message: string;
     timeSpan: TimeSpan;
   };
 };
 
-type BookingRequestAccepted = {
-  type: "booking_request_accepted";
+type ResourceRequestAccepted = {
+  type: "resource_request_accepted";
   data: {
     requestId: Hash;
   };
 };
 
-type BookingRequestRejected = {
-  type: "booking_request_rejected";
+type ResourceRequestRejected = {
+  type: "resource_request_rejected";
   data: {
     requestId: Hash;
   };
@@ -528,8 +529,8 @@ type BookingRequestRejected = {
  * request can be considered implicitly cancelled due to event deletion or other changes which may
  * impact existing requests.
  */
-type BookingRequestCancelled = {
-  type: "booking_request_cancelled";
+type ResourceRequestCancelled = {
+  type: "resource_request_cancelled";
   data: {
     requestId: Hash;
   };
@@ -540,8 +541,8 @@ type BookingRequestCancelled = {
  * request can be considered implicitly revoked due to resource deletion or other changes which may
  * impact existing requests.
  */
-type BookingRequestAcceptanceRevoked = {
-  type: "booking_request_acceptance_revoked";
+type ResourceRequestAcceptanceRevoked = {
+  type: "resource_request_acceptance_revoked";
   data: {
     requestAcceptanceId: Hash;
   };
@@ -630,7 +631,7 @@ type Resource = {
   booked: BookedTimeSpan[];
 } & ResourceFields;
 
-type BookingRequest = {
+type ResourceRequest = {
   id: Hash;
   calendarId: Hash;
   eventId: Hash;
@@ -639,12 +640,11 @@ type BookingRequest = {
   resourceType: ResourceType;
   message: string;
   timeSpan: TimeSpan;
-  responseId: Hash | null;
 };
 
 type ResourceType = "space" | "resource";
 
-type BookingResponse = {
+type ResourceResponse = {
   id: Hash;
   calendarId: Hash;
   requestId: Hash;
@@ -664,6 +664,6 @@ type Settings = {
 type CalendarId = Hash;
 
 type RequestEvent = {
-  type: 'booking_request' | 'access_request',
-  data: BookingRequest | AccessRequest
+  type: 'resource_request' | 'access_request',
+  data: ResourceRequest | AccessRequest
 }

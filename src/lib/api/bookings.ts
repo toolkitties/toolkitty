@@ -1,5 +1,6 @@
 import { db } from "$lib/db";
-import { publish } from ".";
+import { promiseResult } from "$lib/promiseMap";
+import { publish, resources, spaces } from ".";
 
 /**
  * Queries
@@ -8,7 +9,7 @@ import { publish } from ".";
 export async function findAllForAuthor(
   calendarId: Hash,
   requester: PublicKey,
-): Promise<BookingRequest[]> {
+): Promise<ResourceRequest[]> {
   return db.transaction("r", db.requests, db.responses, async () => {
     return await db.requests
       .where({
@@ -23,7 +24,7 @@ export async function findAllForAuthor(
 export async function findPendingForAuthor(
   calendarId: Hash,
   requester: PublicKey,
-): Promise<BookingRequest[]> {
+): Promise<ResourceRequest[]> {
   return db.transaction("r", db.requests, db.responses, async () => {
     return await db.requests
       .where({
@@ -37,7 +38,7 @@ export async function findPendingForAuthor(
 
 export async function findPendingForEvent(
   eventId: Hash,
-): Promise<BookingRequest[]> {
+): Promise<ResourceRequest[]> {
   return db.transaction("r", db.requests, db.responses, async () => {
     return await db.requests
       .where({
@@ -48,7 +49,7 @@ export async function findPendingForEvent(
   });
 }
 
-function isPending(request: BookingRequest): boolean {
+function isPending(request: ResourceRequest): boolean {
   const response = db.transaction("r", db.responses, async () => {
     await db.responses.get({ requestId: request.id });
   });
@@ -58,7 +59,7 @@ function isPending(request: BookingRequest): boolean {
 /**
  * Get one request by its ID
  */
-export async function findById(id: Hash): Promise<BookingRequest | undefined> {
+export async function findById(id: Hash): Promise<ResourceRequest | undefined> {
   //TODO: Return events from db
 
   // return test data.
@@ -67,15 +68,17 @@ export async function findById(id: Hash): Promise<BookingRequest | undefined> {
 
 export async function request(
   eventId: Hash,
-  targetId: Hash,
+  resourceId: Hash,
+  type: ResourceType,
   message: string,
   timeSpan: TimeSpan,
 ) {
   let event = await db.events.get(eventId);
-  const resourceRequested: BookingRequested = {
-    type: "booking_requested",
+  const resourceRequested: ResourceRequested = {
+    type: "resource_requested",
     data: {
-      targetId,
+      resourceId,
+      type,
       eventId,
       message,
       timeSpan,
@@ -87,13 +90,15 @@ export async function request(
     resourceRequested,
   );
 
+  await promiseResult(operationId);
+
   return operationId;
 }
 
 export async function accept(requestId: Hash) {
   let bookingRequest = await db.requests.get(requestId);
-  const bookingRequested: BookingRequestAccepted = {
-    type: "booking_request_accepted",
+  const bookingRequested: ResourceRequestAccepted = {
+    type: "resource_request_accepted",
     data: {
       requestId,
     },
@@ -103,14 +108,16 @@ export async function accept(requestId: Hash) {
     bookingRequest!.calendarId,
     bookingRequested,
   );
+
+  await promiseResult(operationId);
 
   return operationId;
 }
 
 export async function reject(requestId: Hash) {
   let bookingRequest = await db.requests.get(requestId);
-  const bookingRequested: BookingRequestRejected = {
-    type: "booking_request_rejected",
+  const bookingRequested: ResourceRequestRejected = {
+    type: "resource_request_rejected",
     data: {
       requestId,
     },
@@ -121,7 +128,68 @@ export async function reject(requestId: Hash) {
     bookingRequested,
   );
 
+  await promiseResult(operationId);
+
   return operationId;
 }
 
-//TODO: Add processor
+/*
+ * Processor
+ */
+
+export async function process(message: ApplicationMessage) {
+  const meta = message.meta;
+  const { data, type } = message.data;
+
+  switch (type) {
+    case "resource_requested":
+      return await onResourceRequested(meta, data);
+    case "resource_request_accepted":
+      return await onResourceRequestAccepted(meta, data);
+    case "resource_request_rejected":
+      return await onResourceRequestRejected(meta, data);
+  }
+}
+
+async function onResourceRequested(
+  meta: StreamMessageMeta,
+  data: ResourceRequested["data"],
+) {
+  const resourceRequest: ResourceRequest = {
+    id: meta.operationId,
+    calendarId: meta.stream.id,
+    eventId: data.eventId,
+    requester: meta.author,
+    resourceId: data.resourceId,
+    resourceType: data.type,
+    message: data.message,
+    timeSpan: data.timeSpan,
+  };
+  await db.requests.add(resourceRequest);
+}
+
+async function onResourceRequestAccepted(
+  meta: StreamMessageMeta,
+  data: ResourceRequestAccepted["data"],
+) {
+  const resourceResponse: ResourceResponse = {
+    id: meta.operationId,
+    calendarId: meta.stream.id,
+    requestId: data.requestId,
+    answer: "approve",
+  };
+  await db.responses.add(resourceResponse);
+}
+
+async function onResourceRequestRejected(
+  meta: StreamMessageMeta,
+  data: ResourceRequestRejected["data"],
+) {
+  const resourceResponse: ResourceResponse = {
+    id: meta.operationId,
+    calendarId: meta.stream.id,
+    requestId: data.requestId,
+    answer: "reject",
+  };
+  await db.responses.add(resourceResponse);
+}
