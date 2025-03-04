@@ -7,15 +7,16 @@ export const resourceSchema = z.object({
   contact: z.string().min(1, "Contact details are required"),
   linkText: z.string().optional(),
   linkUrl: z.string().url("Invalid URL").optional(),
-  alwaysAvailable: z.boolean(),
+  availability: z.union([
+    z.array(
+      z.object({
+        start: z.string(),
+        end: z.string(),
+      })
+    ),
+    z.literal("always")
+  ]).default([]),
   multiBookable: z.boolean(),
-  availability: z.array(
-    z.object({
-      date: z.string(),
-      startTime: z.string(),
-      endTime: z.string(),
-    })
-  ).optional(),
 });
 
 export type ResourceSchema = typeof resourceSchema;

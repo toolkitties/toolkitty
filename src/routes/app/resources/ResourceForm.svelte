@@ -2,6 +2,7 @@
   import type { SuperValidated, Infer } from "sveltekit-superforms";
   import type { ResourceSchema } from "$lib/schemas";
   import { superForm, setMessage, setError } from "sveltekit-superforms";
+  import SuperDebug from "sveltekit-superforms";
   import AvailabilitySetter from "$lib/components/AvailabilitySetter.svelte";
   import { resources } from "$lib/api";
   import { parseResourceFormData } from "$lib/utils";
@@ -9,16 +10,21 @@
   import { zod } from "sveltekit-superforms/adapters";
 
   let { data }: { data: SuperValidated<Infer<ResourceSchema>> } = $props();
+  let alwaysAvailable = $state(false);
+
+  $effect(() => {
+    if (alwaysAvailable) {
+      $form.availability = "always";
+    }
+  });
 
   let availability: { date: string; startTime: string; endTime: string }[] =
     $state([]);
-  let alwaysAvailable = $state(false);
-  let multiBookable = $state(false);
 
   function updateAvailability(
     newAvailability: { date: string; startTime: string; endTime: string }[],
   ) {
-    availability = newAvailability;
+    $form.availability = newAvailability;
   }
 
   const { form, errors, message, constraints, enhance } = superForm(data, {
@@ -28,10 +34,10 @@
     async onUpdate({ form }) {
       if (form.data.id) {
         console.log("create resource");
-        // await resources.create(form.data)
+        // await resources.create(form.data);
       } else {
         console.log("update resource");
-        // await resources.update(form.data)
+        // await resources.update(form.data);
       }
     },
   });
@@ -83,21 +89,15 @@
   // }
 </script>
 
+<SuperDebug data={{ $form, $errors }} />
 <form method="POST" use:enhance>
   <label for="name">Resource Name*</label>
-  <input
-    type="text"
-    name="name"
-    required
-    aria-invalid={$errors.name ? "true" : undefined}
-    bind:value={$form.name}
-  />
+  <input type="text" name="name" bind:value={$form.name} class="" />
   {#if $errors.name}<span class="invalid">{$errors.name}</span>{/if}
 
   <label for="description">Description*</label>
   <textarea
     name="description"
-    required
     aria-invalid={$errors.description ? "true" : undefined}
     bind:value={$form.description}
   ></textarea>
@@ -108,7 +108,6 @@
   <input
     type="text"
     name="contact"
-    required
     aria-invalid={$errors.contact ? "true" : undefined}
     bind:value={$form.contact}
   />
@@ -141,7 +140,7 @@
   </fieldset>
 
   <p>Resource availability</p>
-  {#if !$form.alwaysAvailable}
+  {#if !alwaysAvailable}
     <AvailabilitySetter
       {availability}
       onUpdateAvailability={updateAvailability}
@@ -152,35 +151,22 @@
     <input
       type="checkbox"
       name="alwaysAvailable"
-      bind:checked={$form.alwaysAvailable}
+      bind:checked={alwaysAvailable}
     />
     Always Available
   </label>
 
-  <p>Can this resource have multiple bookings at the same time?</p>
   <fieldset>
-    <label for="multi-bookable">Yes</label>
+    <label for="multiBookable"
+      >Can this resource have multiple bookings at the same time?
+    </label>
     <input
-      type="radio"
+      id="multiBookable"
+      type="checkbox"
       name="multiBookable"
-      value="true"
-      bind:group={$form.multiBookable}
-    />
-    <label for="multi-bookable">No</label>
-    <input
-      type="radio"
-      name="multiBookable"
-      value="false"
-      bind:group={$form.multiBookable}
-      checked
+      bind:checked={$form.multiBookable}
     />
   </fieldset>
 
-  <!-- {#if formType === "create"}
-    <button type="submit">Create Resource</button>
-  {/if}
-  {#if formType === "edit"}
-    <button type="submit">Update Resource</button>
-  {/if} -->
   <button type="submit">{$form.id ? "Update" : "Create"}</button>
 </form>
