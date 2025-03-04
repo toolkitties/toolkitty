@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { resources } from "$lib/api";
-  import ResourceForm from "$lib/components/SpaceForm.svelte";
+  import ResourceForm from "../../ResourceForm.svelte";
   import { toast } from "$lib/toast.svelte";
   import type { PageProps } from "./$types";
 
@@ -19,8 +19,5 @@
   };
 </script>
 
-<br />
-<br />
-<br />
-<ResourceForm space={data.resource} formType="edit" />
+<ResourceForm data={data.form} />
 <button onclick={() => handleDelete()}>Delete</button>
