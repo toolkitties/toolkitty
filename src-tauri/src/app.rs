@@ -117,10 +117,14 @@ impl Service {
     #[cfg(not(test))]
     pub fn run(app_handle: AppHandle) {
         tauri::async_runtime::spawn(async move {
-            let blobs_root_dir = app_handle
+            let blobs_root_dir = if cfg!(dev) {
+                tempfile::tempdir().expect("temp dir").into_path()
+            } else {
+                app_handle
                 .path()
                 .app_data_dir()
-                .expect("app data directory");
+                .expect("app data directory")
+            };
             let mut app = Self::build(blobs_root_dir).await.expect("build stream");
             let rpc = Rpc {
                 context: app.context.clone(),
