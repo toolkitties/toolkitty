@@ -20,7 +20,8 @@
     "@tauri-apps/plugin-log": "^2.2.1",
     "@tauri-apps/plugin-shell": "^2",
     "bits-ui": "^0.21.16",
-    "dexie": "^4.0.10"
+    "dexie": "^4.0.10",
+    "superforms": "^0.0.1"
   },
   "devDependencies": {
     "@iconify/svelte": "^4.0.2",
