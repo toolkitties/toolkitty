@@ -2,51 +2,44 @@
 
 import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
-import { publish } from ".";
-import { getActiveCalendarId } from "./calendars";
-import { publicKey } from "./identity";
+import { events, publish } from ".";
 
 /**
  * Queries
  */
 
 /**
- * Get events that are associated with the currently active calendar
+ * Get events that are associated with the passed calendar
  */
-export async function findMany(): Promise<CalendarEvent[]> {
-  return await db.events.toArray();
+export function findMany(calendarId: Hash): Promise<CalendarEvent[]> {
+  return db.events.where({ calendarId }).toArray();
 }
 
 /**
- * Get all events that I am the owner of.
+ * Get all calendar events owned by the passed public key.
  */
-export async function findMine(): Promise<CalendarEvent[]> {
-  let myPublicKey = await publicKey();
-  let events = (await db.events.toArray()).filter(
-    (resource) => resource.ownerId == myPublicKey,
-  );
-  return events;
+export function findByOwner(
+  calendarId: Hash,
+  ownerId: PublicKey,
+): Promise<CalendarEvent[]> {
+  return db.events.where({ ownerId, calendarId }).toArray();
 }
 
 /**
  * Get one event via its id
  */
-export async function findById(id: Hash): Promise<CalendarEvent | undefined> {
-  let events = (await db.events.toArray()).filter((events) => events.id == id);
-
-  if (events.length == 0) {
-    return;
-  }
-
-  return events[0];
+export function findById(id: Hash): Promise<CalendarEvent | undefined> {
+  return db.events.get({ id });
 }
 
 /**
  * Commands
  */
 
-export async function create(fields: EventFields) {
-  const calendarId = await getActiveCalendarId();
+/**
+ * Create a calendar event.
+ */
+export async function create(calendarId: Hash, fields: EventFields) {
   let eventCreated: EventCreated = {
     type: "event_created",
     data: {
@@ -63,8 +56,11 @@ export async function create(fields: EventFields) {
   return operationId;
 }
 
+/**
+ * Update a calendar event.
+ */
 export async function update(eventId: Hash, fields: EventFields) {
-  const calendarId = await getActiveCalendarId();
+  const event = await events.findById(eventId);
   let eventUpdated: EventUpdated = {
     type: "event_updated",
     data: {
@@ -73,7 +69,7 @@ export async function update(eventId: Hash, fields: EventFields) {
     },
   };
   const [operationId, streamId] = await publish.toCalendar(
-    calendarId!,
+    event!.calendarId,
     eventUpdated,
   );
 
@@ -82,8 +78,11 @@ export async function update(eventId: Hash, fields: EventFields) {
   return operationId;
 }
 
+/**
+ * Delete a calendar event.
+ */
 async function deleteEvent(eventId: Hash) {
-  const calendarId = await getActiveCalendarId();
+  const event = await events.findById(eventId);
   let eventDeleted: EventDeleted = {
     type: "event_deleted",
     data: {
@@ -91,7 +90,7 @@ async function deleteEvent(eventId: Hash) {
     },
   };
   const [operationId, streamId] = await publish.toCalendar(
-    calendarId!,
+    event!.calendarId,
     eventDeleted,
   );
 
@@ -102,6 +101,10 @@ async function deleteEvent(eventId: Hash) {
 
 //TODO: Move to class so we don't have to export as an alias
 export { deleteEvent as delete };
+
+/**
+ * Processors
+ */
 
 export async function process(message: ApplicationMessage) {
   const meta = message.meta;
