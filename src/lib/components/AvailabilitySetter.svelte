@@ -16,27 +16,27 @@
 
   export const availableDates = writable<Set<string>>(new Set());
 
-  let dateSelected = false;
-  let currentlySelectedDate: DateValue | null = null;
+  let value: DateValue[] | undefined;
+  let dateSelected = $derived(!value || Array.isArray(value) ? true : false);
 
-  const handleDateSelect = (value: DateValue | DateValue[] | undefined) => {
-    if (!value || Array.isArray(value)) {
-      dateSelected = false;
-      currentlySelectedDate = null;
-      return;
-    }
+  // const handleDateSelect = (value: DateValue | DateValue[] | undefined) => {
+  //   if (!value || Array.isArray(value)) {
+  //     dateSelected = false;
+  //     currentlySelectedDate = null;
+  //     return;
+  //   }
 
-    dateSelected = true;
-    currentlySelectedDate = value;
-  };
+  //   dateSelected = true;
+  //   currentlySelectedDate = value;
+  // };
 
   const handleAddAvailability = () => {
-    if (!currentlySelectedDate) {
+    if (!value) {
       alert("Please select a date first.");
       return;
     }
 
-    const selectedDate = currentlySelectedDate.toString();
+    const selectedDate = value.toString();
     const startTimeInput = document.querySelector<HTMLInputElement>(
       'input[name="availability-start-time"]',
     );
@@ -91,7 +91,7 @@
   };
 </script>
 
-<Calendar.Root onValueChange={handleDateSelect}>
+<Calendar.Root bind:value>
   {#snippet children({ months, weekdays })}
     <Calendar.Header class="flex flex-row">
       <Calendar.PrevButton class="w-8 mr-2">←</Calendar.PrevButton>
@@ -138,11 +138,10 @@
   {/snippet}
 </Calendar.Root>
 
-{#if dateSelected && currentlySelectedDate}
-  {#if !$availableDates.has(currentlySelectedDate.toString())}
+{#if dateSelected && value}
+  {#if !$availableDates.has(value.toString())}
     <p>
-      What time is the space available on {currentlySelectedDate?.toString() ||
-        ""}?
+      What time is the space available on {value?.toString() || ""}?
     </p>
     <div class="flex flex-row space-x-2">
       <label for="availability-start-time">Start *</label>
@@ -157,7 +156,7 @@
     <h3>Current Availability:</h3>
     <ul>
       {#each availability as entry, index}
-        {#if entry.date === currentlySelectedDate.toString()}
+        {#if entry.date === value.toString()}
           <li>
             <span>{entry.startTime} - {entry.endTime}</span>
             <button on:click={() => handleRemoveAvailability(index)}>
