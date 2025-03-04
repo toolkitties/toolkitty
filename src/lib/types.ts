@@ -18,7 +18,6 @@ type StreamId = Hash;
  */
 type OperationId = Hash;
 
-
 /**
  * A topic which can be subscribed to on the network layer.
  */
@@ -34,9 +33,9 @@ type Stream = {
 };
 
 type LogId = {
-  stream: Stream,
-  logPath: LogPath
-}
+  stream: Stream;
+  logPath: LogPath;
+};
 
 /**
  * The path portion of a log id.
@@ -71,10 +70,7 @@ type Image = string;
  *
  * Read more here: https://v2.tauri.app/develop/calling-frontend/#channels
  */
-type ChannelMessage =
-  | StreamMessage
-  | EphemeralMessage
-  | SystemMessage;
+type ChannelMessage = StreamMessage | EphemeralMessage | SystemMessage;
 
 /**
  * ଘ(˵╹-╹)━☆•.,¸.•*
@@ -251,16 +247,11 @@ type ApplicationEvent =
   | EventCreated
   | EventUpdated
   | EventDeleted
-  | SpaceRequested
-  | SpaceRequestAccepted
-  | SpaceRequestRejected
-  | SpaceRequestCancelled
-  | SpaceRequestAcceptanceRevoked
-  | ResourceRequested
-  | ResourceRequestAccepted
-  | ResourceRequestRejected
-  | ResourceRequestCancelled
-  | ResourceRequestAcceptanceRevoked
+  | BookingRequested
+  | BookingRequestAccepted
+  | BookingRequestRejected
+  | BookingRequestCancelled
+  | BookingRequestAcceptanceRevoked
   | UserRoleAssigned;
 
 /**
@@ -268,7 +259,7 @@ type ApplicationEvent =
  */
 
 type SpaceRequestId = Hash;
-type ResourceRequestId = Hash;
+type ReservationRequestId = Hash;
 
 type Link = {
   type: "ticket" | "custom";
@@ -340,7 +331,7 @@ type EventFields = {
   endDate: Date; // allocated time of a space
   publicStartDate?: Date; // public facing
   publicEndDate?: Date; // public facing
-  resources: ResourceRequestId[];
+  resources: ReservationRequestId[];
   links: Link[];
   images: Image[];
 };
@@ -504,57 +495,10 @@ type EventDeleted = {
  * Requests and responses
  */
 
-type SpaceRequested = {
-  type: "space_requested";
+type BookingRequested = {
+  type: "booking_requested";
   data: {
-    eventId: Hash;
-    spaceId: Hash;
-    message: string;
-    timePeriod: TimeSpan[];
-  };
-};
-
-type SpaceRequestAccepted = {
-  type: "space_request_accepted";
-  data: {
-    requestId: Hash;
-  };
-};
-
-type SpaceRequestRejected = {
-  type: "space_request_rejected";
-  data: {
-    requestId: Hash;
-  };
-};
-
-/**
- * Message for explicitly cancelling a previously issued space request. Should not be used when a
- * request can be considered implicitly cancelled due to event deletion or other changes which may
- * impact existing requests.
- */
-type SpaceRequestCancelled = {
-  type: "space_request_cancelled";
-  data: {
-    requestId: Hash;
-  };
-};
-
-/**
- * Message for explicitly revoking a previously accepted space request. Should not be used when a
- * request can be considered implicitly revoked due to space deletion or other changes which may
- * impact existing requests.
- */
-type SpaceRequestAcceptanceRevoked = {
-  type: "space_request_acceptance_revoked";
-  data: {
-    requestAcceptanceId: Hash;
-  };
-};
-
-type ResourceRequested = {
-  type: "resource_requested";
-  data: {
+    type: "resource" | "space";
     resourceId: Hash;
     eventId: Hash;
     message: string;
@@ -562,15 +506,15 @@ type ResourceRequested = {
   };
 };
 
-type ResourceRequestAccepted = {
-  type: "resource_request_accepted";
+type BookingRequestAccepted = {
+  type: "booking_request_accepted";
   data: {
     requestId: Hash;
   };
 };
 
-type ResourceRequestRejected = {
-  type: "resource_request_rejected";
+type BookingRequestRejected = {
+  type: "booking_request_rejected";
   data: {
     requestId: Hash;
   };
@@ -581,8 +525,8 @@ type ResourceRequestRejected = {
  * request can be considered implicitly cancelled due to event deletion or other changes which may
  * impact existing requests.
  */
-type ResourceRequestCancelled = {
-  type: "resource_request_cancelled";
+type BookingRequestCancelled = {
+  type: "booking_request_cancelled";
   data: {
     requestId: Hash;
   };
@@ -593,8 +537,8 @@ type ResourceRequestCancelled = {
  * request can be considered implicitly revoked due to resource deletion or other changes which may
  * impact existing requests.
  */
-type ResourceRequestAcceptanceRevoked = {
-  type: "resource_request_acceptance_revoked";
+type BookingRequestAcceptanceRevoked = {
+  type: "booking_request_acceptance_revoked";
   data: {
     requestAcceptanceId: Hash;
   };
@@ -676,22 +620,6 @@ type Space = {
   booked: BookedTimeSpan[];
 } & SpaceFields;
 
-type SpaceRequest = {
-  id: Hash;
-  spaceId: Hash;
-  eventId: Hash;
-  message: string;
-  timeSpan: TimeSpan;
-  response: SpaceResponse | null;
-};
-
-type SpaceResponse = {
-  id: Hash;
-  calendarId: Hash;
-  request: SpaceRequest;
-  answer: Answer;
-};
-
 type Resource = {
   id: Hash;
   calendarId: Hash;
@@ -699,19 +627,25 @@ type Resource = {
   booked: BookedTimeSpan[];
 } & ResourceFields;
 
-type ResourceRequest = {
-  id: Hash;
-  resourceId: Hash;
-  eventId: Hash;
-  message: string;
-  timeSpan: TimeSpan;
-  response: ResourceResponse | null;
-};
-
-type ResourceResponse = {
+type BookingRequest = {
   id: Hash;
   calendarId: Hash;
-  request: ResourceRequest;
+  eventId: Hash;
+  requester: PublicKey;
+  resourceId: Hash;
+  resourceType: ResourceType;
+  message: string;
+  timeSpan: TimeSpan;
+};
+
+type ResourceType = "space" | "resource";
+
+type BookingResponse = {
+  id: Hash;
+  calendarId: Hash;
+  eventId: Hash;
+  requestId: Hash;
+  responder: PublicKey;
   answer: Answer;
 };
 
@@ -728,6 +662,12 @@ type Settings = {
 type CalendarId = Hash;
 
 type RequestEvent = {
-  type: 'space_request' | 'resource_request' | 'access_request',
-  data: SpaceRequest | ResourceRequest | AccessRequest
-}
+  type: "booking_request" | "access_request";
+  data: BookingRequest | AccessRequest;
+};
+
+type BookingQueryFilter = {
+  eventId?: Hash;
+  requester?: PublicKey;
+  resourceType?: ResourceType;
+};
