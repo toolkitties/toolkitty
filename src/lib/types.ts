@@ -496,7 +496,7 @@ type EventDeleted = {
  */
 
 type BookingRequested = {
-  type: "resource_requested";
+  type: "booking_requested";
   data: {
     type: "resource" | "space";
     resourceId: Hash;
@@ -507,14 +507,14 @@ type BookingRequested = {
 };
 
 type BookingRequestAccepted = {
-  type: "resource_request_accepted";
+  type: "booking_request_accepted";
   data: {
     requestId: Hash;
   };
 };
 
 type BookingRequestRejected = {
-  type: "resource_request_rejected";
+  type: "booking_request_rejected";
   data: {
     requestId: Hash;
   };
@@ -526,7 +526,7 @@ type BookingRequestRejected = {
  * impact existing requests.
  */
 type BookingRequestCancelled = {
-  type: "resource_request_cancelled";
+  type: "booking_request_cancelled";
   data: {
     requestId: Hash;
   };
@@ -538,7 +538,7 @@ type BookingRequestCancelled = {
  * impact existing requests.
  */
 type BookingRequestAcceptanceRevoked = {
-  type: "resource_request_acceptance_revoked";
+  type: "booking_request_acceptance_revoked";
   data: {
     requestAcceptanceId: Hash;
   };
@@ -662,7 +662,7 @@ type Settings = {
 type CalendarId = Hash;
 
 type RequestEvent = {
-  type: "resource_request" | "access_request";
+  type: "booking_request" | "access_request";
   data: BookingRequest | AccessRequest;
 };
 
