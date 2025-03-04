@@ -9,28 +9,37 @@ import { publish } from ".";
 /**
  * Search the database for any booking requests matching the passed filter object.
  */
-export function findAll(filter: BookingQueryFilter): Promise<BookingRequest[]> {
-  return db.bookingRequests.where(filter).toArray();
+export function findAll(
+  calendarId: Hash,
+  filter: BookingQueryFilter,
+): Promise<BookingRequest[]> {
+  return db.bookingRequests
+    .where({
+      calendarId,
+      ...filter,
+    })
+    .toArray();
 }
 
 /**
  * Search the database for any pending booking requests matching the passed filter object.
  */
 export async function findPending(
+  calendarId: Hash,
   filter: BookingQueryFilter,
 ): Promise<BookingRequest[]> {
-  let responsesFilter: { [key: string]: any } = {
+  let responsesFilter = {
     answer: "approve",
+    calendarId,
   };
-
-  if (filter.calendarId) {
-    responsesFilter.calendarId = filter.calendarId;
-  }
 
   const approvals = await db.bookingResponses.where(responsesFilter).toArray();
 
   return db.bookingRequests
-    .where(filter)
+    .where({
+      calendarId,
+      ...filter,
+    })
     .filter((request) => isPending(request, approvals))
     .toArray();
 }

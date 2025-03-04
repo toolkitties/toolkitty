@@ -667,7 +667,6 @@ type RequestEvent = {
 };
 
 type BookingQueryFilter = {
-  calendarId?: Hash;
   eventId?: Hash;
   requester?: PublicKey;
   resourceType?: ResourceType;
