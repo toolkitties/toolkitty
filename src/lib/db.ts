@@ -32,12 +32,12 @@ const db = new Dexie("CalendarDatabase") as Dexie & {
     CalendarEvent,
     "id" // primary key
   >;
-  requests: EntityTable<
-    ResourceRequest,
+  bookingRequests: EntityTable<
+    BookingRequest,
     "id" // primary key
   >;
-  responses: EntityTable<
-    ResourceResponse,
+  bookingResponses: EntityTable<
+    BookingResponse,
     "id" // primary key
   >;
   streams: EntityTable<
@@ -68,8 +68,8 @@ db.version(1).stores({
   spaces: "&id, calendarId",
   resources: "&id, calendarId",
   events: "&id, name, date, calendarId",
-  requests: "&id, eventId, calendarId",
-  responses: "&id, eventId, requestId, calendarId, answer",
+  bookingRequests: "&id, eventId, calendarId",
+  bookingResponses: "&id, eventId, requestId, calendarId, answer",
   streams: "&id",
   settings: "&name",
 });

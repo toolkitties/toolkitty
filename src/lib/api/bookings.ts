@@ -6,15 +6,13 @@ import { publish } from ".";
  * Queries
  */
 
-export function findAll(
-  filter: BookingQueryFilter,
-): Promise<ResourceRequest[]> {
-  return db.requests.where(filter).toArray();
+export function findAll(filter: BookingQueryFilter): Promise<BookingRequest[]> {
+  return db.bookingRequests.where(filter).toArray();
 }
 
 export async function findPending(
   filter: BookingQueryFilter,
-): Promise<ResourceRequest[]> {
+): Promise<BookingRequest[]> {
   let responsesFilter: { [key: string]: any } = {
     answer: "approve",
   };
@@ -23,17 +21,17 @@ export async function findPending(
     responsesFilter.calendarId = filter.calendarId;
   }
 
-  const approvals = await db.responses.where(responsesFilter).toArray();
+  const approvals = await db.bookingResponses.where(responsesFilter).toArray();
 
-  return db.requests
+  return db.bookingRequests
     .where(filter)
     .filter((request) => isPending(request, approvals))
     .toArray();
 }
 
 function isPending(
-  request: ResourceRequest,
-  approvals: ResourceResponse[],
+  request: BookingRequest,
+  approvals: BookingResponse[],
 ): boolean {
   return (
     approvals.find((response) => {
@@ -50,7 +48,7 @@ export async function request(
   timeSpan: TimeSpan,
 ) {
   let event = await db.events.get(eventId);
-  const resourceRequested: ResourceRequested = {
+  const resourceRequested: BookingRequested = {
     type: "resource_requested",
     data: {
       resourceId,
@@ -72,8 +70,8 @@ export async function request(
 }
 
 export async function accept(requestId: Hash) {
-  let bookingRequest = await db.requests.get(requestId);
-  const bookingRequested: ResourceRequestAccepted = {
+  let bookingRequest = await db.bookingRequests.get(requestId);
+  const bookingRequested: BookingRequestAccepted = {
     type: "resource_request_accepted",
     data: {
       requestId,
@@ -91,8 +89,8 @@ export async function accept(requestId: Hash) {
 }
 
 export async function reject(requestId: Hash) {
-  let bookingRequest = await db.requests.get(requestId);
-  const bookingRequested: ResourceRequestRejected = {
+  let bookingRequest = await db.bookingRequests.get(requestId);
+  const bookingRequested: BookingRequestRejected = {
     type: "resource_request_rejected",
     data: {
       requestId,
@@ -119,19 +117,19 @@ export async function process(message: ApplicationMessage) {
 
   switch (type) {
     case "resource_requested":
-      return await onResourceRequested(meta, data);
+      return await onBookingRequested(meta, data);
     case "resource_request_accepted":
-      return await onResourceRequestAccepted(meta, data);
+      return await onBookingRequestAccepted(meta, data);
     case "resource_request_rejected":
-      return await onResourceRequestRejected(meta, data);
+      return await onBookingRequestRejected(meta, data);
   }
 }
 
-async function onResourceRequested(
+async function onBookingRequested(
   meta: StreamMessageMeta,
-  data: ResourceRequested["data"],
+  data: BookingRequested["data"],
 ) {
-  const resourceRequest: ResourceRequest = {
+  const resourceRequest: BookingRequest = {
     id: meta.operationId,
     calendarId: meta.stream.id,
     eventId: data.eventId,
@@ -141,20 +139,20 @@ async function onResourceRequested(
     message: data.message,
     timeSpan: data.timeSpan,
   };
-  await db.requests.add(resourceRequest);
+  await db.bookingRequests.add(resourceRequest);
 }
 
-async function onResourceRequestAccepted(
+async function onBookingRequestAccepted(
   meta: StreamMessageMeta,
-  data: ResourceRequestAccepted["data"],
+  data: BookingRequestAccepted["data"],
 ) {
-  const resourceRequest = await db.requests.get(data.requestId);
+  const resourceRequest = await db.bookingRequests.get(data.requestId);
 
   if (!resourceRequest) {
     throw new Error("resource request does not exist");
   }
 
-  const resourceResponse: ResourceResponse = {
+  const resourceResponse: BookingResponse = {
     id: meta.operationId,
     calendarId: meta.stream.id,
     eventId: resourceRequest.eventId,
@@ -162,20 +160,20 @@ async function onResourceRequestAccepted(
     requestId: data.requestId,
     answer: "approve",
   };
-  await db.responses.add(resourceResponse);
+  await db.bookingResponses.add(resourceResponse);
 }
 
-async function onResourceRequestRejected(
+async function onBookingRequestRejected(
   meta: StreamMessageMeta,
-  data: ResourceRequestRejected["data"],
+  data: BookingRequestRejected["data"],
 ) {
-  const resourceRequest = await db.requests.get(data.requestId);
+  const resourceRequest = await db.bookingRequests.get(data.requestId);
 
   if (!resourceRequest) {
     throw new Error("resource request does not exist");
   }
 
-  const resourceResponse: ResourceResponse = {
+  const resourceResponse: BookingResponse = {
     id: meta.operationId,
     calendarId: meta.stream.id,
     eventId: resourceRequest.eventId,
@@ -183,5 +181,5 @@ async function onResourceRequestRejected(
     requestId: data.requestId,
     answer: "reject",
   };
-  await db.responses.add(resourceResponse);
+  await db.bookingResponses.add(resourceResponse);
 }
