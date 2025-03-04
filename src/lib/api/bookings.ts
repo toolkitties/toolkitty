@@ -6,10 +6,16 @@ import { publish } from ".";
  * Queries
  */
 
+/**
+ * Search the database for any booking requests matching the passed filter object.
+ */
 export function findAll(filter: BookingQueryFilter): Promise<BookingRequest[]> {
   return db.bookingRequests.where(filter).toArray();
 }
 
+/**
+ * Search the database for any pending booking requests matching the passed filter object.
+ */
 export async function findPending(
   filter: BookingQueryFilter,
 ): Promise<BookingRequest[]> {
@@ -40,6 +46,9 @@ function isPending(
   );
 }
 
+/**
+ * Issue a booking request.
+ */
 export async function request(
   eventId: Hash,
   resourceId: Hash,
@@ -69,6 +78,9 @@ export async function request(
   return operationId;
 }
 
+/**
+ * Accept a booking request.
+ */
 export async function accept(requestId: Hash) {
   let bookingRequest = await db.bookingRequests.get(requestId);
   const bookingRequested: BookingRequestAccepted = {
@@ -88,6 +100,9 @@ export async function accept(requestId: Hash) {
   return operationId;
 }
 
+/**
+ * Reject a booking request.
+ */
 export async function reject(requestId: Hash) {
   let bookingRequest = await db.bookingRequests.get(requestId);
   const bookingRequested: BookingRequestRejected = {
