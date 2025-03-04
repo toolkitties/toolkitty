@@ -164,14 +164,14 @@ export const bookingTestMessages: ChannelMessage[] = [
   },
   {
     meta: {
-      operationId: "resource_request_001",
+      operationId: "booking_request_001",
       author: PUBLIC_KEY,
       stream: STREAM,
       logPath: LOG_PATH,
     },
     event: "application",
     data: {
-      type: "resource_requested",
+      type: "booking_requested",
       data: {
         type: "resource",
         resourceId: "resource_001",
@@ -186,14 +186,14 @@ export const bookingTestMessages: ChannelMessage[] = [
   },
   {
     meta: {
-      operationId: "resource_request_002",
+      operationId: "booking_request_002",
       author: PUBLIC_KEY,
       stream: STREAM,
       logPath: LOG_PATH,
     },
     event: "application",
     data: {
-      type: "resource_requested",
+      type: "booking_requested",
       data: {
         type: "space",
         resourceId: "space_001",

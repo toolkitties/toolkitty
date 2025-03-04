@@ -28,16 +28,16 @@ test("processes resource request and response messages", async () => {
 
   let requestResponse: ApplicationMessage = {
     meta: {
-      operationId: "resource_request_response_001",
+      operationId: "booking_request_response_001",
       author: PUBLIC_KEY,
       stream: STREAM,
       logPath: LOG_PATH,
     },
     event: "application",
     data: {
-      type: "resource_request_accepted",
+      type: "booking_request_accepted",
       data: {
-        requestId: "resource_request_001",
+        requestId: "booking_request_001",
       },
     },
   };
@@ -54,16 +54,16 @@ test("processes resource request and response messages", async () => {
 
   requestResponse = {
     meta: {
-      operationId: "resource_request_response_002",
+      operationId: "booking_request_response_002",
       author: PUBLIC_KEY,
       stream: STREAM,
       logPath: LOG_PATH,
     },
     event: "application",
     data: {
-      type: "resource_request_accepted",
+      type: "booking_request_accepted",
       data: {
-        requestId: "resource_request_002",
+        requestId: "booking_request_002",
       },
     },
   };
