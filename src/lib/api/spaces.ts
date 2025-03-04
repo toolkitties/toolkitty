@@ -1,7 +1,5 @@
 import { db } from "$lib/db";
-import { publicKey } from "./identity";
-import { publish } from ".";
-import { getActiveCalendarId } from "./calendars";
+import { publish, spaces } from ".";
 import { promiseResult } from "$lib/promiseMap";
 
 /**
@@ -9,43 +7,37 @@ import { promiseResult } from "$lib/promiseMap";
  */
 
 /**
- * Get spaces that are associated with the currently active calendar
+ * Get spaces that are associated with the passed calendar
  */
-export async function findMany(): Promise<Space[]> {
-  const spaces = await db.spaces.toArray();
-  return spaces;
+export function findMany(calendarId: Hash): Promise<Space[]> {
+  return db.spaces.where({ calendarId }).toArray();
 }
 
 /**
- * Get all spaces that I am the owner of.
+ * Get all calendar spaces that are owned by the passed public key.
  */
-export async function findMine(): Promise<Space[]> {
-  const myPublicKey = await publicKey();
-  const spaces = (await db.spaces.toArray()).filter(
-    (space) => space.ownerId == myPublicKey,
-  );
-  return spaces;
+export function findByOwner(
+  calendarId: Hash,
+  ownerId: PublicKey,
+): Promise<Space[]> {
+  return db.spaces.where({ calendarId, ownerId }).toArray();
 }
 
 /**
- * Get one event by its ID
+ * Get one event by its ID.
  */
-export async function findById(id: Hash): Promise<Space | undefined> {
-  const space = (await db.spaces.toArray()).filter((space) => space.id == id);
-
-  if (space.length == 0) {
-    return;
-  }
-
-  return space[0];
+export function findById(id: Hash): Promise<Space | undefined> {
+  return db.spaces.get({ id });
 }
 
 /**
  * Commands
  */
 
-export async function create(fields: SpaceFields): Promise<Hash> {
-  const calendarId = await getActiveCalendarId();
+/**
+ * Create a calendar space.
+ */
+export async function create(calendarId: Hash, fields: SpaceFields): Promise<Hash> {
   const spaceCreated: SpaceCreated = {
     type: "space_created",
     data: {
@@ -54,7 +46,7 @@ export async function create(fields: SpaceFields): Promise<Hash> {
   };
 
   const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
-    calendarId!,
+    calendarId,
     spaceCreated,
   );
 
@@ -63,11 +55,14 @@ export async function create(fields: SpaceFields): Promise<Hash> {
   return operationId;
 }
 
+/**
+ * Update a calendar space.
+ */
 export async function update(
   spaceId: Hash,
   fields: SpaceFields,
 ): Promise<Hash> {
-  const calendarId = await getActiveCalendarId();
+  const space = await spaces.findById(spaceId);
   const spaceUpdated: SpaceUpdated = {
     type: "space_updated",
     data: {
@@ -76,7 +71,7 @@ export async function update(
     },
   };
   const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
-    calendarId!,
+    space!.calendarId,
     spaceUpdated,
   );
 
@@ -85,8 +80,11 @@ export async function update(
   return operationId;
 }
 
+/**
+ * Delete a calendar space.
+ */
 export async function deleteSpace(spaceId: Hash): Promise<Hash> {
-  const calendarId = await getActiveCalendarId();
+  const space = await spaces.findById(spaceId);
   const spaceDeleted: SpaceDeleted = {
     type: "space_deleted",
     data: {
@@ -95,7 +93,7 @@ export async function deleteSpace(spaceId: Hash): Promise<Hash> {
   };
 
   const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
-    calendarId!,
+    space!.calendarId,
     spaceDeleted,
   );
 
@@ -138,6 +136,7 @@ async function onSpaceCreated(
     description,
     contact,
     link,
+    messageForRequesters,
     images,
     availability,
     multiBookable,
@@ -156,6 +155,7 @@ async function onSpaceCreated(
     description,
     contact,
     link,
+    messageForRequesters,
     images,
     availability,
     multiBookable,

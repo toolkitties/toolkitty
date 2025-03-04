@@ -16,7 +16,7 @@ export async function seedData() {
 
   await setActiveCalendar(calendarId);
 
-  const spaceOneId = await spaces.create({
+  const spaceOneId = await spaces.create(calendarId, {
     type: "physical",
     name: "1",
     location: "123 Street Street",
@@ -33,6 +33,7 @@ export async function seedData() {
       "https://placecats.com/neo_banana/300/200",
       "https://placecats.com/neo_2/300/200",
     ],
+    messageForRequesters: "Call me after 6pm",
     availability: [
       {
         start: new Date("2025-01-01T00:00:00Z"),
@@ -42,7 +43,7 @@ export async function seedData() {
     multiBookable: false,
   });
 
-  const spaceTwoId = await spaces.create({
+  const spaceTwoId = await spaces.create(calendarId, {
     type: "physical",
     name: "Recording Studio",
     location: "34 Road Avenue",
@@ -60,6 +61,7 @@ export async function seedData() {
       "https://placecats.com/neo_banana/300/200",
       "https://placecats.com/neo_2/300/200",
     ],
+    messageForRequesters: "Call me after 6pm",
     availability: [
       {
         start: new Date("2025-01-01T00:00:00Z"),
@@ -69,7 +71,7 @@ export async function seedData() {
     multiBookable: false,
   });
 
-  const resourceOneId = await resources.create({
+  const resourceOneId = await resources.create(calendarId, {
     name: "Projector",
     description: "Epson CO-FH01 Full HD Projector",
     contact: "Signal @beamer",
@@ -92,7 +94,7 @@ export async function seedData() {
     multiBookable: false,
   });
 
-  const resourceTwoId = await resources.create({
+  const resourceTwoId = await resources.create(calendarId, {
     name: "XLR Cables",
     description: "as above. Call me to confirm pick up",
     contact: "",
@@ -111,7 +113,7 @@ export async function seedData() {
     multiBookable: false,
   });
 
-  const eventOneId = await events.create({
+  const eventOneId = await events.create(calendarId, {
     name: "Kitty Fest 25",
     description: "A grand music festival with various artists.",
     startDate: new Date("2025-01-06T14:00:00Z"),
@@ -122,7 +124,7 @@ export async function seedData() {
     links: [],
   });
 
-  const eventTwoId = await events.create({
+  const eventTwoId = await events.create(calendarId, {
     name: "Art Exhibition",
     description: "An exhibition showcasing modern art.",
     startDate: new Date("2025-02-10T10:00:00.000Z"),

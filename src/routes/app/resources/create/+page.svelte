@@ -1,16 +1,14 @@
 <script lang="ts">
-  import type { DateValue } from "@internationalized/date";
-  import { CalendarDate } from "@internationalized/date";
-
-  // placeholder data
-  const festivalDates: DateValue[] = [
-    new CalendarDate(2024, 12, 11),
-    new CalendarDate(2024, 12, 12),
-    new CalendarDate(2024, 12, 13),
-    new CalendarDate(2024, 12, 14),
-    new CalendarDate(2024, 12, 15),
-    new CalendarDate(2024, 12, 16),
-  ];
+  import ResourceForm from "$lib/components/ResourceForm.svelte";
 </script>
 
-<h1>Create resource</h1>
+<br />
+<br />
+<br />
+<p>
+  Hello organisers! Fill this form to upload your own resources. Resources can
+  range from material goods, technical support, anything you would like to
+  offer. Once published, event organisers will be able to book your resources
+  for their events. Manage your requests in your dashboard.
+</p>
+<ResourceForm formType="create" />
