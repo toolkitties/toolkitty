@@ -49,7 +49,7 @@ export async function request(
 ) {
   let event = await db.events.get(eventId);
   const resourceRequested: BookingRequested = {
-    type: "resource_requested",
+    type: "booking_requested",
     data: {
       resourceId,
       type,
@@ -72,7 +72,7 @@ export async function request(
 export async function accept(requestId: Hash) {
   let bookingRequest = await db.bookingRequests.get(requestId);
   const bookingRequested: BookingRequestAccepted = {
-    type: "resource_request_accepted",
+    type: "booking_request_accepted",
     data: {
       requestId,
     },
@@ -91,7 +91,7 @@ export async function accept(requestId: Hash) {
 export async function reject(requestId: Hash) {
   let bookingRequest = await db.bookingRequests.get(requestId);
   const bookingRequested: BookingRequestRejected = {
-    type: "resource_request_rejected",
+    type: "booking_request_rejected",
     data: {
       requestId,
     },
@@ -116,11 +116,11 @@ export async function process(message: ApplicationMessage) {
   const { data, type } = message.data;
 
   switch (type) {
-    case "resource_requested":
+    case "booking_requested":
       return await onBookingRequested(meta, data);
-    case "resource_request_accepted":
+    case "booking_request_accepted":
       return await onBookingRequestAccepted(meta, data);
-    case "resource_request_rejected":
+    case "booking_request_rejected":
       return await onBookingRequestRejected(meta, data);
   }
 }
