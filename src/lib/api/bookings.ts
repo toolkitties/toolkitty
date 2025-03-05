@@ -1,6 +1,8 @@
 import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
 import { publish } from ".";
+import { toast } from "$lib/toast.svelte";
+import { identity, spaces, resources } from ".";
 
 /**
  * Queries
@@ -53,6 +55,27 @@ function isPending(
       return response.requestId == request.id;
     }) == undefined
   );
+}
+
+/**
+ * Check if we are the owner of the resource that is being requested in the booking.
+ */
+async function isBookingResourceOwner(me: PublicKey, request: BookingRequest) {
+  let resource: Resource | Space | undefined;
+  if (request.resourceType == "resource") {
+    resource = await resources.findById(request.resourceId)
+  } else {
+    resource = await spaces.findById(request.resourceId)
+  }
+
+  // we are the owner of the resource being requested so return true
+  if (resource?.ownerId == me) {
+    return true
+  }
+
+  // we are not the owner of the resource
+  return false
+
 }
 
 /**
@@ -164,6 +187,11 @@ async function onBookingRequested(
     timeSpan: data.timeSpan,
   };
   await db.bookingRequests.add(resourceRequest);
+  let publicKey = await identity.publicKey()
+  // show toast if we are the owner of the resource
+  if (meta.author != publicKey && await isBookingResourceOwner(publicKey, resourceRequest)) {
+    toast.bookingRequest(resourceRequest)
+  }
 }
 
 async function onBookingRequestAccepted(
