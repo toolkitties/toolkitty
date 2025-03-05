@@ -675,4 +675,5 @@ type BookingQueryFilter = {
   eventId?: Hash;
   requester?: PublicKey;
   resourceType?: ResourceType;
+  resourceOwner?: PublicKey;
 };

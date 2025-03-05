@@ -150,4 +150,15 @@ export async function seedData() {
   );
 
   const resourceResponseId = await bookings.accept(resourceRequestId);
+
+  const resourceTwoResponseId = await bookings.request(
+    eventOneId,
+    resourceTwoId,
+    "resource",
+    "please can i haz?",
+    {
+      start: new Date("2025-01-20T00:00:00Z"),
+      end: new Date("2025-01-22T00:00:00Z"),
+    },
+  );
 }
