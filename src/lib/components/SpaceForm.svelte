@@ -152,6 +152,7 @@
   />
 
   <p>Space availability</p>
+
   {#if !alwaysAvailable}
     <AvailabilitySetter
       {availability}

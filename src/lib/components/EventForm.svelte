@@ -6,7 +6,10 @@
 
   let { formType, spaces, resources, event = null } = $props();
 
-  let selectedSpace: Space | null = null;
+  let selectedSpace: Space | null = $state<Space | null>(null);
+  function handleSpaceSelection(space: Space) {
+    selectedSpace = space;
+  }
 
   function handleSubmit(e: Event) {
     if (formType === "create") {
@@ -92,13 +95,7 @@
     <ul>
       {#each spaces as space}
         <li>
-          <input
-            type="radio"
-            id={space.id}
-            name="selected-space"
-            bind:group={selectedSpace}
-            value={space}
-          />
+          <input type="radio" id={space.id} name="selected-space" />
           <label for={space.id}>{space.name}</label>
         </li>
       {/each}
@@ -107,15 +104,14 @@
     {#if selectedSpace}
       <div class="space-availability">
         <p>View availability</p>
+        <AvailabilityViewer
+          availability={Array.isArray(selectedSpace.availability)
+            ? selectedSpace.availability
+            : []}
+          multiBookable={selectedSpace.multiBookable}
+        />
       </div>
-      <AvailabilityViewer
-        availability={Array.isArray(selectedSpace.availability)
-          ? selectedSpace.availability
-          : []}
-        multiBookable={selectedSpace.multiBookable}
-      />
     {/if}
-
     <p>Request selected space</p>
     <div class="flex flex-row">
       <p>Access from:</p>
@@ -153,6 +149,7 @@
     <input name="event-end-time" type="time" required />
   </div>
 
+  <!-- @TODO - validate against space availability -->
   {#if resources.length > 0}
     <label for="resource-list">Select resources</label>
     <ul id="resource-list">
