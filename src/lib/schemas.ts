@@ -45,9 +45,9 @@ const virtualLocationSchema = z.string().url("Invalid URL");
 
 export const spaceSchema = z.object({
   id: z.string(),
-  type: z.enum(["physical", "gps", "virtual"]),
+  type: z.enum(["physical", "gps", "virtual"]).nullable().default(null),
   name: z.string().min(1, "Space name is required"),
-  location: z.union([physicalLocationSchema, gpsLocationSchema, virtualLocationSchema]),
+  location: z.union([physicalLocationSchema, gpsLocationSchema, virtualLocationSchema]).default('' as string),
   capacity: z.number().optional(),
   accessibilityDetails: z.string().min(1, "Accessibility details are required"),
   description: z.string().min(1, "Space description is required"),
@@ -61,10 +61,25 @@ export const spaceSchema = z.object({
         startTime: z.string(),
         endTime: z.string(),
       })
-    ),
+    ).min(1, "At least one availability date is required."),
     z.literal("always")
-  ]),
+  ]).default([]),
   multiBookable: z.boolean(),
+}).refine(data => {
+  if (data.type === 'physical') {
+    return physicalLocationSchema.safeParse(data.location).success;
+  } else if (data.type === 'gps') {
+    return gpsLocationSchema.safeParse(data.location).success;
+  } else if (data.type === 'virtual') {
+    return virtualLocationSchema.safeParse(data.location).success;
+  }
+  return false
+}, {
+  message: "Invalid location for the specified type",
+  path: ["location"]
+}).refine(data => data.type !== null, {
+  message: "Type must be set",
+  path: ["type"]
 });
 
 

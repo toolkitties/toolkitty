@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { spaces } from "$lib/api";
-  import SpaceForm from "$lib/components/SpaceForm.svelte";
+  import SpaceForm from "../../SpaceForm.svelte";
   import { toast } from "$lib/toast.svelte";
   import type { PageProps } from "./$types";
 

@@ -31,7 +31,7 @@
     SPA: true,
     validators: zod(resourceSchema),
     resetForm: false,
-    dataType: "json", // Set the dataType option to "json"
+    dataType: "json",
     async onUpdate({ form }) {
       if (form.data.id) {
         console.log("create resource");

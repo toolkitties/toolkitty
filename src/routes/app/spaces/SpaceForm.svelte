@@ -27,6 +27,7 @@
     SPA: true,
     validators: zod(spaceSchema),
     resetForm: false,
+    dataType: "json",
     async onUpdate({ form }) {
       if (form.data.id) {
         console.log("create space");
@@ -92,7 +93,7 @@
   </fieldset>
 
   <label for="space-name">Space Name*</label>
-  <input type="text" name="space-name" required />
+  <input type="text" name="space-name" />
   {#if $form.type === "physical"}
     <fieldset>
       <legend>Address</legend>
