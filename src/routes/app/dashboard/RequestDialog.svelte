@@ -11,6 +11,7 @@
 <AlertDialog.Root bind:open>
   <AlertDialog.Trigger class="button">
     <p>{request.id}</p>
+    <span>Pending</span>
     <BookingRequestDialog {request} bind:open />
   </AlertDialog.Trigger>
 </AlertDialog.Root>

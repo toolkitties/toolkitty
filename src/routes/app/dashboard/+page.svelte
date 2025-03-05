@@ -7,6 +7,9 @@
 
 <h1>Dashboard</h1>
 
-{#each data.pendingRequests as request}
-  <RequestDialog {request} />
-{/each}
+<section>
+  <h3>Pending requests</h3>
+  {#each data.pendingRequests as request}
+    <RequestDialog {request} />
+  {/each}
+</section>
