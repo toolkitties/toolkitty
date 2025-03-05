@@ -11,6 +11,12 @@ export async function seedData() {
           end: new Date("2025-01-27T00:00:00Z"),
         },
       ],
+      festivalInstructions:
+        "The Antiuniversity is an ongoing programme of self organised radical  learning and mutual education events. It is a collaborative experiment  to challenge academic and class hierarchy - in, outside and against  existing institutional structures.",
+      spacePageText:
+        "Below is a list of all the venues that are available to host events,  with time slots that you can book. If you have organised a place to hold your event yourself, you can register a new venue and even make your  space available to other Antiuni organisers.",
+      resourcePageText:
+        "Fellow contributors are offering things that might be helpful to make this festival happen, when booking the items, you will be given the owner’s contact so you can arrange the logistics.",
     },
   });
 
