@@ -3,7 +3,7 @@ import { calendars, spaces } from "$lib/api";
 
 export const load: PageLoad = async () => {
   const activeCalendarId = await calendars.getActiveCalendarId();
-  const spacesList = await spaces.findMany();
+  const spacesList = await spaces.findMany(activeCalendarId!);
 
   return { title: "spaces", activeCalendarId, spacesList };
 };

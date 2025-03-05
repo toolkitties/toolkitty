@@ -1,6 +1,5 @@
 import { db } from "$lib/db";
-import { publicKey } from "./identity";
-import { publish } from ".";
+import { publish, resources } from ".";
 import { getActiveCalendarId } from "./calendars";
 import { promiseResult } from "$lib/promiseMap";
 
@@ -9,45 +8,37 @@ import { promiseResult } from "$lib/promiseMap";
  */
 
 /**
- * Get resources that are associated with the currently active calendar
+ * Get resources that are associated with the passed calendar
  */
-export async function findMany(): Promise<Resource[]> {
-  let resources = await db.resources.toArray();
-  return resources;
+export function findMany(calendarId: Hash): Promise<Resource[]> {
+  return db.resources.where({ calendarId }).toArray();
 }
 
 /**
- * Get all resources that I am the owner of.
+ * Get all calendar resources that are owned by the passed public key.
  */
-export async function findMine(): Promise<Resource[]> {
-  let myPublicKey = await publicKey();
-  let resources = (await db.resources.toArray()).filter(
-    (resource) => resource.ownerId == myPublicKey,
-  );
-  return resources;
+export function findByOwner(
+  calendarId: Hash,
+  ownerId: PublicKey,
+): Promise<Resource[]> {
+  return db.resources.where({ calendarId, ownerId }).toArray();
 }
 
 /**
- * Get one event by its ID
+ * Get one event by its ID.
  */
-export async function findById(id: Hash): Promise<Resource | undefined> {
-  let resource = (await db.resources.toArray()).filter(
-    (resource) => resource.id == id,
-  );
-
-  if (resource.length == 0) {
-    return;
-  }
-
-  return resource[0];
+export function findById(id: Hash): Promise<Resource | undefined> {
+  return db.resources.get({ id: id });
 }
 
 /**
  * Commands
  */
 
-export async function create(fields: ResourceFields): Promise<Hash> {
-  const calendarId = await getActiveCalendarId();
+/**
+ * Create a calendar resource.
+ */
+export async function create(calendarId: Hash, fields: ResourceFields): Promise<Hash> {
   let resourceCreated: ResourceCreated = {
     type: "resource_created",
     data: {
@@ -64,11 +55,14 @@ export async function create(fields: ResourceFields): Promise<Hash> {
   return operationId;
 }
 
+/**
+ * Update a calendar resource.
+ */
 export async function update(
   resourceId: Hash,
   fields: ResourceFields,
 ): Promise<Hash> {
-  const calendarId = await getActiveCalendarId();
+  let resource = await resources.findById(resourceId);
   let resourceUpdated: ResourceUpdated = {
     type: "resource_updated",
     data: {
@@ -77,7 +71,7 @@ export async function update(
     },
   };
   const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
-    calendarId!,
+    resource!.calendarId,
     resourceUpdated,
   );
 
@@ -86,8 +80,11 @@ export async function update(
   return operationId;
 }
 
+/**
+ * Delete a calendar resource.
+ */
 export async function deleteResource(resourceId: Hash): Promise<Hash> {
-  const calendarId = await getActiveCalendarId();
+  let resource = await resources.findById(resourceId);
   let resourceDeleted: ResourceDeleted = {
     type: "resource_deleted",
     data: {
@@ -96,7 +93,7 @@ export async function deleteResource(resourceId: Hash): Promise<Hash> {
   };
 
   const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
-    calendarId!,
+    resource!.calendarId,
     resourceDeleted,
   );
 
