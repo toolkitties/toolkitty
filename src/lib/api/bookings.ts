@@ -29,7 +29,7 @@ export async function findPending(
   filter: BookingQueryFilter,
 ): Promise<BookingRequest[]> {
   let responsesFilter = {
-    answer: "approve",
+    answer: "accept",
     calendarId,
   };
 
@@ -182,7 +182,7 @@ async function onBookingRequestAccepted(
     eventId: resourceRequest.eventId,
     responder: meta.author,
     requestId: data.requestId,
-    answer: "approve",
+    answer: "accept",
   };
   await db.bookingResponses.add(resourceResponse);
 }
