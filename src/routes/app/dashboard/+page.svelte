@@ -5,7 +5,7 @@
 
   let { data }: PageProps = $props();
 
-  const pendingRequests = bookings.findPending(data.activeCalendarId!, {});
+  let pendingRequests = bookings.findPending(data.activeCalendarId!, {});
 </script>
 
 <h1>Dashboard</h1>
