@@ -11,6 +11,9 @@ export async function seedData() {
           end: new Date("2025-01-27T00:00:00Z"),
         },
       ],
+      festivalInstructions: null,
+      spacePageText: null,
+      resourcePageText: null
     },
   });
 

@@ -292,7 +292,7 @@ type GPSLocation = {
 
 type VirtualLocation = string;
 
-type Answer = "approve" | "reject";
+type Answer = "accept" | "reject";
 
 type CalendarFields = {
   name: string;
@@ -608,7 +608,7 @@ type AccessResponse = {
   calendarId: Hash;
   from: PublicKey;
   requestId: Hash;
-  accept: boolean;
+  answer: Answer;
 };
 
 type CalendarEvent = {
