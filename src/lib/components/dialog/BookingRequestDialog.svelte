@@ -42,8 +42,8 @@
   <AlertDialog.Content>
     <AlertDialog.Title>{request.resourceId} requested for:</AlertDialog.Title>
     <AlertDialog.Description>
-      <p>{request.eventId}</p>
-      <p>{request.requester}</p>
+      <p>eventId: {request.eventId}</p>
+      <p>requester: {request.requester}</p>
     </AlertDialog.Description>
     <AlertDialog.Action onclick={() => acceptRequest(request.id)}
       >accept</AlertDialog.Action
@@ -51,6 +51,5 @@
     <AlertDialog.Action onclick={() => rejectRequest(request.id)}
       >reject</AlertDialog.Action
     >
-    <AlertDialog.Cancel>cancel</AlertDialog.Cancel>
   </AlertDialog.Content>
 </AlertDialog.Portal>
