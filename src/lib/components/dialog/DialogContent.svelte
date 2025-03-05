@@ -8,19 +8,25 @@
 </script>
 
 <AlertDialogPrimitive.Portal>
+  <!-- TODO: Add transition back to overlay -->
   <AlertDialogPrimitive.Overlay
-    transition={fade}
-    transitionConfig={{ duration: 100 }}
     class="fixed inset-0 z-50 backdrop-blur bg-black/30"
   />
   <AlertDialogPrimitive.Content
-    transition={slide}
-    transitionConfig={{ axis: "y", easing: quintOut }}
     class="fixed bottom-0 left-0 z-50 bg-white px-5 pt-10 pb-[70px] w-full text-center"
+    forceMount
   >
-    <div class="space-y-[15px]">
-      {@render children()}
-    </div>
+    <!-- TODO: Move transition to css -->
+    {#snippet child({ open })}
+      {#if open}
+        <div
+          transition:slide={{ axis: "y", easing: quintOut }}
+          class="space-y-[15px]"
+        >
+          {@render children()}
+        </div>
+      {/if}
+    {/snippet}
     <AlertDialogPrimitive.Cancel class="absolute right-5 top-5 mt-0">
       <Icon class="h-6 w-6 rotate-45" icon="lucide:plus" />
     </AlertDialogPrimitive.Cancel>
