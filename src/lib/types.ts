@@ -638,6 +638,7 @@ type BookingRequest = {
   requester: PublicKey;
   resourceId: Hash;
   resourceType: ResourceType;
+  resourceOwner: PublicKey;
   message: string;
   timeSpan: TimeSpan;
 };

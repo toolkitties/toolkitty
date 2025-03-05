@@ -3,6 +3,7 @@ import { promiseResult } from "$lib/promiseMap";
 import { publish } from ".";
 import { toast } from "$lib/toast.svelte";
 import { identity, spaces, resources } from ".";
+import { publicKey } from "./identity";
 
 /**
  * Queries
@@ -55,27 +56,6 @@ function isPending(
       return response.requestId == request.id;
     }) == undefined
   );
-}
-
-/**
- * Check if we are the owner of the resource that is being requested in the booking.
- */
-async function isBookingResourceOwner(publicKey: PublicKey, request: BookingRequest) {
-  let resource: Resource | Space | undefined;
-  if (request.resourceType == "resource") {
-    resource = await resources.findById(request.resourceId)
-  } else {
-    resource = await spaces.findById(request.resourceId)
-  }
-
-  // we are the owner of the resource being requested so return true
-  if (resource?.ownerId == publicKey) {
-    return true
-  }
-
-  // we are not the owner of the resource
-  return false
-
 }
 
 /**
@@ -176,6 +156,13 @@ async function onBookingRequested(
   meta: StreamMessageMeta,
   data: BookingRequested["data"],
 ) {
+  let resource;
+  if (data.type == "resource") {
+    resource = await resources.findById(data.resourceId)
+  } else {
+    resource = await spaces.findById(data.resourceId)
+  }
+
   const resourceRequest: BookingRequest = {
     id: meta.operationId,
     calendarId: meta.stream.id,
@@ -183,13 +170,17 @@ async function onBookingRequested(
     requester: meta.author,
     resourceId: data.resourceId,
     resourceType: data.type,
+    resourceOwner: resource!.ownerId,
     message: data.message,
     timeSpan: data.timeSpan,
   };
+
   await db.bookingRequests.add(resourceRequest);
-  let publicKey = await identity.publicKey()
-  // show toast if we are the owner of the resource
-  if (meta.author != publicKey && await isBookingResourceOwner(publicKey, resourceRequest)) {
+
+  const publicKey = await identity.publicKey();
+
+  // Show toast if we are the owner of the resource and we didn't make the request.
+  if (meta.author != publicKey && resource!.ownerId == publicKey) {
     toast.bookingRequest(resourceRequest)
   }
 }
