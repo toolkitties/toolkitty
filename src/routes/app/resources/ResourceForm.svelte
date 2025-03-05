@@ -31,6 +31,7 @@
     SPA: true,
     validators: zod(resourceSchema),
     resetForm: false,
+    dataType: "json", // Set the dataType option to "json"
     async onUpdate({ form }) {
       if (form.data.id) {
         console.log("create resource");
@@ -120,9 +121,9 @@
         <label for="link-text">Link Title</label>
         <input
           type="text"
-          name="link-text"
-          aria-invalid={$errors.linkText ? "true" : undefined}
-          bind:value={$form.linkText}
+          name="title"
+          aria-invalid={$errors.link?.title ? "true" : undefined}
+          bind:value={$form.link.title}
         />
       </div>
       <div>
@@ -130,13 +131,12 @@
         <input
           type="url"
           name="link-url"
-          aria-invalid={$errors.linkUrl ? "true" : undefined}
-          bind:value={$form.linkUrl}
+          aria-invalid={$errors.link?.url ? "true" : undefined}
+          bind:value={$form.link.url}
         />
       </div>
     </div>
-    {#if $errors.linkText}<span class="invalid">{$errors.linkText}</span>{/if}
-    {#if $errors.linkUrl}<span class="invalid">{$errors.linkUrl}</span>{/if}
+    {#if $errors.link}<span class="invalid">{$errors.link}</span>{/if}
   </fieldset>
 
   <p>Resource availability</p>
