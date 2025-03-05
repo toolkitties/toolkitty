@@ -5,6 +5,7 @@ import { db } from "$lib/db";
 import { TopicFactory } from "./topics";
 import { toast } from "$lib/toast.svelte";
 import { liveQuery } from "dexie";
+import { promiseResult } from "$lib/promiseMap";
 
 /*
  * Queries
@@ -57,7 +58,7 @@ export async function hasRequested(calendarId: Hash): Promise<boolean> {
 
 export async function wasRejected(requestId: Hash): Promise<boolean> {
   let response = (await db.accessResponses.toArray()).find(
-    (response) => response.requestId == requestId && !response.accept,
+    (response) => response.requestId == requestId && response.answer == "reject",
   );
 
   return response != undefined;
@@ -92,18 +93,28 @@ export async function checkStatus(
     return "not requested yet";
   }
 
-  let response = await db.accessResponses.get({ requestId: request.id });
   // @TODO: We need to be able to check if the response came from the calendar owner but at
   // this point we haven't received the "calendar_created" event yet. It will help when the
   // actual calendar id contains the owner information.
+  let rejected = await db.accessResponses.get({
+    requestId: request.id,
+    answer: "reject",
+  });
 
-  if (response == undefined) {
-    return "pending";
+  if (rejected) {
+    return "rejected";
   }
 
-  if (response.accept) {
+  let accepted = await db.accessResponses.get({
+    requestId: request.id,
+    answer: "accept",
+  });
+
+  if (accepted) {
     return "accepted";
-  } else return "rejected";
+  }
+
+  return "pending";
 }
 
 /**
@@ -121,6 +132,9 @@ export async function requestAccess(
     data.calendarId,
     calendarAccessRequested,
   );
+
+  await promiseResult(operationId);
+
   return operationId;
 }
 
@@ -141,6 +155,9 @@ export async function acceptAccessRequest(
     calendarId!,
     calendarAccessAccepted,
   );
+
+  await promiseResult(operationId);
+
   return operationId;
 }
 
@@ -161,6 +178,9 @@ export async function rejectAccessRequest(
     calendarId!,
     calendarAccessRejected,
   );
+
+  await promiseResult(operationId);
+
   return operationId;
 }
 
@@ -254,7 +274,7 @@ async function onCalendarAccessAccepted(
     calendarId,
     from: meta.author,
     requestId: data.requestId,
-    accept: true,
+    answer: "accept",
   });
 
   let request = await db.accessRequests.get(data.requestId);
@@ -275,7 +295,7 @@ async function onCalendarAccessRejected(
     calendarId: meta.stream.id,
     from: meta.author,
     requestId: data.requestId,
-    accept: false,
+    answer: "reject",
   });
 }
 
