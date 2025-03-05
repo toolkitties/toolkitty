@@ -60,7 +60,7 @@ function isPending(
 /**
  * Check if we are the owner of the resource that is being requested in the booking.
  */
-async function isBookingResourceOwner(me: PublicKey, request: BookingRequest) {
+async function isBookingResourceOwner(publicKey: PublicKey, request: BookingRequest) {
   let resource: Resource | Space | undefined;
   if (request.resourceType == "resource") {
     resource = await resources.findById(request.resourceId)
@@ -69,7 +69,7 @@ async function isBookingResourceOwner(me: PublicKey, request: BookingRequest) {
   }
 
   // we are the owner of the resource being requested so return true
-  if (resource?.ownerId == me) {
+  if (resource?.ownerId == publicKey) {
     return true
   }
 
