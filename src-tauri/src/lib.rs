@@ -1,6 +1,6 @@
 mod app;
 mod blobs;
-mod key_store;
+mod keystore;
 mod messages;
 mod node;
 mod rpc;

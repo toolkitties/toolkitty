@@ -13,6 +13,7 @@ use thiserror::Error;
 use tokio::sync::{broadcast, mpsc, RwLock};
 use tracing::debug;
 
+use crate::keystore::KeyStore;
 use crate::messages::{ChannelEvent, NetworkEvent, StreamArgs};
 use crate::node::extensions::{Extensions, LogId, LogPath, Stream};
 use crate::node::operation::create_operation;
@@ -86,18 +87,19 @@ impl Service {
     ///
     /// The node and several channel senders are added to the shared app context while channel
     /// receivers are stored on the Service struct for use during the runtime loop.
-    pub async fn build(blobs_base_dir: PathBuf) -> anyhow::Result<Self> {
-        let private_key = PrivateKey::new();
+    pub async fn build(app_data_dir: PathBuf) -> anyhow::Result<Self> {
+        // Use an ephemeral private key if we're running with `tauri dev`.
+        let private_key = if cfg!(dev) {
+            PrivateKey::new()
+        } else {
+            let private_key_path = app_data_dir.join("private_key.txt");
+            PrivateKey::load_or_create_new(&private_key_path)?
+        };
         let store = MemoryStore::new();
         let topic_map = TopicMap::new();
 
-        let (node, stream_rx, network_events_rx) = Node::new(
-            private_key.clone(),
-            store.clone(),
-            blobs_base_dir,
-            topic_map.clone(),
-        )
-        .await?;
+        let (node, stream_rx, network_events_rx) =
+            Node::new(private_key, store.clone(), app_data_dir, topic_map.clone()).await?;
 
         let (to_app_tx, to_app_rx) = broadcast::channel(32);
         let (channel_tx, channel_rx) = mpsc::channel(32);
@@ -117,7 +119,7 @@ impl Service {
     #[cfg(not(test))]
     pub fn run(app_handle: AppHandle) {
         tauri::async_runtime::spawn(async move {
-            let blobs_root_dir = if cfg!(dev) {
+            let app_data_dir = if cfg!(dev) {
                 tempfile::tempdir().expect("temp dir").into_path()
             } else {
                 app_handle
@@ -125,7 +127,7 @@ impl Service {
                     .app_data_dir()
                     .expect("app data directory")
             };
-            let mut app = Self::build(blobs_root_dir).await.expect("build stream");
+            let mut app = Self::build(app_data_dir).await.expect("build stream");
             let rpc = Rpc {
                 context: app.context.clone(),
             };
