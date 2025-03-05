@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Calendar } from "bits-ui";
   import type { DateValue } from "@internationalized/date";
-  import { writable } from "svelte/store";
+  import { writable, get } from "svelte/store";
 
   export let availability: {
     date: string;
@@ -13,30 +13,23 @@
   ) => void;
 
   const availabilityStore = writable(availability);
+  export const availableDates = writable<Set<string>>(
+    new Set(availability.map((entry) => entry.date)),
+  );
 
-  export const availableDates = writable<Set<string>>(new Set());
+  let currentlySelectedDate: DateValue | undefined = undefined;
 
-  let value: DateValue[] | undefined;
-  let dateSelected = $derived(!value || Array.isArray(value) ? true : false);
-
-  // const handleDateSelect = (value: DateValue | DateValue[] | undefined) => {
-  //   if (!value || Array.isArray(value)) {
-  //     dateSelected = false;
-  //     currentlySelectedDate = null;
-  //     return;
-  //   }
-
-  //   dateSelected = true;
-  //   currentlySelectedDate = value;
-  // };
+  const handleDateSelect = (value: DateValue | undefined) => {
+    currentlySelectedDate = value || undefined;
+  };
 
   const handleAddAvailability = () => {
-    if (!value) {
+    if (!currentlySelectedDate) {
       alert("Please select a date first.");
       return;
     }
 
-    const selectedDate = value.toString();
+    const selectedDate = currentlySelectedDate.toString();
     const startTimeInput = document.querySelector<HTMLInputElement>(
       'input[name="availability-start-time"]',
     );
@@ -44,16 +37,18 @@
       'input[name="availability-end-time"]',
     );
 
-    if (!startTimeInput || !endTimeInput) {
-      console.log("Time inputs not found.");
-      return;
-    }
+    if (!startTimeInput || !endTimeInput) return;
 
     const startTime = startTimeInput.value;
     const endTime = endTimeInput.value;
 
     if (!startTime || !endTime) {
       alert("Please enter both start and end times.");
+      return;
+    }
+
+    if (startTime >= endTime) {
+      alert("End time must be later than start time.");
       return;
     }
 
@@ -65,11 +60,9 @@
       return updatedAvailability;
     });
 
-    availableDates.update((dates) => {
-      const updatedDates = new Set(dates);
-      updatedDates.add(selectedDate);
-      return updatedDates;
-    });
+    availableDates.update((dates) => new Set([...dates, selectedDate]));
+
+    alert("Availability added successfully!");
   };
 
   const handleRemoveAvailability = (index: number) => {
@@ -91,7 +84,11 @@
   };
 </script>
 
-<Calendar.Root bind:value>
+<Calendar.Root
+  type="single"
+  bind:value={currentlySelectedDate}
+  onValueChange={handleDateSelect}
+>
   {#snippet children({ months, weekdays })}
     <Calendar.Header class="flex flex-row">
       <Calendar.PrevButton class="w-8 mr-2">←</Calendar.PrevButton>
@@ -115,15 +112,15 @@
                 <Calendar.Cell {date} month={month.value}>
                   <Calendar.Day
                     class={"data-[outside-month]:pointer-events-none data-[outside-month]:text-gray-300 data-[selected]:bg-black data-[selected]:text-white " +
-                      ($availableDates.has(date.toString())
+                      (get(availableDates).has(date.toString())
                         ? "bg-green-500 text-white"
                         : "")}
                     aria-label={"Date " +
                       date.toString() +
-                      ($availableDates.has(date.toString())
+                      (get(availableDates).has(date.toString())
                         ? " - Availability set"
                         : " - No availability")}
-                    title={$availableDates.has(date.toString())
+                    title={get(availableDates).has(date.toString())
                       ? "Availability set"
                       : "No availability"}
                     aria-disabled={"outside-month" in date}
@@ -138,33 +135,32 @@
   {/snippet}
 </Calendar.Root>
 
-{#if dateSelected && value}
-  {#if !$availableDates.has(value.toString())}
-    <p>
-      What time is the space available on {value?.toString() || ""}?
-    </p>
-    <div class="flex flex-row space-x-2">
-      <label for="availability-start-time">Start *</label>
-      <input name="availability-start-time" type="time" required />
-      <label for="availability-end-time">End *</label>
-      <input name="availability-end-time" type="time" required />
-    </div>
-    <button on:click={handleAddAvailability}> Add </button>
-  {/if}
+{#if currentlySelectedDate && !get(availableDates).has(currentlySelectedDate.toString())}
+  <p>
+    What time is the space available on {currentlySelectedDate?.toString() ||
+      ""}?
+  </p>
+  <div class="flex flex-row space-x-2">
+    <label for="availability-start-time">Start *</label>
+    <input name="availability-start-time" type="time" required />
+    <label for="availability-end-time">End *</label>
+    <input name="availability-end-time" type="time" required />
+  </div>
+  <button on:click={handleAddAvailability}>Add</button>
+{/if}
 
-  {#if availability.length > 0}
-    <h3>Current Availability:</h3>
-    <ul>
-      {#each availability as entry, index}
-        {#if entry.date === value.toString()}
-          <li>
-            <span>{entry.startTime} - {entry.endTime}</span>
-            <button on:click={() => handleRemoveAvailability(index)}>
-              Remove
-            </button>
-          </li>
-        {/if}
-      {/each}
-    </ul>
-  {/if}
+{#if get(availabilityStore).length > 0}
+  <h3>Current Availability:</h3>
+  <ul>
+    {#each get(availabilityStore) as entry, index}
+      {#if entry.date === currentlySelectedDate?.toString()}
+        <li>
+          <span>{entry.startTime} - {entry.endTime}</span>
+          <button on:click={() => handleRemoveAvailability(index)}
+            >Remove</button
+          >
+        </li>
+      {/if}
+    {/each}
+  </ul>
 {/if}

@@ -8,13 +8,13 @@
   let { availability = [], multiBookable } = $props();
   let availableDays: DateValue[] = $state([]);
   let alwaysAvailable: boolean = $state(false);
-  let timeAvailability: TimeSpan | null = $state(null);
+  let timeAvailability: { start: Date; end: Date } | null = $state(null);
 
   function processAvailability() {
     availableDays = [];
     alwaysAvailable = false;
 
-    if (!Array.isArray(availability)) {
+    if (!Array.isArray(availability) || availability.length === 0) {
       alwaysAvailable = true;
     } else {
       availability.forEach((timeSpan) => {
@@ -35,7 +35,6 @@
 
   const isSameDate = (date1: DateValue, date2: DateValue): boolean => {
     return (
-      date1.calendar.identifier === date2.calendar.identifier &&
       date1.year === date2.year &&
       date1.month === date2.month &&
       date1.day === date2.day
@@ -49,20 +48,21 @@
 
     if (!value) {
       timeAvailability = null;
-    } else if ("year" in value && "month" in value && "day" in value) {
-      const selectedDate = new Date(value.year, value.month - 1, value.day);
-      timeAvailability = null;
+      return;
+    }
 
-      if (Array.isArray(availability)) {
-        for (let timeSpan of availability) {
-          const availabilityDate = timeSpan.start;
-          if (isSameDate(availabilityDate, value)) {
-            timeAvailability = timeSpan;
-          }
+    const selectedDate = new Date(value.year, value.month - 1, value.day);
+    timeAvailability = null;
+
+    if (Array.isArray(availability)) {
+      for (let timeSpan of availability) {
+        if (isSameDate(fromDate(timeSpan.start, "UTC"), value)) {
+          timeAvailability = timeSpan;
+          break;
         }
-      } else {
-        console.error("Invalid DateValue format received:", value);
       }
+    } else {
+      console.error("Invalid availability data:", availability);
     }
   };
 </script>
@@ -70,14 +70,13 @@
 {#if alwaysAvailable}
   <p>Always available</p>
 {:else}
-  <Calendar.Root onValueChange={handleDateSelect}>
+  <Calendar.Root type="single" onValueChange={handleDateSelect}>
     {#snippet children({ months, weekdays })}
       <Calendar.Header class="flex flex-row">
         <Calendar.PrevButton class="w-8 mr-2">←</Calendar.PrevButton>
         <Calendar.Heading />
         <Calendar.NextButton class="w-8 ml-2">→</Calendar.NextButton>
       </Calendar.Header>
-
       {#each months as month}
         <Calendar.Grid>
           <Calendar.GridHead>
@@ -94,11 +93,11 @@
                   <Calendar.Cell {date} month={month.value}>
                     <Calendar.Day
                       class={`data-[outside-month]:pointer-events-none
-                              data-[outside-month]:text-gray-300
-                              data-[selected]:bg-black
-                              data-[selected]:text-white
-                              ${isAvailableDay(date) ? "bg-green-300" : ""}
-                              ${!isAvailableDay(date) ? "text-gray-400 pointer-events-none" : ""}`}
+                            data-[outside-month]:text-gray-300
+                            data-[selected]:bg-black
+                            data-[selected]:text-white
+                            ${isAvailableDay(date) ? "bg-green-300" : ""}
+                            ${!isAvailableDay(date) ? "text-gray-400 pointer-events-none" : ""}`}
                       aria-disabled={!isAvailableDay(date) ? "true" : undefined}
                     />
                   </Calendar.Cell>
@@ -114,6 +113,7 @@
   {#if multiBookable}
     <p>This space can have multiple bookings at the same time.</p>
   {/if}
+
   {#if timeAvailability}
     <Bookings availability={timeAvailability} />
   {/if}
