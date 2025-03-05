@@ -17,7 +17,8 @@ pub trait KeyStore {
     fn load(path: &Path) -> Result<PrivateKey>;
 
     /// Load the private key from file at the given path if it exists.
-    /// Otherise create a new, random private key.
+    /// Otherise create a new, random private key, save it to file and
+    /// return it.
     fn load_or_create_new(path: &Path) -> Result<PrivateKey>;
 }
 
@@ -56,7 +57,9 @@ impl KeyStore for PrivateKey {
         let private_key = if let Ok(private_key) = Self::load(path) {
             private_key
         } else {
-            PrivateKey::new()
+            let private_key = PrivateKey::new();
+            Self::save(&private_key, path)?;
+            private_key
         };
 
         Ok(private_key)
@@ -82,8 +85,9 @@ mod tests {
         // Attempt to load nonexistent private key from file (creates a new one).
         let private_key = PrivateKey::load_or_create_new(&file_path).unwrap();
 
-        // Save the private key to file.
-        assert!(private_key.save(&file_path).is_ok());
+        // Ensure the private key was saved to file by `load_or_create_new()`.
+        let load_attempt = PrivateKey::load(&file_path);
+        assert!(load_attempt.is_ok());
 
         // Load the private key from file and ensure it matches the original.
         let retrieved_private_key = PrivateKey::load_or_create_new(&file_path).unwrap();
