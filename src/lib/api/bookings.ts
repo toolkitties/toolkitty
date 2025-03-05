@@ -4,7 +4,7 @@ import { publish } from ".";
 import { toast } from "$lib/toast.svelte";
 import { identity, spaces, resources } from ".";
 import { publicKey } from "./identity";
-
+import { liveQuery } from "dexie";
 /**
  * Queries
  */
@@ -27,24 +27,26 @@ export function findAll(
 /**
  * Search the database for any pending booking requests matching the passed filter object.
  */
-export async function findPending(
+export function findPending(
   calendarId: Hash,
   filter: BookingQueryFilter,
-): Promise<BookingRequest[]> {
-  let responsesFilter = {
-    answer: "accept",
-    calendarId,
-  };
-
-  const approvals = await db.bookingResponses.where(responsesFilter).toArray();
-
-  return db.bookingRequests
-    .where({
+) {
+  return liveQuery(async () => {
+    let responsesFilter = {
+      answer: "accept",
       calendarId,
-      ...filter,
-    })
-    .filter((request) => isPending(request, approvals))
-    .toArray();
+    };
+
+    const approvals = await db.bookingResponses.where(responsesFilter).toArray();
+
+    return db.bookingRequests
+      .where({
+        calendarId,
+        ...filter,
+      })
+      .filter((request) => isPending(request, approvals))
+      .toArray();
+  })
 }
 
 function isPending(
