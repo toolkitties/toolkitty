@@ -4,6 +4,8 @@ import { calendars, events } from "$lib/api";
 export const load: PageLoad = async () => {
   const activeCalendarId = await calendars.getActiveCalendarId();
   const eventsList = await events.findMany(activeCalendarId!);
+  const activeCalendar = await calendars.findOne(activeCalendarId!);
+  const festivalInstructions = activeCalendar!.festivalInstructions;
 
-  return { title: "home", activeCalendarId, eventsList };
+  return { title: "home", activeCalendarId, eventsList, festivalInstructions };
 };
