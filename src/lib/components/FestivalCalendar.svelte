@@ -1,6 +1,5 @@
 <script lang="ts">
   import { Calendar } from "bits-ui";
-  import type { DateValue } from "@internationalized/date";
 
   let selectMultiple: boolean = $props();
 </script>
