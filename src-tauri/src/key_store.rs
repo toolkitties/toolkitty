@@ -74,7 +74,7 @@ mod tests {
     use super::KeyStore;
 
     #[test]
-    fn save_and_load() {
+    fn load_and_save_private_key() {
         let tmp_dir = tempdir().unwrap();
         let file_path = tmp_dir.path().join("test_secret.txt");
 
