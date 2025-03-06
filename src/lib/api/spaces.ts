@@ -76,14 +76,14 @@ export async function update(
   spaceId: Hash,
   fields: SpaceFields,
 ): Promise<Hash> {
-  const amAdmin = await auth.amAdmin(spaceId);
+  const space = await spaces.findById(spaceId);
+  
+  const amAdmin = await auth.amAdmin(space!.calendarId);
   const amOwner = await spaces.amOwner(spaceId);
   if (!amAdmin && !amOwner) {
     throw new Error("user does not have permission to update this space");
   }
 
-  // @TODO: check the author is an admin or owner.
-  const space = await spaces.findById(spaceId);
   const spaceUpdated: SpaceUpdated = {
     type: "space_updated",
     data: {
@@ -105,13 +105,14 @@ export async function update(
  * Delete a calendar space.
  */
 export async function deleteSpace(spaceId: Hash): Promise<Hash> {
-  const amAdmin = await auth.amAdmin(spaceId);
+  const space = await spaces.findById(spaceId);
+
+  const amAdmin = await auth.amAdmin(space!.calendarId);
   const amOwner = await spaces.amOwner(spaceId);
   if (!amAdmin && !amOwner) {
     throw new Error("user does not have permission to delete this space");
   }
 
-  const space = await spaces.findById(spaceId);
   const spaceDeleted: SpaceDeleted = {
     type: "space_deleted",
     data: {
@@ -201,7 +202,7 @@ async function onSpaceUpdated(
   }
 
   // Check that the message author has the required permissions.
-  const isAdmin = await auth.isAdmin(data.id, meta.author);
+  const isAdmin = await auth.isAdmin(meta.stream.id, meta.author);
   const isOwner = await spaces.isOwner(data.id, meta.author);
   if (!isAdmin && !isOwner) {
     throw new Error("author does not have permission to update this space");
@@ -222,7 +223,7 @@ async function onSpaceDeleted(
   }
 
   // Check that the message author has the required permissions.
-  const isAdmin = await auth.isAdmin(data.id, meta.author);
+  const isAdmin = await auth.isAdmin(meta.stream.id, meta.author);
   const isOwner = await spaces.isOwner(data.id, meta.author);
   if (!isAdmin && !isOwner) {
     throw new Error("author does not have permission to delete this space");

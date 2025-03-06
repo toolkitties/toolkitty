@@ -76,14 +76,15 @@ export async function update(
   resourceId: Hash,
   fields: ResourceFields,
 ): Promise<Hash> {
-  const amAdmin = await auth.amAdmin(resourceId);
+  const resource = await resources.findById(resourceId);
+
+  const amAdmin = await auth.amAdmin(resource!.calendarId);
   const amOwner = await resources.amOwner(resourceId);
   if (!amAdmin && !amOwner) {
     throw new Error("user does not have permission to update this resource");
   }
 
-  let resource = await resources.findById(resourceId);
-  let resourceUpdated: ResourceUpdated = {
+  const resourceUpdated: ResourceUpdated = {
     type: "resource_updated",
     data: {
       id: resourceId,
@@ -104,14 +105,15 @@ export async function update(
  * Delete a calendar resource.
  */
 export async function deleteResource(resourceId: Hash): Promise<Hash> {
-  const amAdmin = await auth.amAdmin(resourceId);
+  const resource = await resources.findById(resourceId);
+
+  const amAdmin = await auth.amAdmin(resource!.calendarId);
   const amOwner = await resources.amOwner(resourceId);
   if (!amAdmin && !amOwner) {
     throw new Error("user does not have permission to delete this resource");
   }
 
-  let resource = await resources.findById(resourceId);
-  let resourceDeleted: ResourceDeleted = {
+  const resourceDeleted: ResourceDeleted = {
     type: "resource_deleted",
     data: {
       id: resourceId,
@@ -190,7 +192,7 @@ async function onResourceUpdated(
   }
 
   // Check that the message author has the required permissions.
-  const isAdmin = await auth.isAdmin(data.id, meta.author);
+  const isAdmin = await auth.isAdmin(meta.stream.id, meta.author);
   const isOwner = await resources.isOwner(data.id, meta.author);
   if (!isAdmin && !isOwner) {
     throw new Error("author does not have permission to update this resource");
@@ -211,7 +213,7 @@ async function onResourceDeleted(
   }
 
   // Check that the message author has the required permissions.
-  const isAdmin = await auth.isAdmin(data.id, meta.author);
+  const isAdmin = await auth.isAdmin(meta.stream.id, meta.author);
   const isOwner = await resources.isOwner(data.id, meta.author);
   if (!isAdmin && !isOwner) {
     throw new Error("author does not have permission to delete this resource");

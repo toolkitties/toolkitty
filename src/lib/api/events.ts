@@ -71,13 +71,14 @@ export async function create(calendarId: Hash, fields: EventFields) {
  * Update a calendar event.
  */
 export async function update(eventId: Hash, fields: EventFields) {
-  const amAdmin = await auth.amAdmin(eventId);
+  const event = await events.findById(eventId);
+
+  const amAdmin = await auth.amAdmin(event!.calendarId);
   const amOwner = await events.amOwner(eventId);
   if (!amAdmin && !amOwner) {
     throw new Error("user does not have permission to update this event");
   }
 
-  const event = await events.findById(eventId);
   let eventUpdated: EventUpdated = {
     type: "event_updated",
     data: {
@@ -99,13 +100,14 @@ export async function update(eventId: Hash, fields: EventFields) {
  * Delete a calendar event.
  */
 async function deleteEvent(eventId: Hash) {
-  const amAdmin = await auth.amAdmin(eventId);
+  const event = await events.findById(eventId);
+
+  const amAdmin = await auth.amAdmin(event!.calendarId);
   const amOwner = await events.amOwner(eventId);
   if (!amAdmin && !amOwner) {
     throw new Error("user does not have permission to delete this event");
   }
 
-  const event = await events.findById(eventId);
   let eventDeleted: EventDeleted = {
     type: "event_deleted",
     data: {
@@ -176,7 +178,7 @@ async function onEventUpdated(
   }
 
   // Check that the message author has the required permissions.
-  const isAdmin = await auth.isAdmin(data.id, meta.author);
+  const isAdmin = await auth.isAdmin(event!.calendarId, meta.author);
   const isOwner = await events.isOwner(data.id, meta.author);
   if (!isAdmin && !isOwner) {
     throw new Error("author does not have permission to update this event");
@@ -197,7 +199,7 @@ async function onEventDeleted(
   }
 
   // Check that the message author has the required permissions.
-  const isAdmin = await auth.isAdmin(data.id, meta.author);
+  const isAdmin = await auth.isAdmin(meta.stream.id, meta.author);
   const isOwner = await events.isOwner(data.id, meta.author);
   if (!isAdmin && !isOwner) {
     throw new Error("author does not have permission to delete this event");
