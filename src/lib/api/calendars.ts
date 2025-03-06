@@ -2,7 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
 import { liveQuery } from "dexie";
-import { access, auth, calendars, publish, topics } from ".";
+import { access, auth, calendars, publish, topics, users } from ".";
 import { TopicFactory } from "./topics";
 
 /*
@@ -199,6 +199,9 @@ async function onCalendarCreated(
     owner: meta.stream.owner,
   };
   await db.streams.add(stream);
+
+  // @TODO: the calendar creator has no way to set a username.
+  await users.create(meta.stream.id, meta.stream.owner);
 
   // Add the calendar creator to the list of authors who's data we want to
   // sync for this calendar.

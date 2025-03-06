@@ -1,4 +1,12 @@
-import { auth, calendars, identity, inviteCodes, publish, topics } from "./";
+import {
+  auth,
+  calendars,
+  identity,
+  inviteCodes,
+  publish,
+  topics,
+  users,
+} from "./";
 import type { ResolvedCalendar } from "$lib/api/inviteCodes";
 import { publicKey } from "./identity";
 import { db } from "$lib/db";
@@ -278,6 +286,8 @@ async function onCalendarAccessRequested(
   }
 
   if (accessStatus == "accepted") {
+    // Create a new user.
+    await users.create(calendarId, meta.author, data.name);
     // Process new calendar author if access was accepted.
     await processNewCalendarAuthor(calendarId, meta.author);
   }
@@ -307,11 +317,19 @@ async function onCalendarAccessAccepted(
   });
 
   let request = await db.accessRequests.get(data.requestId);
-  let accessStatus = await checkStatus(request!.from, calendarId);
+  if (!request) {
+    return;
+  }
+
+  let accessStatus = await checkStatus(request.from, calendarId);
 
   // Process new calendar author if access was accepted.
   if (accessStatus == "accepted") {
-    await processNewCalendarAuthor(calendarId, request!.from);
+    // Create a new user.
+    await users.create(calendarId, request.from, request!.name);
+
+    // Process new calendar author if access was accepted.
+    await processNewCalendarAuthor(calendarId, request.from);
   }
 }
 
