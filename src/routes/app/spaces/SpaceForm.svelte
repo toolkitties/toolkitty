@@ -28,7 +28,9 @@
     validators: zod(spaceSchema),
     resetForm: false,
     dataType: "json",
+    // onUpdate is called when we press submit
     async onUpdate({ form }) {
+      // TODO: add additional validation here
       if (form.data.id) {
         console.log("update space");
         handleUpdateSpace(form.data);

@@ -4,13 +4,17 @@
   import { superForm, setMessage, setError } from "sveltekit-superforms";
   import SuperDebug from "sveltekit-superforms";
   import AvailabilitySetter from "$lib/components/AvailabilitySetter.svelte";
-  import { resources } from "$lib/api";
+  import { resources, calendars } from "$lib/api";
   import { parseResourceFormData } from "$lib/utils";
   import { resourceSchema } from "$lib/schemas";
   import { zod } from "sveltekit-superforms/adapters";
   import { toast } from "$lib/toast.svelte";
 
-  let { data }: { data: SuperValidated<Infer<ResourceSchema>> } = $props();
+  let {
+    data,
+    activeCalendarId,
+  }: { data: SuperValidated<Infer<ResourceSchema>>; activeCalendarId: Hash } =
+    $props();
   let alwaysAvailable = $state(false);
 
   $effect(() => {
@@ -25,7 +29,13 @@
   function updateAvailability(
     newAvailability: { date: string; startTime: string; endTime: string }[],
   ) {
-    $form.availability = newAvailability;
+    const parsedAvailability = newAvailability.map(
+      ({ date, startTime, endTime }) => ({
+        start: new Date(`${date}T${startTime}`),
+        end: new Date(`${date}T${endTime}`),
+      }),
+    );
+    $form.availability = parsedAvailability;
   }
 
   const { form, errors, message, constraints, enhance } = superForm(data, {
@@ -33,20 +43,23 @@
     validators: zod(resourceSchema),
     resetForm: false,
     dataType: "json",
+    // onUpdate is called when we press submit
     async onUpdate({ form }) {
-      if (form.data.id) {
+      // TODO: add additional validation here
+      const { id, ...payload } = form.data;
+      if (id) {
         console.log("update resource");
-        handleUpdateResource(form.data);
+        handleUpdateResource(id, payload);
       } else {
         console.log("create resource");
-        handleCreateResource(form.data);
+        handleCreateResource(payload);
       }
     },
   });
 
-  async function handleCreateResource(data: ResourceFields) {
+  async function handleCreateResource(payload: ResourceFields) {
     try {
-      const response = await resources.create(payload);
+      const response = await resources.create(activeCalendarId!, payload);
       toast.success("Resource created!");
       console.log("Resource created with ID:", response);
     } catch (error) {
@@ -55,7 +68,10 @@
     }
   }
 
-  async function handleUpdateResource(data: ResourceFields) {
+  async function handleUpdateResource(
+    resourceId: Hash,
+    payload: ResourceFields,
+  ) {
     try {
       const response = await resources.update(resourceId, payload);
       toast.success("Resource updated!");
@@ -70,7 +86,13 @@
 <SuperDebug data={{ $form, $errors }} />
 <form method="POST" use:enhance>
   <label for="name">Resource Name*</label>
-  <input type="text" name="name" bind:value={$form.name} class="" />
+  <input
+    type="text"
+    name="name"
+    bind:value={$form.name}
+    class=""
+    aria-invalid={$errors.name ? "true" : undefined}
+  />
   {#if $errors.name}<span class="invalid">{$errors.name}</span>{/if}
 
   <label for="description">Description*</label>

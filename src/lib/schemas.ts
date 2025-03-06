@@ -2,9 +2,16 @@ import { z } from "zod";
 
 // Reusable schemas
 const linkSchema = z.object({
+  title: z.string().nullable(),
   type: z.enum(["ticket", "custom"]).default("custom"),
-  title: z.string(),
   url: z.string().url("Invalid URL")
+});
+
+const imageSchema = z.string();
+
+const timeSpanSchema = z.object({
+  start: z.date(),
+  end: z.date(),
 });
 
 // Resource form Schema
@@ -14,15 +21,10 @@ export const resourceSchema = z.object({
   description: z.string().min(1, "Description is required"),
   contact: z.string().min(1, "Contact details are required"),
   link: linkSchema, //TODO: make this optional, issues with binding to input
+  images: z.array(imageSchema),
   availability: z.union([
-    z.array(
-      z.object({
-        date: z.string(),
-        startTime: z.string(),
-        endTime: z.string(),
-      })
-    ).min(1, "At least one availability date is required."),
-    z.literal("always")
+    z.literal("always"),
+    z.array(timeSpanSchema).min(1, "At least one availability date is required.")
   ]).default([]),
   multiBookable: z.boolean(),
 });

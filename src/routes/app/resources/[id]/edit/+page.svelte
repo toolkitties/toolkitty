@@ -9,7 +9,7 @@
 
   const handleDelete = async () => {
     try {
-      await resources.delete(data.resource!.id);
+      await resources.delete(data.form.id);
       toast.success("Resource deleted!");
       goto("/app/resources");
     } catch (error) {
@@ -19,5 +19,5 @@
   };
 </script>
 
-<ResourceForm data={data.form} />
+<ResourceForm data={data.form} activeCalendarId={data.activeCalendarId!} />
 <button onclick={() => handleDelete()}>Delete</button>
