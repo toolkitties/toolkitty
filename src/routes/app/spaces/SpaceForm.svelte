@@ -161,7 +161,7 @@
       <label for="address-lon">Longitude*</label>
       <input type="number" name="address-lon" bind:value={$form.location.lon} />
     </fieldset>
-  {:else if $form.type === "virtual"}
+  {:else if $form.location.type === "virtual"}
     <label for="address-virtual">Link to virtual space*</label>
     <input type="text" name="address-virtual" bind:value={$form.location} />
   {/if}
