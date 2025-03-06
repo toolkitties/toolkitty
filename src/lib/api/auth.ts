@@ -62,7 +62,6 @@ export async function amOwner(hash: Hash, type: OwnedType): Promise<boolean> {
  * Commands
  */
 
-// @TODO: change this to `assignRole` so it's generic over role type.
 export async function assignRole(
   calendarId: Hash,
   publicKey: PublicKey,

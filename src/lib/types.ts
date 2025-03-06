@@ -362,7 +362,6 @@ type UserProfileUpdated = {
 type CalendarAccessRequested = {
   type: "calendar_access_requested";
   data: {
-    // @TODO(sam): we should switch to using the streamId as the "access reference" for a calendar.
     calendarId: Hash;
     name: string;
     message: string;
