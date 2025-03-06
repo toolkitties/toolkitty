@@ -11,7 +11,11 @@
   import { superForm } from "sveltekit-superforms";
   import SuperDebug from "sveltekit-superforms";
 
-  let { data }: { data: SuperValidated<Infer<SpaceSchema>> } = $props();
+  let {
+    data,
+    activeCalendarId,
+  }: { data: SuperValidated<Infer<SpaceSchema>>; activeCalendarId: Hash } =
+    $props();
 
   let availability: { date: string; startTime: string; endTime: string }[] =
     $state([]);
@@ -31,19 +35,20 @@
     // onUpdate is called when we press submit
     async onUpdate({ form }) {
       // TODO: add additional validation here
+      const { id, ...payload } = form.data;
       if (form.data.id) {
         console.log("update space");
-        handleUpdateSpace(form.data);
+        handleUpdateSpace(id, payload);
       } else {
         console.log("create space");
-        handleCreateSpace(form.data);
+        handleCreateSpace(payload);
       }
     },
   });
 
-  async function handleCreateSpace(data: SpaceFields) {
+  async function handleCreateSpace(payload: SpaceFields) {
     try {
-      const spaceId = await spaces.create(data);
+      const spaceId = await spaces.create(activeCalendarId, payload);
       toast.success("Space created!");
       goto(`/app/spaces/${spaceId}`);
     } catch (error) {
@@ -52,9 +57,9 @@
     }
   }
 
-  async function handleUpdateSpace(data: SpaceFields) {
+  async function handleUpdateSpace(resourceId: Hash, payload: SpaceFields) {
     try {
-      await spaces.update(data.id, data);
+      await spaces.update(resourceId, payload);
       toast.success("Space updated!");
       goto(`/app/spaces/${data.id}`);
     } catch (error) {
@@ -65,21 +70,23 @@
 
   // Reset form.location to the correct object type when form.type is changed
   function updateLocation() {
-    if ($form.type === "physical") {
+    if ($form.location.type === "physical") {
       $form.location = {
+        type: "physical",
         street: "",
         city: "",
         state: "",
         zip: "",
         country: "",
       };
-    } else if ($form.type === "gps") {
+    } else if ($form.location.type === "gps") {
       $form.location = {
+        type: "gps",
         lat: "",
         lon: "",
       };
-    } else if ($form.type === "virtual") {
-      $form.location = "";
+    } else if ($form.location.type === "virtual") {
+      ($form.location.type = "virtual"), ($form.location.link = "");
     }
   }
 </script>
@@ -92,7 +99,7 @@
       type="radio"
       name="space-type"
       value="physical"
-      bind:group={$form.type}
+      bind:group={$form.location.type}
       onchange={updateLocation}
       checked
     />
@@ -101,7 +108,7 @@
       type="radio"
       name="space-type"
       value="gps"
-      bind:group={$form.type}
+      bind:group={$form.location.type}
       onchange={updateLocation}
     />
     <label for="virtual">Virtual Space</label>
@@ -109,14 +116,14 @@
       type="radio"
       name="space-type"
       value="virtual"
-      bind:group={$form.type}
+      bind:group={$form.location.type}
       onchange={updateLocation}
     />
   </fieldset>
 
   <label for="space-name">Space Name*</label>
   <input type="text" name="space-name" />
-  {#if $form.type === "physical"}
+  {#if $form.location.type === "physical"}
     <fieldset>
       <legend>Address</legend>
       <label for="address-street">Street</label>
@@ -146,7 +153,7 @@
         bind:value={$form.location.country}
       />
     </fieldset>
-  {:else if $form.type === "gps"}
+  {:else if $form.location.type === "gps"}
     <fieldset>
       <legend>Co-ordinates</legend>
       <label for="address-lat">Latitude*</label>
@@ -163,14 +170,14 @@
   <input type="number" name="capacity" bind:value={$form.capacity} />
 
   <label for="accessibility-details">Accessibility Details*</label>
-  <textarea name="accessibility-details" bind:value={$form.accessibilityDetails}
+  <textarea name="accessibility-details" bind:value={$form.accessibility}
   ></textarea>
 
   <label for="space-description">Space Description*</label>
   <textarea name="space-description" bind:value={$form.description}></textarea>
 
   <label for="contact-details">Contact Details*</label>
-  <input type="text" name="contact-details" bind:value={$form.contactDetails} />
+  <input type="text" name="contact-details" bind:value={$form.contact} />
 
   <fieldset>
     <legend>🔗 Useful link (website, social media)</legend>
@@ -195,7 +202,7 @@
     type="text"
     name="space-message"
     placeholder="Please let me know in advance if..."
-    bind:value={$form.message}
+    bind:value={$form.messageForRequesters}
   />
 
   <p>Space availability</p>

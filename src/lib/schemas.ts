@@ -14,6 +14,11 @@ const timeSpanSchema = z.object({
   end: z.date(),
 });
 
+const availabilitySchema = z.union([
+  z.literal("always"),
+  z.array(timeSpanSchema).min(1, "At least one availability date is required.")
+]).default([]);
+
 // Resource form Schema
 export const resourceSchema = z.object({
   id: z.string(),
@@ -22,15 +27,13 @@ export const resourceSchema = z.object({
   contact: z.string().min(1, "Contact details are required"),
   link: linkSchema, //TODO: make this optional, issues with binding to input
   images: z.array(imageSchema),
-  availability: z.union([
-    z.literal("always"),
-    z.array(timeSpanSchema).min(1, "At least one availability date is required.")
-  ]).default([]),
+  availability: availabilitySchema,
   multiBookable: z.boolean(),
 });
 
 // Space form Schema
 const physicalLocationSchema = z.object({
+  type: z.literal('physical'),
   street: z.string(),
   city: z.string(),
   state: z.string(),
@@ -39,49 +42,37 @@ const physicalLocationSchema = z.object({
 })
 
 const gpsLocationSchema = z.object({
+  type: z.literal('gps'),
   lat: z.string(),
   lon: z.string(),
 });
 
-const virtualLocationSchema = z.string().url("Invalid URL");
+const virtualLocationSchema = z.object({
+  type: z.literal('virtual'),
+  link: z.string().url("Invalid URL")
+});
+
 
 export const spaceSchema = z.object({
   id: z.string(),
-  type: z.enum(["physical", "gps", "virtual"]).nullable().default(null),
   name: z.string().min(1, "Space name is required"),
-  location: z.union([physicalLocationSchema, gpsLocationSchema, virtualLocationSchema]).default('' as string),
-  capacity: z.number().optional(),
-  accessibilityDetails: z.string().min(1, "Accessibility details are required"),
+  location: z.discriminatedUnion("type", [physicalLocationSchema, gpsLocationSchema, virtualLocationSchema]).default({
+    type: "physical",
+    street: "",
+    city: "",
+    state: "",
+    zip: "",
+    country: ""
+  }),
+  capacity: z.number().nullable(),
+  accessibility: z.string().min(1, "Accessibility details are required"),
   description: z.string().min(1, "Space description is required"),
-  contactDetails: z.string().min(1, "Contact details are required"),
+  contact: z.string().min(1, "Contact details are required"),
   link: linkSchema, //TODO: make this optional, issues with binding to input
-  message: z.string().optional(),
-  availability: z.union([
-    z.array(
-      z.object({
-        date: z.string(),
-        startTime: z.string(),
-        endTime: z.string(),
-      })
-    ).min(1, "At least one availability date is required."),
-    z.literal("always")
-  ]).default([]),
+  messageForRequesters: z.string().min(1, "Contact details are required"),
+  images: z.array(imageSchema),
+  availability: availabilitySchema,
   multiBookable: z.boolean(),
-}).refine(data => {
-  if (data.type === 'physical') {
-    return physicalLocationSchema.safeParse(data.location).success;
-  } else if (data.type === 'gps') {
-    return gpsLocationSchema.safeParse(data.location).success;
-  } else if (data.type === 'virtual') {
-    return virtualLocationSchema.safeParse(data.location).success;
-  }
-  return false
-}, {
-  message: "Invalid location for the specified type",
-  path: ["location"]
-}).refine(data => data.type !== null, {
-  message: "Type must be set",
-  path: ["type"]
 });
 
 // Event form schema
