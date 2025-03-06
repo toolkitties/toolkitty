@@ -149,20 +149,11 @@ async function onEventCreated(
   meta: StreamMessageMeta,
   data: EventCreated["data"],
 ) {
-  let { name, description, startDate, endDate, resources, links, images } =
-    data.fields;
-
   await db.events.add({
     id: meta.operationId,
-    name,
     calendarId: meta.stream.id,
     ownerId: meta.stream.owner,
-    description,
-    startDate,
-    endDate,
-    resources,
-    links,
-    images,
+    ...data.fields
   });
 }
 
