@@ -270,14 +270,15 @@ async function onCalendarAccessRequested(
   let publicKey = await identity.publicKey();
   let accessStatus = await checkStatus(publicKey, calendarId);
 
-  // Show toast to user with request
-  // TODO: Only show toast to owner of the calendar
-  if (accessStatus == "accepted") {
+  // Show toast to user with request if owner or admin.
+  const amOwner = await calendars.amOwner(calendarId);
+  const amAdmin = await auth.amAdmin(calendarId);
+  if (accessStatus == "pending" && (amOwner || amAdmin)) {
     toast.accessRequest(accessRequest);
   }
 
-  // Process new calendar author if access was accepted.
   if (accessStatus == "accepted") {
+    // Process new calendar author if access was accepted.
     await processNewCalendarAuthor(calendarId, meta.author);
   }
 }
@@ -338,7 +339,7 @@ async function onCalendarAccessRejected(
   });
 }
 
-async function processNewCalendarAuthor(
+export async function processNewCalendarAuthor(
   calendarId: Hash,
   publicKey: PublicKey,
 ) {
