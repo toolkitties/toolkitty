@@ -1,5 +1,5 @@
 <script lang="ts">
-  import EventForm from "$lib/components/EventForm.svelte";
+  import EventForm from "../EventForm.svelte";
   import type { PageProps } from "./$types";
 
   let { data }: PageProps = $props();

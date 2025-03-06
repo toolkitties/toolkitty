@@ -1,5 +1,5 @@
 <script lang="ts">
-  import AvailabilityViewer from "./AvailabilityViewer.svelte";
+  import AvailabilityViewer from "$lib/components/AvailabilityViewer.svelte";
   import { parseEventFormData } from "$lib/utils";
   import { goto } from "$app/navigation";
   import { toast } from "$lib/toast.svelte";
