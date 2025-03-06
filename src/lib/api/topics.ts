@@ -77,7 +77,7 @@ export async function subscribeToAll() {
 
   const myPublicKey = await publicKey();
   const allRequests = await db.accessRequests.toArray();
-  const allMyCalendars = await db.calendars.toArray()
+  const allMyCalendars = await db.calendars.toArray();
 
   // Subscribe to all calendars we requested access for and add any relevant public keys + logs to the
   // topic map.
@@ -97,8 +97,8 @@ export async function subscribeToAll() {
       publish.CALENDAR_INBOX_LOG_PATH,
     );
 
-    const hasAccess = await access.checkHasAccess(request.from, calendar.id);
-    if (!hasAccess) {
+    const accessStatus = await access.checkStatus(request.from, calendar.id);
+    if (accessStatus != "accepted") {
       continue;
     }
 
