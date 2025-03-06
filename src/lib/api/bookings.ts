@@ -91,6 +91,7 @@ export async function request(
  * Accept a booking request.
  */
 export async function accept(requestId: Hash) {
+  // @TODO: check user is owner
   let bookingRequest = await db.bookingRequests.get(requestId);
   const bookingRequested: BookingRequestAccepted = {
     type: "booking_request_accepted",
@@ -170,6 +171,7 @@ async function onBookingRequestAccepted(
   meta: StreamMessageMeta,
   data: BookingRequestAccepted["data"],
 ) {
+  // @TODO: check the author is owner.
   const resourceRequest = await db.bookingRequests.get(data.requestId);
 
   if (!resourceRequest) {
@@ -191,6 +193,7 @@ async function onBookingRequestRejected(
   meta: StreamMessageMeta,
   data: BookingRequestRejected["data"],
 ) {
+  // @TODO: check the author is owner.
   const resourceRequest = await db.bookingRequests.get(data.requestId);
 
   if (!resourceRequest) {
