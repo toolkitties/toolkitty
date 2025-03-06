@@ -33,7 +33,6 @@ export function findPending(
 ) {
   return liveQuery(async () => {
     let responsesFilter = {
-      answer: "accept",
       calendarId,
     };
 
@@ -181,9 +180,15 @@ async function onBookingRequested(
 
   const publicKey = await identity.publicKey();
 
-  // Show toast if we are the owner of the resource and we didn't make the request.
-  if (meta.author != publicKey && resource!.ownerId == publicKey) {
-    toast.bookingRequest(resourceRequest)
+  // Check if we own the resource, otherwise do nothing
+  if (resource?.ownerId == publicKey) {
+    if (meta.author == publicKey) {
+      // Automatically accept resource if we are the owner and we make the request
+      await accept(meta.operationId)
+    } else {
+      // Show toast if we are the owner of the resource and we didn't make the request.
+      toast.bookingRequest(resourceRequest)
+    }
   }
 }
 
