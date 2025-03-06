@@ -172,12 +172,9 @@ async function onBookingRequested(
   const resourceRequest: BookingRequest = {
     id: meta.operationId,
     calendarId: meta.stream.id,
-    eventId: data.eventId,
     requester: meta.author,
-    resourceId: data.resourceId,
     resourceType: data.type,
-    message: data.message,
-    timeSpan: data.timeSpan,
+    ...data,
   };
   await db.bookingRequests.add(resourceRequest);
 }
