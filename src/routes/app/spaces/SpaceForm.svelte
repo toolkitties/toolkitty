@@ -39,14 +39,6 @@
     },
   });
 
-  // function handleSubmit(e: Event) {
-  //   if (formType === "create") {
-  //     handleCreateSpace(e);
-  //   } else if (formType === "edit") {
-  //     handleUpdateSpace(e);
-  //   }
-  // }
-
   async function handleCreateSpace(data) {
     try {
       await spaces.create(data);
@@ -68,6 +60,26 @@
       toast.error("Error updating space!");
     }
   }
+
+  // Reset form.location to the correct object type when form.type is changed
+  function updateLocation() {
+    if ($form.type === "physical") {
+      $form.location = {
+        street: "",
+        city: "",
+        state: "",
+        zip: "",
+        country: "",
+      };
+    } else if ($form.type === "gps") {
+      $form.location = {
+        lat: "",
+        lon: "",
+      };
+    } else if ($form.type === "virtual") {
+      $form.location = "";
+    }
+  }
 </script>
 
 <SuperDebug data={{ $form, $errors }} />
@@ -79,16 +91,24 @@
       name="space-type"
       value="physical"
       bind:group={$form.type}
+      onchange={updateLocation}
       checked
     />
     <label for="gps">GPS coordinates</label>
-    <input type="radio" name="space-type" value="gps" bind:group={$form.type} />
+    <input
+      type="radio"
+      name="space-type"
+      value="gps"
+      bind:group={$form.type}
+      onchange={updateLocation}
+    />
     <label for="virtual">Virtual Space</label>
     <input
       type="radio"
       name="space-type"
       value="virtual"
       bind:group={$form.type}
+      onchange={updateLocation}
     />
   </fieldset>
 
