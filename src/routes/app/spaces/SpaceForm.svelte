@@ -30,31 +30,31 @@
     dataType: "json",
     async onUpdate({ form }) {
       if (form.data.id) {
-        console.log("create space");
-        handleCreateSpace(form.data);
-      } else {
         console.log("update space");
         handleUpdateSpace(form.data);
+      } else {
+        console.log("create space");
+        handleCreateSpace(form.data);
       }
     },
   });
 
-  async function handleCreateSpace(data) {
+  async function handleCreateSpace(data: SpaceFields) {
     try {
-      await spaces.create(data);
+      const spaceId = await spaces.create(data);
       toast.success("Space created!");
-      //goto(`/app/spaces/${space.id}`);
+      goto(`/app/spaces/${spaceId}`);
     } catch (error) {
       console.error("Error creating space: ", error);
       toast.error("Error creating space!");
     }
   }
 
-  async function handleUpdateSpace(data) {
+  async function handleUpdateSpace(data: SpaceFields) {
     try {
-      await spaces.update(space.id, data);
+      await spaces.update(data.id, data);
       toast.success("Space updated!");
-      goto(`/app/spaces/${space.id}`);
+      goto(`/app/spaces/${data.id}`);
     } catch (error) {
       console.error("Error updating space: ", error);
       toast.error("Error updating space!");

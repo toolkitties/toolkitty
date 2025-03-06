@@ -7,7 +7,7 @@ const linkSchema = z.object({
   url: z.string().url("Invalid URL")
 });
 
-// Resource Schema
+// Resource form Schema
 export const resourceSchema = z.object({
   id: z.string(),
   name: z.string().min(1, "Resource name is required"),
@@ -27,7 +27,7 @@ export const resourceSchema = z.object({
   multiBookable: z.boolean(),
 });
 
-// Space Schema
+// Space form Schema
 const physicalLocationSchema = z.object({
   street: z.string(),
   city: z.string(),
@@ -82,7 +82,20 @@ export const spaceSchema = z.object({
   path: ["type"]
 });
 
+// Event form schema
+export const eventSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1, "Event name is required"),
+  description: z.string().min(1, "Event description is required"),
+  startDate: z.string().min(1, "Event start date is required"),
+  endDate: z.string().min(1, "Event start time is required"),
+  publicStartDate: z.string(),
+  eventEndTime: z.string(),
+  resources: z.array(z.string()).optional(),
+  link: z.array(linkSchema),
+});
 
 // Schema types for zod
 export type ResourceSchema = typeof resourceSchema;
 export type SpaceSchema = typeof spaceSchema;
+export type EventSchema = typeof eventSchema;

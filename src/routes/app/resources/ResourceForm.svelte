@@ -8,6 +8,7 @@
   import { parseResourceFormData } from "$lib/utils";
   import { resourceSchema } from "$lib/schemas";
   import { zod } from "sveltekit-superforms/adapters";
+  import { toast } from "$lib/toast.svelte";
 
   let { data }: { data: SuperValidated<Infer<ResourceSchema>> } = $props();
   let alwaysAvailable = $state(false);
@@ -34,60 +35,36 @@
     dataType: "json",
     async onUpdate({ form }) {
       if (form.data.id) {
-        console.log("create resource");
-        // await resources.create(form.data);
-      } else {
         console.log("update resource");
-        // await resources.update(form.data);
+        handleUpdateResource(form.data);
+      } else {
+        console.log("create resource");
+        handleCreateResource(form.data);
       }
     },
   });
 
-  // function handleSubmit(e: Event) {
-  //   if (formType === "create") {
-  //     handleCreateResource(e);
-  //   } else if (formType === "edit") {
-  //     handleUpdateResource(e);
-  //   }
-  // }
+  async function handleCreateResource(data: ResourceFields) {
+    try {
+      const response = await resources.create(payload);
+      toast.success("Resource created!");
+      console.log("Resource created with ID:", response);
+    } catch (error) {
+      toast.error("Error creating resource!");
+      console.error("Error creating resource:", error);
+    }
+  }
 
-  // async function handleCreateResource(e: Event) {
-  //   e.preventDefault();
-  //   const form = e.currentTarget as HTMLFormElement;
-  //   const formData = new FormData(form);
-  //   const payload = parseResourceFormData(
-  //     formData,
-  //     alwaysAvailable,
-  //     availability,
-  //   );
-
-  //   try {
-  //     const response = await create(payload);
-  //     console.log("Resource created with ID:", response);
-  //   } catch (error) {
-  //     console.error("Error creating resource:", error);
-  //   }
-  // }
-
-  // async function handleUpdateResource(e: Event) {
-  //   e.preventDefault();
-  //   const form = e.currentTarget as HTMLFormElement;
-  //   const formData = new FormData(form);
-
-  //   const resourceId = "1"; // @todo - fetch properly
-  //   const payload = parseResourceFormData(
-  //     formData,
-  //     alwaysAvailable,
-  //     availability,
-  //   );
-
-  //   try {
-  //     const response = await update(resourceId, payload);
-  //     console.log("Resource updated", response);
-  //   } catch (error) {
-  //     console.error("Error updating resource:", error);
-  //   }
-  // }
+  async function handleUpdateResource(data: ResourceFields) {
+    try {
+      const response = await resources.update(resourceId, payload);
+      toast.success("Resource updated!");
+      console.log("Resource updated", response);
+    } catch (error) {
+      toast.error("Error updating resource!");
+      console.error("Error updating resource:", error);
+    }
+  }
 </script>
 
 <SuperDebug data={{ $form, $errors }} />
