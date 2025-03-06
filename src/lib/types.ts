@@ -552,7 +552,7 @@ type BookingRequestAcceptanceRevoked = {
  * Roles
  */
 
-type Role = "admin";
+type Role = "organiser" | "admin";
 
 type UserRoleAssigned = {
   type: "user_role_assigned";

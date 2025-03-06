@@ -62,20 +62,23 @@ export async function amOwner(
  * Commands
  */
 
-export async function makeAdmin(
+// @TODO: change this to `assignRole` so it's generic over role type.
+export async function assignRole(
   calendarId: Hash,
   publicKey: PublicKey,
+  role: Role,
 ): Promise<OperationId> {
+  const amOwner = await calendars.amOwner(calendarId);
   const amAdmin = await auth.amAdmin(calendarId);
-  if (!amAdmin) {
-    throw new Error("user is not an admin");
+  if (!amAdmin && !amOwner) {
+    throw new Error("user does not have permission to assign user roles");
   }
 
   const user_role_assigned: UserRoleAssigned = {
     type: "user_role_assigned",
     data: {
       publicKey,
-      role: "admin",
+      role,
     },
   };
 
