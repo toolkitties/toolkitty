@@ -552,11 +552,13 @@ type BookingRequestAcceptanceRevoked = {
  * Roles
  */
 
+type Role = "admin";
+
 type UserRoleAssigned = {
   type: "user_role_assigned";
   data: {
     publicKey: PublicKey;
-    role: "publisher" | "organiser" | "admin";
+    role: Role;
   };
 };
 
@@ -579,8 +581,11 @@ type Subscription = {
  */
 
 type User = {
-  id: PublicKey;
-  name: string;
+  publicKey: PublicKey;
+  calendarId: CalendarId;
+  // @TODO: currently this value is undefined for calendar creators: https://github.com/toolkitties/toolkitty/issues/177
+  name?: string;
+  role?: Role
 };
 
 type Calendar = {

@@ -1,4 +1,4 @@
-import Dexie, { type EntityTable } from "dexie";
+import Dexie, { type EntityTable, type Table } from "dexie";
 
 /**
  * (ノ ˘_˘)ノ　ζ|||ζ　ζ|||ζ
@@ -48,6 +48,10 @@ const db = new Dexie("Toolkitty") as Dexie & {
     Settings,
     "name" // primary key
   >;
+  users: Table<
+    User,
+    [CalendarId, PublicKey] // primary key
+  >;
 };
 
 /**
@@ -72,6 +76,7 @@ db.version(1).stores({
   bookingResponses: "&id, eventId, requestId, calendarId, answer",
   streams: "&id",
   settings: "&name",
+  users: "&[calendarId+publicKey]",
 });
 
 export { db };
