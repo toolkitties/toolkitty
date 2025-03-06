@@ -2,7 +2,9 @@
  * Queries
  */
 
+import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
+import { invoke } from "@tauri-apps/api/core";
 import {
   auth,
   calendars,
@@ -13,6 +15,7 @@ import {
   spaces,
   users,
 } from ".";
+import { TopicFactory } from "./topics";
 
 type OwnedType = "calendar" | "space" | "resource" | "event";
 
@@ -50,10 +53,7 @@ export async function isOwner(
   }
 }
 
-export async function amOwner(
-  hash: Hash,
-  type: OwnedType,
-): Promise<boolean> {
+export async function amOwner(hash: Hash, type: OwnedType): Promise<boolean> {
   const myPublicKey = await identity.publicKey();
   return await isOwner(hash, myPublicKey, type);
 }
@@ -110,7 +110,20 @@ async function onUserRoleAssigned(
   meta: StreamMessageMeta,
   data: UserRoleAssigned["data"],
 ) {
-  // @TODO: check the author is an admin, if not error so that the operation is not ack'd
-  // @TODO: assign role to user in users table.
-  // @TODO: request replay of all un-ack'd messages.
+  // Check if the author has permission to assign roles in this calendar.
+  const isOwner = await calendars.isOwner(meta.stream.id, meta.author);
+  const isAdmin = await auth.isAdmin(meta.stream.id, meta.author);
+  if (!isAdmin && !isOwner) {
+    throw new Error("author does not have permission to delete this event");
+  }
+
+  // Update the user's role.
+  db.users.update([meta.stream.id, data.publicKey], { role: data.role });
+  
+  // Request that all un-ack'd operations from this topic a replayed.
+  //
+  // We do this because an authors role has changed, which may mean that operations we received
+  // earlier, and rejected due to insufficient permissions, would now be processed correctly. 
+  const topic = new TopicFactory(meta.stream.id);
+  await invoke("replay", { topic: topic.calendar() });
 }
