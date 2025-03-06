@@ -2,7 +2,7 @@
 
 import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
-import { events, publish } from ".";
+import { auth, events, publish } from ".";
 
 /**
  * Queries
@@ -30,6 +30,17 @@ export function findByOwner(
  */
 export function findById(id: Hash): Promise<CalendarEvent | undefined> {
   return db.events.get({ id });
+}
+
+export async function isOwner(
+  eventId: Hash,
+  publicKey: PublicKey,
+): Promise<boolean> {
+  return auth.isOwner(eventId, publicKey, "event");
+}
+
+export async function amOwner(eventId: Hash): Promise<boolean> {
+  return auth.amOwner(eventId, "event");
 }
 
 /**
@@ -60,6 +71,12 @@ export async function create(calendarId: Hash, fields: EventFields) {
  * Update a calendar event.
  */
 export async function update(eventId: Hash, fields: EventFields) {
+  const amAdmin = await auth.amAdmin(eventId);
+  const amOwner = await events.amOwner(eventId);
+  if (!amAdmin && !amOwner) {
+    throw new Error("user does not have permission to update this event");
+  }
+
   const event = await events.findById(eventId);
   let eventUpdated: EventUpdated = {
     type: "event_updated",
@@ -82,6 +99,12 @@ export async function update(eventId: Hash, fields: EventFields) {
  * Delete a calendar event.
  */
 async function deleteEvent(eventId: Hash) {
+  const amAdmin = await auth.amAdmin(eventId);
+  const amOwner = await events.amOwner(eventId);
+  if (!amAdmin && !amOwner) {
+    throw new Error("user does not have permission to delete this event");
+  }
+
   const event = await events.findById(eventId);
   let eventDeleted: EventDeleted = {
     type: "event_deleted",
@@ -145,46 +168,40 @@ async function onEventUpdated(
   meta: StreamMessageMeta,
   data: EventUpdated["data"],
 ) {
-  await validateUpdateDelete(meta.author, data.id);
+  let event = await db.events.get(data.id);
 
-  let { name, description, startDate, endDate, resources, links, images } =
-    data.fields;
+  // The event must already exist.
+  if (!event) {
+    throw new Error("event does not exist");
+  }
 
-  await db.events.update(data.id, {
-    name,
-    calendarId: meta.stream.id,
-    ownerId: meta.stream.owner,
-    description,
-    startDate,
-    endDate,
-    resources,
-    links,
-    images,
-  });
+  // Check that the message author has the required permissions.
+  const isAdmin = await auth.isAdmin(data.id, meta.author);
+  const isOwner = await events.isOwner(data.id, meta.author);
+  if (!isAdmin && !isOwner) {
+    throw new Error("author does not have permission to update this event");
+  }
+
+  await db.events.update(data.id, data.fields);
 }
 
 async function onEventDeleted(
   meta: StreamMessageMeta,
   data: EventDeleted["data"],
 ) {
-  await validateUpdateDelete(meta.author, data.id);
+  let event = await db.events.get(data.id);
+
+  // The event must already exist.
+  if (!event) {
+    throw new Error("event does not exist");
+  }
+
+  // Check that the message author has the required permissions.
+  const isAdmin = await auth.isAdmin(data.id, meta.author);
+  const isOwner = await events.isOwner(data.id, meta.author);
+  if (!isAdmin && !isOwner) {
+    throw new Error("author does not have permission to delete this event");
+  }
+
   await db.events.delete(data.id);
-}
-
-/**
- * Validation
- */
-
-async function validateUpdateDelete(publicKey: PublicKey, resourceId: Hash) {
-  let resource = await db.events.get(resourceId);
-
-  // The resource must already exist.
-  if (!resource) {
-    throw new Error("resource does not exist");
-  }
-
-  // Only the resource owner can perform updates and deletes.
-  if (resource.ownerId != publicKey) {
-    throw new Error("non-owner update or delete on resource");
-  }
 }

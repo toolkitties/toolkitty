@@ -3,7 +3,7 @@ import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
 import { liveQuery } from "dexie";
 import { publicKey } from "./identity";
-import { publish, topics } from ".";
+import { auth, calendars, publish, topics } from ".";
 import { TopicFactory } from "./topics";
 
 /*
@@ -14,6 +14,7 @@ export function findMany(): Promise<Calendar[]> {
   return db.calendars.toArray();
 }
 
+// @TODO: for consistency this query should be named `findById`
 export function findOne(id: Hash): Promise<Calendar | undefined> {
   return db.calendars.get({ id });
 }
@@ -32,7 +33,9 @@ export function inviteCode(calendar: Calendar): string {
  * Returns the id of the currently active calendar
  */
 export function getActiveCalendarId(): Promise<string | undefined> {
-  return db.settings.get("activeCalendar").then((activeCalendar) => activeCalendar?.value);
+  return db.settings
+    .get("activeCalendar")
+    .then((activeCalendar) => activeCalendar?.value);
 }
 
 /*
@@ -50,8 +53,19 @@ export const getActiveCalendar = liveQuery(async () => {
  */
 export async function getShareCode() {
   const activeCalendarId = await db.settings.get("activeCalendar");
-  if (!activeCalendarId) return '';
+  if (!activeCalendarId) return "";
   return activeCalendarId.value.slice(0, 4);
+}
+
+export async function isOwner(
+  calendarId: Hash,
+  publicKey: PublicKey,
+): Promise<boolean> {
+  return auth.isOwner(calendarId, publicKey, "calendar");
+}
+
+export async function amOwner(calendarId: Hash): Promise<boolean> {
+  return auth.amOwner(calendarId, "calendar");
 }
 
 /*
@@ -61,8 +75,6 @@ export async function getShareCode() {
 export async function create(
   data: CalendarCreated["data"],
 ): Promise<[OperationId, StreamId]> {
-  const myPublicKey = await publicKey();
-
   // Define the "calendar created" application event.
   const calendarCreated: CalendarCreated = {
     type: "calendar_created",
@@ -90,6 +102,12 @@ export async function update(
   calendarId: Hash,
   fields: CalendarFields,
 ): Promise<Hash> {
+  const amAdmin = await auth.amAdmin(calendarId);
+  const amOwner = await calendars.amOwner(calendarId);
+  if (!amAdmin && !amOwner) {
+    throw new Error("user does not have permission to update this calendar");
+  }
+
   let calendarUpdated: CalendarUpdated = {
     type: "calendar_updated",
     data: {
@@ -109,6 +127,12 @@ export async function update(
 }
 
 export async function deleteCalendar(calendarId: Hash): Promise<Hash> {
+  const amAdmin = await auth.amAdmin(calendarId);
+  const amOwner = await calendars.amOwner(calendarId);
+  if (!amAdmin && !amOwner) {
+    throw new Error("user does not have permission to delete this calendar");
+  }
+
   const calendarDeleted: CalendarDeleted = {
     type: "calendar_deleted",
     data: {
@@ -194,8 +218,21 @@ async function onCalendarUpdated(
   meta: StreamMessageMeta,
   data: CalendarUpdated["data"],
 ) {
+  let calendar = await db.calendars.get(data.id);
+
+  // The calendar must already exist.
+  if (!calendar) {
+    throw new Error("calendar does not exist");
+  }
+
+  // Check that the message author has the required permissions.
+  const isAdmin = await auth.isAdmin(data.id, meta.author);
+  const isOwner = await calendars.isOwner(data.id, meta.author);
+  if (!isAdmin && !isOwner) {
+    throw new Error("author does not have permission to update this calendar");
+  }
+
   validateFields(data.fields);
-  await validateUpdateDelete(meta.author, data.id);
 
   let { name, dates } = data.fields;
   let timeSpan = dates[0];
@@ -211,7 +248,20 @@ async function onCalendarDeleted(
   meta: StreamMessageMeta,
   data: CalendarDeleted["data"],
 ) {
-  await validateUpdateDelete(meta.author, data.id);
+  let calendar = await db.calendars.get(data.id);
+
+  // The calendar must already exist.
+  if (!calendar) {
+    throw new Error("calendar does not exist");
+  }
+
+  // Check that the message author has the required permissions.
+  const isAdmin = await auth.isAdmin(data.id, meta.author);
+  const isOwner = await calendars.isOwner(data.id, meta.author);
+  if (!isAdmin && !isOwner) {
+    throw new Error("author does not have permission to delete this calendar");
+  }
+
   await db.calendars.delete(data.id);
 }
 
@@ -223,19 +273,5 @@ function validateFields(fields: CalendarFields) {
   let { dates } = fields;
   if (dates.length == 0) {
     throw new Error("calendar dates must contain at least on time span");
-  }
-}
-
-async function validateUpdateDelete(publicKey: PublicKey, calendarId: Hash) {
-  let calendar = await db.calendars.get(calendarId);
-
-  // The calendar must already exist.
-  if (!calendar) {
-    throw new Error("calendar does not exist");
-  }
-
-  // Only the calendar owner can perform updates and deletes.
-  if (calendar.ownerId != publicKey) {
-    throw new Error("non-owner update or delete on calendar");
   }
 }

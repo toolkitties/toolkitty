@@ -1,5 +1,5 @@
 import { db } from "$lib/db";
-import { publish, resources } from ".";
+import { auth, publish, resources } from ".";
 import { getActiveCalendarId } from "./calendars";
 import { promiseResult } from "$lib/promiseMap";
 
@@ -31,6 +31,17 @@ export function findById(id: Hash): Promise<Resource | undefined> {
   return db.resources.get({ id: id });
 }
 
+export async function isOwner(
+  resourceId: Hash,
+  publicKey: PublicKey,
+): Promise<boolean> {
+  return auth.isOwner(resourceId, publicKey, "resource");
+}
+
+export async function amOwner(resourceId: Hash): Promise<boolean> {
+  return auth.amOwner(resourceId, "resource");
+}
+
 /**
  * Commands
  */
@@ -38,7 +49,10 @@ export function findById(id: Hash): Promise<Resource | undefined> {
 /**
  * Create a calendar resource.
  */
-export async function create(calendarId: Hash, fields: ResourceFields): Promise<Hash> {
+export async function create(
+  calendarId: Hash,
+  fields: ResourceFields,
+): Promise<Hash> {
   let resourceCreated: ResourceCreated = {
     type: "resource_created",
     data: {
@@ -62,6 +76,12 @@ export async function update(
   resourceId: Hash,
   fields: ResourceFields,
 ): Promise<Hash> {
+  const amAdmin = await auth.amAdmin(resourceId);
+  const amOwner = await resources.amOwner(resourceId);
+  if (!amAdmin && !amOwner) {
+    throw new Error("user does not have permission to update this resource");
+  }
+
   let resource = await resources.findById(resourceId);
   let resourceUpdated: ResourceUpdated = {
     type: "resource_updated",
@@ -84,6 +104,12 @@ export async function update(
  * Delete a calendar resource.
  */
 export async function deleteResource(resourceId: Hash): Promise<Hash> {
+  const amAdmin = await auth.amAdmin(resourceId);
+  const amOwner = await resources.amOwner(resourceId);
+  if (!amAdmin && !amOwner) {
+    throw new Error("user does not have permission to delete this resource");
+  }
+
   let resource = await resources.findById(resourceId);
   let resourceDeleted: ResourceDeleted = {
     type: "resource_deleted",
@@ -156,51 +182,40 @@ async function onResourceUpdated(
   meta: StreamMessageMeta,
   data: ResourceUpdated["data"],
 ) {
-  await validateUpdateDelete(meta.author, data.id);
-
-  let {
-    name,
-    description,
-    contact,
-    link,
-    images,
-    availability,
-    multiBookable,
-  } = data.fields;
-
-  await db.resources.update(data.id, {
-    name,
-    description,
-    contact,
-    link,
-    images,
-    availability,
-    multiBookable,
-  });
-}
-
-async function onResourceDeleted(
-  meta: StreamMessageMeta,
-  data: ResourceDeleted["data"],
-) {
-  await validateUpdateDelete(meta.author, data.id);
-  await db.resources.delete(data.id);
-}
-
-/**
- * Validation
- */
-
-async function validateUpdateDelete(publicKey: PublicKey, resourceId: Hash) {
-  let resource = await db.resources.get(resourceId);
+  let resource = await db.resources.get(data.id);
 
   // The resource must already exist.
   if (!resource) {
     throw new Error("resource does not exist");
   }
 
-  // Only the resource owner can perform updates and deletes.
-  if (resource.ownerId != publicKey) {
-    throw new Error("non-owner update or delete on resource");
+  // Check that the message author has the required permissions.
+  const isAdmin = await auth.isAdmin(data.id, meta.author);
+  const isOwner = await resources.isOwner(data.id, meta.author);
+  if (!isAdmin && !isOwner) {
+    throw new Error("author does not have permission to update this resource");
   }
+
+  await db.resources.update(data.id, data.fields);
+}
+
+async function onResourceDeleted(
+  meta: StreamMessageMeta,
+  data: ResourceDeleted["data"],
+) {
+  let resource = await db.resources.get(data.id);
+
+  // The resource must already exist.
+  if (!resource) {
+    throw new Error("resource does not exist");
+  }
+
+  // Check that the message author has the required permissions.
+  const isAdmin = await auth.isAdmin(data.id, meta.author);
+  const isOwner = await resources.isOwner(data.id, meta.author);
+  if (!isAdmin && !isOwner) {
+    throw new Error("author does not have permission to delete this resource");
+  }
+
+  await db.resources.delete(data.id);
 }
