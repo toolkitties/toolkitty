@@ -30,7 +30,7 @@
       return;
     }
 
-    goto(`/join?code=${calendar.stream.id}`);
+    goto(`/request`);
   }
 </script>
 
