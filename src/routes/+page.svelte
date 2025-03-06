@@ -6,7 +6,7 @@
   let loading = $state("");
   let loaded = $state(false);
   const targetLoadingString = ">₍^. .^₎<";
-  let interval: number;
+  let interval: ReturnType<typeof setInterval>;
 
   $effect(() => {
     if (loaded) {
@@ -15,14 +15,14 @@
   });
 
   async function checkAccess() {
+    // TODO: cache active calendar somewhere
     let activeCalendarId = await calendars.getActiveCalendarId();
 
     if (activeCalendarId) {
+      // TODO: cache publicKey somewhere
       let publicKey = await identity.publicKey();
       let accessStatus = await access.checkStatus(publicKey, activeCalendarId);
 
-      console.log(publicKey);
-      console.log(accessStatus);
       if (accessStatus == "accepted") {
         // access is accepted, go to events
         // goto("/app/events");
