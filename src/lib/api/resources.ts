@@ -155,28 +155,12 @@ async function onResourceCreated(
   meta: StreamMessageMeta,
   data: ResourceCreated["data"],
 ) {
-  let {
-    name,
-    description,
-    contact,
-    link,
-    images,
-    availability,
-    multiBookable,
-  } = data.fields;
-
   await db.resources.add({
     id: meta.operationId,
     calendarId: meta.stream.id,
     ownerId: meta.author,
     booked: [],
-    name,
-    description,
-    contact,
-    link,
-    images,
-    availability,
-    multiBookable,
+    ...data.fields,
   });
 }
 
