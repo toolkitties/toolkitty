@@ -1,6 +1,8 @@
 import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
+import { invoke } from "@tauri-apps/api/core";
 import { publish, resources } from ".";
+import { TopicFactory } from "./topics";
 
 /**
  * Queries
@@ -177,6 +179,10 @@ async function onBookingRequested(
     ...data,
   };
   await db.bookingRequests.add(resourceRequest);
+
+  // Replay un-ack'd messages which we may have received out-of-order.
+  const topic = new TopicFactory(meta.stream.id);
+  await invoke("replay", { topic: topic.calendar() });
 }
 
 async function onBookingRequestAccepted(

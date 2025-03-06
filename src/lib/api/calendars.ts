@@ -203,6 +203,10 @@ async function onCalendarCreated(
   // Add the calendar creator to the list of authors who's data we want to
   // sync for this calendar.
   access.processNewCalendarAuthor(meta.stream.id, meta.stream.owner);
+
+  // Replay un-ack'd messages which we may have received out-of-order.
+  const topic = new TopicFactory(meta.stream.id);
+  await invoke("replay", { topic: topic.calendar() });
 }
 
 async function onCalendarUpdated(

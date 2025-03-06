@@ -1,6 +1,8 @@
 import { db } from "$lib/db";
 import { auth, publish, spaces } from ".";
 import { promiseResult } from "$lib/promiseMap";
+import { TopicFactory } from "./topics";
+import { invoke } from "@tauri-apps/api/core";
 
 /**
  * Queries
@@ -77,7 +79,7 @@ export async function update(
   fields: SpaceFields,
 ): Promise<Hash> {
   const space = await spaces.findById(spaceId);
-  
+
   const amAdmin = await auth.amAdmin(space!.calendarId);
   const amOwner = await spaces.amOwner(spaceId);
   if (!amAdmin && !amOwner) {
@@ -160,8 +162,12 @@ async function onSpaceCreated(
     calendarId: meta.stream.id,
     ownerId: meta.author,
     booked: [],
-    ...data.fields
+    ...data.fields,
   });
+
+  // Replay un-ack'd messages which we may have received out-of-order.
+  const topic = new TopicFactory(meta.stream.id);
+  await invoke("replay", { topic: topic.calendar() });
 }
 
 async function onSpaceUpdated(
