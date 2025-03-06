@@ -13,6 +13,39 @@ export function findMany(calendarId: Hash): Promise<Space[]> {
   return db.spaces.where({ calendarId }).toArray();
 }
 
+export async function findManyWithinCalendarDates(
+  calendarId: Hash,
+): Promise<Space[]> {
+  const calendar = await db.calendars.get(calendarId);
+  const calendarStartDate = calendar!.startDate;
+  const calendarEndDate = calendar!.endDate;
+
+  return db.spaces
+    .where({ calendarId })
+    .filter((space) => {
+      if (space.availability == "always") {
+        return true;
+      }
+      for (const span of space.availability) {
+        return isValidAvailability(calendarStartDate, calendarEndDate, span);
+      }
+      return false;
+    })
+    .toArray();
+}
+
+function isValidAvailability(
+  calendarStartDate: Date,
+  calendarEndDate: Date | undefined,
+  timeSpan: TimeSpan,
+): boolean {
+  if (calendarEndDate == undefined) {
+    return timeSpan.end > calendarStartDate;
+  }
+
+  return timeSpan.end > calendarStartDate || timeSpan.start < calendarEndDate;
+}
+
 /**
  * Get all calendar spaces that are owned by the passed public key.
  */
@@ -37,7 +70,10 @@ export function findById(id: Hash): Promise<Space | undefined> {
 /**
  * Create a calendar space.
  */
-export async function create(calendarId: Hash, fields: SpaceFields): Promise<Hash> {
+export async function create(
+  calendarId: Hash,
+  fields: SpaceFields,
+): Promise<Hash> {
   const spaceCreated: SpaceCreated = {
     type: "space_created",
     data: {
