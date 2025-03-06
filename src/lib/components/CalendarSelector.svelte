@@ -3,6 +3,7 @@
   import { onMount } from "svelte";
   import { invalidateAll } from "$app/navigation";
   import { Select } from "bits-ui";
+  import ChevronIcon from "$lib/components/icons/ChevronIcon.svelte";
 
   let calendarList: Calendar[] = $state([]);
   let selectedCalendar = $state("");
@@ -32,17 +33,22 @@
     bind:value={selectedCalendar}
     onValueChange={(value) => handleCalendarSelected(value)}
   >
-    <Select.Trigger>
-      {selectedCalendarName}
+    <Select.Trigger class="w-full flex items-center">
+      <span class="flex-grow">
+        {selectedCalendarName}
+      </span>
+      <ChevronIcon size={16} />
     </Select.Trigger>
     <Select.Portal>
-      <Select.Content class="bg-bg border p-2">
-        <Select.Viewport>
+      <Select.Content>
+        <Select.Viewport class="bg-bg border p-2 flex flex-col w-full">
           {#each calendarList as calendar}
             <Select.Item value={calendar.id} label={calendar.name}
               >{calendar.name}</Select.Item
             >
           {/each}
+          <a href="/join">Join Calendar</a>
+          <a href="/create">+ Create new calendar</a>
         </Select.Viewport>
       </Select.Content>
     </Select.Portal>
