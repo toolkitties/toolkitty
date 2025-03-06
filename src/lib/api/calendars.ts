@@ -2,8 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
 import { liveQuery } from "dexie";
-import { publicKey } from "./identity";
-import { auth, calendars, publish, topics } from ".";
+import { access, auth, calendars, publish, topics } from ".";
 import { TopicFactory } from "./topics";
 
 /*
@@ -203,15 +202,7 @@ async function onCalendarCreated(
 
   // Add the calendar creator to the list of authors who's data we want to
   // sync for this calendar.
-  const topic = new TopicFactory(meta.stream.id);
-  await topics.addCalendarAuthor(meta.author, topic.calendarInbox(), {
-    stream,
-    logPath: publish.CALENDAR_INBOX_LOG_PATH,
-  });
-  await topics.addCalendarAuthor(meta.author, topic.calendar(), {
-    stream,
-    logPath: publish.CALENDAR_LOG_PATH,
-  });
+  access.processNewCalendarAuthor(meta.stream.id, meta.stream.owner);
 }
 
 async function onCalendarUpdated(
