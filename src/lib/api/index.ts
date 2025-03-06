@@ -10,3 +10,5 @@ export * as streams from "./streams";
 export * as publish from "./publish";
 export * as identity from "./identity"
 export * as bookings from "./bookings"
+export * as users from "./users"
+export * as auth from "./auth"
