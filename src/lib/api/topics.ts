@@ -97,8 +97,8 @@ export async function subscribeToAll() {
       publish.CALENDAR_INBOX_LOG_PATH,
     );
 
-    const hasAccess = await access.checkHasAccess(request.from, calendar.id);
-    if (!hasAccess) {
+    const hasAccess = await access.checkStatus(request.from, calendar.id);
+    if (hasAccess != "accepted") {
       continue;
     }
 
