@@ -1,6 +1,6 @@
 import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
-import { publish } from ".";
+import { publish, resources } from ".";
 
 /**
  * Queries
@@ -91,8 +91,15 @@ export async function request(
  * Accept a booking request.
  */
 export async function accept(requestId: Hash) {
-  // @TODO: check user is owner
   let bookingRequest = await db.bookingRequests.get(requestId);
+
+  const amOwner = await resources.amOwner(bookingRequest!.resourceId);
+  if (!amOwner) {
+    throw new Error(
+      "user does not have permission to accept booking request for this resource",
+    );
+  }
+
   const bookingRequested: BookingRequestAccepted = {
     type: "booking_request_accepted",
     data: {
@@ -115,6 +122,14 @@ export async function accept(requestId: Hash) {
  */
 export async function reject(requestId: Hash) {
   let bookingRequest = await db.bookingRequests.get(requestId);
+
+  const amOwner = await resources.amOwner(bookingRequest!.resourceId);
+  if (!amOwner) {
+    throw new Error(
+      "user does not have permission to reject booking request for this resource",
+    );
+  }
+
   const bookingRequested: BookingRequestRejected = {
     type: "booking_request_rejected",
     data: {
@@ -171,11 +186,21 @@ async function onBookingRequestAccepted(
   meta: StreamMessageMeta,
   data: BookingRequestAccepted["data"],
 ) {
-  // @TODO: check the author is owner.
   const resourceRequest = await db.bookingRequests.get(data.requestId);
 
   if (!resourceRequest) {
     throw new Error("resource request does not exist");
+  }
+
+  const isOwner = await resources.isOwner(
+    resourceRequest.resourceId,
+    meta.author,
+  );
+
+  if (!isOwner) {
+    throw new Error(
+      "author does not have permission to accept a booking request for this resource",
+    );
   }
 
   const resourceResponse: BookingResponse = {
@@ -193,11 +218,21 @@ async function onBookingRequestRejected(
   meta: StreamMessageMeta,
   data: BookingRequestRejected["data"],
 ) {
-  // @TODO: check the author is owner.
   const resourceRequest = await db.bookingRequests.get(data.requestId);
 
   if (!resourceRequest) {
     throw new Error("resource request does not exist");
+  }
+
+  const isOwner = await resources.isOwner(
+    resourceRequest.resourceId,
+    meta.author,
+  );
+
+  if (!isOwner) {
+    throw new Error(
+      "author does not have permission to accept a booking request for this resource",
+    );
   }
 
   const resourceResponse: BookingResponse = {
