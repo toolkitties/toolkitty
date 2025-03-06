@@ -28,11 +28,25 @@ export function inviteCode(calendar: Calendar): string {
   return calendar.id.slice(0, 4);
 }
 
+export function festivalInstructions(calendar: Calendar): string | undefined {
+  return calendar.festivalInstructions;
+}
+
+export function spacePageText(calendar: Calendar): string | undefined {
+  return calendar.spacePageText;
+}
+
+export function resourcePageText(calendar: Calendar): string | undefined {
+  return calendar.resourcePageText;
+}
+
 /*
  * Returns the id of the currently active calendar
  */
 export function getActiveCalendarId(): Promise<string | undefined> {
-  return db.settings.get("activeCalendar").then((activeCalendar) => activeCalendar?.value);
+  return db.settings
+    .get("activeCalendar")
+    .then((activeCalendar) => activeCalendar?.value);
 }
 
 /*
@@ -50,7 +64,7 @@ export const getActiveCalendar = liveQuery(async () => {
  */
 export async function getShareCode() {
   const activeCalendarId = await db.settings.get("activeCalendar");
-  if (!activeCalendarId) return '';
+  if (!activeCalendarId) return "";
   return activeCalendarId.value.slice(0, 4);
 }
 
