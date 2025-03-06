@@ -1,9 +1,10 @@
 import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
 import { invoke } from "@tauri-apps/api/core";
-import { publish, resources } from ".";
 import { TopicFactory } from "./topics";
-
+import { toast } from "$lib/toast.svelte";
+import { publish, identity, spaces, resources } from ".";
+import { liveQuery } from "dexie";
 /**
  * Queries
  */
@@ -26,24 +27,24 @@ export function findAll(
 /**
  * Search the database for any pending booking requests matching the passed filter object.
  */
-export async function findPending(
-  calendarId: Hash,
-  filter: BookingQueryFilter,
-): Promise<BookingRequest[]> {
-  let responsesFilter = {
-    answer: "accept",
-    calendarId,
-  };
-
-  const approvals = await db.bookingResponses.where(responsesFilter).toArray();
-
-  return db.bookingRequests
-    .where({
+export function findPending(calendarId: Hash, filter: BookingQueryFilter) {
+  return liveQuery(async () => {
+    let responsesFilter = {
       calendarId,
-      ...filter,
-    })
-    .filter((request) => isPending(request, approvals))
-    .toArray();
+    };
+
+    const approvals = await db.bookingResponses
+      .where(responsesFilter)
+      .toArray();
+
+    return db.bookingRequests
+      .where({
+        calendarId,
+        ...filter,
+      })
+      .filter((request) => isPending(request, approvals))
+      .toArray();
+  });
 }
 
 function isPending(
@@ -171,18 +172,39 @@ async function onBookingRequested(
   meta: StreamMessageMeta,
   data: BookingRequested["data"],
 ) {
+  let resource;
+  if (data.type == "resource") {
+    resource = await resources.findById(data.resourceId);
+  } else {
+    resource = await spaces.findById(data.resourceId);
+  }
+
   const resourceRequest: BookingRequest = {
     id: meta.operationId,
     calendarId: meta.stream.id,
     requester: meta.author,
     resourceType: data.type,
+    resourceOwner: resource!.ownerId,
     ...data,
   };
+
   await db.bookingRequests.add(resourceRequest);
 
   // Replay un-ack'd messages which we may have received out-of-order.
   const topic = new TopicFactory(meta.stream.id);
   await invoke("replay", { topic: topic.calendar() });
+  const publicKey = await identity.publicKey();
+
+  // Check if we own the resource, otherwise do nothing
+  if (resource?.ownerId == publicKey) {
+    if (meta.author == publicKey) {
+      // Automatically accept resource if we are the owner and we make the request
+      await accept(meta.operationId);
+    } else {
+      // Show toast if we are the owner of the resource and we didn't make the request.
+      toast.bookingRequest(resourceRequest);
+    }
+  }
 }
 
 async function onBookingRequestAccepted(

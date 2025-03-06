@@ -10,6 +10,9 @@ import { TopicFactory } from "./topics";
  */
 
 export function findMany(): Promise<Calendar[]> {
+
+  // TODO: check if have access to each calendar and return it alongside calendar
+  // TODO: return a livequery
   return db.calendars.toArray();
 }
 

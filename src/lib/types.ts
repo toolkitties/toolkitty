@@ -642,6 +642,7 @@ type BookingRequest = {
   requester: PublicKey;
   resourceId: Hash;
   resourceType: ResourceType;
+  resourceOwner: PublicKey;
   message: string;
   timeSpan: TimeSpan;
 };
@@ -678,4 +679,5 @@ type BookingQueryFilter = {
   eventId?: Hash;
   requester?: PublicKey;
   resourceType?: ResourceType;
+  resourceOwner?: PublicKey;
 };
