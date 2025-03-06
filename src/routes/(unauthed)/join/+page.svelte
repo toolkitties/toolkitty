@@ -1,77 +1,86 @@
 <script lang="ts">
-  import type { PageProps } from "./$types";
+  import { PinInput, Toggle } from "bits-ui";
   import { goto } from "$app/navigation";
-  import { access } from "$lib/api";
-  import { getActiveCalendarId } from "$lib/api/calendars";
+  import { topics } from "$lib/api";
   import { toast } from "$lib/toast.svelte";
-  import { onDestroy } from "svelte";
+  import { resolveInviteCode } from "$lib/api/access";
+  import { TopicFactory } from "$lib/api/topics";
+  import { calendars } from "$lib/api";
 
-  let { data }: PageProps = $props();
-  let requestStatus = $state(data.accessStatus);
-  let interval: number;
+  let value = $state("");
+  let show = $state(true);
+  let progress: "dormant" | "pending" = $state("dormant");
 
-  async function updateRequestStatus() {
-    let accessStatus = await access.checkStatus(
-      data.myPublicKey,
-      data.activeCalendarId!,
-    );
+  async function join() {
+    // event.preventDefault();
 
-    if (accessStatus == "accepted") {
-      toast.success("access accepted!");
-      goto("/app/events");
-    } else if (accessStatus == "rejected") {
-      toast.error("access rejected!");
-      goto("/");
-    }
-  }
+    if (!value) return;
 
-  async function join(event: Event) {
-    event.preventDefault();
-
-    let calendarId = await getActiveCalendarId();
-
-    if (calendarId == undefined) {
-      console.error("active calendar not set");
-      goto(`/`);
+    let calendar;
+    try {
+      progress = "pending";
+      calendar = await resolveInviteCode(value);
+      const topic = new TopicFactory(calendar.stream.id);
+      await topics.subscribe(topic.calendarInbox());
+      await calendars.setActiveCalendar(calendar.stream.id);
+    } catch (err) {
+      progress = "dormant";
+      console.error(err);
+      toast.error("Calendar not found");
       return;
     }
 
-    let formData = new FormData(event.target as HTMLFormElement);
-    let request = {
-      calendarId,
-      name: formData.get("name") as string,
-      message: formData.get("message") as string,
-    };
-
-    await access.requestAccess(request);
-    requestStatus = "pending";
-
-    interval = setInterval(updateRequestStatus, 1000);
+    goto(`/join?code=${calendar.stream.id}`);
   }
-
-  onDestroy(() => {
-    clearInterval(interval);
-  });
 </script>
 
-<h1>Kitty Fest 25</h1>
+<h1 class="text-3xl text-center">Toolkitty 🐈</h1>
 
-{#if requestStatus == "pending"}
-  <p>
-    Your request is now pending. You will be notified when this changes. Read
-    more about Toolkitties <a href="/help">here</a>.
-  </p>
-  <span>⏳</span>
-{:else if requestStatus == "rejected"}
-  <p>Your request was rejected!!</p>
-{:else}
-  <p>Welcome to Toolkitties</p>
-  <form onsubmit={join}>
-    <input id="name" name="name" type="text" placeholder="Your name" required />
-    <textarea id="message" name="message" rows="4" placeholder="Your message"
-    ></textarea>
-    <button class="border border-black rounded p-4" type="submit"
-      >Request access</button
+<div class="flex flex-col gap-4 grow justify-center mx-auto">
+  {#if progress == "dormant"}
+    <!-- TODO: Make this a form for better semantics -->
+    <PinInput.Root
+      bind:value
+      class="flex items-center gap-2"
+      maxlength={4}
+      onComplete={join}
     >
-  </form>
-{/if}
+      {#snippet children({ cells })}
+        {#each cells as cell}
+          <PinInput.Cell
+            class="flex items-center justify-center h-16 w-10 border rounded data-active:outline-primary data-active:outline-1"
+            {cell}
+          >
+            {#if cell.char !== null}
+              <div>
+                {show ? cell.char : "·"}
+              </div>
+            {/if}
+          </PinInput.Cell>
+        {/each}
+      {/snippet}
+    </PinInput.Root>
+    <Toggle.Root
+      aria-label="toggle code visibility"
+      class="inline-flex size-10 items-center justify-center rounded-[9px] text-foreground/40 transition-all hover:bg-muted active:scale-98 active:bg-dark-10 active:data-[state=on]:bg-dark-10"
+      bind:pressed={show}
+    >
+      {#if show}
+        <span>Hide</span>
+      {:else}
+        <span>Show</span>
+      {/if}
+    </Toggle.Root>
+    <button class="border border-black rounded p-4" onclick={() => join()}
+      >Join</button
+    >
+  {:else if progress == "pending"}
+    <p>Searching for calendar</p>
+  {/if}
+</div>
+
+<a
+  href="/create"
+  class="border border-black rounded p-4 text-center"
+  type="submit">Create</a
+>
