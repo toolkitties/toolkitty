@@ -166,7 +166,7 @@
     <input type="text" name="address-virtual" bind:value={$form.location} />
   {/if}
 
-  <label for="capacity">Capacity*</label>
+  <label for="capacity">Capacity</label>
   <input type="number" name="capacity" bind:value={$form.capacity} />
 
   <label for="accessibility-details">Accessibility Details*</label>
@@ -183,6 +183,7 @@
     <legend>🔗 Useful link (website, social media)</legend>
     <div class="flex flex-row">
       <div>
+        <!-- TODO: Fix type issue with '$form.link' is possibly being 'null'. -->
         <label for="space-link-text">Link Title</label>
         <input
           type="text"

@@ -16,8 +16,9 @@ export const load: PageLoad = async ({ params }) => {
     });
   }
 
-  const form = await superValidate(space, zod(spaceSchema));
+  const { calendarId, ownerId, booked, ...spaceFields } = space
+  const activeCalendarId = calendarId;
+  const form = await superValidate(spaceFields, zod(spaceSchema));
 
-
-  return { title: "edit space", space };
+  return { title: "edit space", form, activeCalendarId };
 };

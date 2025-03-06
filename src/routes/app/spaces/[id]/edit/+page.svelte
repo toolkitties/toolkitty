@@ -9,7 +9,7 @@
 
   const handleDelete = async () => {
     try {
-      await spaces.delete(data.space!.id);
+      await spaces.delete(data.form.id);
       toast.success("Space deleted!");
       goto("/app/spaces");
     } catch (error) {
@@ -22,5 +22,5 @@
 <br />
 <br />
 <br />
-<SpaceForm space={data.space} formType="edit" />
+<SpaceForm data={data.form} activeCalendarId={data.activeCalendarId} />
 <button onclick={() => handleDelete()}>Delete</button>
