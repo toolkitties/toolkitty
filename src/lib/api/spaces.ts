@@ -155,38 +155,12 @@ async function onSpaceCreated(
   meta: StreamMessageMeta,
   data: SpaceCreated["data"],
 ) {
-  const {
-    type,
-    name,
-    location,
-    capacity,
-    accessibility,
-    description,
-    contact,
-    link,
-    messageForRequesters,
-    images,
-    availability,
-    multiBookable,
-  } = data.fields;
-
   await db.spaces.add({
     id: meta.operationId,
     calendarId: meta.stream.id,
     ownerId: meta.author,
     booked: [],
-    type,
-    name,
-    location,
-    capacity,
-    accessibility,
-    description,
-    contact,
-    link,
-    messageForRequesters,
-    images,
-    availability,
-    multiBookable,
+    ...data.fields
   });
 }
 
