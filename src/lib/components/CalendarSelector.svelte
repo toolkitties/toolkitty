@@ -1,7 +1,7 @@
 <script lang="ts">
   import { calendars } from "$lib/api";
   import { onMount } from "svelte";
-  import { invalidateAll } from "$app/navigation";
+  import { goto, invalidateAll } from "$app/navigation";
   import { Select } from "bits-ui";
   import ChevronIcon from "$lib/components/icons/ChevronIcon.svelte";
 
@@ -19,7 +19,7 @@
     calendarList = await calendars.findMany();
   });
 
-  function handleCalendarSelected(calendarId: Hash) {
+  async function handleCalendarSelected(calendarId: Hash) {
     calendars.setActiveCalendar(calendarId);
 
     // reload page on the client side

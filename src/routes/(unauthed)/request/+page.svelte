@@ -5,10 +5,11 @@
   import { getActiveCalendarId } from "$lib/api/calendars";
   import { toast } from "$lib/toast.svelte";
   import { onDestroy } from "svelte";
+  import CalendarSelector from "$lib/components/CalendarSelector.svelte";
 
   let { data }: PageProps = $props();
   let requestStatus = $state(data.accessStatus);
-  let interval: number;
+  let interval: ReturnType<typeof setInterval>;
 
   async function updateRequestStatus() {
     let accessStatus = await access.checkStatus(
@@ -54,6 +55,7 @@
   });
 </script>
 
+<CalendarSelector />
 <h1>Kitty Fest 25</h1>
 
 {#if requestStatus == "pending"}
