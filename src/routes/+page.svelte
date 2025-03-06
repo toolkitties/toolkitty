@@ -8,6 +8,7 @@
   const targetLoadingString = ">₍^. .^₎<";
   let interval: ReturnType<typeof setInterval>;
 
+  // TODO: Run check access once we have successfully subscribed to channels (currently in +layout.svelte)
   $effect(() => {
     if (loaded) {
       checkAccess();
