@@ -14,6 +14,7 @@
     // fully and calls "init" again.
     if (!("isInit" in window)) {
       init().then(async () => {
+        // Don't reseed the db if it's HMR.
         if (!import.meta.hot) {
           console.log("Deleting and seeding the frontend database");
           // Delete any old version of db
