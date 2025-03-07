@@ -77,7 +77,7 @@ export const spaceSchema = z.object({
   accessibility: z.string().min(1, "Accessibility details are required"),
   description: z.string().min(1, "Space description is required"),
   contact: z.string().min(1, "Contact details are required"),
-  link: linkSchema.nullable(), //TODO: make this optional, issues with binding to input
+  link: linkSchema, //TODO: make this optional, issues with binding to input
   messageForRequesters: z.string().min(1, "Contact details are required"),
   images: z.array(imageSchema),
   availability: availabilitySchema,
