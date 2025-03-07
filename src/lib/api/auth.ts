@@ -13,6 +13,7 @@ import {
   identity,
   publish,
   resources,
+  roles,
   spaces,
   streams,
   users,
@@ -20,26 +21,6 @@ import {
 import { TopicFactory } from "./topics";
 
 type OwnedType = "calendar" | "space" | "resource" | "event";
-
-/*
- * Check if the user associated with the given public key and calendar has been assigned the
- * "admin" role.
- */
-export async function isAdmin(
-  calendarId: Hash,
-  publicKey: PublicKey,
-): Promise<boolean> {
-  const user = await users.get(calendarId, publicKey);
-  return user?.role == "admin";
-}
-
-/*
- * Check if the local user has been given the "admin" role for this calendar.
- */
-export async function amAdmin(calendarId: Hash): Promise<boolean> {
-  const myPublicKey = await identity.publicKey();
-  return await isAdmin(calendarId, myPublicKey);
-}
 
 /*
  * Check if the user associated with the given public key of the owner of a calendar, space,
@@ -87,7 +68,7 @@ export async function assignRole(
   role: Role,
 ): Promise<OperationId> {
   const amOwner = await calendars.amOwner(calendarId);
-  const amAdmin = await auth.amAdmin(calendarId);
+  const amAdmin = await roles.amAdmin(calendarId);
   if (!amAdmin && !amOwner) {
     throw new Error("user does not have permission to assign user roles");
   }
@@ -125,7 +106,7 @@ export async function process(message: ApplicationMessage) {
   }
 
   // Users with "admin" role can perform all actions so we return now already if that is the case.
-  const isAdmin = await auth.isAdmin(meta.stream.id, meta.author);
+  const isAdmin = await roles.isAdmin(meta.stream.id, meta.author);
   const isOwner = await auth.isOwner(meta.stream.id, meta.author, "calendar");
   if (isAdmin || isOwner) {
     return;
@@ -201,7 +182,7 @@ async function onCalendarEdit(
   }
 
   // Check that the message author has the required permissions.
-  const isAdmin = await auth.isAdmin(data.id, meta.author);
+  const isAdmin = await roles.isAdmin(data.id, meta.author);
   const isOwner = await calendars.isOwner(data.id, meta.author);
   if (!isAdmin && !isOwner) {
     throw new Error(
@@ -222,7 +203,7 @@ async function onSpaceEdit(
   }
 
   // Check that the message author has the required permissions.
-  const isAdmin = await auth.isAdmin(meta.stream.id, meta.author);
+  const isAdmin = await roles.isAdmin(meta.stream.id, meta.author);
   const isOwner = await spaces.isOwner(data.id, meta.author);
   if (!isAdmin && !isOwner) {
     throw new Error(
@@ -243,7 +224,7 @@ async function onResourceEdit(
   }
 
   // Check that the message author has the required permissions.
-  const isAdmin = await auth.isAdmin(meta.stream.id, meta.author);
+  const isAdmin = await roles.isAdmin(meta.stream.id, meta.author);
   const isOwner = await resources.isOwner(data.id, meta.author);
   if (!isAdmin && !isOwner) {
     throw new Error(
@@ -264,7 +245,7 @@ async function onEventEdit(
   }
 
   // Check that the message author has the required permissions.
-  const isAdmin = await auth.isAdmin(event!.calendarId, meta.author);
+  const isAdmin = await roles.isAdmin(event!.calendarId, meta.author);
   const isOwner = await events.isOwner(data.id, meta.author);
   if (!isAdmin && !isOwner) {
     throw new Error(
@@ -287,22 +268,12 @@ async function onUserRoleAssigned(
 ) {
   // Check if the author has permission to assign roles in this calendar.
   const isOwner = await calendars.isOwner(meta.stream.id, meta.author);
-  const isAdmin = await auth.isAdmin(meta.stream.id, meta.author);
+  const isAdmin = await roles.isAdmin(meta.stream.id, meta.author);
   if (!isAdmin && !isOwner) {
     throw new Error(
-      "author does not have permission assign user roles for this calendar",
+      "author does not have permission to assign user roles for this calendar",
     );
   }
-
-  // Update the user's role.
-  db.users.update([meta.stream.id, data.publicKey], { role: data.role });
-
-  // Request that all un-ack'd operations from this topic a replayed.
-  //
-  // We do this because an authors role has changed, which may mean that operations we received
-  // earlier, and rejected due to insufficient permissions, would now be processed correctly.
-  const topic = new TopicFactory(meta.stream.id);
-  await invoke("replay", { topic: topic.calendar() });
 }
 
 async function onCalendarAccessResponse(
@@ -317,7 +288,7 @@ async function onCalendarAccessResponse(
   const calendarId = data.requestId;
 
   // Check that the message author has the required permissions.
-  const isAdmin = await auth.isAdmin(calendarId, meta.author);
+  const isAdmin = await roles.isAdmin(calendarId, meta.author);
   const isOwner = await calendars.isOwner(calendarId, meta.author);
   if (!isAdmin && !isOwner) {
     throw new Error(

@@ -36,7 +36,10 @@ export function findAll(
 // @TODO: It's tricky to test live queries, and maybe anyway it's nice to differentiate between
 // methods which are "live" and those which are not. Could we post-fix their name with 'Live'? and
 // have them as wrappers around a "non-live" variant?
-export async function findPending(calendarId: Hash, filter: BookingQueryFilter) {
+export async function findPending(
+  calendarId: Hash,
+  filter: BookingQueryFilter,
+) {
   let responsesFilter = {
     calendarId,
   };
@@ -100,12 +103,20 @@ export async function request(
  */
 export async function accept(requestId: Hash) {
   let bookingRequest = await db.bookingRequests.get(requestId);
-
-  const amOwner = await resources.amOwner(bookingRequest!.resourceId);
-  if (!amOwner) {
-    throw new Error(
-      "user does not have permission to accept booking request for this resource",
-    );
+  const amOwner = await spaces.amOwner(bookingRequest!.resourceId);
+  if (bookingRequest!.resourceType == "space") {
+    if (!amOwner) {
+      throw new Error(
+        "user does not have permission to accept booking request for this space",
+      );
+    }
+  } else if (bookingRequest!.resourceType == "resource") {
+    const amOwner = await resources.amOwner(bookingRequest!.resourceId);
+    if (!amOwner) {
+      throw new Error(
+        "user does not have permission to accept booking request for this resource",
+      );
+    }
   }
 
   const bookingRequested: BookingRequestAccepted = {

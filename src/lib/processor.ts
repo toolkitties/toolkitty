@@ -8,6 +8,7 @@ import {
   events,
   bookings,
   auth,
+  roles,
 } from "$lib/api";
 import { rejectPromise, resolvePromise } from "$lib/promiseMap";
 
@@ -168,6 +169,7 @@ async function onApplicationMessage(message: ApplicationMessage) {
       await auth.process(message);
     }
     await access.process(message);
+    await roles.process(message);
     await calendars.process(message);
     await events.process(message);
     await spaces.process(message);

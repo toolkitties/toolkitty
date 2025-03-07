@@ -3,7 +3,7 @@
 import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
 import { invoke } from "@tauri-apps/api/core";
-import { auth, events, publish } from ".";
+import { auth, events, publish, roles } from ".";
 import { TopicFactory } from "./topics";
 
 /**
@@ -75,7 +75,7 @@ export async function create(calendarId: Hash, fields: EventFields) {
 export async function update(eventId: Hash, fields: EventFields) {
   const event = await events.findById(eventId);
 
-  const amAdmin = await auth.amAdmin(event!.calendarId);
+  const amAdmin = await roles.amAdmin(event!.calendarId);
   const amOwner = await events.amOwner(eventId);
   if (!amAdmin && !amOwner) {
     throw new Error("user does not have permission to update this event");
@@ -104,7 +104,7 @@ export async function update(eventId: Hash, fields: EventFields) {
 async function deleteEvent(eventId: Hash) {
   const event = await events.findById(eventId);
 
-  const amAdmin = await auth.amAdmin(event!.calendarId);
+  const amAdmin = await roles.amAdmin(event!.calendarId);
   const amOwner = await events.amOwner(eventId);
   if (!amAdmin && !amOwner) {
     throw new Error("user does not have permission to delete this event");

@@ -1,5 +1,5 @@
 import { db } from "$lib/db";
-import { auth, publish, spaces } from ".";
+import { auth, publish, roles, spaces } from ".";
 import { promiseResult } from "$lib/promiseMap";
 import { TopicFactory } from "./topics";
 import { invoke } from "@tauri-apps/api/core";
@@ -80,7 +80,7 @@ export async function update(
 ): Promise<Hash> {
   const space = await spaces.findById(spaceId);
 
-  const amAdmin = await auth.amAdmin(space!.calendarId);
+  const amAdmin = await roles.amAdmin(space!.calendarId);
   const amOwner = await spaces.amOwner(spaceId);
   if (!amAdmin && !amOwner) {
     throw new Error("user does not have permission to update this space");
@@ -109,7 +109,7 @@ export async function update(
 export async function deleteSpace(spaceId: Hash): Promise<Hash> {
   const space = await spaces.findById(spaceId);
 
-  const amAdmin = await auth.amAdmin(space!.calendarId);
+  const amAdmin = await roles.amAdmin(space!.calendarId);
   const amOwner = await spaces.amOwner(spaceId);
   if (!amAdmin && !amOwner) {
     throw new Error("user does not have permission to delete this space");
