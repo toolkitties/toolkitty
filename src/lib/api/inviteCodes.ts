@@ -24,6 +24,8 @@ const pendingInviteCode: InviteCodesState = {
  */
 
 export async function resolve(inviteCode: string): Promise<ResolvedCalendar> {
+  inviteCode = inviteCode.toLowerCase();
+
   // Get local calendars
   const calendar = await calendars.findByInviteCode(inviteCode);
 

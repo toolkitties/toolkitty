@@ -9,7 +9,13 @@
 
   let value = $state("");
   let show = $state(true);
-  let progress: "dormant" | "pending" = $state("dormant");
+  let searching = $state(false);
+  const REGEX_ONLY_CHARS_AND_DIGITS = "^[a-zA-Z0-9]+$";
+
+  // Transform value to lowercase as the user inputs the code
+  $effect(() => {
+    value = value.toLowerCase();
+  });
 
   async function join() {
     // event.preventDefault();
@@ -18,13 +24,13 @@
 
     let calendar;
     try {
-      progress = "pending";
+      searching = true;
       calendar = await resolveInviteCode(value);
       const topic = new TopicFactory(calendar.stream.id);
       await topics.subscribe(topic.calendarInbox());
       await calendars.setActiveCalendar(calendar.stream.id);
     } catch (err) {
-      progress = "dormant";
+      searching = false;
       console.error(err);
       toast.error("Calendar not found");
       return;
@@ -37,12 +43,13 @@
 <h1 class="text-3xl text-center">Toolkitty 🐈</h1>
 
 <div class="flex flex-col gap-4 grow justify-center mx-auto">
-  {#if progress == "dormant"}
+  {#if !searching}
     <!-- TODO: Make this a form for better semantics -->
     <PinInput.Root
       bind:value
       class="flex items-center gap-2"
       maxlength={4}
+      pattern={REGEX_ONLY_CHARS_AND_DIGITS}
       onComplete={join}
     >
       {#snippet children({ cells })}
@@ -74,7 +81,7 @@
     <button class="border border-black rounded p-4" onclick={() => join()}
       >Join</button
     >
-  {:else if progress == "pending"}
+  {:else}
     <p>Searching for calendar</p>
   {/if}
 </div>

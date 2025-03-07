@@ -36,24 +36,20 @@ export function findAll(
 // @TODO: It's tricky to test live queries, and maybe anyway it's nice to differentiate between
 // methods which are "live" and those which are not. Could we post-fix their name with 'Live'? and
 // have them as wrappers around a "non-live" variant?
-export function findPending(calendarId: Hash, filter: BookingQueryFilter) {
-  return liveQuery(async () => {
-    let responsesFilter = {
+export async function findPending(calendarId: Hash, filter: BookingQueryFilter) {
+  let responsesFilter = {
+    calendarId,
+  };
+
+  const approvals = await db.bookingResponses.where(responsesFilter).toArray();
+
+  return db.bookingRequests
+    .where({
       calendarId,
-    };
-
-    const approvals = await db.bookingResponses
-      .where(responsesFilter)
-      .toArray();
-
-    return db.bookingRequests
-      .where({
-        calendarId,
-        ...filter,
-      })
-      .filter((request) => isPending(request, approvals))
-      .toArray();
-  });
+      ...filter,
+    })
+    .filter((request) => isPending(request, approvals))
+    .toArray();
 }
 
 function isPending(

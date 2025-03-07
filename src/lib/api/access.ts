@@ -105,19 +105,13 @@ export async function checkStatus(
   // @TODO: We need to be able to check if the response came from the calendar owner but at
   // this point we haven't received the "calendar_created" event yet. It will help when the
   // actual calendar id contains the owner information.
-  let rejected = await db.accessResponses.get({
-    requestId: request.id,
-    answer: "reject",
-  });
+  let rejected = await db.accessResponses.get([request.id, "reject"]);
 
   if (rejected) {
     return "rejected";
   }
 
-  let accepted = await db.accessResponses.get({
-    requestId: request.id,
-    answer: "accept",
-  });
+  let accepted = await db.accessResponses.get([request.id, "accept"]);
 
   if (accepted) {
     return "accepted";

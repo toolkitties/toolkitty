@@ -31,7 +31,7 @@ export function findOne(id: Hash): Promise<Calendar | undefined> {
 
 export function findByInviteCode(code: string): Promise<undefined | Calendar> {
   return db.calendars
-    .filter((calendar) => inviteCode(calendar) === code)
+    .filter((calendar) => inviteCode(calendar) === code.toLowerCase())
     .first();
 }
 
