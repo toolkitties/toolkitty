@@ -276,10 +276,9 @@ type BookedTimeSpan = TimeSpan & {
   event: Hash;
 };
 
-
 // TODO: TBC from open street maps
 type PhysicalLocation = {
-  type: 'physical';
+  type: "physical";
   street: string;
   city: string;
   state: string;
@@ -288,15 +287,15 @@ type PhysicalLocation = {
 };
 
 type GPSLocation = {
-  type: 'gps';
+  type: "gps";
   lat: string;
   lon: string;
 };
 
 type VirtualLocation = {
-  type: 'virtual';
+  type: "virtual";
   link: string;
-}
+};
 
 type Answer = "approve" | "reject";
 
@@ -336,11 +335,11 @@ type EventFields = {
   name: string;
   description: string;
   location?: SpaceRequestId; // ref to a space
-  startDate: Date; // allocated time of a space
-  endDate: Date; // allocated time of a space
-  publicStartDate?: Date; // public facing
-  publicEndDate?: Date; // public facing
-  resources: ReservationRequestId[];
+  startDate: string; // allocated time of a space
+  endDate: string; // allocated time of a space
+  publicStartDate?: string; // public facing
+  publicEndDate?: string; // public facing
+  resources?: ReservationRequestId[];
   links: Link[];
   images: Image[];
 };

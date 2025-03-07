@@ -4,7 +4,7 @@ import { z } from "zod";
 const linkSchema = z.object({
   title: z.string().nullable(),
   type: z.enum(["ticket", "custom"]).default("custom"),
-  url: z.string().url("Invalid URL")
+  url: z.string().url("Invalid URL"),
 });
 
 const imageSchema = z.string();
@@ -14,10 +14,14 @@ const timeSpanSchema = z.object({
   end: z.date(),
 });
 
-const availabilitySchema = z.union([
-  z.literal("always"),
-  z.array(timeSpanSchema).min(1, "At least one availability date is required.")
-]).default([]);
+const availabilitySchema = z
+  .union([
+    z.literal("always"),
+    z
+      .array(timeSpanSchema)
+      .min(1, "At least one availability date is required."),
+  ])
+  .default([]);
 
 // Resource form Schema
 export const resourceSchema = z.object({
@@ -33,37 +37,42 @@ export const resourceSchema = z.object({
 
 // Space form Schema
 const physicalLocationSchema = z.object({
-  type: z.literal('physical'),
+  type: z.literal("physical"),
   street: z.string(),
   city: z.string(),
   state: z.string(),
   zip: z.string(),
-  country: z.string() // TODO: ISO 3166
-})
+  country: z.string(), // TODO: ISO 3166
+});
 
 const gpsLocationSchema = z.object({
-  type: z.literal('gps'),
+  type: z.literal("gps"),
   lat: z.string(),
   lon: z.string(),
 });
 
 const virtualLocationSchema = z.object({
-  type: z.literal('virtual'),
-  link: z.string().url("Invalid URL")
+  type: z.literal("virtual"),
+  link: z.string().url("Invalid URL"),
 });
-
 
 export const spaceSchema = z.object({
   id: z.string(),
   name: z.string().min(1, "Space name is required"),
-  location: z.discriminatedUnion("type", [physicalLocationSchema, gpsLocationSchema, virtualLocationSchema]).default({
-    type: "physical",
-    street: "",
-    city: "",
-    state: "",
-    zip: "",
-    country: ""
-  }),
+  location: z
+    .discriminatedUnion("type", [
+      physicalLocationSchema,
+      gpsLocationSchema,
+      virtualLocationSchema,
+    ])
+    .default({
+      type: "physical",
+      street: "",
+      city: "",
+      state: "",
+      zip: "",
+      country: "",
+    }),
   capacity: z.number().nullable(),
   accessibility: z.string().min(1, "Accessibility details are required"),
   description: z.string().min(1, "Space description is required"),
@@ -80,12 +89,13 @@ export const eventSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, "Event name is required"),
   description: z.string().min(1, "Event description is required"),
-  startDate: z.string().min(1, "Event start date is required"),
-  endDate: z.string().min(1, "Event start time is required"),
-  publicStartDate: z.string(),
-  eventEndTime: z.string(),
+  startDate: z.string().min(1, "Access start time is required"),
+  endDate: z.string().min(1, "Access end time is required"),
+  publicStartDate: z.string().min(1, "Event start time is required"),
+  publicEndDate: z.string(),
   resources: z.array(z.string()).optional(),
-  link: z.array(linkSchema),
+  links: z.array(linkSchema),
+  images: z.array(imageSchema),
 });
 
 // Schema types for zod

@@ -3,52 +3,64 @@
   import { parseEventFormData } from "$lib/utils";
   import { goto } from "$app/navigation";
   import { toast } from "$lib/toast.svelte";
+  import type { SuperValidated, Infer } from "sveltekit-superforms";
+  import type { EventSchema } from "$lib/schemas";
+  import { superForm, setMessage, setError } from "sveltekit-superforms";
+  import SuperDebug from "sveltekit-superforms";
+  import { eventSchema } from "$lib/schemas";
+  import { zod } from "sveltekit-superforms/adapters";
+  import { events } from "$lib/api";
 
-  let { formType, spaces, resources, event = null } = $props();
+  let {
+    data,
+    activeCalendarId,
+    spaces,
+    resources,
+  }: {
+    data: SuperValidated<Infer<EventSchema>>;
+    activeCalendarId: Hash;
+    spaces: Space[];
+    resources: Resource[];
+  } = $props();
 
   let selectedSpace: Space | null = $state<Space | null>(null);
   function handleSpaceSelection(space: Space) {
     selectedSpace = space;
   }
 
-  function handleSubmit(e: Event) {
-    if (formType === "create") {
-      handleCreateEvent(e);
-    } else if (formType === "edit") {
-      handleUpdateEvent(e);
-    }
-  }
+  const { form, errors, message, constraints, enhance } = superForm(data, {
+    SPA: true,
+    validators: zod(eventSchema),
+    resetForm: false,
+    dataType: "json",
+    async onUpdate({ form }) {
+      const { id, ...payload } = form.data;
+      if (form.data.id) {
+        console.log("update event");
+        handleUpdateEvent(id!, payload);
+      } else {
+        console.log("create space");
+        handleCreateEvent(payload);
+      }
+    },
+  });
 
-  async function handleCreateEvent(e: Event) {
-    e.preventDefault();
-
-    const form = e.currentTarget as HTMLFormElement;
-    const formData = new FormData(form);
-
-    const payload = parseEventFormData(formData, selectedSpace);
-
+  async function handleCreateEvent(payload: EventFields) {
     try {
-      await spaces.create(payload);
+      const eventId = await events.create(activeCalendarId, payload);
       toast.success("Event created!");
-      goto(`/app/events/${event.id}`);
+      goto(`/app/events/${eventId}`);
     } catch (error) {
       console.error("Error creating event: ", error);
       toast.error("Error creating event!");
     }
   }
 
-  async function handleUpdateEvent(e: Event) {
-    e.preventDefault();
-
-    const form = e.currentTarget as HTMLFormElement;
-    const formData = new FormData(form);
-
-    const payload = parseEventFormData(formData, selectedSpace);
-
+  async function handleUpdateEvent(eventId: Hash, payload: EventFields) {
     try {
-      await spaces.update(event.id, payload);
+      await events.update(eventId, payload);
       toast.success("Event updated!");
-      goto(`/app/events/${event.id}`);
+      goto(`/app/events/${data.id}`);
     } catch (error) {
       console.error("Error updating event: ", error);
       toast.error("Error updating event!");
@@ -56,25 +68,32 @@
   }
 </script>
 
-<form onsubmit={handleSubmit}>
-  {#if event}
-    <input type="text" bind:value={event.id} />
-  {/if}
+<SuperDebug data={{ $form, $errors }} />
+<form method="POST" use:enhance>
   <label for="name">Event name*</label>
-  <input type="text" name="name" required />
+  <input type="text" name="name" required bind:value={$form.name} />
 
   <label for="description">Event description*</label>
-  <textarea name="description" required></textarea>
+  <textarea name="description" required bind:value={$form.description}
+  ></textarea>
 
   <p>🎫 Ticket Link</p>
   <div class="flex flex-row">
     <div>
       <label for="ticket-link-text">Link text</label>
-      <input type="text" name="ticket-link-text" />
+      <input
+        type="text"
+        name="ticket-link-text"
+        bind:value={$form.links[0].title}
+      />
     </div>
     <div>
       <label for="ticket-link-url">URL</label>
-      <input type="url" name="ticket-link-url" />
+      <input
+        type="url"
+        name="ticket-link-url"
+        bind:value={$form.links[0].url}
+      />
     </div>
   </div>
 
@@ -82,11 +101,19 @@
   <div class="flex flex-row">
     <div>
       <label for="additional-link-text">Link text</label>
-      <input type="text" name="additional-link-text" />
+      <input
+        type="text"
+        name="additional-link-text"
+        bind:value={$form.links[1].title}
+      />
     </div>
     <div>
       <label for="additional-link-url">URL</label>
-      <input type="url" name="additional-link-url" />
+      <input
+        type="url"
+        name="additional-link-url"
+        bind:value={$form.links[1].url}
+      />
     </div>
   </div>
 
@@ -95,8 +122,8 @@
     <ul>
       {#each spaces as space}
         <li>
-          <input type="radio" id={space.id} name="selected-space" />
-          <label for={space.id}>{space.name}</label>
+          <!-- <input type="radio" id={space.id} name="selected-space" />
+          <label for={space.id}>{space.name}</label> -->
         </li>
       {/each}
     </ul>
@@ -114,19 +141,21 @@
     {/if}
     <p>Request selected space</p>
     <div class="flex flex-row">
-      <p>Access from:</p>
-      <label for="event-start-date">Date *</label>
-      <input name="event-start-date" type="date" required />
-      <label for="event-start-time">Time *</label>
-      <input name="event-start-time" type="time" required />
-    </div>
+      <label for="startDate">Access Start *</label>
+      <input
+        type="datetime-local"
+        name="startDate"
+        required
+        bind:value={$form.startDate}
+      />
 
-    <div class="flex flex-row">
-      <p>Leave by:</p>
-      <label for="event-end-date">Date *</label>
-      <input name="event-end-date" type="date" required />
-      <label for="event-end-time">Time *</label>
-      <input name="event-end-time" type="time" required />
+      <label for="endDate">Access End *</label>
+      <input
+        type="datetime-local"
+        name="endDate"
+        required
+        bind:value={$form.endDate}
+      />
     </div>
   {:else}
     <p>No spaces found.</p>
@@ -134,23 +163,25 @@
 
   <p>Event time (excluding set-up)</p>
   <div class="flex flex-row">
-    <p>Event start</p>
-    <label for="event-start-date">Date *</label>
-    <input name="event-start-date" type="date" required />
-    <label for="event-start-time">Time *</label>
-    <input name="event-start-time" type="time" required />
-  </div>
+    <label for="publicStartDate">Event Start *</label>
+    <input
+      type="datetime-local"
+      name="publicStartDate"
+      required
+      bind:value={$form.publicStartDate}
+    />
 
-  <div class="flex flex-row">
-    <p>Event end</p>
-    <label for="event-end-date">Date *</label>
-    <input name="event-end-date" type="date" required />
-    <label for="event-end-time">Time *</label>
-    <input name="event-end-time" type="time" required />
+    <label for="publicEndDate">Event End *</label>
+    <input
+      type="datetime-local"
+      name="publicEndDate"
+      required
+      bind:value={$form.publicEndDate}
+    />
   </div>
 
   <!-- @TODO - validate against space availability -->
-  {#if resources.length > 0}
+  <!-- {#if resources.length > 0}
     <label for="resource-list">Select resources</label>
     <ul id="resource-list">
       {#each resources as resource}
@@ -166,12 +197,7 @@
     </ul>
   {:else}
     <p>No resources available.</p>
-  {/if}
+  {/if} -->
 
-  {#if formType === "create"}
-    <button type="submit">Create Event</button>
-  {/if}
-  {#if formType === "edit"}
-    <button type="submit">Update Event</button>
-  {/if}
+  <button type="submit">{$form.id ? "Update" : "Create"}</button>
 </form>
