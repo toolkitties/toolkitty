@@ -14,11 +14,13 @@
     // fully and calls "init" again.
     if (!("isInit" in window)) {
       init().then(async () => {
-        // Delete any old version of db
-        await db.delete({ disableAutoOpen: false });
-
-        // TODO(sam): for testing publish some events to the network.
-        await seedData();
+        if (!import.meta.hot) {
+          console.log("Deleting and seeding the frontend database");
+          // Delete any old version of db
+          await db.delete({ disableAutoOpen: false });
+          // TODO(sam): for testing publish some events to the network.
+          await seedData();
+        }
 
         // After init subscribe to all calendars we know about.
         await topics.subscribeToAll();
