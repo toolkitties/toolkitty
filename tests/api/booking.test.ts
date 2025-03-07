@@ -10,13 +10,23 @@ import {
   bookingTestMessages,
 } from "./data";
 import { bookings } from "$lib/api";
-import { expect, test } from "vitest";
+import { beforeAll, expect, test } from "vitest";
+import { mockIPC } from "@tauri-apps/api/mocks";
 
-test("processes resource request and response messages", async () => {
+beforeAll(async () => {
+  mockIPC((cmd, args) => {
+    if (cmd === "public_key") {
+      return PUBLIC_KEY;
+    }
+  });
+
   for (const message of bookingTestMessages) {
     await processMessage(message);
   }
+});
 
+// @TODO: this test fails as bookings.findPending now returns an observable.
+test("processes resource request and response messages", async () => {
   let pendingBookings = await bookings.findPending(CALENDAR_ID, {
     eventId: "event_001",
   });
