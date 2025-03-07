@@ -18,10 +18,13 @@ import {
   users,
 } from ".";
 import { TopicFactory } from "./topics";
-import { requestAccess } from "./access";
 
 type OwnedType = "calendar" | "space" | "resource" | "event";
 
+/*
+ * Check if the user associated with the given public key and calendar has been assigned the
+ * "admin" role.
+ */
 export async function isAdmin(
   calendarId: Hash,
   publicKey: PublicKey,
@@ -30,11 +33,18 @@ export async function isAdmin(
   return user?.role == "admin";
 }
 
+/*
+ * Check if the local user has been given the "admin" role for this calendar.
+ */
 export async function amAdmin(calendarId: Hash): Promise<boolean> {
   const myPublicKey = await identity.publicKey();
   return await isAdmin(calendarId, myPublicKey);
 }
 
+/*
+ * Check if the user associated with the given public key of the owner of a calendar, space,
+ * resource or event.
+ */
 export async function isOwner(
   hash: Hash,
   publicKey: PublicKey,
@@ -56,6 +66,9 @@ export async function isOwner(
   }
 }
 
+/*
+ * Check if the local user is the owner of a calendar, space, resource or event.
+ */
 export async function amOwner(hash: Hash, type: OwnedType): Promise<boolean> {
   const myPublicKey = await identity.publicKey();
   return await isOwner(hash, myPublicKey, type);
@@ -65,6 +78,9 @@ export async function amOwner(hash: Hash, type: OwnedType): Promise<boolean> {
  * Commands
  */
 
+/*
+ * Assign a role to the user associated with the provided public key and calendar.
+ */
 export async function assignRole(
   calendarId: Hash,
   publicKey: PublicKey,
@@ -99,10 +115,8 @@ export async function assignRole(
  */
 
 export async function process(message: ApplicationMessage) {
-  await authorize(message.meta, message.data);
-}
+  const { meta, data } = message;
 
-async function authorize(meta: StreamMessageMeta, data: ApplicationEvent) {
   if (
     data.type == "booking_request_accepted" ||
     data.type == "booking_request_rejected"
@@ -117,6 +131,7 @@ async function authorize(meta: StreamMessageMeta, data: ApplicationEvent) {
     return;
   }
 
+  // All message types which require authorizing before we accept them are checked here.
   if (
     data.type == "calendar_updated" ||
     data.type == "calendar_deleted" ||
@@ -143,6 +158,8 @@ async function authorize(meta: StreamMessageMeta, data: ApplicationEvent) {
     return await onCalendarAccessResponse(meta, data.data);
   }
 
+  // If the message is of an unexpected type the fallback behaviour is to reject it as
+  // unauthorized.
   return await fallback(meta, data);
 }
 
@@ -264,7 +281,9 @@ async function onUserRoleAssigned(
   const isOwner = await calendars.isOwner(meta.stream.id, meta.author);
   const isAdmin = await auth.isAdmin(meta.stream.id, meta.author);
   if (!isAdmin && !isOwner) {
-    throw new Error("author does not have permission assign user roles for this calendar");
+    throw new Error(
+      "author does not have permission assign user roles for this calendar",
+    );
   }
 
   // Update the user's role.
@@ -282,6 +301,11 @@ async function onCalendarAccessResponse(
   meta: StreamMessageMeta,
   data: CalendarAccessAccepted["data"] | CalendarAccessRejected["data"],
 ) {
+  // @TODO: we should check here if the calendar _stream_ already exists in the database. We may
+  // not have received the actual "calendar_created" event yet, but we _must_ know the stream
+  // already if want to handle access requests and responses.
+
+  // @TODO: should we also check that the request itself exists?
   const calendarId = data.requestId;
 
   // Check that the message author has the required permissions.
