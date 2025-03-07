@@ -15,7 +15,7 @@
     if (!("isInit" in window)) {
       init().then(async () => {
         // Delete any old version of db
-        db.delete({ disableAutoOpen: false });
+        await db.delete({ disableAutoOpen: false });
 
         // TODO(sam): for testing publish some events to the network.
         await seedData();

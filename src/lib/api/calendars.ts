@@ -11,6 +11,9 @@ import { TopicFactory } from "./topics";
  */
 
 export function findMany(): Promise<Calendar[]> {
+
+  // TODO: check if have access to each calendar and return it alongside calendar
+  // TODO: return a livequery
   return db.calendars.toArray();
 }
 
@@ -20,7 +23,7 @@ export function findOne(id: Hash): Promise<Calendar | undefined> {
 
 export function findByInviteCode(code: string): Promise<undefined | Calendar> {
   return db.calendars
-    .filter((calendar) => inviteCode(calendar) === code)
+    .filter((calendar) => inviteCode(calendar) === code.toLowerCase())
     .first();
 }
 
