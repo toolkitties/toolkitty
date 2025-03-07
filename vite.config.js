@@ -12,7 +12,7 @@ const disableHmr = process.env.VITE_DISABLE_HMR ? true : false;
 
 export default defineConfig(async () => ({
   plugins: [sveltekit()],
-
+  test: { environment: "jsdom" },
   // vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`:
   //
   // 1. Prevent vite from obscuring rust errors
