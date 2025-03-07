@@ -287,7 +287,9 @@ async function onCalendarAccessRequested(
 
   if (accessStatus == "accepted") {
     // Create a new user.
-    await users.create(calendarId, meta.author, data.name);
+    if (!(await users.get(calendarId, meta.author))) {
+      await users.create(calendarId, meta.author, data.name);
+    }
     // Process new calendar author if access was accepted.
     await processNewCalendarAuthor(calendarId, meta.author);
   }
@@ -326,7 +328,9 @@ async function onCalendarAccessAccepted(
   // Process new calendar author if access was accepted.
   if (accessStatus == "accepted") {
     // Create a new user.
-    await users.create(calendarId, request.from, request!.name);
+    if (!(await users.get(calendarId, request.from))) {
+      await users.create(calendarId, request.from, request!.name);
+    }
 
     // Process new calendar author if access was accepted.
     await processNewCalendarAuthor(calendarId, request.from);
