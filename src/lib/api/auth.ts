@@ -13,6 +13,7 @@ import {
   publish,
   resources,
   spaces,
+  streams,
   users,
 } from ".";
 import { TopicFactory } from "./topics";
@@ -39,8 +40,8 @@ export async function isOwner(
 ): Promise<boolean> {
   switch (type) {
     case "calendar":
-      const calendar = await calendars.findOne(hash);
-      return calendar?.ownerId == publicKey;
+      const calendarStream = await streams.findById(hash);
+      return calendarStream?.owner == publicKey;
     case "space":
       const space = await spaces.findById(hash);
       return space?.ownerId == publicKey;
