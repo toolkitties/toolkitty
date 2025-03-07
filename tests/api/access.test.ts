@@ -7,7 +7,7 @@ import {
   LOG_PATH,
   PUBLIC_KEY,
   STREAM,
-  calendarTestMessages,
+  seedTestMessages,
 } from "./data";
 import { access, identity } from "$lib/api";
 import {
@@ -27,7 +27,7 @@ beforeAll(async () => {
     }
   });
 
-  for (const message of calendarTestMessages) {
+  for (const message of seedTestMessages) {
     await processMessage(message);
   }
 });

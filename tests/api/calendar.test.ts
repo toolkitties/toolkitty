@@ -2,7 +2,7 @@
 import "fake-indexeddb/auto";
 
 import { processMessage } from "$lib/processor";
-import { CALENDAR_ID, calendarTestMessages, PUBLIC_KEY } from "./data";
+import { CALENDAR_ID, seedTestMessages, PUBLIC_KEY } from "./data";
 import { calendars } from "$lib/api";
 import { beforeAll, expect, test } from "vitest";
 import { mockIPC } from "@tauri-apps/api/mocks";
@@ -14,7 +14,7 @@ beforeAll(async () => {
     }
   });
 
-  for (const message of calendarTestMessages) {
+  for (const message of seedTestMessages) {
     await processMessage(message);
   }
 });

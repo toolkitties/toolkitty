@@ -12,36 +12,7 @@ export const STREAM = {
   owner: PUBLIC_KEY,
 };
 
-export const calendarTestMessages: ChannelMessage[] = [
-  {
-    meta: {
-      operationId: "calendar_001",
-      author: PUBLIC_KEY,
-      stream: STREAM,
-      logPath: LOG_PATH,
-    },
-    event: "application",
-    data: {
-      type: "calendar_created",
-      data: {
-        fields: {
-          name: "My Festival",
-          dates: [
-            {
-              start: new Date("2025-01-06T14:00:00Z"),
-              end: new Date("2025-01-08T14:00:00Z"),
-            },
-          ],
-          festivalInstructions: null,
-          spacePageText: null,
-          resourcePageText: null,
-        },
-      },
-    },
-  },
-];
-
-export const bookingTestMessages: ChannelMessage[] = [
+export const seedTestMessages: ChannelMessage[] = [
   {
     meta: {
       operationId: "calendar_001",

@@ -7,7 +7,7 @@ import {
   LOG_PATH,
   PUBLIC_KEY,
   STREAM,
-  bookingTestMessages,
+  seedTestMessages,
 } from "./data";
 import { bookings } from "$lib/api";
 import { beforeAll, expect, test } from "vitest";
@@ -20,7 +20,7 @@ beforeAll(async () => {
     }
   });
 
-  for (const message of bookingTestMessages) {
+  for (const message of seedTestMessages) {
     await processMessage(message);
   }
 });
