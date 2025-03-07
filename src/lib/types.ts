@@ -404,6 +404,7 @@ type CalendarUpdated = {
 type PageUpdated = {
   type: "page_updated";
   data: {
+    id: Hash;
     page_type: "spaces" | "resources" | "about";
     description: string;
   };

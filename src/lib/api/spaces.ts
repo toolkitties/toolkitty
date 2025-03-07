@@ -147,9 +147,9 @@ export async function process(message: ApplicationMessage) {
     case "space_created":
       return await onSpaceCreated(meta, data);
     case "space_updated":
-      return await onSpaceUpdated(meta, data);
+      return await onSpaceUpdated(data);
     case "space_deleted":
-      return await onSpaceDeleted(meta, data);
+      return await onSpaceDeleted(data);
   }
 }
 
@@ -170,44 +170,10 @@ async function onSpaceCreated(
   await invoke("replay", { topic: topic.calendar() });
 }
 
-async function onSpaceUpdated(
-  meta: StreamMessageMeta,
-  data: SpaceUpdated["data"],
-) {
-  let space = await db.spaces.get(data.id);
-
-  // The space must already exist.
-  if (!space) {
-    throw new Error("space does not exist");
-  }
-
-  // Check that the message author has the required permissions.
-  const isAdmin = await auth.isAdmin(meta.stream.id, meta.author);
-  const isOwner = await spaces.isOwner(data.id, meta.author);
-  if (!isAdmin && !isOwner) {
-    throw new Error("author does not have permission to update this space");
-  }
-
+async function onSpaceUpdated(data: SpaceUpdated["data"]) {
   await db.spaces.update(data.id, data.fields);
 }
 
-async function onSpaceDeleted(
-  meta: StreamMessageMeta,
-  data: SpaceDeleted["data"],
-) {
-  let space = await db.spaces.get(data.id);
-
-  // The space must already exist.
-  if (!space) {
-    throw new Error("space does not exist");
-  }
-
-  // Check that the message author has the required permissions.
-  const isAdmin = await auth.isAdmin(meta.stream.id, meta.author);
-  const isOwner = await spaces.isOwner(data.id, meta.author);
-  if (!isAdmin && !isOwner) {
-    throw new Error("author does not have permission to delete this space");
-  }
-
+async function onSpaceDeleted(data: SpaceDeleted["data"]) {
   await db.spaces.delete(data.id);
 }

@@ -147,9 +147,9 @@ export async function process(message: ApplicationMessage) {
     case "resource_created":
       return await onResourceCreated(meta, data);
     case "resource_updated":
-      return await onResourceUpdated(meta, data);
+      return await onResourceUpdated(data);
     case "resource_deleted":
-      return await onResourceDeleted(meta, data);
+      return await onResourceDeleted(data);
   }
 }
 
@@ -171,43 +171,13 @@ async function onResourceCreated(
 }
 
 async function onResourceUpdated(
-  meta: StreamMessageMeta,
   data: ResourceUpdated["data"],
 ) {
-  let resource = await db.resources.get(data.id);
-
-  // The resource must already exist.
-  if (!resource) {
-    throw new Error("resource does not exist");
-  }
-
-  // Check that the message author has the required permissions.
-  const isAdmin = await auth.isAdmin(meta.stream.id, meta.author);
-  const isOwner = await resources.isOwner(data.id, meta.author);
-  if (!isAdmin && !isOwner) {
-    throw new Error("author does not have permission to update this resource");
-  }
-
   await db.resources.update(data.id, data.fields);
 }
 
 async function onResourceDeleted(
-  meta: StreamMessageMeta,
   data: ResourceDeleted["data"],
 ) {
-  let resource = await db.resources.get(data.id);
-
-  // The resource must already exist.
-  if (!resource) {
-    throw new Error("resource does not exist");
-  }
-
-  // Check that the message author has the required permissions.
-  const isAdmin = await auth.isAdmin(meta.stream.id, meta.author);
-  const isOwner = await resources.isOwner(data.id, meta.author);
-  if (!isAdmin && !isOwner) {
-    throw new Error("author does not have permission to delete this resource");
-  }
-
   await db.resources.delete(data.id);
 }

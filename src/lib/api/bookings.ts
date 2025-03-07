@@ -9,6 +9,12 @@ import { liveQuery } from "dexie";
  * Queries
  */
 
+export function findRequest(
+  requestId: Hash,
+): Promise<BookingRequest | undefined> {
+  return db.bookingRequests.get(requestId);
+}
+
 /**
  * Search the database for any booking requests matching the passed filter object.
  */
@@ -193,6 +199,7 @@ async function onBookingRequested(
 
   await db.bookingRequests.add(resourceRequest);
 
+  // @TODO: move this into new "crdt" API.
   // Replay un-ack'd messages which we may have received out-of-order.
   const topic = new TopicFactory(meta.stream.id);
   await invoke("replay", { topic: topic.calendar() });
@@ -215,26 +222,10 @@ async function onBookingRequestAccepted(
   data: BookingRequestAccepted["data"],
 ) {
   const resourceRequest = await db.bookingRequests.get(data.requestId);
-
-  if (!resourceRequest) {
-    throw new Error("resource request does not exist");
-  }
-
-  const isOwner = await resources.isOwner(
-    resourceRequest.resourceId,
-    meta.author,
-  );
-
-  if (!isOwner) {
-    throw new Error(
-      "author does not have permission to accept a booking request for this resource",
-    );
-  }
-
   const resourceResponse: BookingResponse = {
     id: meta.operationId,
     calendarId: meta.stream.id,
-    eventId: resourceRequest.eventId,
+    eventId: resourceRequest!.eventId,
     responder: meta.author,
     requestId: data.requestId,
     answer: "accept",
@@ -247,26 +238,10 @@ async function onBookingRequestRejected(
   data: BookingRequestRejected["data"],
 ) {
   const resourceRequest = await db.bookingRequests.get(data.requestId);
-
-  if (!resourceRequest) {
-    throw new Error("resource request does not exist");
-  }
-
-  const isOwner = await resources.isOwner(
-    resourceRequest.resourceId,
-    meta.author,
-  );
-
-  if (!isOwner) {
-    throw new Error(
-      "author does not have permission to accept a booking request for this resource",
-    );
-  }
-
   const resourceResponse: BookingResponse = {
     id: meta.operationId,
     calendarId: meta.stream.id,
-    eventId: resourceRequest.eventId,
+    eventId: resourceRequest!.eventId,
     responder: meta.author,
     requestId: data.requestId,
     answer: "reject",

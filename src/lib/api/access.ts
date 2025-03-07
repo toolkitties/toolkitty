@@ -300,16 +300,6 @@ async function onCalendarAccessAccepted(
   data: CalendarAccessAccepted["data"],
 ) {
   const calendarId = meta.stream.id;
-
-  // Check that the message author has the required permissions.
-  const isAdmin = await auth.isAdmin(calendarId, meta.author);
-  const isOwner = await calendars.isOwner(calendarId, meta.author);
-  if (!isAdmin && !isOwner) {
-    throw new Error(
-      "author does not have permission to accept an access request to this calendar",
-    );
-  }
-
   await db.accessResponses.add({
     id: meta.operationId,
     calendarId,
@@ -341,17 +331,6 @@ async function onCalendarAccessRejected(
   meta: StreamMessageMeta,
   data: CalendarAccessRejected["data"],
 ) {
-  const calendarId = meta.stream.id;
-
-  // Check that the message author has the required permissions.
-  const isAdmin = await auth.isAdmin(calendarId, meta.author);
-  const isOwner = await calendars.isOwner(calendarId, meta.author);
-  if (!isAdmin && !isOwner) {
-    throw new Error(
-      "author does not have permission to reject an access request to this calendar",
-    );
-  }
-
   await db.accessResponses.add({
     id: meta.operationId,
     calendarId: meta.stream.id,

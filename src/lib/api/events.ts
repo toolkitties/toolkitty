@@ -141,9 +141,9 @@ export async function process(message: ApplicationMessage) {
     case "event_created":
       return await onEventCreated(meta, data);
     case "event_updated":
-      return await onEventUpdated(meta, data);
+      return await onEventUpdated(data);
     case "event_deleted":
-      return await onEventDeleted(meta, data);
+      return await onEventDeleted(data);
   }
 }
 
@@ -164,43 +164,13 @@ async function onEventCreated(
 }
 
 async function onEventUpdated(
-  meta: StreamMessageMeta,
   data: EventUpdated["data"],
 ) {
-  let event = await db.events.get(data.id);
-
-  // The event must already exist.
-  if (!event) {
-    throw new Error("event does not exist");
-  }
-
-  // Check that the message author has the required permissions.
-  const isAdmin = await auth.isAdmin(event!.calendarId, meta.author);
-  const isOwner = await events.isOwner(data.id, meta.author);
-  if (!isAdmin && !isOwner) {
-    throw new Error("author does not have permission to update this event");
-  }
-
   await db.events.update(data.id, data.fields);
 }
 
 async function onEventDeleted(
-  meta: StreamMessageMeta,
   data: EventDeleted["data"],
 ) {
-  let event = await db.events.get(data.id);
-
-  // The event must already exist.
-  if (!event) {
-    throw new Error("event does not exist");
-  }
-
-  // Check that the message author has the required permissions.
-  const isAdmin = await auth.isAdmin(meta.stream.id, meta.author);
-  const isOwner = await events.isOwner(data.id, meta.author);
-  if (!isAdmin && !isOwner) {
-    throw new Error("author does not have permission to delete this event");
-  }
-
   await db.events.delete(data.id);
 }

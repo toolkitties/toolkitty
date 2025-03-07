@@ -2,7 +2,16 @@ import { invoke } from "@tauri-apps/api/core";
 import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
 import { liveQuery } from "dexie";
-import { access, auth, calendars, publish, topics, users } from ".";
+import {
+  access,
+  auth,
+  calendars,
+  identity,
+  publish,
+  streams,
+  topics,
+  users,
+} from ".";
 import { TopicFactory } from "./topics";
 
 /*
@@ -10,7 +19,6 @@ import { TopicFactory } from "./topics";
  */
 
 export function findMany(): Promise<Calendar[]> {
-
   // TODO: check if have access to each calendar and return it alongside calendar
   // TODO: return a livequery
   return db.calendars.toArray();
@@ -171,9 +179,9 @@ export async function process(message: ApplicationMessage) {
     case "calendar_created":
       return await onCalendarCreated(meta, data);
     case "calendar_updated":
-      return await onCalendarUpdated(meta, data);
+      return await onCalendarUpdated(data);
     case "calendar_deleted":
-      return await onCalendarDeleted(meta, data);
+      return await onCalendarDeleted(data);
   }
 }
 
@@ -196,12 +204,13 @@ async function onCalendarCreated(
     endDate: timeSpan.end,
   });
 
-  let stream = {
-    id: meta.stream.id,
-    rootHash: meta.stream.rootHash,
-    owner: meta.stream.owner,
-  };
-  await db.streams.add(stream);
+  // If we were the creator of this calendar then add it as a new stream to the streams table as
+  // well. In the case of calendars that we join (via requesting access) the stream is added to
+  // the database on the "calendar_access_accepted" message.
+  const myPublicKey = await identity.publicKey();
+  if (meta.author === myPublicKey) {
+    await streams.add(meta.stream);
+  }
 
   // @TODO: the calendar creator has no way to set a username.
   await users.create(meta.stream.id, meta.stream.owner);
@@ -215,24 +224,9 @@ async function onCalendarCreated(
   await invoke("replay", { topic: topic.calendar() });
 }
 
-async function onCalendarUpdated(
-  meta: StreamMessageMeta,
-  data: CalendarUpdated["data"],
-) {
-  let calendar = await db.calendars.get(data.id);
-
-  // The calendar must already exist.
-  if (!calendar) {
-    throw new Error("calendar does not exist");
-  }
-
-  // Check that the message author has the required permissions.
-  const isAdmin = await auth.isAdmin(data.id, meta.author);
-  const isOwner = await calendars.isOwner(data.id, meta.author);
-  if (!isAdmin && !isOwner) {
-    throw new Error("author does not have permission to update this calendar");
-  }
-
+async function onCalendarUpdated(data: CalendarUpdated["data"]) {
+  // @TODO: move validation into own "validation" processor module (and maybe we don't want to
+  // actually error here anyway?)
   validateFields(data.fields);
 
   let { name, dates } = data.fields;
@@ -245,24 +239,7 @@ async function onCalendarUpdated(
   });
 }
 
-async function onCalendarDeleted(
-  meta: StreamMessageMeta,
-  data: CalendarDeleted["data"],
-) {
-  let calendar = await db.calendars.get(data.id);
-
-  // The calendar must already exist.
-  if (!calendar) {
-    throw new Error("calendar does not exist");
-  }
-
-  // Check that the message author has the required permissions.
-  const isAdmin = await auth.isAdmin(data.id, meta.author);
-  const isOwner = await calendars.isOwner(data.id, meta.author);
-  if (!isAdmin && !isOwner) {
-    throw new Error("author does not have permission to delete this calendar");
-  }
-
+async function onCalendarDeleted(data: CalendarDeleted["data"]) {
   await db.calendars.delete(data.id);
 }
 

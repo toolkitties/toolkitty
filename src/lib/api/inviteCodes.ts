@@ -124,6 +124,8 @@ async function onResponse(response: ResolveInviteCodeResponse) {
     return;
   }
 
+  await streams.add(response.calendarStream);
+
   pendingInviteCode.onResolved({
     stream: response.calendarStream,
     name: response.calendarName,

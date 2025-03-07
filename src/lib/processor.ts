@@ -7,6 +7,7 @@ import {
   resources,
   events,
   bookings,
+  auth,
 } from "$lib/api";
 import { rejectPromise, resolvePromise } from "$lib/promiseMap";
 
@@ -151,8 +152,21 @@ export async function processMessage(message: ChannelMessage) {
   }
 }
 
+const PUBLIC_MESSAGE_TYPES: string[] = [
+  "calendar_access_requested",
+  "calendar_created",
+  "space_created",
+  "resource_created",
+  "event_created",
+  "booking_requested",
+];
+
 async function onApplicationMessage(message: ApplicationMessage) {
   try {
+    // Public message types don't pass through the auth processor.
+    if (!PUBLIC_MESSAGE_TYPES.includes(message.data.type)) {
+      await auth.process(message);
+    }
     await access.process(message);
     await calendars.process(message);
     await events.process(message);
