@@ -2,10 +2,13 @@
   import type { PageProps } from "./$types";
   import RequestDialog from "./RequestDialog.svelte";
   import { bookings } from "$lib/api";
+  import { liveQuery } from "dexie";
 
   let { data }: PageProps = $props();
 
-  let pendingRequests = bookings.findPending(data.activeCalendarId!, {});
+  let pendingRequests = liveQuery(() =>
+    bookings.findPending(data.activeCalendarId!, {}),
+  );
 </script>
 
 <h1>Dashboard</h1>
