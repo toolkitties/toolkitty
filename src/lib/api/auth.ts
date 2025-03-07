@@ -172,12 +172,20 @@ async function onBookingResponse(
     throw new Error("resource request does not exist");
   }
 
-  const isOwner = await resources.isOwner(request.resourceId, meta.author);
-
-  if (!isOwner) {
-    throw new Error(
-      "author does not have permission to accept or reject a booking request for this resource",
-    );
+  if (request.resourceType === "resource") {
+    const isOwner = await resources.isOwner(request.resourceId, meta.author);
+    if (!isOwner) {
+      throw new Error(
+        "author does not have permission to accept or reject a booking request for this resource",
+      );
+    }
+  } else if (request.resourceType === "space") {
+    const isOwner = await spaces.isOwner(request.resourceId, meta.author);
+    if (!isOwner) {
+      throw new Error(
+        "author does not have permission to accept or reject a booking request for this space",
+      );
+    }
   }
 }
 
