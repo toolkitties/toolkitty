@@ -1,5 +1,5 @@
 import { db } from "$lib/db";
-import { auth, publish, resources } from ".";
+import { auth, publish, resources, roles } from ".";
 import { getActiveCalendarId } from "./calendars";
 import { promiseResult } from "$lib/promiseMap";
 import { invoke } from "@tauri-apps/api/core";
@@ -80,7 +80,7 @@ export async function update(
 ): Promise<Hash> {
   const resource = await resources.findById(resourceId);
 
-  const amAdmin = await auth.amAdmin(resource!.calendarId);
+  const amAdmin = await roles.amAdmin(resource!.calendarId);
   const amOwner = await resources.amOwner(resourceId);
   if (!amAdmin && !amOwner) {
     throw new Error("user does not have permission to update this resource");
@@ -109,7 +109,7 @@ export async function update(
 export async function deleteResource(resourceId: Hash): Promise<Hash> {
   const resource = await resources.findById(resourceId);
 
-  const amAdmin = await auth.amAdmin(resource!.calendarId);
+  const amAdmin = await roles.amAdmin(resource!.calendarId);
   const amOwner = await resources.amOwner(resourceId);
   if (!amAdmin && !amOwner) {
     throw new Error("user does not have permission to delete this resource");
