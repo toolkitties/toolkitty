@@ -37,7 +37,7 @@ impl TopicQuery for Topic {}
 
 impl TopicId for Topic {
     fn id(&self) -> [u8; 32] {
-        Hash::new(self.0.as_bytes()).as_bytes().clone()
+        *Hash::new(self.0.as_bytes()).as_bytes()
     }
 }
 
@@ -62,19 +62,19 @@ impl TopicMap {
         }
     }
 
-    pub async fn add_log(&self, topic: Topic, public_key: PublicKey, log_id: LogId) {
+    pub async fn add_log(&self, topic: &Topic, public_key: &PublicKey, log_id: &LogId) {
         let mut lock = self.inner.write().await;
         lock.topics
-            .entry(topic)
+            .entry(topic.clone())
             .and_modify(|author_logs| {
                 author_logs
-                    .entry(public_key)
+                    .entry(*public_key)
                     .and_modify(|logs| {
                         logs.push(log_id.clone());
                     })
                     .or_insert(vec![log_id.clone()]);
             })
-            .or_insert(HashMap::from([(public_key, vec![log_id])]));
+            .or_insert(HashMap::from([(*public_key, vec![log_id.clone()])]));
     }
 }
 
@@ -82,6 +82,6 @@ impl TopicMap {
 impl TopicLogMap<Topic, LogId> for TopicMap {
     async fn get(&self, topic: &Topic) -> Option<HashMap<PublicKey, Vec<LogId>>> {
         let lock = self.inner.read().await;
-        lock.topics.get(&topic).cloned()
+        lock.topics.get(topic).cloned()
     }
 }

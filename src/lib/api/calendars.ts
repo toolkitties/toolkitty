@@ -10,22 +10,21 @@ import { TopicFactory } from "./topics";
  * Queries
  */
 
-export async function findMany(): Promise<Calendar[]> {
-  return await db.calendars.toArray();
+export function findMany(): Promise<Calendar[]> {
+
+  // TODO: check if have access to each calendar and return it alongside calendar
+  // TODO: return a livequery
+  return db.calendars.toArray();
 }
 
-export async function findOne(id: Hash): Promise<Calendar | undefined> {
-  let calendars = await db.calendars.toArray();
-  return calendars.find((calendar) => calendar.id == id);
+export function findOne(id: Hash): Promise<Calendar | undefined> {
+  return db.calendars.get({ id });
 }
 
-export async function findByInviteCode(
-  code: string,
-): Promise<undefined | Calendar> {
-  const calendars = await findMany();
-  return calendars.find((calendar) => {
-    return inviteCode(calendar) === code;
-  });
+export function findByInviteCode(code: string): Promise<undefined | Calendar> {
+  return db.calendars
+    .filter((calendar) => inviteCode(calendar) === code.toLowerCase())
+    .first();
 }
 
 export function inviteCode(calendar: Calendar): string {
@@ -35,9 +34,8 @@ export function inviteCode(calendar: Calendar): string {
 /*
  * Returns the id of the currently active calendar
  */
-export async function getActiveCalendarId() {
-  const activeCalendar = await db.settings.get("activeCalendar");
-  return activeCalendar?.value;
+export function getActiveCalendarId(): Promise<string | undefined> {
+  return db.settings.get("activeCalendar").then((activeCalendar) => activeCalendar?.value);
 }
 
 /*
@@ -49,6 +47,15 @@ export const getActiveCalendar = liveQuery(async () => {
   const activeCalendar = await db.calendars.get(activeCalendarId.value);
   return activeCalendar?.name;
 });
+
+/*
+ * Share code for currently active calendar
+ */
+export async function getShareCode() {
+  const activeCalendarId = await db.settings.get("activeCalendar");
+  if (!activeCalendarId) return '';
+  return activeCalendarId.value.slice(0, 4);
+}
 
 /*
  * Commands
@@ -123,7 +130,7 @@ export async function deleteCalendar(calendarId: Hash): Promise<Hash> {
 }
 
 export async function setActiveCalendar(id: Hash) {
-  await db.settings.add({
+  await db.settings.put({
     name: "activeCalendar",
     value: id,
   });

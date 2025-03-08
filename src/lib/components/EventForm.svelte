@@ -1,15 +1,65 @@
 <script lang="ts">
   import AvailabilityViewer from "./AvailabilityViewer.svelte";
+  import { parseEventFormData } from "$lib/utils";
+  import { goto } from "$app/navigation";
+  import { toast } from "$lib/toast.svelte";
 
-  let { formType, spaces, resources } = $props();
+  let { formType, spaces, resources, event = null } = $props();
 
   let selectedSpace: Space | null = $state<Space | null>(null);
   function handleSpaceSelection(space: Space) {
     selectedSpace = space;
   }
+
+  function handleSubmit(e: Event) {
+    if (formType === "create") {
+      handleCreateEvent(e);
+    } else if (formType === "edit") {
+      handleUpdateEvent(e);
+    }
+  }
+
+  async function handleCreateEvent(e: Event) {
+    e.preventDefault();
+
+    const form = e.currentTarget as HTMLFormElement;
+    const formData = new FormData(form);
+
+    const payload = parseEventFormData(formData, selectedSpace);
+
+    try {
+      await spaces.create(payload);
+      toast.success("Event created!");
+      goto(`/app/events/${event.id}`);
+    } catch (error) {
+      console.error("Error creating event: ", error);
+      toast.error("Error creating event!");
+    }
+  }
+
+  async function handleUpdateEvent(e: Event) {
+    e.preventDefault();
+
+    const form = e.currentTarget as HTMLFormElement;
+    const formData = new FormData(form);
+
+    const payload = parseEventFormData(formData, selectedSpace);
+
+    try {
+      await spaces.update(event.id, payload);
+      toast.success("Event updated!");
+      goto(`/app/events/${event.id}`);
+    } catch (error) {
+      console.error("Error updating event: ", error);
+      toast.error("Error updating event!");
+    }
+  }
 </script>
 
-<form>
+<form onsubmit={handleSubmit}>
+  {#if event}
+    <input type="text" bind:value={event.id} />
+  {/if}
   <label for="name">Event name*</label>
   <input type="text" name="name" required />
 
@@ -45,12 +95,7 @@
     <ul>
       {#each spaces as space}
         <li>
-          <input
-            type="radio"
-            id={space.id}
-            name="selected-space"
-            onchange={() => handleSpaceSelection(space)}
-          />
+          <input type="radio" id={space.id} name="selected-space" />
           <label for={space.id}>{space.name}</label>
         </li>
       {/each}
@@ -123,5 +168,10 @@
     <p>No resources available.</p>
   {/if}
 
-  <button type="submit">Publish</button>
+  {#if formType === "create"}
+    <button type="submit">Create Event</button>
+  {/if}
+  {#if formType === "edit"}
+    <button type="submit">Update Event</button>
+  {/if}
 </form>

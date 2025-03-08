@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use p2panda_core::{Hash, PrivateKey, PublicKey};
@@ -9,7 +10,7 @@ use serde::Serialize;
 #[cfg(not(test))]
 use tauri::{AppHandle, Manager};
 use thiserror::Error;
-use tokio::sync::{broadcast, mpsc, Mutex};
+use tokio::sync::{broadcast, mpsc, RwLock};
 use tracing::debug;
 
 use crate::messages::{ChannelEvent, NetworkEvent, StreamArgs};
@@ -64,7 +65,7 @@ impl Context {
 
 pub struct Service {
     /// Handle onto the tauri application. The shared Context can be accessed and modified here.
-    context: Arc<Mutex<Context>>,
+    context: Arc<RwLock<Context>>,
 
     /// Stream where we receive all topic events from the p2panda node.
     stream_rx: mpsc::Receiver<StreamEvent>,
@@ -85,13 +86,18 @@ impl Service {
     ///
     /// The node and several channel senders are added to the shared app context while channel
     /// receivers are stored on the Service struct for use during the runtime loop.
-    pub async fn build() -> anyhow::Result<Self> {
+    pub async fn build(blobs_base_dir: PathBuf) -> anyhow::Result<Self> {
         let private_key = PrivateKey::new();
         let store = MemoryStore::new();
         let topic_map = TopicMap::new();
 
-        let (node, stream_rx, network_events_rx) =
-            Node::new(private_key.clone(), store.clone(), topic_map.clone()).await?;
+        let (node, stream_rx, network_events_rx) = Node::new(
+            private_key.clone(),
+            store.clone(),
+            blobs_base_dir,
+            topic_map.clone(),
+        )
+        .await?;
 
         let (to_app_tx, to_app_rx) = broadcast::channel(32);
         let (channel_tx, channel_rx) = mpsc::channel(32);
@@ -99,7 +105,7 @@ impl Service {
         let context = Context::new(node, to_app_tx, topic_map, channel_tx);
 
         Ok(Self {
-            context: Arc::new(Mutex::new(context)),
+            context: Arc::new(RwLock::new(context)),
             stream_rx,
             network_events_rx,
             to_app_rx,
@@ -111,7 +117,15 @@ impl Service {
     #[cfg(not(test))]
     pub fn run(app_handle: AppHandle) {
         tauri::async_runtime::spawn(async move {
-            let mut app = Self::build().await.expect("build stream");
+            let blobs_root_dir = if cfg!(dev) {
+                tempfile::tempdir().expect("temp dir").into_path()
+            } else {
+                app_handle
+                    .path()
+                    .app_data_dir()
+                    .expect("app data directory")
+            };
+            let mut app = Self::build(blobs_root_dir).await.expect("build stream");
             let rpc = Rpc {
                 context: app.context.clone(),
             };
@@ -123,8 +137,11 @@ impl Service {
 
     /// Spawn the service task.
     #[cfg(test)]
-    pub async fn run() -> Arc<Mutex<Context>> {
-        let mut app = Self::build().await.expect("build stream");
+    pub async fn run() -> Arc<RwLock<Context>> {
+        let temp_blobs_root_dir = tempfile::tempdir().expect("temp dir");
+        let mut app = Self::build(temp_blobs_root_dir.into_path())
+            .await
+            .expect("build stream");
         let context = app.context.clone();
         let rt = tokio::runtime::Handle::current();
 
@@ -140,7 +157,7 @@ impl Service {
     /// invite codes channels.
     pub(crate) async fn inner_run(
         mut self,
-        channel: broadcast::Sender<ChannelEvent>,
+        mut channel: broadcast::Sender<ChannelEvent>,
     ) -> anyhow::Result<()> {
         loop {
             tokio::select! {
@@ -152,6 +169,9 @@ impl Service {
                 },
                 Some(event) = self.stream_rx.recv() => {
                     channel.send(ChannelEvent::Stream(event))?;
+                },
+                Some(new_channel) = self.channel_rx.recv() => {
+                    channel = new_channel;
                 },
                 // @TODO(sam): Need a way to handle ephemeral topics in the stream controller as
                 // we now don't have a static topic we can subscribe to on startup.
@@ -174,47 +194,45 @@ impl Service {
             return Err(anyhow::anyhow!("channel tx closed"));
         };
 
-        self.context.lock().await.channel_set = true;
+        self.context.write().await.channel_set = true;
 
         Ok(channel)
     }
 }
 
 pub struct Rpc {
-    context: Arc<Mutex<Context>>,
+    pub(crate) context: Arc<RwLock<Context>>,
 }
 
 impl Rpc {
     /// Initialize the app by passing it a channel from the frontend.
     pub async fn init(&self, channel: broadcast::Sender<ChannelEvent>) -> Result<(), RpcError> {
-        let context = self.context.lock().await;
-        if context.channel_set {
-            return Err(RpcError::SetStreamChannel);
-        }
+        let context = self.context.write().await;
 
-        if context.channel_tx.send(channel).await.is_err() {
-            return Err(RpcError::OneshotChannel);
-        };
+        context
+            .channel_tx
+            .send(channel)
+            .await
+            .expect("send on channel");
 
         Ok(())
     }
-
     /// The public key of the local node.
     pub async fn public_key(&self) -> Result<PublicKey, RpcError> {
-        let context = self.context.lock().await;
+        let context = self.context.read().await;
         let public_key = context.node.private_key.public_key();
         Ok(public_key)
     }
 
     /// Acknowledge operations to mark them as successfully processed in the stream controller.
     pub async fn ack(&self, operation_id: Hash) -> Result<(), RpcError> {
-        let mut context = self.context.lock().await;
+        let mut context = self.context.write().await;
         context.node.ack(operation_id).await?;
         Ok(())
     }
 
     pub async fn replay(&self, topic: Topic) -> Result<(), RpcError> {
-        let mut context = self.context.lock().await;
+        let mut context = self.context.write().await;
         if let Some(logs) = context.topic_map.get(&topic).await {
             context.node.replay(logs).await?;
         };
@@ -223,17 +241,17 @@ impl Rpc {
 
     pub async fn add_topic_log(
         &self,
-        public_key: PublicKey,
-        topic: Topic,
-        log_id: LogId,
+        public_key: &PublicKey,
+        topic: &Topic,
+        log_id: &LogId,
     ) -> Result<(), RpcError> {
-        let context = self.context.lock().await;
+        let context = self.context.write().await;
         context.topic_map.add_log(topic, public_key, log_id).await;
         Ok(())
     }
 
     pub async fn subscribe(&self, topic: &Topic) -> Result<(), RpcError> {
-        let mut context = self.context.lock().await;
+        let mut context = self.context.write().await;
 
         if context
             .subscriptions
@@ -255,7 +273,7 @@ impl Rpc {
     }
 
     pub async fn subscribe_ephemeral(&self, topic: &Topic) -> Result<(), RpcError> {
-        let mut context = self.context.lock().await;
+        let mut context = self.context.write().await;
 
         if context
             .subscriptions
@@ -264,7 +282,7 @@ impl Rpc {
         {
             context
                 .node
-                .subscribe_ephemeral(&topic)
+                .subscribe_ephemeral(topic)
                 .await
                 .expect("can subscribe to topic");
 
@@ -283,7 +301,7 @@ impl Rpc {
         log_path: Option<&LogPath>,
         topic: Option<&Topic>,
     ) -> Result<(Hash, Hash), RpcError> {
-        let mut context = self.context.lock().await;
+        let mut context = self.context.write().await;
         let private_key = context.node.private_key.clone();
 
         let extensions = Extensions {
@@ -297,7 +315,7 @@ impl Rpc {
             &mut context.node.store,
             &private_key,
             extensions,
-            Some(&payload),
+            Some(payload),
         )
         .await;
 
@@ -321,25 +339,28 @@ impl Rpc {
     }
 
     pub async fn publish_ephemeral(&self, topic: &Topic, payload: &[u8]) -> Result<(), RpcError> {
-        let mut context = self.context.lock().await;
-        context.node.publish_ephemeral(&topic, &payload).await?;
+        let mut context = self.context.write().await;
+        context.node.publish_ephemeral(topic, payload).await?;
         Ok(())
+    }
+
+    pub async fn upload_file(&self, path: PathBuf) -> Result<Hash, RpcError> {
+        let context = self.context.read().await;
+        let file_hash = context.node.upload_file(path).await?;
+        Ok(file_hash)
     }
 }
 
 #[derive(Debug, Error)]
 pub enum RpcError {
-    #[error("oneshot channel receiver closed")]
-    OneshotChannel,
-
-    #[error("stream channel already set")]
-    SetStreamChannel,
-
     #[error(transparent)]
     StreamController(#[from] crate::node::StreamControllerError),
 
     #[error(transparent)]
     Publish(#[from] crate::node::PublishError),
+
+    #[error(transparent)]
+    Blob(#[from] crate::node::BlobError),
 
     #[error("payload decoding failed")]
     Serde(#[from] serde_json::Error),
@@ -367,7 +388,7 @@ mod tests {
     use crate::{
         messages::{ChannelEvent, StreamArgs},
         node::{
-            extensions::{LogPath, StreamOwner, StreamRootHash},
+            extensions::{LogId, LogPath, Stream, StreamOwner, StreamRootHash},
             stream::{EventData, EventMeta},
             StreamEvent,
         },
@@ -379,7 +400,7 @@ mod tests {
     #[tokio::test]
     async fn public_key() {
         let context = Service::run().await;
-        let node_private_key = context.lock().await.node.private_key.clone();
+        let node_private_key = context.read().await.node.private_key.clone();
         let rpc = Rpc { context };
 
         let (channel_tx, _channel_rx) = broadcast::channel(10);
@@ -439,7 +460,7 @@ mod tests {
     #[tokio::test]
     async fn publish() {
         let context = Service::run().await;
-        let private_key = context.lock().await.node.private_key.clone();
+        let private_key = context.read().await.node.private_key.clone();
         let rpc = Rpc { context };
 
         let (channel_tx, mut channel_rx) = broadcast::channel(10);
@@ -543,9 +564,146 @@ mod tests {
 
         let mut message_received = false;
         while let Ok(event) = peer_b_rx.recv().await {
-            if let ChannelEvent::Stream(StreamEvent { data, .. }) = event {
-                if let EventData::Ephemeral(payload) = data {
-                    assert_eq!(send_payload, payload);
+            if let ChannelEvent::Stream(StreamEvent {
+                data: EventData::Ephemeral(payload),
+                ..
+            }) = event
+            {
+                assert_eq!(send_payload, payload);
+                message_received = true;
+                break;
+            }
+        }
+
+        assert!(message_received);
+    }
+
+    #[tokio::test]
+    async fn two_peers_sync() {
+        let peer_a = Rpc {
+            context: Service::run().await,
+        };
+        let peer_b = Rpc {
+            context: Service::run().await,
+        };
+
+        let peer_a_public_key = peer_a.public_key().await.unwrap();
+        let peer_b_public_key = peer_b.public_key().await.unwrap();
+
+        let (peer_a_tx, mut peer_a_rx) = broadcast::channel(100);
+        let (peer_b_tx, mut peer_b_rx) = broadcast::channel(100);
+
+        let result = peer_a.init(peer_a_tx).await;
+        assert!(result.is_ok());
+
+        let result = peer_b.init(peer_b_tx).await;
+        assert!(result.is_ok());
+
+        let topic = "messages".into();
+        let log_path = json!("messages").into();
+        let stream_args = StreamArgs::default();
+
+        let peer_a_payload = json!({
+            "message": "organize!"
+        });
+
+        // Peer A publishes the first message to a new stream.
+        let result = peer_a
+            .publish(
+                &serde_json::to_vec(&peer_a_payload).unwrap(),
+                &stream_args,
+                Some(&log_path),
+                Some(&topic),
+            )
+            .await;
+        assert!(result.is_ok());
+
+        // We need these values so Peer B can subscribe and publish to the correct stream.
+        let (operation_id, stream_id) = result.unwrap();
+
+        let stream_args = StreamArgs {
+            id: Some(stream_id),
+            root_hash: Some(operation_id.clone()),
+            owner: Some(peer_a_public_key.clone()),
+        };
+
+        let peer_b_payload = json!({
+            "message": "Hell yeah!"
+        });
+
+        // Peer B publishes it's own message to the stream.
+        let result = peer_b
+            .publish(
+                &serde_json::to_vec(&peer_b_payload).unwrap(),
+                &stream_args,
+                Some(&log_path),
+                Some(&topic),
+            )
+            .await;
+        assert!(result.is_ok());
+
+        // Both peers add themselves and each other to their topic map.
+        let stream = Stream {
+            root_hash: operation_id.into(),
+            owner: peer_a_public_key.into(),
+        };
+        let log_id = LogId {
+            stream,
+            log_path: Some(log_path),
+        };
+
+        peer_a
+            .add_topic_log(&peer_a_public_key, &topic, &log_id)
+            .await
+            .unwrap();
+        peer_a
+            .add_topic_log(&peer_b_public_key, &topic, &log_id)
+            .await
+            .unwrap();
+
+        peer_b
+            .add_topic_log(&peer_a_public_key, &topic, &log_id)
+            .await
+            .unwrap();
+        peer_b
+            .add_topic_log(&peer_b_public_key, &topic, &log_id)
+            .await
+            .unwrap();
+
+        // Finally they both subscribe to the topic.
+        let result = peer_a.subscribe(&topic).await;
+        assert!(result.is_ok());
+        let result = peer_b.subscribe(&topic).await;
+        assert!(result.is_ok());
+
+        // Peer A should receive Peer B's message via sync.
+        let mut message_received = false;
+        while let Ok(event) = peer_a_rx.recv().await {
+            if let ChannelEvent::Stream(StreamEvent {
+                data: EventData::Application(payload),
+                meta: Some(EventMeta { author, .. }),
+            }) = event
+            {
+                if author == peer_b_public_key {
+                    assert_eq!(peer_b_payload, payload);
+                    message_received = true;
+                    break;
+                }
+            }
+        }
+
+        assert!(message_received);
+
+        // Peer B should receive Peer A's message via sync.
+        let mut message_received = false;
+        while let Ok(event) = peer_b_rx.recv().await {
+            if let ChannelEvent::Stream(StreamEvent {
+                data: EventData::Application(payload),
+                meta: Some(EventMeta { author, .. }),
+            }) = event
+            {
+                if author == peer_a_public_key {
+                    assert_eq!(peer_a_payload, payload);
                     message_received = true;
                     break;
                 }

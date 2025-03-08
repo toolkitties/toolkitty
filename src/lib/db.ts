@@ -1,4 +1,4 @@
-import Dexie, { type EntityTable } from "dexie";
+import Dexie, { type EntityTable, type Table } from "dexie";
 
 /**
  * (ノ ˘_˘)ノ　ζ|||ζ　ζ|||ζ
@@ -7,14 +7,14 @@ import Dexie, { type EntityTable } from "dexie";
  * We extend the Dexie instance with our custom table definitions for type-safety.
  * So Dexie knows how the data should look when updating or querying.
  */
-const db = new Dexie("CalendarDatabase") as Dexie & {
+const db = new Dexie("Toolkitty") as Dexie & {
   accessRequests: EntityTable<
     AccessRequest,
     "id" // primary key
   >;
-  accessResponses: EntityTable<
+  accessResponses: Table<
     AccessResponse,
-    "id" // primary key
+    ["requestId+answer"] // primary key
   >;
   calendars: EntityTable<
     Calendar,
@@ -30,6 +30,14 @@ const db = new Dexie("CalendarDatabase") as Dexie & {
   >;
   events: EntityTable<
     CalendarEvent,
+    "id" // primary key
+  >;
+  bookingRequests: EntityTable<
+    BookingRequest,
+    "id" // primary key
+  >;
+  bookingResponses: EntityTable<
+    BookingResponse,
     "id" // primary key
   >;
   streams: EntityTable<
@@ -50,16 +58,18 @@ const db = new Dexie("CalendarDatabase") as Dexie & {
  * For each new table we can specify a primary key and then any fields we want to index for faster queries.
  * Not all fields need to be listed here, as we declared them when creating the database.
  * For example we don't want to index images!!
- * 
+ *
  * & symbol denotes that the primary key must be unique.
  */
 db.version(1).stores({
   accessRequests: "&id, calendarId",
-  accessResponses: "&id, calendarId",
+  accessResponses: "&[requestId+answer], id, calendarId",
   calendars: "&id, name, calendarId",
   spaces: "&id, calendarId",
   resources: "&id, calendarId",
   events: "&id, name, date, calendarId",
+  bookingRequests: "&id, eventId, calendarId, requester, resourceType",
+  bookingResponses: "&id, eventId, requestId, calendarId, answer",
   streams: "&id",
   settings: "&name",
 });

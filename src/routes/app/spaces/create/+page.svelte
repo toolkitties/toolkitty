@@ -1,16 +1,13 @@
 <script lang="ts">
-  import type { DateValue } from "@internationalized/date";
-  import { CalendarDate } from "@internationalized/date";
-
-  // placeholder data
-  const festivalDates: DateValue[] = [
-    new CalendarDate(2024, 12, 11),
-    new CalendarDate(2024, 12, 12),
-    new CalendarDate(2024, 12, 13),
-    new CalendarDate(2024, 12, 14),
-    new CalendarDate(2024, 12, 15),
-    new CalendarDate(2024, 12, 16),
-  ];
+  import SpaceForm from "$lib/components/SpaceForm.svelte";
 </script>
 
-<h1>Create space</h1>
+<br />
+<br />
+<br />
+<p>
+  Hello Organisers! Fill in this form to upload your own space. Once published,
+  event organisers will be able to book your space for their events. Manage
+  requests in your dashboard.
+</p>
+<SpaceForm formType="create" />

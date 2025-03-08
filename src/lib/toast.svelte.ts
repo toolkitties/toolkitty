@@ -58,6 +58,30 @@ class Toasts {
     this.addToast("info", message, options)
   }
 
+  /**
+   * Show access request toast to the user
+   */
+  accessRequest(data: AccessRequest) {
+    let message = data.name + ' requested access'
+    let request: RequestEvent = {
+      type: 'access_request',
+      data
+    }
+    this.addToast("info", message, { request })
+  }
+
+  /**
+   * Show booking request toast to the user
+   */
+  bookingRequest(data: BookingRequest) {
+    let message = "new booking request: " + data.id
+    let request: RequestEvent = {
+      type: 'booking_request',
+      data
+    }
+    this.addToast("info", message, { request })
+  }
+
   dismissToast(id: number) {
     this.toasts = this.toasts.filter((toast) => toast.id !== id);
   }

@@ -12,7 +12,7 @@ const disableHmr = process.env.VITE_DISABLE_HMR ? true : false;
 
 export default defineConfig(async () => ({
   plugins: [sveltekit()],
-
+  test: { environment: "jsdom" },
   // vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`:
   //
   // 1. Prevent vite from obscuring rust errors
@@ -22,16 +22,23 @@ export default defineConfig(async () => ({
     // 2. Tauri expects a fixed port, fail if that port is not available
     strictPort: true,
     host: host || false,
-    hmr: disableHmr ? false : host
-      ? {
-        protocol: "ws",
-        host,
-        port: 1421,
-      }
-      : undefined,
+    hmr: disableHmr
+      ? false
+      : host
+        ? {
+            protocol: "ws",
+            host,
+            port: 1421,
+          }
+        : undefined,
     watch: {
       // 3. tell vite to ignore watching `src-tauri`
       ignored: ["**/src-tauri/**"],
     },
   },
+  resolve: process.env.VITEST
+    ? {
+        conditions: ["browser"],
+      }
+    : undefined,
 }));

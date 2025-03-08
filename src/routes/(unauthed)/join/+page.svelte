@@ -1,74 +1,93 @@
 <script lang="ts">
+  import { PinInput, Toggle } from "bits-ui";
   import { goto } from "$app/navigation";
-  import { access } from "$lib/api";
-  import { getActiveCalendarId } from "$lib/api/calendars";
-  import { publicKey } from "$lib/api/identity";
+  import { topics } from "$lib/api";
+  import { toast } from "$lib/toast.svelte";
+  import { resolveInviteCode } from "$lib/api/access";
+  import { TopicFactory } from "$lib/api/topics";
+  import { calendars } from "$lib/api";
 
-  // @TODO: We want to check in the database if we already made a request by calling the async
-  // method access.hasRequested(), is there a svelty way to do this from here? Like with `onMount`
-  // or something?
-  let pending = false;
+  let value = $state("");
+  let show = $state(true);
+  let searching = $state(false);
+  const REGEX_ONLY_CHARS_AND_DIGITS = "^[a-zA-Z0-9]+$";
 
-  // @TODO: Same here, want to actually check the db using access.wasRejected.
-  let rejected = false;
+  // Transform value to lowercase as the user inputs the code
+  $effect(() => {
+    value = value.toLowerCase();
+  });
 
-  async function join(event: Event) {
-    event.preventDefault();
+  async function join() {
+    // event.preventDefault();
 
-    // @TODO: Want to get the calendar id from the page url somehow.
-    let calendarId = await getActiveCalendarId();
+    if (!value) return;
 
-    if (calendarId == undefined) {
-      console.error("active calendar not set");
-      goto(`/app/calendar/${calendarId}`);
+    let calendar;
+    try {
+      searching = true;
+      calendar = await resolveInviteCode(value);
+      const topic = new TopicFactory(calendar.stream.id);
+      await topics.subscribe(topic.calendarInbox());
+      await calendars.setActiveCalendar(calendar.stream.id);
+    } catch (err) {
+      searching = false;
+      console.error(err);
+      toast.error("Calendar not found");
       return;
-    };
-
-    // @TODO: take name and message values from form.
-    let request = {
-      calendarId,
-      name: "",
-      message: ""
     }
 
-    let requestId = await access.requestAccess(request);
-    pending = true;
-
-    // @TODO: Is this the best way to wait on a response here (probably no)?
-    let hasAccess = false;
-    let myPublicKey = await publicKey();
-    while (!hasAccess && !rejected) {
-      hasAccess = await access.checkHasAccess(myPublicKey, calendarId);
-      rejected = await access.wasRejected(requestId);
-    }
-
-    if (hasAccess) {
-      goto("/app/events");
-    }
+    goto(`/request`);
   }
-
 </script>
 
-<h1>Kitty Fest 25</h1>
+<h1 class="text-3xl text-center">Toolkitty 🐈</h1>
 
-{#if pending && !rejected}
-  <p>
-    Your request is now pending. You will be notified when this changes. Read
-    more about Toolkitties <a href="/help">here</a>.
-  </p>
-  <span>⏳</span>
-{:else if rejected}
-  <p>
-    Your request was rejected!!
-  </p>
-{:else}
-  <p>Welcome to Toolkitties</p>
-  <form onsubmit={join}>
-    <input id="name" name="name" type="text" placeholder="Your name" />
-    <textarea id="message" name="message" rows="4" placeholder="Your message"
-    ></textarea>
-    <button class="border border-black rounded p-4" type="submit"
-      >Request access</button
+<div class="flex flex-col gap-4 grow justify-center mx-auto">
+  {#if !searching}
+    <!-- TODO: Make this a form for better semantics -->
+    <PinInput.Root
+      bind:value
+      class="flex items-center gap-2"
+      maxlength={4}
+      pattern={REGEX_ONLY_CHARS_AND_DIGITS}
+      onComplete={join}
     >
-  </form>
-{/if}
+      {#snippet children({ cells })}
+        {#each cells as cell}
+          <PinInput.Cell
+            class="flex items-center justify-center h-16 w-10 border rounded data-active:outline-primary data-active:outline-1"
+            {cell}
+          >
+            {#if cell.char !== null}
+              <div>
+                {show ? cell.char : "·"}
+              </div>
+            {/if}
+          </PinInput.Cell>
+        {/each}
+      {/snippet}
+    </PinInput.Root>
+    <Toggle.Root
+      aria-label="toggle code visibility"
+      class="inline-flex size-10 items-center justify-center rounded-[9px] text-foreground/40 transition-all hover:bg-muted active:scale-98 active:bg-dark-10 active:data-[state=on]:bg-dark-10"
+      bind:pressed={show}
+    >
+      {#if show}
+        <span>Hide</span>
+      {:else}
+        <span>Show</span>
+      {/if}
+    </Toggle.Root>
+    <button class="border border-black rounded p-4" onclick={() => join()}
+      >Join</button
+    >
+  {:else}
+    <p>Searching for calendar</p>
+  {/if}
+</div>
+
+<a
+  href="/create"
+  class="border border-black rounded p-4 text-center"
+  type="submit">Create</a
+>

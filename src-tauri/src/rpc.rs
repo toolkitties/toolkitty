@@ -1,5 +1,7 @@
 use p2panda_core::{Hash, PublicKey};
+use tauri::AppHandle;
 use tauri::{ipc::Channel, State};
+use tauri_plugin_dialog::DialogExt;
 use tokio::sync::broadcast;
 use tracing::debug;
 
@@ -72,7 +74,7 @@ pub async fn add_topic_log(
         "RPC request received"
     );
 
-    rpc.add_topic_log(public_key, topic, log_id).await?;
+    rpc.add_topic_log(&public_key, &topic, &log_id).await?;
     Ok(())
 }
 
@@ -132,8 +134,20 @@ pub async fn publish_ephemeral(
     payload: serde_json::Value,
 ) -> Result<(), RpcError> {
     debug!(command.name = "publish_ephemeral", "RPC request received");
-
     let payload = serde_json::to_vec(&payload)?;
     rpc.publish_ephemeral(&topic, &payload).await?;
     Ok(())
+}
+
+#[tauri::command]
+pub async fn upload_file(rpc: State<'_, Rpc>, app: AppHandle) -> Result<Option<Hash>, RpcError> {
+    debug!(command.name = "upload_file", "RPC request received");
+    match app.dialog().file().blocking_pick_file() {
+        Some(file_path) => {
+            let file_path = file_path.into_path().expect("parseable file path");
+            let file_hash = rpc.upload_file(file_path).await?;
+            Ok(Some(file_hash))
+        }
+        None => Ok(None),
+    }
 }

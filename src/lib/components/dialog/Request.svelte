@@ -1,36 +1,39 @@
 <script lang="ts">
-  import * as Dialog from "./index";
+  import * as AlertDialog from "./index";
+  import { access } from "$lib/api";
 
   let { request } = $props();
 
   // TODO: Handle user actions from requests
 </script>
 
-<Dialog.Portal>
-  <Dialog.Content>
-    {#if (request.type = "space_request")}
-      <Dialog.Title>{request.space.name} requested for:</Dialog.Title>
-      <Dialog.Description>
+<AlertDialog.Portal>
+  <AlertDialog.Content>
+    {#if request.type == "space_request"}
+      <AlertDialog.Title>{request.space.name} requested for:</AlertDialog.Title>
+      <AlertDialog.Description>
         {request.event.name}<br />
         {request.event.startDate} - {request.event.endDate}<br />
-      </Dialog.Description>
-      <Dialog.Close>approve</Dialog.Close>
-      <Dialog.Close>reject</Dialog.Close>
-    {:else if (request.type = "resource_requested")}
-      <Dialog.Title>{request.resource.name} requested for:</Dialog.Title>
-      <Dialog.Description>
+      </AlertDialog.Description>
+      <AlertDialog.Action>approve</AlertDialog.Action>
+      <AlertDialog.Action>reject</AlertDialog.Action>
+    {:else if request.type == "resource_request"}
+      <AlertDialog.Title
+        >{request.resource.name} requested for:</AlertDialog.Title
+      >
+      <AlertDialog.Description>
         {request.event.name}<br />
         {request.event.startDate} - {request.event.endDate}<br />
         {request.space.name}
-      </Dialog.Description>
-      <Dialog.Close>approve</Dialog.Close>
-      <Dialog.Close>reject</Dialog.Close>
+      </AlertDialog.Description>
+      <AlertDialog.Action>approve</AlertDialog.Action>
+      <AlertDialog.Action>reject</AlertDialog.Action>
     {:else}
-      <Dialog.Title>Update permissions for {request.name}</Dialog.Title>
-      <Dialog.Description>{request.message}</Dialog.Description>
-      <Dialog.Close>admin</Dialog.Close>
-      <Dialog.Close>organiser</Dialog.Close>
-      <Dialog.Close>reject or remove</Dialog.Close>
+      <AlertDialog.Title>{request.name} requested access</AlertDialog.Title>
+      <AlertDialog.Description>{request.message}</AlertDialog.Description>
+      <AlertDialog.Action>accept</AlertDialog.Action>
+      <AlertDialog.Action>reject</AlertDialog.Action>
     {/if}
-  </Dialog.Content>
-</Dialog.Portal>
+    <AlertDialog.Cancel>cancel</AlertDialog.Cancel>
+  </AlertDialog.Content>
+</AlertDialog.Portal>

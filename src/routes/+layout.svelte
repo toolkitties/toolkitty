@@ -4,7 +4,7 @@
   import Toasts from "$lib/components/Toasts.svelte";
   import { topics } from "$lib/api";
   import { seedData } from "$lib/api/data";
-  import { process } from "$lib/processor";
+  import { db } from "$lib/db";
 
   onMount(() => {
     // Hacky workaround to only call "init" once in a Svelte HMR life-cycle.
@@ -14,7 +14,9 @@
     // fully and calls "init" again.
     if (!("isInit" in window)) {
       init().then(async () => {
-        
+        // Delete any old version of db
+        await db.delete({ disableAutoOpen: false });
+
         // TODO(sam): for testing publish some events to the network.
         await seedData();
 

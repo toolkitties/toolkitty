@@ -17,24 +17,29 @@ tauri-build = { version = "2", features = [] }
 anyhow = "1.0.95"
 async-trait = "0.1.85"
 futures-util = "0.3.31"
+iroh-io = "0.6.1"
+mime = "0.3.17"
+p2panda-blobs = { git = "https://github.com/p2panda/p2panda", rev = "3ad402697feaf8287f779735f019fd9431320df0" }
 p2panda-core = { git = "https://github.com/p2panda/p2panda", rev = "3ad402697feaf8287f779735f019fd9431320df0" }
-p2panda-discovery = { git = "https://github.com/p2panda/p2panda", rev = "3ad402697feaf8287f779735f019fd9431320df0", features = [
-    "mdns",
-] }
+p2panda-discovery = { git = "https://github.com/p2panda/p2panda", rev = "3ad402697feaf8287f779735f019fd9431320df0", features = ["mdns"] }
 p2panda-net = { git = "https://github.com/p2panda/p2panda", rev = "3ad402697feaf8287f779735f019fd9431320df0" }
 p2panda-store = { git = "https://github.com/p2panda/p2panda", rev = "3ad402697feaf8287f779735f019fd9431320df0" }
 p2panda-stream = { git = "https://github.com/p2panda/p2panda", rev = "3ad402697feaf8287f779735f019fd9431320df0" }
-p2panda-sync = { git = "https://github.com/p2panda/p2panda", rev = "3ad402697feaf8287f779735f019fd9431320df0", features = [
-    "log-sync",
-] }
+p2panda-sync = { git = "https://github.com/p2panda/p2panda", rev = "3ad402697feaf8287f779735f019fd9431320df0", features = ["log-sync"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
 tauri-plugin-log = "2"
 tauri-plugin-shell = "2"
+tempfile = "3.17.1"
 thiserror = "2.0.9"
 tokio = { version = "1.42.0", features = ["sync"] }
 tokio-stream = { version = "0.1.17", features = ["sync"] }
 tokio-util = "0.7.13"
 tokio-utils = "0.1.2"
 tracing = "0.1.41"
+tracing-subscriber = {version = "0.3.19", features = ["env-filter"] }
+
+[dev-dependencies]
+tempfile = "3.17.1"

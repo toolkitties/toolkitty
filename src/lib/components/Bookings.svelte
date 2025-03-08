@@ -1,6 +1,8 @@
 <script lang="ts">
   // booked eventually becomes prop.
+  // Convert availability strings to Date objects
   let { availability } = $props();
+
   // for now placing data below so its easier to understand
 
   // const availability = {
@@ -38,22 +40,39 @@
    * start being % from top and length being % height.
    */
   function getBookedBlocks() {
-    const availabilityLength = getHoursDifference(
-      availability.start,
-      availability.end,
+    const availabilityStart = new Date(
+      availability.start.year,
+      availability.start.month - 1, // JS months are 0-based
+      availability.start.day,
+      availability.start.hour,
+      availability.start.minute,
     );
+
+    const availabilityEnd = new Date(
+      availability.end.year,
+      availability.end.month - 1,
+      availability.end.day,
+      availability.end.hour,
+      availability.end.minute,
+    );
+
+    const availabilityLength = getHoursDifference(
+      availabilityStart,
+      availabilityEnd,
+    );
+
     return booked.map((booking) => {
       const start =
-        (getHoursDifference(availability.start, booking.start) /
+        (getHoursDifference(availabilityStart, booking.start) /
           availabilityLength) *
         100;
       const length =
         (getHoursDifference(booking.start, booking.end) / availabilityLength) *
         100;
+
       return { start, length };
     });
   }
-
   /**
    * Get the availability split into hours
    */
