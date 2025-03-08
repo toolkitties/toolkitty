@@ -95,6 +95,20 @@ export async function assignRole(
  * Processor
  */
 
+/*
+ * The auth processor checks that the author of a message holds suitable authority to perform the
+ * action described by the message. Authority can be gained from being the owner of a particular
+ * piece of data, or by having a role assigned. Different message types require different auth
+ * checks, custom handlers are used based on the message `type` field. An error is thrown if any
+ * message author does not have the required authority level, this means the message does not
+ * arrive at any subsequent processors and will not be "acknowledged". If an unknown message type
+ * is received then it is immediately rejected with an error.
+ *
+ * There may be cases where we receive role assignment messages out-of-order (after we already
+ * rejected messages which would now be accepted), in order to account for this situation it is
+ * assumed that any un-auth'd messages will be replayed when a users role changes.
+ *
+ */
 export async function process(message: ApplicationMessage) {
   const { meta, data } = message;
 
@@ -103,17 +117,16 @@ export async function process(message: ApplicationMessage) {
     data.type == "booking_request_rejected"
   ) {
     return await onBookingResponse(meta, data.data);
-  }
-
-  // Users with "admin" role can perform all actions so we return now already if that is the case.
-  const isAdmin = await roles.isAdmin(meta.stream.id, meta.author);
-  const isOwner = await auth.isOwner(meta.stream.id, meta.author, "calendar");
-  if (isAdmin || isOwner) {
-    return;
-  }
-
-  // All message types which require authorizing before we accept them are checked here.
-  if (
+  } else if (
+    data.type == "calendar_access_accepted" ||
+    data.type == "calendar_access_rejected"
+  ) {
+    return await onCalendarAccessResponse(meta, data.data);
+  } else if (data.type == "user_profile_updated") {
+    return await onUserProfileUpdated(meta, data.data);
+  } else if (data.type == "user_role_assigned") {
+    return await onUserRoleAssigned(meta, data.data);
+  } else if (
     data.type == "calendar_updated" ||
     data.type == "calendar_deleted" ||
     data.type == "page_updated"
@@ -128,15 +141,6 @@ export async function process(message: ApplicationMessage) {
     return await onResourceEdit(meta, data.data);
   } else if (data.type == "event_updated" || data.type == "event_deleted") {
     return await onEventEdit(meta, data.data);
-  } else if (data.type == "user_profile_updated") {
-    return await onUserProfileUpdated(meta, data.data);
-  } else if (data.type == "user_role_assigned") {
-    return await onUserRoleAssigned(meta, data.data);
-  } else if (
-    data.type == "calendar_access_accepted" ||
-    data.type == "calendar_access_rejected"
-  ) {
-    return await onCalendarAccessResponse(meta, data.data);
   }
 
   // If the message is of an unexpected type the fallback behaviour is to reject it as
@@ -267,8 +271,8 @@ async function onUserRoleAssigned(
   data: UserRoleAssigned["data"],
 ) {
   // Check if the author has permission to assign roles in this calendar.
-  const isOwner = await calendars.isOwner(meta.stream.id, meta.author);
   const isAdmin = await roles.isAdmin(meta.stream.id, meta.author);
+  const isOwner = await calendars.isOwner(meta.stream.id, meta.author);
   if (!isAdmin && !isOwner) {
     throw new Error(
       "author does not have permission to assign user roles for this calendar",
