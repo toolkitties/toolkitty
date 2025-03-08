@@ -2,7 +2,7 @@
 import "fake-indexeddb/auto";
 
 import { processMessage } from "$lib/processor";
-import { CALENDAR_ID, seedTestMessages, PUBLIC_KEY } from "./data";
+import { CALENDAR_ID, seedTestMessages, OWNER_PUBLIC_KEY } from "./data";
 import { calendars } from "$lib/api";
 import { beforeAll, expect, test } from "vitest";
 import { mockIPC } from "@tauri-apps/api/mocks";
@@ -10,7 +10,7 @@ import { mockIPC } from "@tauri-apps/api/mocks";
 beforeAll(async () => {
   mockIPC((cmd, args) => {
     if (cmd === "public_key") {
-      return PUBLIC_KEY;
+      return OWNER_PUBLIC_KEY;
     }
   });
 

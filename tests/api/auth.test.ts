@@ -5,21 +5,19 @@ import { processMessage } from "$lib/processor";
 import {
   CALENDAR_ID,
   seedTestMessages,
-  PUBLIC_KEY,
+  OWNER_PUBLIC_KEY,
+  NON_OWNER_PUBLIC_KEY,
   STREAM,
   LOG_PATH,
 } from "./data";
-import { auth, calendars, users } from "$lib/api";
+import { auth, users } from "$lib/api";
 import { beforeAll, describe, expect, test } from "vitest";
 import { mockIPC } from "@tauri-apps/api/mocks";
-import { db } from "$lib/db";
-
-const PUBLIC_KEY_NO_AUTH: string = "naughtyPanda";
 
 beforeAll(async () => {
   mockIPC((cmd, args) => {
     if (cmd === "public_key") {
-      return PUBLIC_KEY;
+      return OWNER_PUBLIC_KEY;
     }
   });
 
@@ -33,7 +31,7 @@ describe("owners can perform updates", () => {
     let updateCalendar: ApplicationMessage = {
       meta: {
         operationId: "update_calendar_001",
-        author: PUBLIC_KEY,
+        author: OWNER_PUBLIC_KEY,
         stream: STREAM,
         logPath: LOG_PATH,
       },
@@ -65,7 +63,7 @@ describe("owners can perform updates", () => {
     let updateEvent: ApplicationMessage = {
       meta: {
         operationId: "update_event_001",
-        author: PUBLIC_KEY,
+        author: OWNER_PUBLIC_KEY,
         stream: STREAM,
         logPath: LOG_PATH,
       },
@@ -73,7 +71,7 @@ describe("owners can perform updates", () => {
       data: {
         type: "event_updated",
         data: {
-          id: CALENDAR_ID,
+          id: "event_001",
           fields: {
             name: "Better name",
             description: "Monthly team meeting to discuss project updates.",
@@ -96,6 +94,89 @@ describe("owners can perform updates", () => {
 
     await expect(auth.process(updateEvent)).resolves.toEqual(undefined);
   });
+
+  test("update resource", async () => {
+    let updateResource: ApplicationMessage = {
+      meta: {
+        operationId: "update_resource_001",
+        author: OWNER_PUBLIC_KEY,
+        stream: STREAM,
+        logPath: LOG_PATH,
+      },
+      event: "application",
+      data: {
+        type: "resource_updated",
+        data: {
+          id: "resource_001",
+          fields: {
+            name: "Updated Projector",
+            description: "Updated HD projector for presentations.",
+            contact: "newtechsupport@example.com",
+            link: {
+              type: "custom",
+              title: "Updated Projector Info",
+              url: "https://example.com/updated-projector-info",
+            },
+            images: [],
+            availability: "always",
+            multiBookable: true,
+          },
+        },
+      },
+    };
+
+    await expect(auth.process(updateResource)).resolves.toEqual(undefined);
+  });
+
+  test("update space", async () => {
+    let updateSpace: ApplicationMessage = {
+      meta: {
+        operationId: "update_space_001",
+        author: OWNER_PUBLIC_KEY,
+        stream: STREAM,
+        logPath: LOG_PATH,
+      },
+      event: "application",
+      data: {
+        type: "space_updated",
+        data: {
+          id: "space_001",
+          fields: {
+            type: "physical",
+            name: "Updated Conference Room A",
+            location: {
+              street: "456 Another St",
+              city: "London",
+              state: "London",
+              zip: "E12",
+              country: "UK",
+            },
+            messageForRequesters: "Please leave the space tidy after use",
+            capacity: 25,
+            accessibility: "Wheelchair accessible",
+            description:
+              "Updated spacious conference room with video conferencing facilities.",
+            contact: "newadmin@example.com",
+            link: {
+              type: "custom",
+              title: "Updated Room Info",
+              url: "https://example.com/updated-room-info",
+            },
+            images: [],
+            availability: [
+              {
+                start: new Date("2025-03-01T09:00:00Z"),
+                end: new Date("2025-03-01T17:00:00Z"),
+              },
+            ],
+            multiBookable: false,
+          },
+        },
+      },
+    };
+
+    await expect(auth.process(updateSpace)).resolves.toEqual(undefined);
+  });
 });
 
 describe("non-owners cannot perform updates", () => {
@@ -103,7 +184,7 @@ describe("non-owners cannot perform updates", () => {
     let updateCalendar: ApplicationMessage = {
       meta: {
         operationId: "update_calendar_001",
-        author: PUBLIC_KEY_NO_AUTH,
+        author: NON_OWNER_PUBLIC_KEY,
         stream: STREAM,
         logPath: LOG_PATH,
       },
@@ -137,7 +218,7 @@ describe("non-owners cannot perform updates", () => {
     let updateEvent: ApplicationMessage = {
       meta: {
         operationId: "update_event_001",
-        author: PUBLIC_KEY_NO_AUTH,
+        author: NON_OWNER_PUBLIC_KEY,
         stream: STREAM,
         logPath: LOG_PATH,
       },
@@ -170,6 +251,93 @@ describe("non-owners cannot perform updates", () => {
       "author does not have permission to update or delete this event",
     );
   });
+
+  test("update resource", async () => {
+    let updateResource: ApplicationMessage = {
+      meta: {
+        operationId: "update_resource_001",
+        author: NON_OWNER_PUBLIC_KEY,
+        stream: STREAM,
+        logPath: LOG_PATH,
+      },
+      event: "application",
+      data: {
+        type: "resource_updated",
+        data: {
+          id: "resource_001",
+          fields: {
+            name: "Updated Projector",
+            description: "Updated HD projector for presentations.",
+            contact: "newtechsupport@example.com",
+            link: {
+              type: "custom",
+              title: "Updated Projector Info",
+              url: "https://example.com/updated-projector-info",
+            },
+            images: [],
+            availability: "always",
+            multiBookable: true,
+          },
+        },
+      },
+    };
+
+    await expect(auth.process(updateResource)).rejects.toThrowError(
+      "author does not have permission to update or delete this resource",
+    );
+  });
+
+  test("update space", async () => {
+    let updateSpace: ApplicationMessage = {
+      meta: {
+        operationId: "update_space_001",
+        author: NON_OWNER_PUBLIC_KEY,
+        stream: STREAM,
+        logPath: LOG_PATH,
+      },
+      event: "application",
+      data: {
+        type: "space_updated",
+        data: {
+          id: "space_001",
+          fields: {
+            type: "physical",
+            name: "Updated Conference Room A",
+            location: {
+              street: "456 Another St",
+              city: "London",
+              state: "London",
+              zip: "E12",
+              country: "UK",
+            },
+            messageForRequesters: "Please leave the space tidy after use",
+            capacity: 25,
+            accessibility: "Wheelchair accessible",
+            description:
+              "Updated spacious conference room with video conferencing facilities.",
+            contact: "newadmin@example.com",
+            link: {
+              type: "custom",
+              title: "Updated Room Info",
+              url: "https://example.com/updated-room-info",
+            },
+            images: [],
+            availability: [
+              {
+                start: new Date("2025-03-01T09:00:00Z"),
+                end: new Date("2025-03-01T17:00:00Z"),
+              },
+            ],
+            multiBookable: false,
+          },
+        },
+      },
+    };
+
+    await expect(auth.process(updateSpace)).rejects.toThrowError(
+      "author does not have permission to update or delete this space",
+    );
+  });
 });
 
 describe("admin can update things too", () => {
@@ -177,29 +345,29 @@ describe("admin can update things too", () => {
     let assignAdminRole: ApplicationMessage = {
       meta: {
         operationId: "assign_user_role_001",
-        author: PUBLIC_KEY,
+        author: OWNER_PUBLIC_KEY,
         stream: STREAM,
         logPath: LOG_PATH,
       },
       event: "application",
       data: {
         type: "user_role_assigned",
-        data: { publicKey: PUBLIC_KEY_NO_AUTH, role: "admin" },
+        data: { publicKey: NON_OWNER_PUBLIC_KEY, role: "admin" },
       },
     };
-    await users.create(CALENDAR_ID, PUBLIC_KEY_NO_AUTH, "panda");
+    await users.create(CALENDAR_ID, NON_OWNER_PUBLIC_KEY, "panda");
     await processMessage(assignAdminRole);
   });
 
   test("update calendar", async () => {
     // User should already exist in the database.
-    const user = await users.get(CALENDAR_ID, PUBLIC_KEY_NO_AUTH);
+    const user = await users.get(CALENDAR_ID, NON_OWNER_PUBLIC_KEY);
     expect(user?.role).toBe("admin");
 
     let updateCalendar: ApplicationMessage = {
       meta: {
         operationId: "update_calendar_001",
-        author: PUBLIC_KEY_NO_AUTH,
+        author: NON_OWNER_PUBLIC_KEY,
         stream: STREAM,
         logPath: LOG_PATH,
       },
@@ -229,13 +397,13 @@ describe("admin can update things too", () => {
 
   test("update event", async () => {
     // User should already exist in the database.
-    const user = await users.get(CALENDAR_ID, PUBLIC_KEY_NO_AUTH);
+    const user = await users.get(CALENDAR_ID, NON_OWNER_PUBLIC_KEY);
     expect(user?.role).toBe("admin");
 
     let updateEvent: ApplicationMessage = {
       meta: {
         operationId: "update_event_001",
-        author: PUBLIC_KEY_NO_AUTH,
+        author: NON_OWNER_PUBLIC_KEY,
         stream: STREAM,
         logPath: LOG_PATH,
       },
@@ -243,7 +411,7 @@ describe("admin can update things too", () => {
       data: {
         type: "event_updated",
         data: {
-          id: CALENDAR_ID,
+          id: "event_001",
           fields: {
             name: "Better name",
             description: "Monthly team meeting to discuss project updates.",
@@ -265,5 +433,96 @@ describe("admin can update things too", () => {
     };
 
     await expect(auth.process(updateEvent)).resolves.toEqual(undefined);
+  });
+
+  test("update resource", async () => {
+    // User should already exist in the database.
+    const user = await users.get(CALENDAR_ID, NON_OWNER_PUBLIC_KEY);
+    expect(user?.role).toBe("admin");
+
+    let updateResource: ApplicationMessage = {
+      meta: {
+        operationId: "update_resource_001",
+        author: NON_OWNER_PUBLIC_KEY,
+        stream: STREAM,
+        logPath: LOG_PATH,
+      },
+      event: "application",
+      data: {
+        type: "resource_updated",
+        data: {
+          id: "resource_001",
+          fields: {
+            name: "Updated Projector",
+            description: "Updated HD projector for presentations.",
+            contact: "newtechsupport@example.com",
+            link: {
+              type: "custom",
+              title: "Updated Projector Info",
+              url: "https://example.com/updated-projector-info",
+            },
+            images: [],
+            availability: "always",
+            multiBookable: true,
+          },
+        },
+      },
+    };
+
+    await expect(auth.process(updateResource)).resolves.toEqual(undefined);
+  });
+
+  test("update space", async () => {
+    // User should already exist in the database.
+    const user = await users.get(CALENDAR_ID, NON_OWNER_PUBLIC_KEY);
+    expect(user?.role).toBe("admin");
+
+    let updateSpace: ApplicationMessage = {
+      meta: {
+        operationId: "update_space_001",
+        author: NON_OWNER_PUBLIC_KEY,
+        stream: STREAM,
+        logPath: LOG_PATH,
+      },
+      event: "application",
+      data: {
+        type: "space_updated",
+        data: {
+          id: "space_001",
+          fields: {
+            type: "physical",
+            name: "Updated Conference Room A",
+            location: {
+              street: "456 Another St",
+              city: "London",
+              state: "London",
+              zip: "E12",
+              country: "UK",
+            },
+            messageForRequesters: "Please leave the space tidy after use",
+            capacity: 25,
+            accessibility: "Wheelchair accessible",
+            description:
+              "Updated spacious conference room with video conferencing facilities.",
+            contact: "newadmin@example.com",
+            link: {
+              type: "custom",
+              title: "Updated Room Info",
+              url: "https://example.com/updated-room-info",
+            },
+            images: [],
+            availability: [
+              {
+                start: new Date("2025-03-01T09:00:00Z"),
+                end: new Date("2025-03-01T17:00:00Z"),
+              },
+            ],
+            multiBookable: false,
+          },
+        },
+      },
+    };
+
+    await expect(auth.process(updateSpace)).resolves.toEqual(undefined);
   });
 });
