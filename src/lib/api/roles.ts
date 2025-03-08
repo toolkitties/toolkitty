@@ -128,7 +128,7 @@ async function onUserRoleAssigned(
   data: UserRoleAssigned["data"],
 ) {
   // Update the user's role.
-  db.users.update([meta.stream.id, data.publicKey], { role: data.role });
+  await db.users.update([meta.stream.id, data.publicKey], { role: data.role });
 
   // Request that all un-ack'd operations from this topic a replayed.
   //
