@@ -74,7 +74,7 @@ pub async fn add_topic_log(
         "RPC request received"
     );
 
-    rpc.add_topic_log(public_key, topic, log_id).await?;
+    rpc.add_topic_log(&public_key, &topic, &log_id).await?;
     Ok(())
 }
 
