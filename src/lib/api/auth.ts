@@ -33,8 +33,8 @@ export async function isOwner(
 ): Promise<boolean> {
   switch (type) {
     case "calendar":
-      const calendarStream = await streams.findById(hash);
-      return calendarStream?.owner == publicKey;
+      const calendar = await calendars.findOne(hash);
+      return calendar?.ownerId == publicKey;
     case "space":
       const space = await spaces.findById(hash);
       return space?.ownerId == publicKey;
@@ -153,19 +153,15 @@ async function onBookingResponse(
   data: BookingRequestAccepted["data"] | BookingRequestRejected["data"],
 ) {
   const request = await bookings.findRequest(data.requestId);
-  if (!request) {
-    throw new Error("resource request does not exist");
-  }
-
-  if (request.resourceType === "resource") {
-    const isOwner = await resources.isOwner(request.resourceId, meta.author);
+  if (request!.resourceType === "resource") {
+    const isOwner = await resources.isOwner(request!.resourceId, meta.author);
     if (!isOwner) {
       throw new Error(
         "author does not have permission to accept or reject a booking request for this resource",
       );
     }
-  } else if (request.resourceType === "space") {
-    const isOwner = await spaces.isOwner(request.resourceId, meta.author);
+  } else if (request!.resourceType === "space") {
+    const isOwner = await spaces.isOwner(request!.resourceId, meta.author);
     if (!isOwner) {
       throw new Error(
         "author does not have permission to accept or reject a booking request for this space",
@@ -178,13 +174,6 @@ async function onCalendarEdit(
   meta: StreamMessageMeta,
   data: CalendarUpdated["data"] | CalendarDeleted["data"] | PageUpdated["data"],
 ) {
-  let calendar = await calendars.findOne(data.id);
-
-  // The calendar must already exist.
-  if (!calendar) {
-    throw new Error("calendar does not exist");
-  }
-
   // Check that the message author has the required permissions.
   const isAdmin = await roles.isAdmin(data.id, meta.author);
   const isOwner = await calendars.isOwner(data.id, meta.author);
@@ -199,13 +188,6 @@ async function onSpaceEdit(
   meta: StreamMessageMeta,
   data: SpaceUpdated["data"] | SpaceDeleted["data"],
 ) {
-  let space = await spaces.findById(data.id);
-
-  // The space must already exist.
-  if (!space) {
-    throw new Error("space does not exist");
-  }
-
   // Check that the message author has the required permissions.
   const isAdmin = await roles.isAdmin(meta.stream.id, meta.author);
   const isOwner = await spaces.isOwner(data.id, meta.author);
@@ -220,13 +202,6 @@ async function onResourceEdit(
   meta: StreamMessageMeta,
   data: ResourceUpdated["data"] | ResourceDeleted["data"],
 ) {
-  let resource = await db.resources.get(data.id);
-
-  // The resource must already exist.
-  if (!resource) {
-    throw new Error("resource does not exist");
-  }
-
   // Check that the message author has the required permissions.
   const isAdmin = await roles.isAdmin(meta.stream.id, meta.author);
   const isOwner = await resources.isOwner(data.id, meta.author);
@@ -241,15 +216,8 @@ async function onEventEdit(
   meta: StreamMessageMeta,
   data: EventUpdated["data"] | EventDeleted["data"],
 ) {
-  let event = await events.findById(data.id);
-
-  // The event must already exist.
-  if (!event) {
-    throw new Error("event does not exist");
-  }
-
   // Check that the message author has the required permissions.
-  const isAdmin = await roles.isAdmin(event!.calendarId, meta.author);
+  const isAdmin = await roles.isAdmin(meta.stream.id, meta.author);
   const isOwner = await events.isOwner(data.id, meta.author);
   if (!isAdmin && !isOwner) {
     throw new Error(
@@ -289,11 +257,10 @@ async function onCalendarAccessResponse(
   // already if want to handle access requests and responses.
 
   // @TODO: should we also check that the request itself exists?
-  const calendarId = data.requestId;
 
   // Check that the message author has the required permissions.
-  const isAdmin = await roles.isAdmin(calendarId, meta.author);
-  const isOwner = await calendars.isOwner(calendarId, meta.author);
+  const isAdmin = await roles.isAdmin(meta.stream.id, meta.author);
+  const isOwner = await calendars.isOwner(meta.stream.id, meta.author);
   if (!isAdmin && !isOwner) {
     throw new Error(
       "author does not have permission to accept or reject an access request to this calendar",

@@ -53,8 +53,8 @@ export async function isOwner(
 ): Promise<boolean> {
   switch (type) {
     case "calendar":
-      const calendarStream = await streams.findById(hash);
-      return calendarStream?.owner == publicKey;
+      const calendar = await calendars.findOne(hash);
+      return calendar?.ownerId == publicKey;
     case "space":
       const space = await spaces.findById(hash);
       return space?.ownerId == publicKey;

@@ -33,11 +33,7 @@ export async function getPending(activeCalendarId: Hash) {
 }
 
 export async function findRequestByid(id: Hash) {
-  let request = liveQuery(() => {
-    db.accessRequests.get(id);
-  });
-
-  return request;
+  return db.accessRequests.get(id);
 }
 
 /**

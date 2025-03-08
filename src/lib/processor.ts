@@ -9,6 +9,7 @@ import {
   bookings,
   auth,
   roles,
+  dependencies,
 } from "$lib/api";
 import { rejectPromise, resolvePromise } from "$lib/promiseMap";
 
@@ -164,6 +165,7 @@ const PUBLIC_MESSAGE_TYPES: string[] = [
 
 async function onApplicationMessage(message: ApplicationMessage) {
   try {
+    await dependencies.process(message);
     // Public message types don't pass through the auth processor.
     if (!PUBLIC_MESSAGE_TYPES.includes(message.data.type)) {
       await auth.process(message);
