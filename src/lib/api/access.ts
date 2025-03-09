@@ -147,7 +147,7 @@ export async function acceptAccessRequest(
   // @TODO: pass calendarId into method.
   const calendarId = await calendars.getActiveCalendarId();
 
-  const amAdmin = await roles.amAdmin(calendarId!);
+  const amAdmin = await auth.amAdmin(calendarId!);
   const amOwner = await calendars.amOwner(calendarId!);
   if (!amAdmin && !amOwner) {
     throw new Error(
@@ -178,7 +178,7 @@ export async function rejectAccessRequest(
 ) {
   const calendarId = await calendars.getActiveCalendarId();
 
-  const amAdmin = await roles.amAdmin(calendarId!);
+  const amAdmin = await auth.amAdmin(calendarId!);
   const amOwner = await calendars.amOwner(calendarId!);
   if (!amAdmin && !amOwner) {
     throw new Error(
@@ -271,7 +271,7 @@ async function onCalendarAccessRequested(
 
   // Show toast to user with request if owner or admin.
   const amOwner = await calendars.amOwner(calendarId);
-  const amAdmin = await roles.amAdmin(calendarId);
+  const amAdmin = await auth.amAdmin(calendarId);
   if (accessStatus == "pending" && (amOwner || amAdmin)) {
     toast.accessRequest(accessRequest);
   }

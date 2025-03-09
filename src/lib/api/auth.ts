@@ -23,6 +23,26 @@ import { TopicFactory } from "./topics";
 type OwnedType = "calendar" | "space" | "resource" | "event";
 
 /*
+ * Check if the user associated with the given public key and calendar has been assigned the
+ * "admin" role.
+ */
+export async function isAdmin(
+  calendarId: Hash,
+  publicKey: PublicKey,
+): Promise<boolean> {
+  const user = await users.get(calendarId, publicKey);
+  return user?.role == "admin";
+}
+
+/*
+ * Check if the local user has been given the "admin" role for this calendar.
+ */
+export async function amAdmin(calendarId: Hash): Promise<boolean> {
+  const myPublicKey = await identity.publicKey();
+  return await isAdmin(calendarId, myPublicKey);
+}
+
+/*
  * Check if the user associated with the given public key of the owner of a calendar, space,
  * resource or event.
  */
@@ -68,7 +88,7 @@ export async function assignRole(
   role: Role,
 ): Promise<OperationId> {
   const amOwner = await calendars.amOwner(calendarId);
-  const amAdmin = await roles.amAdmin(calendarId);
+  const amAdmin = await auth.amAdmin(calendarId);
   if (!amAdmin && !amOwner) {
     throw new Error("user does not have permission to assign user roles");
   }
@@ -175,7 +195,7 @@ async function onCalendarEdit(
   data: CalendarUpdated["data"] | CalendarDeleted["data"] | PageUpdated["data"],
 ) {
   // Check that the message author has the required permissions.
-  const isAdmin = await roles.isAdmin(data.id, meta.author);
+  const isAdmin = await auth.isAdmin(data.id, meta.author);
   const isOwner = await calendars.isOwner(data.id, meta.author);
   if (!isAdmin && !isOwner) {
     throw new Error(
@@ -189,7 +209,7 @@ async function onSpaceEdit(
   data: SpaceUpdated["data"] | SpaceDeleted["data"],
 ) {
   // Check that the message author has the required permissions.
-  const isAdmin = await roles.isAdmin(meta.stream.id, meta.author);
+  const isAdmin = await auth.isAdmin(meta.stream.id, meta.author);
   const isOwner = await spaces.isOwner(data.id, meta.author);
   if (!isAdmin && !isOwner) {
     throw new Error(
@@ -203,7 +223,7 @@ async function onResourceEdit(
   data: ResourceUpdated["data"] | ResourceDeleted["data"],
 ) {
   // Check that the message author has the required permissions.
-  const isAdmin = await roles.isAdmin(meta.stream.id, meta.author);
+  const isAdmin = await auth.isAdmin(meta.stream.id, meta.author);
   const isOwner = await resources.isOwner(data.id, meta.author);
   if (!isAdmin && !isOwner) {
     throw new Error(
@@ -217,7 +237,7 @@ async function onEventEdit(
   data: EventUpdated["data"] | EventDeleted["data"],
 ) {
   // Check that the message author has the required permissions.
-  const isAdmin = await roles.isAdmin(meta.stream.id, meta.author);
+  const isAdmin = await auth.isAdmin(meta.stream.id, meta.author);
   const isOwner = await events.isOwner(data.id, meta.author);
   if (!isAdmin && !isOwner) {
     throw new Error(
@@ -239,7 +259,7 @@ async function onUserRoleAssigned(
   data: UserRoleAssigned["data"],
 ) {
   // Check if the author has permission to assign roles in this calendar.
-  const isAdmin = await roles.isAdmin(meta.stream.id, meta.author);
+  const isAdmin = await auth.isAdmin(meta.stream.id, meta.author);
   const isOwner = await calendars.isOwner(meta.stream.id, meta.author);
   if (!isAdmin && !isOwner) {
     throw new Error(
@@ -259,7 +279,7 @@ async function onCalendarAccessResponse(
   // @TODO: should we also check that the request itself exists?
 
   // Check that the message author has the required permissions.
-  const isAdmin = await roles.isAdmin(meta.stream.id, meta.author);
+  const isAdmin = await auth.isAdmin(meta.stream.id, meta.author);
   const isOwner = await calendars.isOwner(meta.stream.id, meta.author);
   if (!isAdmin && !isOwner) {
     throw new Error(

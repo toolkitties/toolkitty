@@ -113,7 +113,7 @@ export async function update(
   calendarId: Hash,
   fields: CalendarFields,
 ): Promise<Hash> {
-  const amAdmin = await roles.amAdmin(calendarId);
+  const amAdmin = await auth.amAdmin(calendarId);
   const amOwner = await calendars.amOwner(calendarId);
   if (!amAdmin && !amOwner) {
     throw new Error("user does not have permission to update this calendar");
@@ -138,7 +138,7 @@ export async function update(
 }
 
 export async function deleteCalendar(calendarId: Hash): Promise<Hash> {
-  const amAdmin = await roles.amAdmin(calendarId);
+  const amAdmin = await auth.amAdmin(calendarId);
   const amOwner = await calendars.amOwner(calendarId);
   if (!amAdmin && !amOwner) {
     throw new Error("user does not have permission to delete this calendar");
