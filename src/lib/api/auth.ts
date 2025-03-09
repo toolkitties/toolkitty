@@ -142,7 +142,7 @@ export async function process(message: ApplicationMessage) {
   const { meta, data } = message;
 
   // Public message types don't pass through the auth processor.
-  if (!PUBLIC_MESSAGE_TYPES.includes(message.data.type)) {
+  if (PUBLIC_MESSAGE_TYPES.includes(message.data.type)) {
     return;
   }
 
