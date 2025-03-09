@@ -5,22 +5,8 @@
 import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
 import { invoke } from "@tauri-apps/api/core";
-import {
-  auth,
-  bookings,
-  calendars,
-  events,
-  identity,
-  publish,
-  resources,
-  roles,
-  spaces,
-  streams,
-  users,
-} from ".";
+import { auth, calendars, publish } from ".";
 import { TopicFactory } from "./topics";
-
-type OwnedType = "calendar" | "space" | "resource" | "event";
 
 /*
  * Commands
