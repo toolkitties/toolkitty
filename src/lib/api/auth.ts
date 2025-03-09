@@ -115,6 +115,15 @@ export async function assignRole(
  * Processor
  */
 
+const PUBLIC_MESSAGE_TYPES: string[] = [
+  "calendar_access_requested",
+  "calendar_created",
+  "space_created",
+  "resource_created",
+  "event_created",
+  "booking_requested",
+];
+
 /*
  * The auth processor checks that the author of a message holds suitable authority to perform the
  * action described by the message. Authority can be gained from being the owner of a particular
@@ -132,6 +141,12 @@ export async function assignRole(
 export async function process(message: ApplicationMessage) {
   const { meta, data } = message;
 
+  // Public message types don't pass through the auth processor.
+  if (!PUBLIC_MESSAGE_TYPES.includes(message.data.type)) {
+    return;
+  }
+
+  // All other messages require that the author has relevant authority to perform it's action.
   if (
     data.type == "booking_request_accepted" ||
     data.type == "booking_request_rejected"
