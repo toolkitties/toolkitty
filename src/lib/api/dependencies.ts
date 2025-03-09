@@ -16,6 +16,21 @@ import { TopicFactory } from "./topics";
 export async function process(message: ApplicationMessage) {
   const { meta, data } = message;
 
+  // First deal with messages which trigger a topic replay of un-ack'd messages.
+  if (
+    data.type == "calendar_created" ||
+    data.type == "event_created" ||
+    data.type == "resource_created" ||
+    data.type == "space_created" ||
+    data.type == "calendar_access_requested" ||
+    data.type == "booking_requested" ||
+    data.type == "user_role_assigned"
+  ) {
+    const topic = new TopicFactory(meta.stream.id);
+    await topics.replay(topic.calendar());
+  }
+
+  // Next check that dependencies are met for the following message types.
   if (
     data.type == "booking_request_accepted" ||
     data.type == "booking_request_rejected"
@@ -29,7 +44,7 @@ export async function process(message: ApplicationMessage) {
   } else if (data.type == "user_profile_updated") {
     return await onUserProfileUpdated(meta);
   } else if (data.type == "user_role_assigned") {
-    return await onUserRoleAssigned(meta, data.data);
+    await onUserRoleAssigned(meta, data.data);
   } else if (
     data.type == "calendar_updated" ||
     data.type == "calendar_deleted" ||
@@ -45,16 +60,6 @@ export async function process(message: ApplicationMessage) {
     return await onResourceEdit(data.data);
   } else if (data.type == "event_updated" || data.type == "event_deleted") {
     return await onEventEdit(data.data);
-  } else if (
-    data.type == "calendar_created" ||
-    data.type == "event_created" ||
-    data.type == "resource_created" ||
-    data.type == "space_created" ||
-    data.type == "calendar_access_requested" ||
-    data.type == "booking_requested"
-  ) {
-    const topic = new TopicFactory(meta.stream.id);
-    await topics.replay(topic.calendar());
   }
 }
 
