@@ -178,13 +178,18 @@ async function onSpaceUpdated(
           request.validTime = true;
           return;
         }
+        request.validTime = false;
         for (const span of spaceAvailability) {
-          request.validTime = isSubTimespan(
+          const validTime = isSubTimespan(
             span.start,
             span.end,
             request.timeSpan,
           );
-          return;
+
+          if (validTime) {
+            request.validTime = true;
+            return;
+          }
         }
         request.validTime = false;
       });

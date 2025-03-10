@@ -166,23 +166,22 @@ async function onResourceUpdated(
 
   db.transaction("rw", db.resources, db.bookingRequests, async () => {
     // Update `validTime` field of all booking requests associated with this space.
-    await db.bookingRequests
-      .where({ resourceId })
-      .modify((request) => {
-        if (resourceAvailability == "always") {
+    await db.bookingRequests.where({ resourceId }).modify((request) => {
+      if (resourceAvailability == "always") {
+        request.validTime = true;
+        return;
+      }
+      request.validTime = false;
+      for (const span of resourceAvailability) {
+        const validTime = isSubTimespan(span.start, span.end, request.timeSpan);
+
+        if (validTime) {
           request.validTime = true;
           return;
         }
-        for (const span of resourceAvailability) {
-          request.validTime = isSubTimespan(
-            span.start,
-            span.end,
-            request.timeSpan,
-          );
-          return;
-        }
-        request.validTime = false;
-      });
+      }
+      request.validTime = false;
+    });
 
     // @TODO: we could show a toast to the user if a previously valid request timespan now became
     // invalid.
@@ -201,9 +200,7 @@ async function onResourceDeleted(
 
   db.transaction("rw", db.events, db.bookingRequests, async () => {
     // Update `validTime` field of all booking requests associated with this resource.
-    await db.bookingRequests
-      .where({ resourceId })
-      .modify({ validTime: false });
+    await db.bookingRequests.where({ resourceId }).modify({ validTime: false });
 
     // @TODO: we could show a toast to the user if a previously valid event timespan now became
     // invalid.

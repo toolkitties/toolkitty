@@ -151,7 +151,7 @@ async function onEventUpdated(
   const { endDate, startDate } = data.fields;
 
   db.transaction("rw", db.events, db.bookingRequests, async () => {
-    // Update `validAvailability` field of all booking requests associated with this event.
+    // Update `validTime` field of all booking requests associated with this event.
     await db.bookingRequests.where({ eventId }).modify((request) => {
       request.validTime = isSubTimespan(
         startDate,
