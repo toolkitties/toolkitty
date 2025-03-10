@@ -647,7 +647,7 @@ type BookingRequest = {
   message: string;
   timeSpan: TimeSpan;
   validTime?: boolean;
-  accepted?: boolean;
+  status: "accepted" | "rejected" | "pending";
 };
 
 type ResourceType = "space" | "resource";
