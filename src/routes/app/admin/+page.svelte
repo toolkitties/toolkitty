@@ -27,6 +27,7 @@
 </section>
 
 <section class="section">
+  <!-- TODO: Only show if we are user -->
   <h2>Users</h2>
   <!-- <p>
     There are three roles at ToolKitties. Public members can view the program,
@@ -36,6 +37,7 @@
   </p> -->
   {#if data.pendingRequests.length > 0}
     {#each data.pendingRequests as request}
+      <!-- TODO: go through users instead of pending requests -->
       <RequestDialog {request} />
     {/each}
   {:else}

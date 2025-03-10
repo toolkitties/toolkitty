@@ -682,3 +682,7 @@ type BookingQueryFilter = {
   resourceType?: ResourceType;
   resourceOwner?: PublicKey;
 };
+
+type AdminUserList = User & {
+  pendingRequest?: AccessRequest;
+}
