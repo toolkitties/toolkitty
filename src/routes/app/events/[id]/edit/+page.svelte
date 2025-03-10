@@ -4,6 +4,7 @@
   import { events } from "$lib/api";
   import { toast } from "$lib/toast.svelte";
   import { goto } from "$app/navigation";
+  import Delete from "$lib/components/Delete.svelte";
 
   let { data }: PageProps = $props();
 
@@ -28,4 +29,4 @@
   spaces={data.spacesList}
   resources={data.resourcesList}
 />
-<button onclick={() => handleDelete()}>Delete</button>
+<Delete entity={data.event!} type="event" />
