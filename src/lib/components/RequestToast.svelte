@@ -2,6 +2,7 @@
   import { toast } from "$lib/toast.svelte";
   import { tick } from "svelte";
   import AccessRequestDialog from "./dialog/AccessRequestDialog.svelte";
+  import BookingRequestDialog from "./dialog/BookingRequestDialog.svelte";
   import * as AlertDialog from "$lib/components/dialog/index";
 
   let { toastie } = $props();
@@ -32,6 +33,8 @@
     <p>{toastie.message}</p>
     {#if toastie.request.type == "access_request"}
       <AccessRequestDialog request={toastie.request.data} bind:open />
+    {:else if toastie.request.type == "booking_request"}
+      <BookingRequestDialog request={toastie.request.data} bind:open />
     {/if}
   </AlertDialog.Trigger>
 </AlertDialog.Root>

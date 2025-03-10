@@ -1,6 +1,8 @@
 import { db } from "$lib/db";
-import { publish, spaces } from ".";
+import { auth, publish, roles, spaces } from ".";
 import { promiseResult } from "$lib/promiseMap";
+import { TopicFactory } from "./topics";
+import { invoke } from "@tauri-apps/api/core";
 
 /**
  * Queries
@@ -63,6 +65,17 @@ export function findById(id: Hash): Promise<Space | undefined> {
   return db.spaces.get({ id });
 }
 
+export async function isOwner(
+  spaceId: Hash,
+  publicKey: PublicKey,
+): Promise<boolean> {
+  return auth.isOwner(spaceId, publicKey, "space");
+}
+
+export async function amOwner(spaceId: Hash): Promise<boolean> {
+  return auth.amOwner(spaceId, "space");
+}
+
 /**
  * Commands
  */
@@ -99,6 +112,13 @@ export async function update(
   fields: SpaceFields,
 ): Promise<Hash> {
   const space = await spaces.findById(spaceId);
+
+  const amAdmin = await roles.amAdmin(space!.calendarId);
+  const amOwner = await spaces.amOwner(spaceId);
+  if (!amAdmin && !amOwner) {
+    throw new Error("user does not have permission to update this space");
+  }
+
   const spaceUpdated: SpaceUpdated = {
     type: "space_updated",
     data: {
@@ -121,6 +141,13 @@ export async function update(
  */
 export async function deleteSpace(spaceId: Hash): Promise<Hash> {
   const space = await spaces.findById(spaceId);
+
+  const amAdmin = await roles.amAdmin(space!.calendarId);
+  const amOwner = await spaces.amOwner(spaceId);
+  if (!amAdmin && !amOwner) {
+    throw new Error("user does not have permission to delete this space");
+  }
+
   const spaceDeleted: SpaceDeleted = {
     type: "space_deleted",
     data: {
@@ -153,9 +180,9 @@ export async function process(message: ApplicationMessage) {
     case "space_created":
       return await onSpaceCreated(meta, data);
     case "space_updated":
-      return await onSpaceUpdated(meta, data);
+      return await onSpaceUpdated(data);
     case "space_deleted":
-      return await onSpaceDeleted(meta, data);
+      return await onSpaceDeleted(data);
   }
 }
 
@@ -163,98 +190,23 @@ async function onSpaceCreated(
   meta: StreamMessageMeta,
   data: SpaceCreated["data"],
 ) {
-  const {
-    type,
-    name,
-    location,
-    capacity,
-    accessibility,
-    description,
-    contact,
-    link,
-    messageForRequesters,
-    images,
-    availability,
-    multiBookable,
-  } = data.fields;
-
   await db.spaces.add({
     id: meta.operationId,
     calendarId: meta.stream.id,
     ownerId: meta.author,
     booked: [],
-    type,
-    name,
-    location,
-    capacity,
-    accessibility,
-    description,
-    contact,
-    link,
-    messageForRequesters,
-    images,
-    availability,
-    multiBookable,
+    ...data.fields,
   });
+
+  // Replay un-ack'd messages which we may have received out-of-order.
+  const topic = new TopicFactory(meta.stream.id);
+  await invoke("replay", { topic: topic.calendar() });
 }
 
-async function onSpaceUpdated(
-  meta: StreamMessageMeta,
-  data: SpaceUpdated["data"],
-) {
-  await validateUpdateDelete(meta.author, data.id);
-
-  const {
-    type,
-    name,
-    location,
-    capacity,
-    accessibility,
-    description,
-    contact,
-    link,
-    images,
-    availability,
-    multiBookable,
-  } = data.fields;
-
-  await db.spaces.update(data.id, {
-    type,
-    name,
-    location,
-    capacity,
-    accessibility,
-    description,
-    contact,
-    link,
-    images,
-    availability,
-    multiBookable,
-  });
+async function onSpaceUpdated(data: SpaceUpdated["data"]) {
+  await db.spaces.update(data.id, data.fields);
 }
 
-async function onSpaceDeleted(
-  meta: StreamMessageMeta,
-  data: SpaceDeleted["data"],
-) {
-  await validateUpdateDelete(meta.author, data.id);
+async function onSpaceDeleted(data: SpaceDeleted["data"]) {
   await db.spaces.delete(data.id);
-}
-
-/**
- * Validation
- */
-
-async function validateUpdateDelete(publicKey: PublicKey, spaceId: Hash) {
-  const space = await db.spaces.get(spaceId);
-
-  // The space must already exist.
-  if (!space) {
-    throw new Error("space does not exist");
-  }
-
-  // Only the space owner can perform updates and deletes.
-  if (space.ownerId != publicKey) {
-    throw new Error("non-owner update or delete");
-  }
 }

@@ -1,4 +1,4 @@
-import Dexie, { type EntityTable } from "dexie";
+import Dexie, { type EntityTable, type Table } from "dexie";
 
 /**
  * (ノ ˘_˘)ノ　ζ|||ζ　ζ|||ζ
@@ -12,9 +12,9 @@ const db = new Dexie("Toolkitty") as Dexie & {
     AccessRequest,
     "id" // primary key
   >;
-  accessResponses: EntityTable<
+  accessResponses: Table<
     AccessResponse,
-    "id" // primary key
+    ["requestId+answer"] // primary key
   >;
   calendars: EntityTable<
     Calendar,
@@ -48,6 +48,10 @@ const db = new Dexie("Toolkitty") as Dexie & {
     Settings,
     "name" // primary key
   >;
+  users: Table<
+    User,
+    [CalendarId, PublicKey] // primary key
+  >;
 };
 
 /**
@@ -63,15 +67,16 @@ const db = new Dexie("Toolkitty") as Dexie & {
  */
 db.version(1).stores({
   accessRequests: "&id, calendarId",
-  accessResponses: "&id, calendarId, requestId",
+  accessResponses: "&[requestId+answer], id, calendarId",
   calendars: "&id, name, calendarId",
   spaces: "&id, calendarId",
   resources: "&id, calendarId",
   events: "&id, name, date, calendarId",
-  bookingRequests: "&id, eventId, calendarId",
+  bookingRequests: "&id, eventId, calendarId, requester, resourceType",
   bookingResponses: "&id, eventId, requestId, calendarId, answer",
   streams: "&id",
   settings: "&name",
+  users: "&[calendarId+publicKey]",
 });
 
 export { db };

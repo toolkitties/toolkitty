@@ -24,6 +24,8 @@ const pendingInviteCode: InviteCodesState = {
  */
 
 export async function resolve(inviteCode: string): Promise<ResolvedCalendar> {
+  inviteCode = inviteCode.toLowerCase();
+
   // Get local calendars
   const calendar = await calendars.findByInviteCode(inviteCode);
 
@@ -123,6 +125,8 @@ async function onResponse(response: ResolveInviteCodeResponse) {
     // Ignore, we're not looking for one right now.
     return;
   }
+
+  await streams.add(response.calendarStream);
 
   pendingInviteCode.onResolved({
     stream: response.calendarStream,

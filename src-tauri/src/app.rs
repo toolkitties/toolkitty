@@ -241,9 +241,9 @@ impl Rpc {
 
     pub async fn add_topic_log(
         &self,
-        public_key: PublicKey,
-        topic: Topic,
-        log_id: LogId,
+        public_key: &PublicKey,
+        topic: &Topic,
+        log_id: &LogId,
     ) -> Result<(), RpcError> {
         let context = self.context.write().await;
         context.topic_map.add_log(topic, public_key, log_id).await;
@@ -388,7 +388,7 @@ mod tests {
     use crate::{
         messages::{ChannelEvent, StreamArgs},
         node::{
-            extensions::{LogPath, StreamOwner, StreamRootHash},
+            extensions::{LogId, LogPath, Stream, StreamOwner, StreamRootHash},
             stream::{EventData, EventMeta},
             StreamEvent,
         },
@@ -572,6 +572,141 @@ mod tests {
                 assert_eq!(send_payload, payload);
                 message_received = true;
                 break;
+            }
+        }
+
+        assert!(message_received);
+    }
+
+    #[tokio::test]
+    async fn two_peers_sync() {
+        let peer_a = Rpc {
+            context: Service::run().await,
+        };
+        let peer_b = Rpc {
+            context: Service::run().await,
+        };
+
+        let peer_a_public_key = peer_a.public_key().await.unwrap();
+        let peer_b_public_key = peer_b.public_key().await.unwrap();
+
+        let (peer_a_tx, mut peer_a_rx) = broadcast::channel(100);
+        let (peer_b_tx, mut peer_b_rx) = broadcast::channel(100);
+
+        let result = peer_a.init(peer_a_tx).await;
+        assert!(result.is_ok());
+
+        let result = peer_b.init(peer_b_tx).await;
+        assert!(result.is_ok());
+
+        let topic = "messages".into();
+        let log_path = json!("messages").into();
+        let stream_args = StreamArgs::default();
+
+        let peer_a_payload = json!({
+            "message": "organize!"
+        });
+
+        // Peer A publishes the first message to a new stream.
+        let result = peer_a
+            .publish(
+                &serde_json::to_vec(&peer_a_payload).unwrap(),
+                &stream_args,
+                Some(&log_path),
+                Some(&topic),
+            )
+            .await;
+        assert!(result.is_ok());
+
+        // We need these values so Peer B can subscribe and publish to the correct stream.
+        let (operation_id, stream_id) = result.unwrap();
+
+        let stream_args = StreamArgs {
+            id: Some(stream_id),
+            root_hash: Some(operation_id.clone()),
+            owner: Some(peer_a_public_key.clone()),
+        };
+
+        let peer_b_payload = json!({
+            "message": "Hell yeah!"
+        });
+
+        // Peer B publishes it's own message to the stream.
+        let result = peer_b
+            .publish(
+                &serde_json::to_vec(&peer_b_payload).unwrap(),
+                &stream_args,
+                Some(&log_path),
+                Some(&topic),
+            )
+            .await;
+        assert!(result.is_ok());
+
+        // Both peers add themselves and each other to their topic map.
+        let stream = Stream {
+            root_hash: operation_id.into(),
+            owner: peer_a_public_key.into(),
+        };
+        let log_id = LogId {
+            stream,
+            log_path: Some(log_path),
+        };
+
+        peer_a
+            .add_topic_log(&peer_a_public_key, &topic, &log_id)
+            .await
+            .unwrap();
+        peer_a
+            .add_topic_log(&peer_b_public_key, &topic, &log_id)
+            .await
+            .unwrap();
+
+        peer_b
+            .add_topic_log(&peer_a_public_key, &topic, &log_id)
+            .await
+            .unwrap();
+        peer_b
+            .add_topic_log(&peer_b_public_key, &topic, &log_id)
+            .await
+            .unwrap();
+
+        // Finally they both subscribe to the topic.
+        let result = peer_a.subscribe(&topic).await;
+        assert!(result.is_ok());
+        let result = peer_b.subscribe(&topic).await;
+        assert!(result.is_ok());
+
+        // Peer A should receive Peer B's message via sync.
+        let mut message_received = false;
+        while let Ok(event) = peer_a_rx.recv().await {
+            if let ChannelEvent::Stream(StreamEvent {
+                data: EventData::Application(payload),
+                meta: Some(EventMeta { author, .. }),
+            }) = event
+            {
+                if author == peer_b_public_key {
+                    assert_eq!(peer_b_payload, payload);
+                    message_received = true;
+                    break;
+                }
+            }
+        }
+
+        assert!(message_received);
+
+        // Peer B should receive Peer A's message via sync.
+        let mut message_received = false;
+        while let Ok(event) = peer_b_rx.recv().await {
+            if let ChannelEvent::Stream(StreamEvent {
+                data: EventData::Application(payload),
+                meta: Some(EventMeta { author, .. }),
+            }) = event
+            {
+                if author == peer_a_public_key {
+                    assert_eq!(peer_a_payload, payload);
+                    message_received = true;
+                    break;
+                }
             }
         }
 

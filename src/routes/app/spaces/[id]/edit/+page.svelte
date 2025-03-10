@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { spaces } from "$lib/api";
-  import SpaceForm from "$lib/components/SpaceForm.svelte";
+  import SpaceForm from "../../SpaceForm.svelte";
   import { toast } from "$lib/toast.svelte";
   import type { PageProps } from "./$types";
 
@@ -9,7 +9,7 @@
 
   const handleDelete = async () => {
     try {
-      await spaces.delete(data.space!.id);
+      await spaces.delete(data.form.id);
       toast.success("Space deleted!");
       goto("/app/spaces");
     } catch (error) {
@@ -22,5 +22,5 @@
 <br />
 <br />
 <br />
-<SpaceForm space={data.space} formType="edit" />
+<SpaceForm data={data.form} activeCalendarId={data.activeCalendarId} />
 <button onclick={() => handleDelete()}>Delete</button>

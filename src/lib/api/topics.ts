@@ -52,6 +52,10 @@ export async function subscribeEphemeral(topic: Topic) {
   await invoke("subscribe_ephemeral", { topic });
 }
 
+export async function replay(topic: Topic) {
+  await invoke("replay", { topic });
+}
+
 /**
  * Subscribe to all possible topics for all calendars we know about, and add authors to topics
  * when we want to sync their data. This method can be run when starting the app in order to
@@ -77,7 +81,7 @@ export async function subscribeToAll() {
 
   const myPublicKey = await publicKey();
   const allRequests = await db.accessRequests.toArray();
-  const allMyCalendars = await db.calendars.toArray()
+  const allMyCalendars = await db.calendars.toArray();
 
   // Subscribe to all calendars we requested access for and add any relevant public keys + logs to the
   // topic map.
@@ -97,8 +101,8 @@ export async function subscribeToAll() {
       publish.CALENDAR_INBOX_LOG_PATH,
     );
 
-    const hasAccess = await access.checkHasAccess(request.from, calendar.id);
-    if (!hasAccess) {
+    const accessStatus = await access.checkStatus(request.from, calendar.id);
+    if (accessStatus != "accepted") {
       continue;
     }
 
