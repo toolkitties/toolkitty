@@ -1,10 +1,7 @@
 import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
-import { invoke } from "@tauri-apps/api/core";
-import { TopicFactory } from "./topics";
 import { toast } from "$lib/toast.svelte";
 import { publish, identity, spaces, resources } from ".";
-import { liveQuery } from "dexie";
 import { isSubTimespan } from "$lib/utils";
 /**
  * Queries
@@ -189,6 +186,7 @@ async function onBookingRequested(
   db.transaction(
     "rw",
     db.bookingRequests,
+    db.bookingResponses,
     db.resources,
     db.spaces,
     async () => {
@@ -208,6 +206,7 @@ async function onBookingRequested(
         resourceType: data.type,
         resourceOwner: resource!.ownerId,
         validTime: false,
+        accepted: false,
         ...data,
       };
 
@@ -227,6 +226,15 @@ async function onBookingRequested(
           }
         }
       }
+
+      const acceptResponse = await db.bookingResponses
+        .where({ requestId: meta.operationId, answer: "accept" })
+        .toArray();
+      const rejectResponse = await db.bookingResponses
+        .where({ requestId: meta.operationId, answer: "reject" })
+        .toArray();
+      resourceRequest.accepted =
+        acceptResponse.length > 0 && rejectResponse.length == 0;
 
       await db.bookingRequests.add(resourceRequest);
 
@@ -249,30 +257,42 @@ async function onBookingRequestAccepted(
   meta: StreamMessageMeta,
   data: BookingRequestAccepted["data"],
 ) {
-  const resourceRequest = await db.bookingRequests.get(data.requestId);
-  const resourceResponse: BookingResponse = {
-    id: meta.operationId,
-    calendarId: meta.stream.id,
-    eventId: resourceRequest!.eventId,
-    responder: meta.author,
-    requestId: data.requestId,
-    answer: "accept",
-  };
-  await db.bookingResponses.add(resourceResponse);
+  db.transaction("rw", db.bookingRequests, db.bookingResponses, async () => {
+    const resourceRequest = await db.bookingRequests.get(data.requestId);
+    const resourceResponse: BookingResponse = {
+      id: meta.operationId,
+      calendarId: meta.stream.id,
+      eventId: resourceRequest!.eventId,
+      responder: meta.author,
+      requestId: data.requestId,
+      answer: "accept",
+    };
+
+    // Only update the resource request to `accepted` if the previous value was `undefined`.
+    // Already rejected requests cannot be later accepted.
+    if (resourceRequest!.accepted == undefined) {
+      await db.bookingRequests.update(data.requestId, { accepted: true });
+    }
+    await db.bookingResponses.add(resourceResponse);
+  });
 }
 
 async function onBookingRequestRejected(
   meta: StreamMessageMeta,
   data: BookingRequestRejected["data"],
 ) {
-  const resourceRequest = await db.bookingRequests.get(data.requestId);
-  const resourceResponse: BookingResponse = {
-    id: meta.operationId,
-    calendarId: meta.stream.id,
-    eventId: resourceRequest!.eventId,
-    responder: meta.author,
-    requestId: data.requestId,
-    answer: "reject",
-  };
-  await db.bookingResponses.add(resourceResponse);
+  db.transaction("rw", db.bookingRequests, db.bookingResponses, async () => {
+    const resourceRequest = await db.bookingRequests.get(data.requestId);
+    const resourceResponse: BookingResponse = {
+      id: meta.operationId,
+      calendarId: meta.stream.id,
+      eventId: resourceRequest!.eventId,
+      responder: meta.author,
+      requestId: data.requestId,
+      answer: "reject",
+    };
+
+    await db.bookingRequests.update(data.requestId, { accepted: false });
+    await db.bookingResponses.add(resourceResponse);
+  });
 }
