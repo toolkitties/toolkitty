@@ -5,6 +5,14 @@
 import { db } from "$lib/db";
 import { identity, users } from ".";
 
+export function findAll(
+  calendarId: CalendarId,
+) {
+  return db.users.where({ calendarId }).toArray();
+}
+
+
+
 export function get(
   calendarId: CalendarId,
   publicKey: PublicKey,

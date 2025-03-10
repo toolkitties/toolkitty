@@ -6,34 +6,19 @@
   let {
     user,
     open = $bindable(false),
-  }: { user: AdminUserList; open: boolean } = $props();
-
-  /**
-   * Accept request for calendar access
-   */
-  // async function acceptRequest(requestId: Hash) {
-  //   try {
-  //     await access.acceptAccessRequest({ requestId });
-
-  //     // close the dialog
-  //     open = false;
-  //   } catch (error) {
-  //     console.error("Failed to accept access request:", error);
-  //   }
-  // }
+  }: { user: RequestDialogUser; open: boolean } = $props();
 
   /**
    * Assign user to a new role and accept access request if pending
    */
   async function assignRole(role: Role) {
     let activeCalendarId = await calendars.getActiveCalendarId();
-    let publicKey = await identity.publicKey();
     try {
       if (user.pendingRequest) {
         await access.acceptAccessRequest({ requestId: user.pendingRequest.id });
       }
 
-      roles.assignRole(activeCalendarId!, publicKey, role);
+      roles.assignRole(activeCalendarId!, user.publicKey, role);
 
       // close the dialog
       open = false;

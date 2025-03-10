@@ -1,5 +1,4 @@
 <script lang="ts">
-  import AccessRequestDialog from "$lib/components/dialog/AccessRequestDialog.svelte";
   import BookingRequestDialog from "$lib/components/dialog/BookingRequestDialog.svelte";
   import * as AlertDialog from "$lib/components/dialog/index";
 

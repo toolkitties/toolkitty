@@ -2,7 +2,7 @@
   import AccessRoleDialog from "$lib/components/dialog/AccessRoleDialog.svelte";
   import * as AlertDialog from "$lib/components/dialog/index";
 
-  let { user }: { user: AdminUserList } = $props();
+  let { user }: { user: RequestDialogUser } = $props();
 
   let open = $state(false);
 </script>
