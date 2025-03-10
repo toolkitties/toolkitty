@@ -2,6 +2,7 @@
 
 import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
+import { isSubTimespan } from "$lib/utils";
 import { events, publish } from ".";
 
 /**
@@ -146,20 +147,27 @@ async function onEventUpdated(
   data: EventUpdated["data"],
 ) {
   await validateUpdateDelete(meta.author, data.id);
+  const eventId = data.id;
+  const { endDate, startDate } = data.fields;
 
-  let { name, description, startDate, endDate, resources, links, images } =
-    data.fields;
+  db.transaction("rw", db.events, db.bookingRequests, async () => {
+    // Update `validAvailability` field of all booking requests associated with this event.
+    await db.bookingRequests.where({ eventId }).modify((request) => {
+      request.validAvailability = isSubTimespan(
+        startDate,
+        endDate,
+        request.timeSpan,
+      );
+    });
 
-  await db.events.update(data.id, {
-    name,
-    calendarId: meta.stream.id,
-    ownerId: meta.stream.owner,
-    description,
-    startDate,
-    endDate,
-    resources,
-    links,
-    images,
+    // @TODO: we could show a toast to the user if a previously valid event timespan now became
+    // invalid.
+
+    await db.events.update(data.id, {
+      calendarId: meta.stream.id,
+      ownerId: meta.stream.owner,
+      ...data.fields,
+    });
   });
 }
 
@@ -168,7 +176,19 @@ async function onEventDeleted(
   data: EventDeleted["data"],
 ) {
   await validateUpdateDelete(meta.author, data.id);
-  await db.events.delete(data.id);
+  const eventId = data.id;
+
+  db.transaction("rw", db.events, db.bookingRequests, async () => {
+    // Update `validAvailability` field of all booking requests associated with this event.
+    await db.bookingRequests
+      .where({ eventId })
+      .modify({ validAvailability: false });
+
+    // @TODO: we could show a toast to the user if a previously valid event timespan now became
+    // invalid.
+
+    await db.events.delete(data.id);
+  });
 }
 
 /**

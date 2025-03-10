@@ -213,12 +213,12 @@ export function parseEventFormData(
 
 // Availability
 
-function isValidAvailability(
+export function isSubTimespan(
   startDate: Date,
-  endTate: Date | undefined,
+  endDate: Date | undefined,
   timeSpan: TimeSpan,
 ): boolean {
-  if (endTate == undefined) {
+  if (endDate == undefined) {
     return timeSpan.end > startDate;
   }
 
