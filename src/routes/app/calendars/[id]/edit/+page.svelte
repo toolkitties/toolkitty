@@ -9,7 +9,7 @@
 
   const handleDelete = async () => {
     try {
-      await calendars.deleteCalendar(data.calendarId);
+      await calendars.deleteCalendar(data.form.id);
       toast.success("Calendar deleted!");
       goto("/");
     } catch (error) {
@@ -22,5 +22,5 @@
 <br />
 <br />
 <br />
-<CalendarForm formType={"edit"} calendarId={data.calendarId} />
+<CalendarForm data={data.form} />
 <button onclick={() => handleDelete()}>Delete</button>

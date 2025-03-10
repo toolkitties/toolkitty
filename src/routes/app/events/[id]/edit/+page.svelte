@@ -1,5 +1,5 @@
 <script lang="ts">
-  import EventForm from "$lib/components/EventForm.svelte";
+  import EventForm from "../../EventForm.svelte";
   import type { PageProps } from "./$types";
   import { events } from "$lib/api";
   import { toast } from "$lib/toast.svelte";
@@ -9,7 +9,7 @@
 
   const handleDelete = async () => {
     try {
-      await events.delete(data.event!.id);
+      await events.delete(data.form.id);
       toast.success("Event deleted!");
       goto("/app/events");
     } catch (error) {
@@ -23,9 +23,9 @@
 <br />
 <br />
 <EventForm
-  formType="edit"
+  data={data.form}
+  activeCalendarId={data.activeCalendarId}
   spaces={data.spacesList}
   resources={data.resourcesList}
-  event={data.event}
 />
 <button onclick={() => handleDelete()}>Delete</button>
