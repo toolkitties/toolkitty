@@ -1,5 +1,5 @@
 import { db } from "$lib/db";
-import { publish, spaces } from ".";
+import { auth, publish, roles, spaces } from ".";
 import { promiseResult } from "$lib/promiseMap";
 import { isSubTimespan } from "$lib/utils";
 
@@ -29,6 +29,17 @@ export function findByOwner(
  */
 export function findById(id: Hash): Promise<Space | undefined> {
   return db.spaces.get({ id });
+}
+
+export async function isOwner(
+  spaceId: Hash,
+  publicKey: PublicKey,
+): Promise<boolean> {
+  return auth.isOwner(spaceId, publicKey, "space");
+}
+
+export async function amOwner(spaceId: Hash): Promise<boolean> {
+  return auth.amOwner(spaceId, "space");
 }
 
 /**
@@ -67,6 +78,13 @@ export async function update(
   fields: SpaceFields,
 ): Promise<Hash> {
   const space = await spaces.findById(spaceId);
+
+  const amAdmin = await auth.amAdmin(space!.calendarId);
+  const amOwner = await spaces.amOwner(spaceId);
+  if (!amAdmin && !amOwner) {
+    throw new Error("user does not have permission to update this space");
+  }
+
   const spaceUpdated: SpaceUpdated = {
     type: "space_updated",
     data: {
@@ -89,6 +107,13 @@ export async function update(
  */
 export async function deleteSpace(spaceId: Hash): Promise<Hash> {
   const space = await spaces.findById(spaceId);
+
+  const amAdmin = await auth.amAdmin(space!.calendarId);
+  const amOwner = await spaces.amOwner(spaceId);
+  if (!amAdmin && !amOwner) {
+    throw new Error("user does not have permission to delete this space");
+  }
+
   const spaceDeleted: SpaceDeleted = {
     type: "space_deleted",
     data: {
@@ -121,9 +146,9 @@ export async function process(message: ApplicationMessage) {
     case "space_created":
       return await onSpaceCreated(meta, data);
     case "space_updated":
-      return await onSpaceUpdated(meta, data);
+      return await onSpaceUpdated(data);
     case "space_deleted":
-      return await onSpaceDeleted(meta, data);
+      return await onSpaceDeleted(data);
   }
 }
 
@@ -140,11 +165,7 @@ async function onSpaceCreated(
   });
 }
 
-async function onSpaceUpdated(
-  meta: StreamMessageMeta,
-  data: SpaceUpdated["data"],
-) {
-  await validateUpdateDelete(meta.author, data.id);
+async function onSpaceUpdated(data: SpaceUpdated["data"]) {
   const spaceId = data.id;
   const spaceAvailability = data.fields.availability;
 
@@ -181,11 +202,7 @@ async function onSpaceUpdated(
   });
 }
 
-async function onSpaceDeleted(
-  meta: StreamMessageMeta,
-  data: SpaceDeleted["data"],
-) {
-  await validateUpdateDelete(meta.author, data.id);
+async function onSpaceDeleted(data: SpaceDeleted["data"]) {
   const spaceId = data.id;
 
   db.transaction("rw", db.events, db.bookingRequests, async () => {
@@ -199,22 +216,4 @@ async function onSpaceDeleted(
 
     await db.spaces.delete(spaceId);
   });
-}
-
-/**
- * Validation
- */
-
-async function validateUpdateDelete(publicKey: PublicKey, spaceId: Hash) {
-  const space = await db.spaces.get(spaceId);
-
-  // The space must already exist.
-  if (!space) {
-    throw new Error("space does not exist");
-  }
-
-  // Only the space owner can perform updates and deletes.
-  if (space.ownerId != publicKey) {
-    throw new Error("non-owner update or delete");
-  }
 }

@@ -52,6 +52,10 @@ export async function subscribeEphemeral(topic: Topic) {
   await invoke("subscribe_ephemeral", { topic });
 }
 
+export async function replay(topic: Topic) {
+  await invoke("replay", { topic });
+}
+
 /**
  * Subscribe to all possible topics for all calendars we know about, and add authors to topics
  * when we want to sync their data. This method can be run when starting the app in order to

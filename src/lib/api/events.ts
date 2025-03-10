@@ -3,7 +3,9 @@
 import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
 import { isSubTimespan } from "$lib/utils";
-import { events, publish } from ".";
+import { invoke } from "@tauri-apps/api/core";
+import { auth, events, publish, roles } from ".";
+import { TopicFactory } from "./topics";
 
 /**
  * Queries
@@ -31,6 +33,17 @@ export function findByOwner(
  */
 export function findById(id: Hash): Promise<CalendarEvent | undefined> {
   return db.events.get({ id });
+}
+
+export async function isOwner(
+  eventId: Hash,
+  publicKey: PublicKey,
+): Promise<boolean> {
+  return auth.isOwner(eventId, publicKey, "event");
+}
+
+export async function amOwner(eventId: Hash): Promise<boolean> {
+  return auth.amOwner(eventId, "event");
 }
 
 /**
@@ -62,6 +75,13 @@ export async function create(calendarId: Hash, fields: EventFields) {
  */
 export async function update(eventId: Hash, fields: EventFields) {
   const event = await events.findById(eventId);
+
+  const amAdmin = await auth.amAdmin(event!.calendarId);
+  const amOwner = await events.amOwner(eventId);
+  if (!amAdmin && !amOwner) {
+    throw new Error("user does not have permission to update this event");
+  }
+
   let eventUpdated: EventUpdated = {
     type: "event_updated",
     data: {
@@ -84,6 +104,13 @@ export async function update(eventId: Hash, fields: EventFields) {
  */
 async function deleteEvent(eventId: Hash) {
   const event = await events.findById(eventId);
+
+  const amAdmin = await auth.amAdmin(event!.calendarId);
+  const amOwner = await events.amOwner(eventId);
+  if (!amAdmin && !amOwner) {
+    throw new Error("user does not have permission to delete this event");
+  }
+
   let eventDeleted: EventDeleted = {
     type: "event_deleted",
     data: {
@@ -115,9 +142,9 @@ export async function process(message: ApplicationMessage) {
     case "event_created":
       return await onEventCreated(meta, data);
     case "event_updated":
-      return await onEventUpdated(meta, data);
+      return await onEventUpdated(data);
     case "event_deleted":
-      return await onEventDeleted(meta, data);
+      return await onEventDeleted(data);
   }
 }
 
@@ -125,28 +152,21 @@ async function onEventCreated(
   meta: StreamMessageMeta,
   data: EventCreated["data"],
 ) {
-  let { name, description, startDate, endDate, resources, links, images } =
-    data.fields;
-
   await db.events.add({
     id: meta.operationId,
-    name,
     calendarId: meta.stream.id,
     ownerId: meta.stream.owner,
-    description,
-    startDate,
-    endDate,
-    resources,
-    links,
-    images,
+    ...data.fields,
   });
+
+  // Replay un-ack'd messages which we may have received out-of-order.
+  const topic = new TopicFactory(meta.stream.id);
+  await invoke("replay", { topic: topic.calendar() });
 }
 
 async function onEventUpdated(
-  meta: StreamMessageMeta,
   data: EventUpdated["data"],
 ) {
-  await validateUpdateDelete(meta.author, data.id);
   const eventId = data.id;
   const { endDate, startDate } = data.fields;
 
@@ -164,18 +184,14 @@ async function onEventUpdated(
     // invalid.
 
     await db.events.update(data.id, {
-      calendarId: meta.stream.id,
-      ownerId: meta.stream.owner,
       ...data.fields,
     });
   });
 }
 
 async function onEventDeleted(
-  meta: StreamMessageMeta,
   data: EventDeleted["data"],
 ) {
-  await validateUpdateDelete(meta.author, data.id);
   const eventId = data.id;
 
   db.transaction("rw", db.events, db.bookingRequests, async () => {
@@ -189,22 +205,4 @@ async function onEventDeleted(
 
     await db.events.delete(data.id);
   });
-}
-
-/**
- * Validation
- */
-
-async function validateUpdateDelete(publicKey: PublicKey, resourceId: Hash) {
-  let resource = await db.events.get(resourceId);
-
-  // The resource must already exist.
-  if (!resource) {
-    throw new Error("resource does not exist");
-  }
-
-  // Only the resource owner can perform updates and deletes.
-  if (resource.ownerId != publicKey) {
-    throw new Error("non-owner update or delete on resource");
-  }
 }
