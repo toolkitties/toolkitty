@@ -169,29 +169,26 @@ function onSpaceUpdated(data: SpaceUpdated["data"]): Promise<void> {
   const spaceId = data.id;
   const spaceAvailability = data.fields.availability;
 
-  return db.transaction("rw", db.events, db.bookingRequests, async () => {
-    // Update `validTime` field of all booking requests associated with this space.
+  return db.transaction("rw", db.spaces, db.bookingRequests, async () => {
+    // Update `isValid` field of all booking requests associated with this space.
     await db.bookingRequests
       .where({ resourceId: spaceId })
       .modify((request) => {
+        console.log("modify booking request: ", request.id);
         if (spaceAvailability == "always") {
-          request.validTime = true;
+          request.isValid = "true";
           return;
         }
-        request.validTime = false;
+        request.isValid = "false";
         for (const span of spaceAvailability) {
-          const validTime = isSubTimespan(
-            span.start,
-            span.end,
-            request.timeSpan,
-          );
+          const isValid = isSubTimespan(span.start, span.end, request.timeSpan);
 
-          if (validTime) {
-            request.validTime = true;
-            return;
+          if (isValid) {
+            request.isValid = "true";
+            break;
           }
         }
-        request.validTime = false;
+        request.isValid = "false";
       });
 
     // @TODO: we could show a toast to the user if a previously valid request timespan now became
@@ -205,11 +202,11 @@ function onSpaceUpdated(data: SpaceUpdated["data"]): Promise<void> {
 function onSpaceDeleted(data: SpaceDeleted["data"]): Promise<void> {
   const spaceId = data.id;
 
-  return db.transaction("rw", db.events, db.bookingRequests, async () => {
-    // Update `validTime` field of all booking requests associated with this event.
+  return db.transaction("rw", db.spaces, db.bookingRequests, async () => {
+    // Update `isValid` field of all booking requests associated with this event.
     await db.bookingRequests
       .where({ resourceId: spaceId })
-      .modify({ validTime: false });
+      .modify({ isValid: "false" });
 
     // @TODO: we could show a toast to the user if a previously valid event timespan now became
     // invalid.

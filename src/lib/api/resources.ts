@@ -169,22 +169,22 @@ function onResourceUpdated(data: ResourceUpdated["data"]): Promise<void> {
   const resourceAvailability = data.fields.availability;
 
   return db.transaction("rw", db.resources, db.bookingRequests, async () => {
-    // Update `validTime` field of all booking requests associated with this space.
+    // Update `isavalid` field of all booking requests associated with this space.
     await db.bookingRequests.where({ resourceId }).modify((request) => {
       if (resourceAvailability == "always") {
-        request.validTime = true;
+        request.isValid = "true";
         return;
       }
-      request.validTime = false;
+      request.isValid = "false";
       for (const span of resourceAvailability) {
-        const validTime = isSubTimespan(span.start, span.end, request.timeSpan);
+        const isValid = isSubTimespan(span.start, span.end, request.timeSpan);
 
-        if (validTime) {
-          request.validTime = true;
-          return;
+        if (isValid) {
+          request.isValid = "true";
+          break;
         }
       }
-      request.validTime = false;
+      request.isValid = "false";
     });
 
     // @TODO: we could show a toast to the user if a previously valid request timespan now became
@@ -198,13 +198,13 @@ function onResourceUpdated(data: ResourceUpdated["data"]): Promise<void> {
 function onResourceDeleted(data: ResourceDeleted["data"]): Promise<void> {
   const resourceId = data.id;
 
-  return db.transaction("rw", db.events, db.bookingRequests, async () => {
-    // Update `validTime` field of all booking requests associated with this resource.
-    await db.bookingRequests.where({ resourceId }).modify({ validTime: false });
+  return db.transaction("rw", db.resources, db.bookingRequests, async () => {
+    // Update `isavalid` field of all booking requests associated with this resource.
+    await db.bookingRequests.where({ resourceId }).modify({ isValid: "false" });
 
     // @TODO: we could show a toast to the user if a previously valid event timespan now became
     // invalid.
 
-    await db.spaces.delete(resourceId);
+    await db.resources.delete(resourceId);
   });
 }

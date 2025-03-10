@@ -160,20 +160,15 @@ function onEventCreated(
   });
 }
 
-function onEventUpdated(
-  data: EventUpdated["data"],
-): Promise<void>  {
+function onEventUpdated(data: EventUpdated["data"]): Promise<void> {
   const eventId = data.id;
   const { endDate, startDate } = data.fields;
 
   return db.transaction("rw", db.events, db.bookingRequests, async () => {
     // Update `validTime` field of all booking requests associated with this event.
     await db.bookingRequests.where({ eventId }).modify((request) => {
-      request.validTime = isSubTimespan(
-        startDate,
-        endDate,
-        request.timeSpan,
-      );
+      const isValid = isSubTimespan(startDate, endDate, request.timeSpan);
+      request.isValid = isValid ? "true" : "false";
     });
 
     // @TODO: we could show a toast to the user if a previously valid event timespan now became
@@ -185,16 +180,12 @@ function onEventUpdated(
   });
 }
 
-function onEventDeleted(
-  data: EventDeleted["data"],
-): Promise<void> {
+function onEventDeleted(data: EventDeleted["data"]): Promise<void> {
   const eventId = data.id;
 
   return db.transaction("rw", db.events, db.bookingRequests, async () => {
     // Update `validTime` field of all booking requests associated with this space.
-    await db.bookingRequests
-      .where({ eventId })
-      .modify({ validTime: false });
+    await db.bookingRequests.where({ eventId }).modify({ isValid: "false" });
 
     // @TODO: we could show a toast to the user if a previously valid space timespan now became
     // invalid.

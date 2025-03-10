@@ -185,13 +185,13 @@ async function onBookingRequested(
         requester: meta.author,
         resourceType: data.type,
         resourceOwner: resource!.ownerId,
-        validTime: false,
+        isValid: "false",
         status: "pending",
         ...data,
       };
 
       if (resourceAvailability == "always") {
-        resourceRequest.validTime = true;
+        resourceRequest.isValid = "true";
       } else {
         for (const span of resourceAvailability) {
           const isSub = isSubTimespan(
@@ -201,7 +201,7 @@ async function onBookingRequested(
           );
 
           if (isSub) {
-            resourceRequest.validTime = true;
+            resourceRequest.isValid = "true";
           }
         }
       }
@@ -217,7 +217,6 @@ async function onBookingRequested(
         resourceRequest.status = "accepted";
       }
 
-      console.log("add resource request to db", resourceRequest);
       await db.bookingRequests.add(resourceRequest);
     },
   );
