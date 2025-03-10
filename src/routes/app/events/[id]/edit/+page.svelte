@@ -23,9 +23,9 @@
 <br />
 <br />
 <EventForm
-  formType="edit"
+  data={data.form}
+  activeCalendarId={data.activeCalendarId}
   spaces={data.spacesList}
   resources={data.resourcesList}
-  event={data.event}
 />
 <button onclick={() => handleDelete()}>Delete</button>

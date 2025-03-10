@@ -2,7 +2,9 @@
   import { Calendar } from "bits-ui";
   import type { DateValue } from "@internationalized/date";
 
-  let { availability } = $props();
+  let { availability = $bindable() } = $props<{
+    availability: { date: string; startTime: string; endTime: string }[];
+  }>();
   let availableDates = $state(
     new Set(availability.map((entry: { date: string }) => entry.date)),
   );

@@ -3,7 +3,6 @@
   import type { SpaceSchema } from "$lib/schemas";
   import AvailabilitySetter from "$lib/components/AvailabilitySetter.svelte";
   import { spaces } from "$lib/api";
-  import { parseSpaceFormData } from "$lib/utils";
   import { goto } from "$app/navigation";
   import { toast } from "$lib/toast.svelte";
   import { spaceSchema } from "$lib/schemas";
@@ -209,10 +208,7 @@
   <p>Space availability</p>
 
   {#if !alwaysAvailable}
-    <AvailabilitySetter
-      {availability}
-      onUpdateAvailability={updateAvailability}
-    />
+    <AvailabilitySetter {availability} />
   {/if}
 
   <label>
