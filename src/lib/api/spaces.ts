@@ -14,27 +14,6 @@ export function findMany(calendarId: Hash): Promise<Space[]> {
   return db.spaces.where({ calendarId }).toArray();
 }
 
-export async function findManyWithinCalendarDates(
-  calendarId: Hash,
-): Promise<Space[]> {
-  const calendar = await db.calendars.get(calendarId);
-  const calendarStartDate = calendar!.startDate;
-  const calendarEndDate = calendar!.endDate;
-
-  return db.spaces
-    .where({ calendarId })
-    .filter((space) => {
-      if (space.availability == "always") {
-        return true;
-      }
-      for (const span of space.availability) {
-        return isSubTimespan(calendarStartDate, calendarEndDate, span);
-      }
-      return false;
-    })
-    .toArray();
-}
-
 /**
  * Get all calendar spaces that are owned by the passed public key.
  */
