@@ -107,7 +107,8 @@ export const eventSchema = z.object({
 // Calendar schema
 export const calendarSchema = z.object({
   id: z.string().optional(),
-  dates: z.array(timeSpanSchema),
+  name: z.string().min(1, "Calendar name is required"),
+  dates: z.array(timeSpanSchema).min(1, "A start date is required"),
   festivalInstructions: z.string().nullable(),
   spacePageText: z.string().nullable(),
   resourcePageText: z.string().nullable(),
