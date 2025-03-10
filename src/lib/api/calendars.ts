@@ -201,33 +201,15 @@ async function onCalendarUpdated(
   validateFields(data.fields);
   await validateUpdateDelete(meta.author, data.id);
 
-  const calendarId = data.id;
   const { name, dates } = data.fields;
   const timeSpan = dates[0];
 
-  db.transaction("rw", db.calendars, db.events, async () => {
-    // Update `validAvailability` field of all events associated with this calendar.
-    await db.events
-      .where({ calendarId })
-      .filter((event) => event.startDate >= timeSpan.end)
-      .modify({ validAvailability: false });
-
-    await db.events
-      .where({ calendarId })
-      .filter((event) => event.endDate <= timeSpan.start)
-      .modify({ validAvailability: false });
-
-    // @TODO: also update resources, spaces and booking requests.
-
-    // @TODO: we could show a toast to the user if a previously valid event timespan now became
-    // invalid.
-
-    await db.calendars.update(data.id, {
-      name,
-      startDate: timeSpan.start,
-      endDate: timeSpan.end,
-    });
+  await db.calendars.update(data.id, {
+    name,
+    startDate: timeSpan.start,
+    endDate: timeSpan.end,
   });
+
 }
 
 async function onCalendarDeleted(
@@ -235,19 +217,7 @@ async function onCalendarDeleted(
   data: CalendarDeleted["data"],
 ) {
   await validateUpdateDelete(meta.author, data.id);
-  const calendarId = data.id;
-
-  db.transaction("rw", db.calendars, db.events, async () => {
-    // Update `validAvailability` field of all events associated with this calendar.
-    await db.events
-      .where({ calendarId })
-      .modify({ validAvailability: false });
-
-    // @TODO: we could show a toast to the user if a previously valid event timespan now became
-    // invalid.
-
-    await db.calendars.delete(data.id);
-  });
+  await db.calendars.delete(data.id);
 }
 
 /**
