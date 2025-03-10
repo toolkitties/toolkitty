@@ -25,7 +25,7 @@ beforeAll(async () => {
   }
 });
 
-describe("access tests", () => {
+describe("maintain booking request timespan validity", () => {
   test("space with update and delete", async () => {
     let pendingBookings = await bookings.findPending(CALENDAR_ID, {
       eventId: "event_001",
@@ -64,7 +64,7 @@ describe("access tests", () => {
       resourceType: "space",
       isValid: "true",
     });
-    expect(pendingBookings).lengthOf(2);
+    expect(pendingBookings).lengthOf(1);
 
     let space = await spaces.findById("space_001");
     const { id, calendarId, availability, ...fields } = space!;
@@ -179,7 +179,7 @@ describe("access tests", () => {
           resourceId: "resource_001",
           eventId: "event_001",
           message: "Hi, can I haz your Projector?",
-          // This timeSpan is outside the available timeSpan for resource_001
+          // The resource is "always" available so all timespans are "valid"
           timeSpan: {
             start: new Date("2025-04-01T09:00:00Z"),
             end: new Date("2025-05-01T17:00:00Z"),
