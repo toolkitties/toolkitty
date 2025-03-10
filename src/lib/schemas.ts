@@ -94,7 +94,13 @@ export const eventSchema = z.object({
   publicStartDate: z.string().min(1, "Event start time is required"),
   publicEndDate: z.string(),
   resources: z.array(z.string()).optional(),
-  links: z.array(linkSchema),
+  links: z
+    .array(linkSchema)
+    .optional()
+    .default([
+      { title: "", type: "ticket", url: "" },
+      { title: "", type: "custom", url: "" },
+    ]),
   images: z.array(imageSchema),
 });
 
