@@ -92,7 +92,7 @@
     class=""
     aria-invalid={$errors.name ? "true" : undefined}
   />
-  {#if $errors.name}<span class="invalid">{$errors.name}</span>{/if}
+  {#if $errors.name}<span class="form-error">{$errors.name}</span>{/if}
 
   <label for="description">Description*</label>
   <textarea
@@ -100,7 +100,7 @@
     aria-invalid={$errors.description ? "true" : undefined}
     bind:value={$form.description}
   ></textarea>
-  {#if $errors.description}<span class="invalid">{$errors.description}</span
+  {#if $errors.description}<span class="form-error">{$errors.description}</span
     >{/if}
 
   <label for="contact">Contact Details*</label>
@@ -110,7 +110,7 @@
     aria-invalid={$errors.contact ? "true" : undefined}
     bind:value={$form.contact}
   />
-  {#if $errors.contact}<span class="invalid">{$errors.contact}</span>{/if}
+  {#if $errors.contact}<span class="form-error">{$errors.contact}</span>{/if}
 
   <fieldset>
     <legend>🔗 Useful link (website, social media)</legend>
@@ -134,7 +134,7 @@
         />
       </div>
     </div>
-    {#if $errors.link}<span class="invalid">{$errors.link}</span>{/if}
+    {#if $errors.link}<span class="form-error">{$errors.link}</span>{/if}
   </fieldset>
 
   <p>Resource availability</p>

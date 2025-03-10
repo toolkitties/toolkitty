@@ -118,6 +118,9 @@
       bind:group={$form.location.type}
       onchange={updateLocation}
     />
+    {#if $errors.location?.type}<span class="form-error"
+        >{$errors.location?.type}</span
+      >{/if}
   </fieldset>
 
   <label for="space-name">Space Name*</label>
@@ -129,54 +132,129 @@
       <input
         type="text"
         name="address-street"
+        aria-invalid={$errors.location?.street ? "true" : undefined}
         bind:value={$form.location.street}
       />
+      {#if $errors.location?.street}<span class="form-error"
+          >{$errors.location?.street}</span
+        >{/if}
 
       <label for="address-city">City</label>
-      <input type="text" name="address-city" bind:value={$form.location.city} />
+      <input
+        type="text"
+        name="address-city"
+        aria-invalid={$errors.location?.city ? "true" : undefined}
+        bind:value={$form.location.city}
+      />
+      {#if $errors.location?.city}<span class="form-error"
+          >{$errors.location?.city}</span
+        >{/if}
 
       <label for="address-state">State</label>
       <input
         type="text"
         name="address-state"
+        aria-invalid={$errors.location?.state ? "true" : undefined}
         bind:value={$form.location.state}
       />
+      {#if $errors.location?.state}<span class="form-error"
+          >{$errors.location?.state}</span
+        >{/if}
 
       <label for="address-zip">Zip</label>
-      <input type="text" name="address-zip" bind:value={$form.location.zip} />
+      <input
+        type="text"
+        name="address-zip"
+        aria-invalid={$errors.location?.zip ? "true" : undefined}
+        bind:value={$form.location.zip}
+      />
+      {#if $errors.location?.zip}<span class="form-error"
+          >{$errors.location?.zip}</span
+        >{/if}
 
       <label for="address-country">Country</label>
       <input
         type="text"
         name="address-country"
+        aria-invalid={$errors.location?.country ? "true" : undefined}
         bind:value={$form.location.country}
       />
+      {#if $errors.location?.country}<span class="form-error"
+          >{$errors.location?.country}</span
+        >{/if}
     </fieldset>
   {:else if $form.location.type === "gps"}
     <fieldset>
       <legend>Co-ordinates</legend>
       <label for="address-lat">Latitude*</label>
-      <input type="number" name="address-lat" bind:value={$form.location.lat} />
+      <input
+        type="number"
+        name="address-lat"
+        aria-invalid={$errors.location?.lat ? "true" : undefined}
+        bind:value={$form.location.lat}
+      />
+      {#if $errors.location?.lat}<span class="form-error"
+          >{$errors.location?.lat}</span
+        >{/if}
       <label for="address-lon">Longitude*</label>
-      <input type="number" name="address-lon" bind:value={$form.location.lon} />
+      <input
+        type="number"
+        name="address-lon"
+        aria-invalid={$errors.location?.lon ? "true" : undefined}
+        bind:value={$form.location.lon}
+      />
+      {#if $errors.location?.lon}<span class="form-error"
+          >{$errors.location?.lon}</span
+        >{/if}
     </fieldset>
   {:else if $form.location.type === "virtual"}
     <label for="address-virtual">Link to virtual space*</label>
-    <input type="text" name="address-virtual" bind:value={$form.location} />
+    <input
+      type="text"
+      name="address-virtual"
+      aria-invalid={$errors.location ? "true" : undefined}
+      bind:value={$form.location}
+    />
+    {#if $errors.location}<span class="form-error">{$errors.location}</span
+      >{/if}
   {/if}
 
   <label for="capacity">Capacity</label>
-  <input type="number" name="capacity" bind:value={$form.capacity} />
+  <input
+    type="number"
+    name="capacity"
+    aria-invalid={$errors.capacity ? "true" : undefined}
+    bind:value={$form.capacity}
+  />
+  {#if $errors.capacity}<span class="form-error">{$errors.capacity}</span>{/if}
 
   <label for="accessibility-details">Accessibility Details*</label>
-  <textarea name="accessibility-details" bind:value={$form.accessibility}
+  <textarea
+    name="accessibility-details"
+    aria-invalid={$errors.accessibility ? "true" : undefined}
+    bind:value={$form.accessibility}
   ></textarea>
+  {#if $errors.accessibility}<span class="form-error"
+      >{$errors.accessibility}</span
+    >{/if}
 
   <label for="space-description">Space Description*</label>
-  <textarea name="space-description" bind:value={$form.description}></textarea>
+  <textarea
+    name="space-description"
+    aria-invalid={$errors.description ? "true" : undefined}
+    bind:value={$form.description}
+  ></textarea>
+  {#if $errors.description}<span class="form-error">{$errors.description}</span
+    >{/if}
 
   <label for="contact-details">Contact Details*</label>
-  <input type="text" name="contact-details" bind:value={$form.contact} />
+  <input
+    type="text"
+    name="contact-details"
+    aria-invalid={$errors.contact ? "true" : undefined}
+    bind:value={$form.contact}
+  />
+  {#if $errors.contact}<span class="form-error">{$errors.contact}</span>{/if}
 
   <fieldset>
     <legend>🔗 Useful link (website, social media)</legend>
@@ -187,12 +265,24 @@
         <input
           type="text"
           name="space-link-text"
+          aria-invalid={$errors.link?.title ? "true" : undefined}
           bind:value={$form.link.title}
         />
+        {#if $errors.link?.title}<span class="form-error"
+            >{$errors.link?.title}</span
+          >{/if}
       </div>
       <div>
         <label for="space-link-url">URL</label>
-        <input type="url" name="space-link-url" bind:value={$form.link.url} />
+        <input
+          type="url"
+          name="space-link-url"
+          aria-invalid={$errors.link?.url ? "true" : undefined}
+          bind:value={$form.link.url}
+        />
+        {#if $errors.link?.url}<span class="form-error"
+            >{$errors.link?.url}</span
+          >{/if}
       </div>
     </div>
   </fieldset>
@@ -202,8 +292,12 @@
     type="text"
     name="space-message"
     placeholder="Please let me know in advance if..."
+    aria-invalid={$errors.messageForRequesters ? "true" : undefined}
     bind:value={$form.messageForRequesters}
   />
+  {#if $errors.messageForRequesters}<span class="form-error"
+      >{$errors.messageForRequesters}</span
+    >{/if}
 
   <p>Space availability</p>
 
@@ -233,6 +327,9 @@
       bind:group={$form.multiBookable}
     />
   </fieldset>
+  {#if $errors.multiBookable}<span class="form-error"
+      >{$errors.multiBookable}</span
+    >{/if}
 
   <button type="submit">{$form.id ? "Update" : "Create"}</button>
 </form>
