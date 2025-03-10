@@ -148,11 +148,11 @@ export async function process(message: ApplicationMessage) {
   }
 }
 
-async function onEventCreated(
+function onEventCreated(
   meta: StreamMessageMeta,
   data: EventCreated["data"],
-) {
-  await db.events.add({
+): Promise<string> {
+  return db.events.add({
     id: meta.operationId,
     calendarId: meta.stream.id,
     ownerId: meta.stream.owner,
@@ -160,13 +160,13 @@ async function onEventCreated(
   });
 }
 
-async function onEventUpdated(
+function onEventUpdated(
   data: EventUpdated["data"],
-) {
+): Promise<void>  {
   const eventId = data.id;
   const { endDate, startDate } = data.fields;
 
-  db.transaction("rw", db.events, db.bookingRequests, async () => {
+  return db.transaction("rw", db.events, db.bookingRequests, async () => {
     // Update `validTime` field of all booking requests associated with this event.
     await db.bookingRequests.where({ eventId }).modify((request) => {
       request.validTime = isSubTimespan(
@@ -185,12 +185,12 @@ async function onEventUpdated(
   });
 }
 
-async function onEventDeleted(
+function onEventDeleted(
   data: EventDeleted["data"],
-) {
+): Promise<void> {
   const eventId = data.id;
 
-  db.transaction("rw", db.events, db.bookingRequests, async () => {
+  return db.transaction("rw", db.events, db.bookingRequests, async () => {
     // Update `validTime` field of all booking requests associated with this space.
     await db.bookingRequests
       .where({ eventId })

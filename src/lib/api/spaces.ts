@@ -152,11 +152,11 @@ export async function process(message: ApplicationMessage) {
   }
 }
 
-async function onSpaceCreated(
+function onSpaceCreated(
   meta: StreamMessageMeta,
   data: SpaceCreated["data"],
-) {
-  await db.spaces.add({
+): Promise<string> {
+  return db.spaces.add({
     id: meta.operationId,
     calendarId: meta.stream.id,
     ownerId: meta.author,
@@ -165,11 +165,11 @@ async function onSpaceCreated(
   });
 }
 
-async function onSpaceUpdated(data: SpaceUpdated["data"]) {
+function onSpaceUpdated(data: SpaceUpdated["data"]): Promise<void> {
   const spaceId = data.id;
   const spaceAvailability = data.fields.availability;
 
-  db.transaction("rw", db.events, db.bookingRequests, async () => {
+  return db.transaction("rw", db.events, db.bookingRequests, async () => {
     // Update `validTime` field of all booking requests associated with this space.
     await db.bookingRequests
       .where({ resourceId: spaceId })
@@ -202,10 +202,10 @@ async function onSpaceUpdated(data: SpaceUpdated["data"]) {
   });
 }
 
-async function onSpaceDeleted(data: SpaceDeleted["data"]) {
+function onSpaceDeleted(data: SpaceDeleted["data"]): Promise<void> {
   const spaceId = data.id;
 
-  db.transaction("rw", db.events, db.bookingRequests, async () => {
+  return db.transaction("rw", db.events, db.bookingRequests, async () => {
     // Update `validTime` field of all booking requests associated with this event.
     await db.bookingRequests
       .where({ resourceId: spaceId })

@@ -151,11 +151,11 @@ export async function process(message: ApplicationMessage) {
   }
 }
 
-async function onResourceCreated(
+function onResourceCreated(
   meta: StreamMessageMeta,
   data: ResourceCreated["data"],
-) {
-  await db.resources.add({
+): Promise<string> {
+  return db.resources.add({
     id: meta.operationId,
     calendarId: meta.stream.id,
     ownerId: meta.author,
@@ -164,13 +164,11 @@ async function onResourceCreated(
   });
 }
 
-async function onResourceUpdated(
-  data: ResourceUpdated["data"],
-) {
+function onResourceUpdated(data: ResourceUpdated["data"]): Promise<void> {
   const resourceId = data.id;
   const resourceAvailability = data.fields.availability;
 
-  db.transaction("rw", db.resources, db.bookingRequests, async () => {
+  return db.transaction("rw", db.resources, db.bookingRequests, async () => {
     // Update `validTime` field of all booking requests associated with this space.
     await db.bookingRequests.where({ resourceId }).modify((request) => {
       if (resourceAvailability == "always") {
@@ -197,12 +195,10 @@ async function onResourceUpdated(
   });
 }
 
-async function onResourceDeleted(
-  data: ResourceDeleted["data"],
-) {
+function onResourceDeleted(data: ResourceDeleted["data"]): Promise<void> {
   const resourceId = data.id;
 
-  db.transaction("rw", db.events, db.bookingRequests, async () => {
+  return db.transaction("rw", db.events, db.bookingRequests, async () => {
     // Update `validTime` field of all booking requests associated with this resource.
     await db.bookingRequests.where({ resourceId }).modify({ validTime: false });
 
