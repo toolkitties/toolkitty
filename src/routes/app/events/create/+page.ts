@@ -5,16 +5,16 @@ import { defaults } from "sveltekit-superforms";
 import { zod } from "sveltekit-superforms/adapters";
 
 export const load: PageLoad = async () => {
-  const activeCalelendarId = await calendars.getActiveCalendarId();
-  let spacesList = await spaces.findMany(activeCalelendarId!);
-  let resourcesList = await resources.findMany(activeCalelendarId!);
+  const activeCalendarId = await calendars.getActiveCalendarId();
+  let spacesList = await spaces.findMany(activeCalendarId!);
+  let resourcesList = await resources.findMany(activeCalendarId!);
 
   const form = defaults(zod(eventSchema));
 
   return {
     title: "create event",
     form,
-    activeCalelendarId,
+    activeCalendarId,
     spacesList,
     resourcesList,
   };
