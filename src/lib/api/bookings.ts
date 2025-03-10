@@ -186,60 +186,63 @@ async function onBookingRequested(
   meta: StreamMessageMeta,
   data: BookingRequested["data"],
 ) {
-  let resource;
-  if (data.type == "resource") {
-    resource = await resources.findById(data.resourceId);
-  } else {
-    resource = await spaces.findById(data.resourceId);
-  }
-
-  const resourceAvailability = resource!.availability;
-
-  const resourceRequest: BookingRequest = {
-    id: meta.operationId,
-    calendarId: meta.stream.id,
-    requester: meta.author,
-    resourceType: data.type,
-    resourceOwner: resource!.ownerId,
-    validTime: false,
-    ...data,
-  };
-
-  if (resourceAvailability == "always") {
-    resourceRequest.validTime = true;
-  } else {
-    for (const span of resourceAvailability) {
-      const isSub = isSubTimespan(
-        span.start,
-        span.end,
-        resourceRequest.timeSpan,
-      );
-
-      if (isSub) {
-        resourceRequest.validTime = true;
-        break;
+  db.transaction(
+    "rw",
+    db.bookingRequests,
+    db.resources,
+    db.spaces,
+    async () => {
+      let resource;
+      if (data.type == "resource") {
+        resource = await resources.findById(data.resourceId);
+      } else {
+        resource = await spaces.findById(data.resourceId);
       }
-    }
-  }
 
-  await db.bookingRequests.add(resourceRequest);
+      const resourceAvailability = resource!.availability;
 
-  // @TODO: move this into new "crdt" API.
-  // Replay un-ack'd messages which we may have received out-of-order.
-  const topic = new TopicFactory(meta.stream.id);
-  await invoke("replay", { topic: topic.calendar() });
-  const publicKey = await identity.publicKey();
+      const resourceRequest: BookingRequest = {
+        id: meta.operationId,
+        calendarId: meta.stream.id,
+        requester: meta.author,
+        resourceType: data.type,
+        resourceOwner: resource!.ownerId,
+        validTime: false,
+        ...data,
+      };
 
-  // Check if we own the resource, otherwise do nothing
-  if (resource?.ownerId == publicKey) {
-    if (meta.author == publicKey) {
-      // Automatically accept resource if we are the owner and we make the request
-      await accept(meta.operationId);
-    } else {
-      // Show toast if we are the owner of the resource and we didn't make the request.
-      toast.bookingRequest(resourceRequest);
-    }
-  }
+      if (resourceAvailability == "always") {
+        resourceRequest.validTime = true;
+      } else {
+        for (const span of resourceAvailability) {
+          const isSub = isSubTimespan(
+            span.start,
+            span.end,
+            resourceRequest.timeSpan,
+          );
+
+          if (isSub) {
+            resourceRequest.validTime = true;
+            break;
+          }
+        }
+      }
+
+      await db.bookingRequests.add(resourceRequest);
+
+      // Check if we own the resource, otherwise do nothing
+      const publicKey = await identity.publicKey();
+      if (resource?.ownerId == publicKey) {
+        if (meta.author == publicKey) {
+          // Automatically accept resource if we are the owner and we make the request
+          await accept(meta.operationId);
+        } else {
+          // Show toast if we are the owner of the resource and we didn't make the request.
+          toast.bookingRequest(resourceRequest);
+        }
+      }
+    },
+  );
 }
 
 async function onBookingRequestAccepted(
