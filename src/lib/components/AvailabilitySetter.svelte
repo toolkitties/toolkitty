@@ -3,8 +3,9 @@
   import type { DateValue } from "@internationalized/date";
 
   let { availability = $bindable() } = $props<{
-    availability: { date: string; startTime: string; endTime: string }[];
+    availability: TimeSpan[];
   }>();
+
   let availableDates = $state(
     new Set(availability.map((entry: { date: string }) => entry.date)),
   );
@@ -45,10 +46,14 @@
       return;
     }
 
-    const newEntry = { date: selectedDate, startTime, endTime };
+    // convert to TimeSpan
+    const newTimeSpan: TimeSpan = {
+      start: new Date(selectedDate + "T" + startTime),
+      end: new Date(selectedDate + "T" + endTime),
+    };
 
     // Update availability directly
-    availability = [...availability, newEntry];
+    availability = [...availability, newTimeSpan];
 
     availableDates = new Set([...availableDates, selectedDate]);
 

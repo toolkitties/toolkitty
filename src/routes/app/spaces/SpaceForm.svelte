@@ -16,13 +16,10 @@
   }: { data: SuperValidated<Infer<SpaceSchema>>; activeCalendarId: Hash } =
     $props();
 
-  let availability: { date: string; startTime: string; endTime: string }[] =
-    $state([]);
+  let availability: TimeSpan[] = $state([]);
   let alwaysAvailable = $state(false);
 
-  function updateAvailability(
-    newAvailability: { date: string; startTime: string; endTime: string }[],
-  ) {
+  function updateAvailability(newAvailability: TimeSpan[]) {
     availability = newAvailability;
   }
 

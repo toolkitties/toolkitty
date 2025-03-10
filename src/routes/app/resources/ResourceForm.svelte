@@ -22,8 +22,7 @@
     }
   });
 
-  let availability: { date: string; startTime: string; endTime: string }[] =
-    $state([]);
+  let availability: TimeSpan[] = $state([]);
 
   function updateAvailability(
     newAvailability: { date: string; startTime: string; endTime: string }[],
@@ -139,10 +138,7 @@
 
   <p>Resource availability</p>
   {#if !alwaysAvailable}
-    <AvailabilitySetter
-      {availability}
-      onUpdateAvailability={updateAvailability}
-    />
+    <AvailabilitySetter {availability} />
   {/if}
 
   <label>
