@@ -153,7 +153,7 @@ async function onEventUpdated(
   db.transaction("rw", db.events, db.bookingRequests, async () => {
     // Update `validAvailability` field of all booking requests associated with this event.
     await db.bookingRequests.where({ eventId }).modify((request) => {
-      request.validAvailability = isSubTimespan(
+      request.validTime = isSubTimespan(
         startDate,
         endDate,
         request.timeSpan,
@@ -179,12 +179,12 @@ async function onEventDeleted(
   const eventId = data.id;
 
   db.transaction("rw", db.events, db.bookingRequests, async () => {
-    // Update `validAvailability` field of all booking requests associated with this event.
+    // Update `validTime` field of all booking requests associated with this space.
     await db.bookingRequests
       .where({ eventId })
-      .modify({ validAvailability: false });
+      .modify({ validTime: false });
 
-    // @TODO: we could show a toast to the user if a previously valid event timespan now became
+    // @TODO: we could show a toast to the user if a previously valid space timespan now became
     // invalid.
 
     await db.events.delete(data.id);

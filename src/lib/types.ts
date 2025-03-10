@@ -641,7 +641,7 @@ type BookingRequest = {
   resourceOwner: PublicKey;
   message: string;
   timeSpan: TimeSpan;
-  validAvailability?: boolean;
+  validTime?: boolean;
 };
 
 type ResourceType = "space" | "resource";

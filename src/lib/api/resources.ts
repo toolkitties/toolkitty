@@ -2,6 +2,7 @@ import { db } from "$lib/db";
 import { publish, resources } from ".";
 import { getActiveCalendarId } from "./calendars";
 import { promiseResult } from "$lib/promiseMap";
+import { isSubTimespan } from "$lib/utils";
 
 /**
  * Queries
@@ -38,7 +39,10 @@ export function findById(id: Hash): Promise<Resource | undefined> {
 /**
  * Create a calendar resource.
  */
-export async function create(calendarId: Hash, fields: ResourceFields): Promise<Hash> {
+export async function create(
+  calendarId: Hash,
+  fields: ResourceFields,
+): Promise<Hash> {
   let resourceCreated: ResourceCreated = {
     type: "resource_created",
     data: {
@@ -157,25 +161,34 @@ async function onResourceUpdated(
   data: ResourceUpdated["data"],
 ) {
   await validateUpdateDelete(meta.author, data.id);
+  const resourceId = data.id;
+  const resourceAvailability = data.fields.availability;
 
-  let {
-    name,
-    description,
-    contact,
-    link,
-    images,
-    availability,
-    multiBookable,
-  } = data.fields;
+  db.transaction("rw", db.resources, db.bookingRequests, async () => {
+    // Update `validTime` field of all booking requests associated with this space.
+    await db.bookingRequests
+      .where({ resourceId })
+      .modify((request) => {
+        if (resourceAvailability == "always") {
+          request.validTime = true;
+          return;
+        }
+        for (const span of resourceAvailability) {
+          request.validTime = isSubTimespan(
+            span.start,
+            span.end,
+            request.timeSpan,
+          );
+          return;
+        }
+        request.validTime = false;
+      });
 
-  await db.resources.update(data.id, {
-    name,
-    description,
-    contact,
-    link,
-    images,
-    availability,
-    multiBookable,
+    // @TODO: we could show a toast to the user if a previously valid request timespan now became
+    // invalid.
+
+    // @TODO: add related location to spaces object.
+    await db.resources.update(data.id, data.fields);
   });
 }
 
@@ -184,7 +197,19 @@ async function onResourceDeleted(
   data: ResourceDeleted["data"],
 ) {
   await validateUpdateDelete(meta.author, data.id);
-  await db.resources.delete(data.id);
+  const resourceId = data.id;
+
+  db.transaction("rw", db.events, db.bookingRequests, async () => {
+    // Update `validTime` field of all booking requests associated with this resource.
+    await db.bookingRequests
+      .where({ resourceId })
+      .modify({ validTime: false });
+
+    // @TODO: we could show a toast to the user if a previously valid event timespan now became
+    // invalid.
+
+    await db.spaces.delete(resourceId);
+  });
 }
 
 /**

@@ -1,6 +1,7 @@
 import { db } from "$lib/db";
 import { publish, spaces } from ".";
 import { promiseResult } from "$lib/promiseMap";
+import { isSubTimespan } from "$lib/utils";
 
 /**
  * Queries
@@ -27,23 +28,11 @@ export async function findManyWithinCalendarDates(
         return true;
       }
       for (const span of space.availability) {
-        return isValidAvailability(calendarStartDate, calendarEndDate, span);
+        return isSubTimespan(calendarStartDate, calendarEndDate, span);
       }
       return false;
     })
     .toArray();
-}
-
-function isValidAvailability(
-  calendarStartDate: Date,
-  calendarEndDate: Date | undefined,
-  timeSpan: TimeSpan,
-): boolean {
-  if (calendarEndDate == undefined) {
-    return timeSpan.end > calendarStartDate;
-  }
-
-  return timeSpan.end > calendarStartDate || timeSpan.start < calendarEndDate;
 }
 
 /**
@@ -163,38 +152,12 @@ async function onSpaceCreated(
   meta: StreamMessageMeta,
   data: SpaceCreated["data"],
 ) {
-  const {
-    type,
-    name,
-    location,
-    capacity,
-    accessibility,
-    description,
-    contact,
-    link,
-    messageForRequesters,
-    images,
-    availability,
-    multiBookable,
-  } = data.fields;
-
   await db.spaces.add({
     id: meta.operationId,
     calendarId: meta.stream.id,
     ownerId: meta.author,
     booked: [],
-    type,
-    name,
-    location,
-    capacity,
-    accessibility,
-    description,
-    contact,
-    link,
-    messageForRequesters,
-    images,
-    availability,
-    multiBookable,
+    ...data.fields,
   });
 }
 
@@ -203,33 +166,34 @@ async function onSpaceUpdated(
   data: SpaceUpdated["data"],
 ) {
   await validateUpdateDelete(meta.author, data.id);
+  const spaceId = data.id;
+  const spaceAvailability = data.fields.availability;
 
-  const {
-    type,
-    name,
-    location,
-    capacity,
-    accessibility,
-    description,
-    contact,
-    link,
-    images,
-    availability,
-    multiBookable,
-  } = data.fields;
+  db.transaction("rw", db.events, db.bookingRequests, async () => {
+    // Update `validTime` field of all booking requests associated with this space.
+    await db.bookingRequests
+      .where({ resourceId: spaceId })
+      .modify((request) => {
+        if (spaceAvailability == "always") {
+          request.validTime = true;
+          return;
+        }
+        for (const span of spaceAvailability) {
+          request.validTime = isSubTimespan(
+            span.start,
+            span.end,
+            request.timeSpan,
+          );
+          return;
+        }
+        request.validTime = false;
+      });
 
-  await db.spaces.update(data.id, {
-    type,
-    name,
-    location,
-    capacity,
-    accessibility,
-    description,
-    contact,
-    link,
-    images,
-    availability,
-    multiBookable,
+    // @TODO: we could show a toast to the user if a previously valid request timespan now became
+    // invalid.
+
+    // @TODO: add related location to spaces object.
+    await db.spaces.update(data.id, data.fields);
   });
 }
 
@@ -238,7 +202,19 @@ async function onSpaceDeleted(
   data: SpaceDeleted["data"],
 ) {
   await validateUpdateDelete(meta.author, data.id);
-  await db.spaces.delete(data.id);
+  const spaceId = data.id;
+
+  db.transaction("rw", db.events, db.bookingRequests, async () => {
+    // Update `validTime` field of all booking requests associated with this event.
+    await db.bookingRequests
+      .where({ resourceId: spaceId })
+      .modify({ validTime: false });
+
+    // @TODO: we could show a toast to the user if a previously valid event timespan now became
+    // invalid.
+
+    await db.spaces.delete(spaceId);
+  });
 }
 
 /**
