@@ -6,12 +6,17 @@
     availability: TimeSpan[];
   }>();
 
+  // used to color available dates in the calendar
   let availableDates = $state(
     new Set(availability.map((entry: { date: string }) => entry.date)),
   );
 
-  let currentlySelectedDate: DateValue | undefined = $state(undefined);
+  // Keep a list of availability as destructured strings to show to user
+  let availabilityList: { date: string; startTime: string; endTime: string }[] =
+    $state([]);
 
+  // keep track of the currently selected date to show in UI
+  let currentlySelectedDate: DateValue | undefined = $state(undefined);
   const handleDateSelect = (value: DateValue | undefined) => {
     currentlySelectedDate = value || undefined;
   };
@@ -46,15 +51,22 @@
       return;
     }
 
-    // convert to TimeSpan
+    let newAvailabilityListEntry = {
+      date: selectedDate,
+      startTime: startTime,
+      endTime: endTime,
+    };
+
+    // Convert to TimeSpan for form submission
     const newTimeSpan: TimeSpan = {
       start: new Date(selectedDate + "T" + startTime),
       end: new Date(selectedDate + "T" + endTime),
     };
 
-    // Update availability directly
     availability = [...availability, newTimeSpan];
+    availabilityList = [...availabilityList, newAvailabilityListEntry];
 
+    // Update availableDates set
     availableDates = new Set([...availableDates, selectedDate]);
 
     alert("Availability added successfully!");
@@ -65,12 +77,25 @@
     const removedDate = availability[index].date;
     availability = availability.filter((_: any, i: number) => i !== index);
 
+    const removedDateFromList = availabilityList[index].date;
+    availabilityList = availabilityList.filter(
+      (_: any, i: number) => i !== index,
+    );
+
     if (
       !availability.some(
         (entry: { date: string }) => entry.date === removedDate,
       )
     ) {
       availableDates.delete(removedDate);
+    }
+
+    if (
+      !availabilityList.some(
+        (entry: { date: string }) => entry.date === removedDateFromList,
+      )
+    ) {
+      availableDates.delete(removedDateFromList);
     }
   };
 </script>
@@ -140,18 +165,16 @@
   <button onclick={(e: Event) => handleAddAvailability(e)}>Add</button>
 {/if}
 
-{#if availability.length > 0}
+{#if availabilityList.length > 0}
   <h3>Current Availability:</h3>
   <ul>
-    {#each availability as entry, index}
-      {#if entry.date === currentlySelectedDate?.toString()}
-        <li>
-          <span>{entry.startTime} - {entry.endTime}</span>
-          <button onclick={(e: Event) => handleRemoveAvailability(e, index)}
-            >Remove</button
-          >
-        </li>
-      {/if}
+    {#each availabilityList as entry, index}
+      <li>
+        <span>{entry.startTime} - {entry.endTime}</span>
+        <button onclick={(e: Event) => handleRemoveAvailability(e, index)}
+          >Remove</button
+        >
+      </li>
     {/each}
   </ul>
 {/if}
