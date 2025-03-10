@@ -222,5 +222,5 @@ export function isSubTimespan(
     return timeSpan.end > startDate;
   }
 
-  return timeSpan.end > startDate || timeSpan.start < endTate;
+  return timeSpan.end > startDate || timeSpan.start < endDate;
 }
