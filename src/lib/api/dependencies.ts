@@ -36,6 +36,8 @@ export async function process(message: ApplicationMessage) {
     data.type == "booking_request_rejected"
   ) {
     return await onBookingResponse(data.data);
+  } else if (data.type == "booking_requested") {
+    return await onBookingRequest(data.data);
   } else if (
     data.type == "calendar_access_accepted" ||
     data.type == "calendar_access_rejected"
@@ -60,6 +62,24 @@ export async function process(message: ApplicationMessage) {
     return await onResourceEdit(data.data);
   } else if (data.type == "event_updated" || data.type == "event_deleted") {
     return await onEventEdit(data.data);
+  }
+}
+
+async function onBookingRequest(data: BookingRequested["data"]) {
+  const event = await events.findById(data.eventId);
+  if (!event) {
+    throw new Error("resource request event not yet received");
+  }
+
+  let resource;
+  if (data.type == "space") {
+    resource = await spaces.findById(data.eventId);
+  } else {
+    resource = await resources.findById(data.eventId);
+  }
+
+  if (!resource) {
+    throw new Error("resource request resource not yet received");
   }
 }
 
