@@ -1,15 +1,14 @@
 <script lang="ts">
   import type { PageProps } from "./$types";
   import EventRow from "$lib/components/EventRow.svelte";
+  import CalendarSelector from "$lib/components/CalendarSelector.svelte";
 
   let { data }: PageProps = $props();
 
   let contributeButtonOpen = $state(false);
 </script>
 
-<br />
-<br />
-<br />
+<CalendarSelector />
 <h1 class="font-pixel">{data.title}</h1>
 <a href="/app/calendars/{data.activeCalendarId}/edit">Edit Calendar</a>
 <a href="/app/events/create">Create event</a>

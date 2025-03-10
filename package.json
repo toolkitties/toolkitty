@@ -12,7 +12,7 @@
     "peer": "./scripts/peer.sh",
     "preview": "vite preview",
     "tauri": "tauri",
-    "test": "vitest"
+    "test": "vitest --no-file-parallelism"
   },
   "license": "GPL-3.0",
   "dependencies": {
@@ -31,6 +31,7 @@
     "@tauri-apps/cli": "^2",
     "autoprefixer": "^10.4.20",
     "fake-indexeddb": "^6.0.0",
+    "jsdom": "^26.0.0",
     "postcss": "^8.4.49",
     "prettier": "^3.4.2",
     "prettier-plugin-svelte": "^3.3.3",

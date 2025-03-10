@@ -1,18 +1,18 @@
 <script lang="ts">
   import * as AlertDialog from "./index";
-  import { access } from "$lib/api";
+  import { bookings } from "$lib/api";
 
   let {
     request,
     open = $bindable(false),
-  }: { request: AccessRequest; open: boolean } = $props();
+  }: { request: BookingRequest; open: boolean } = $props();
 
   /**
-   * Accept request for calendar access
+   * Accept request for a booking
    */
   async function acceptRequest(requestId: Hash) {
     try {
-      await access.acceptAccessRequest({ requestId });
+      await bookings.accept(requestId);
 
       // close the dialog
       open = false;
@@ -22,11 +22,11 @@
   }
 
   /**
-   * Reject request for calendar access
+   * Reject request for a booking
    */
   async function rejectRequest(requestId: Hash) {
     try {
-      await access.rejectAccessRequest({ requestId });
+      await bookings.reject(requestId);
 
       // close the dialog
       open = false;
@@ -40,14 +40,16 @@
 
 <AlertDialog.Portal>
   <AlertDialog.Content>
-    <AlertDialog.Title>{request.name} requested access</AlertDialog.Title>
-    <AlertDialog.Description>{request.message}</AlertDialog.Description>
+    <AlertDialog.Title>{request.resourceId} requested for:</AlertDialog.Title>
+    <AlertDialog.Description>
+      <p>eventId: {request.eventId}</p>
+      <p>requester: {request.requester}</p>
+    </AlertDialog.Description>
     <AlertDialog.Action onclick={() => acceptRequest(request.id)}
       >accept</AlertDialog.Action
     >
     <AlertDialog.Action onclick={() => rejectRequest(request.id)}
       >reject</AlertDialog.Action
     >
-    <AlertDialog.Cancel>cancel</AlertDialog.Cancel>
   </AlertDialog.Content>
 </AlertDialog.Portal>

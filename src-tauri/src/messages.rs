@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::node::StreamEvent;
 use crate::topic::Topic;
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StreamArgs {
     pub(crate) id: Option<Hash>,

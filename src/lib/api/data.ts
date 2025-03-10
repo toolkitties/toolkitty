@@ -11,6 +11,39 @@ export async function seedData() {
           end: new Date("2025-01-27T00:00:00Z"),
         },
       ],
+      festivalInstructions: null,
+      spacePageText: null,
+      resourcePageText: null
+    },
+  });
+
+  await calendars.create({
+    fields: {
+      name: "Pedals 3000",
+      dates: [
+        {
+          start: new Date("2025-01-20T00:00:00Z"),
+          end: new Date("2025-01-27T00:00:00Z"),
+        },
+      ],
+      festivalInstructions: null,
+      spacePageText: null,
+      resourcePageText: null
+    },
+  });
+
+  await calendars.create({
+    fields: {
+      name: "Cute venue",
+      dates: [
+        {
+          start: new Date("2025-01-20T00:00:00Z"),
+          end: new Date("2025-01-27T00:00:00Z"),
+        },
+      ],
+      festivalInstructions: null,
+      spacePageText: null,
+      resourcePageText: null
     },
   });
 
@@ -147,4 +180,15 @@ export async function seedData() {
   );
 
   const resourceResponseId = await bookings.accept(resourceRequestId);
+
+  const resourceTwoResponseId = await bookings.request(
+    eventOneId,
+    resourceTwoId,
+    "resource",
+    "please can i haz?",
+    {
+      start: new Date("2025-01-20T00:00:00Z"),
+      end: new Date("2025-01-22T00:00:00Z"),
+    },
+  );
 }

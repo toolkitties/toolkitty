@@ -3,8 +3,6 @@
   // @ts-ignore
   let { event } = $props();
 
-  console.log(event)
-
   // TODO: possibly need to convert date to nice format from ISO 8601. TBC.
 
   // tag colour possibly comes from event rather than hard coded light this.

@@ -6,6 +6,7 @@ import { superValidate } from "sveltekit-superforms";
 import { zod } from "sveltekit-superforms/adapters";
 
 export const load: PageLoad = async ({ params }) => {
+  const activeCalendarId = await calendars.getActiveCalendarId();
   const eventId = params.id;
   const event = await events.findById(eventId);
 
