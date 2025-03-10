@@ -5,9 +5,9 @@ import { processMessage } from "$lib/processor";
 import {
   CALENDAR_ID,
   LOG_PATH,
-  PUBLIC_KEY,
+  OWNER_PUBLIC_KEY,
   STREAM,
-  bookingTestMessages,
+  seedTestMessages,
 } from "./data";
 import { bookings } from "$lib/api";
 import { beforeAll, expect, test } from "vitest";
@@ -16,11 +16,11 @@ import { mockIPC } from "@tauri-apps/api/mocks";
 beforeAll(async () => {
   mockIPC((cmd, args) => {
     if (cmd === "public_key") {
-      return PUBLIC_KEY;
+      return OWNER_PUBLIC_KEY;
     }
   });
 
-  for (const message of bookingTestMessages) {
+  for (const message of seedTestMessages) {
     await processMessage(message);
   }
 });
@@ -32,14 +32,14 @@ test("processes resource request and response messages", async () => {
   });
   expect(pendingBookings).lengthOf(2);
   pendingBookings = await bookings.findPending(CALENDAR_ID, {
-    requester: PUBLIC_KEY,
+    requester: OWNER_PUBLIC_KEY,
   });
   expect(pendingBookings).lengthOf(2);
 
   let requestResponse: ApplicationMessage = {
     meta: {
       operationId: "booking_request_response_001",
-      author: PUBLIC_KEY,
+      author: OWNER_PUBLIC_KEY,
       stream: STREAM,
       logPath: LOG_PATH,
     },
@@ -59,14 +59,14 @@ test("processes resource request and response messages", async () => {
   });
   expect(pendingBookings).lengthOf(1);
   pendingBookings = await bookings.findPending(CALENDAR_ID, {
-    requester: PUBLIC_KEY,
+    requester: OWNER_PUBLIC_KEY,
   });
   expect(pendingBookings).lengthOf(1);
 
   requestResponse = {
     meta: {
       operationId: "booking_request_response_002",
-      author: PUBLIC_KEY,
+      author: OWNER_PUBLIC_KEY,
       stream: STREAM,
       logPath: LOG_PATH,
     },
@@ -86,7 +86,7 @@ test("processes resource request and response messages", async () => {
   });
   expect(pendingBookings).lengthOf(0);
   pendingBookings = await bookings.findPending(CALENDAR_ID, {
-    requester: PUBLIC_KEY,
+    requester: OWNER_PUBLIC_KEY,
   });
   expect(pendingBookings).lengthOf(0);
 
@@ -106,16 +106,16 @@ test("processes resource request and response messages", async () => {
   expect(resourceRequests).lengthOf(1);
 
   allRequests = await bookings.findAll(CALENDAR_ID, {
-    requester: PUBLIC_KEY,
+    requester: OWNER_PUBLIC_KEY,
   });
   expect(allRequests).lengthOf(2);
   spaceRequests = await bookings.findAll(CALENDAR_ID, {
-    requester: PUBLIC_KEY,
+    requester: OWNER_PUBLIC_KEY,
     resourceType: "space",
   });
   expect(spaceRequests).lengthOf(1);
   resourceRequests = await bookings.findAll(CALENDAR_ID, {
-    requester: PUBLIC_KEY,
+    requester: OWNER_PUBLIC_KEY,
     resourceType: "resource",
   });
   expect(resourceRequests).lengthOf(1);

@@ -1,4 +1,13 @@
-import { calendars, identity, inviteCodes, publish, topics } from "./";
+import {
+  auth,
+  calendars,
+  identity,
+  inviteCodes,
+  publish,
+  roles,
+  topics,
+  users,
+} from "./";
 import type { ResolvedCalendar } from "$lib/api/inviteCodes";
 import { publicKey } from "./identity";
 import { db } from "$lib/db";
@@ -24,11 +33,7 @@ export async function getPending(activeCalendarId: Hash) {
 }
 
 export async function findRequestByid(id: Hash) {
-  let request = liveQuery(() => {
-    db.accessRequests.get(id);
-  });
-
-  return request;
+  return db.accessRequests.get(id);
 }
 
 /**
@@ -139,7 +144,16 @@ export async function requestAccess(
 export async function acceptAccessRequest(
   data: CalendarAccessAccepted["data"],
 ): Promise<OperationId> {
+  // @TODO: pass calendarId into method.
   const calendarId = await calendars.getActiveCalendarId();
+
+  const amAdmin = await auth.amAdmin(calendarId!);
+  const amOwner = await calendars.amOwner(calendarId!);
+  if (!amAdmin && !amOwner) {
+    throw new Error(
+      "user does not have permission to accept an access request for this calender",
+    );
+  }
 
   const calendarAccessAccepted: CalendarAccessAccepted = {
     type: "calendar_access_accepted",
@@ -163,6 +177,14 @@ export async function rejectAccessRequest(
   data: CalendarAccessAccepted["data"],
 ) {
   const calendarId = await calendars.getActiveCalendarId();
+
+  const amAdmin = await auth.amAdmin(calendarId!);
+  const amOwner = await calendars.amOwner(calendarId!);
+  if (!amAdmin && !amOwner) {
+    throw new Error(
+      "user does not have permission to reject an access request for this calender",
+    );
+  }
 
   const calendarAccessRejected: CalendarAccessRejected = {
     type: "calendar_access_rejected",
@@ -247,14 +269,19 @@ async function onCalendarAccessRequested(
   let publicKey = await identity.publicKey();
   let accessStatus = await checkStatus(publicKey, calendarId);
 
-  // Show toast to user with request
-  // TODO: Only show toast to owner of the calendar
-  if (accessStatus == "accepted") {
+  // Show toast to user with request if owner or admin.
+  const amOwner = await calendars.amOwner(calendarId);
+  const amAdmin = await auth.amAdmin(calendarId);
+  if (accessStatus == "pending" && (amOwner || amAdmin)) {
     toast.accessRequest(accessRequest);
   }
 
-  // Process new calendar author if access was accepted.
   if (accessStatus == "accepted") {
+    // Create a new user.
+    if (!(await users.get(calendarId, meta.author))) {
+      await users.create(calendarId, meta.author, data.name);
+    }
+    // Process new calendar author if access was accepted.
     await processNewCalendarAuthor(calendarId, meta.author);
   }
 }
@@ -273,11 +300,21 @@ async function onCalendarAccessAccepted(
   });
 
   let request = await db.accessRequests.get(data.requestId);
-  let accessStatus = await checkStatus(request!.from, calendarId);
+  if (!request) {
+    return;
+  }
+
+  let accessStatus = await checkStatus(request.from, calendarId);
 
   // Process new calendar author if access was accepted.
   if (accessStatus == "accepted") {
-    await processNewCalendarAuthor(calendarId, request!.from);
+    // Create a new user.
+    if (!(await users.get(calendarId, request.from))) {
+      await users.create(calendarId, request.from, request!.name);
+    }
+
+    // Process new calendar author if access was accepted.
+    await processNewCalendarAuthor(calendarId, request.from);
   }
 }
 
@@ -294,7 +331,7 @@ async function onCalendarAccessRejected(
   });
 }
 
-async function processNewCalendarAuthor(
+export async function processNewCalendarAuthor(
   calendarId: Hash,
   publicKey: PublicKey,
 ) {

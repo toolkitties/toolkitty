@@ -362,7 +362,6 @@ type UserProfileUpdated = {
 type CalendarAccessRequested = {
   type: "calendar_access_requested";
   data: {
-    // @TODO(sam): we should switch to using the streamId as the "access reference" for a calendar.
     calendarId: Hash;
     name: string;
     message: string;
@@ -405,6 +404,7 @@ type CalendarUpdated = {
 type PageUpdated = {
   type: "page_updated";
   data: {
+    id: Hash;
     page_type: "spaces" | "resources" | "about";
     description: string;
   };
@@ -552,11 +552,13 @@ type BookingRequestAcceptanceRevoked = {
  * Roles
  */
 
+type Role = "organiser" | "admin";
+
 type UserRoleAssigned = {
   type: "user_role_assigned";
   data: {
     publicKey: PublicKey;
-    role: "publisher" | "organiser" | "admin";
+    role: Role;
   };
 };
 
@@ -579,8 +581,11 @@ type Subscription = {
  */
 
 type User = {
-  id: PublicKey;
-  name: string;
+  publicKey: PublicKey;
+  calendarId: CalendarId;
+  // @TODO: currently this value is undefined for calendar creators: https://github.com/toolkitties/toolkitty/issues/177
+  name?: string;
+  role?: Role
 };
 
 type Calendar = {

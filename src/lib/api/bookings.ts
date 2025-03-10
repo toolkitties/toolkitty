@@ -1,13 +1,19 @@
 import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
-import { publish } from ".";
+import { invoke } from "@tauri-apps/api/core";
+import { TopicFactory } from "./topics";
 import { toast } from "$lib/toast.svelte";
-import { identity, spaces, resources } from ".";
-import { publicKey } from "./identity";
+import { publish, identity, spaces, resources } from ".";
 import { liveQuery } from "dexie";
 /**
  * Queries
  */
+
+export function findRequest(
+  requestId: Hash,
+): Promise<BookingRequest | undefined> {
+  return db.bookingRequests.get(requestId);
+}
 
 /**
  * Search the database for any booking requests matching the passed filter object.
@@ -30,7 +36,10 @@ export function findAll(
 // @TODO: It's tricky to test live queries, and maybe anyway it's nice to differentiate between
 // methods which are "live" and those which are not. Could we post-fix their name with 'Live'? and
 // have them as wrappers around a "non-live" variant?
-export async function findPending(calendarId: Hash, filter: BookingQueryFilter) {
+export async function findPending(
+  calendarId: Hash,
+  filter: BookingQueryFilter,
+) {
   let responsesFilter = {
     calendarId,
   };
@@ -94,6 +103,22 @@ export async function request(
  */
 export async function accept(requestId: Hash) {
   let bookingRequest = await db.bookingRequests.get(requestId);
+  const amOwner = await spaces.amOwner(bookingRequest!.resourceId);
+  if (bookingRequest!.resourceType == "space") {
+    if (!amOwner) {
+      throw new Error(
+        "user does not have permission to accept booking request for this space",
+      );
+    }
+  } else if (bookingRequest!.resourceType == "resource") {
+    const amOwner = await resources.amOwner(bookingRequest!.resourceId);
+    if (!amOwner) {
+      throw new Error(
+        "user does not have permission to accept booking request for this resource",
+      );
+    }
+  }
+
   const bookingRequested: BookingRequestAccepted = {
     type: "booking_request_accepted",
     data: {
@@ -116,6 +141,14 @@ export async function accept(requestId: Hash) {
  */
 export async function reject(requestId: Hash) {
   let bookingRequest = await db.bookingRequests.get(requestId);
+
+  const amOwner = await resources.amOwner(bookingRequest!.resourceId);
+  if (!amOwner) {
+    throw new Error(
+      "user does not have permission to reject booking request for this resource",
+    );
+  }
+
   const bookingRequested: BookingRequestRejected = {
     type: "booking_request_rejected",
     data: {
@@ -165,17 +198,18 @@ async function onBookingRequested(
   const resourceRequest: BookingRequest = {
     id: meta.operationId,
     calendarId: meta.stream.id,
-    eventId: data.eventId,
     requester: meta.author,
-    resourceId: data.resourceId,
     resourceType: data.type,
     resourceOwner: resource!.ownerId,
-    message: data.message,
-    timeSpan: data.timeSpan,
+    ...data,
   };
 
   await db.bookingRequests.add(resourceRequest);
 
+  // @TODO: move this into new "crdt" API.
+  // Replay un-ack'd messages which we may have received out-of-order.
+  const topic = new TopicFactory(meta.stream.id);
+  await invoke("replay", { topic: topic.calendar() });
   const publicKey = await identity.publicKey();
 
   // Check if we own the resource, otherwise do nothing
@@ -195,15 +229,10 @@ async function onBookingRequestAccepted(
   data: BookingRequestAccepted["data"],
 ) {
   const resourceRequest = await db.bookingRequests.get(data.requestId);
-
-  if (!resourceRequest) {
-    throw new Error("resource request does not exist");
-  }
-
   const resourceResponse: BookingResponse = {
     id: meta.operationId,
     calendarId: meta.stream.id,
-    eventId: resourceRequest.eventId,
+    eventId: resourceRequest!.eventId,
     responder: meta.author,
     requestId: data.requestId,
     answer: "accept",
@@ -216,15 +245,10 @@ async function onBookingRequestRejected(
   data: BookingRequestRejected["data"],
 ) {
   const resourceRequest = await db.bookingRequests.get(data.requestId);
-
-  if (!resourceRequest) {
-    throw new Error("resource request does not exist");
-  }
-
   const resourceResponse: BookingResponse = {
     id: meta.operationId,
     calendarId: meta.stream.id,
-    eventId: resourceRequest.eventId,
+    eventId: resourceRequest!.eventId,
     responder: meta.author,
     requestId: data.requestId,
     answer: "reject",
