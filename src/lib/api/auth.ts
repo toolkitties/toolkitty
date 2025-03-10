@@ -76,42 +76,6 @@ export async function amOwner(hash: Hash, type: OwnedType): Promise<boolean> {
 }
 
 /*
- * Commands
- */
-
-/*
- * Assign a role to the user associated with the provided public key and calendar.
- */
-export async function assignRole(
-  calendarId: Hash,
-  publicKey: PublicKey,
-  role: Role,
-): Promise<OperationId> {
-  const amOwner = await calendars.amOwner(calendarId);
-  const amAdmin = await auth.amAdmin(calendarId);
-  if (!amAdmin && !amOwner) {
-    throw new Error("user does not have permission to assign user roles");
-  }
-
-  const user_role_assigned: UserRoleAssigned = {
-    type: "user_role_assigned",
-    data: {
-      publicKey,
-      role,
-    },
-  };
-
-  const [operationId, streamId] = await publish.toCalendar(
-    calendarId,
-    user_role_assigned,
-  );
-
-  await promiseResult(operationId);
-
-  return operationId;
-}
-
-/*
  * Processor
  */
 
