@@ -31,6 +31,30 @@ export function findById(id: Hash): Promise<Space | undefined> {
   return db.spaces.get({ id });
 }
 
+/**
+ * Returns a collection of spaces which have _some_ availability in the timespan provided.
+ */
+export function findByTimespan(
+  calendarId: Hash,
+  timeSpan: TimeSpan,
+): Promise<Space[]> {
+  return db.spaces
+    .where({ calendarId })
+    .filter((space) => {
+      if (space.availability == "always") {
+        return true;
+      }
+      for (const span of space.availability) {
+        const isSub = isSubTimespan(timeSpan.start, timeSpan.end, span);
+        if (isSub) {
+          return true;
+        }
+      }
+      return false;
+    })
+    .toArray();
+}
+
 export async function isOwner(
   spaceId: Hash,
   publicKey: PublicKey,

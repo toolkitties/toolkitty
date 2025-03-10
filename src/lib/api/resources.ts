@@ -31,6 +31,30 @@ export function findById(id: Hash): Promise<Resource | undefined> {
   return db.resources.get({ id: id });
 }
 
+/**
+ * Returns a collection of resources which have _some_ availability in the timespan provided.
+ */
+export function findByTimespan(
+  calendarId: Hash,
+  timeSpan: TimeSpan,
+): Promise<Resource[]> {
+  return db.resources
+    .where({ calendarId })
+    .filter((resource) => {
+      if (resource.availability == "always") {
+        return true;
+      }
+      for (const span of resource.availability) {
+        const isSub = isSubTimespan(timeSpan.start, timeSpan.end, span);
+        if (isSub) {
+          return true;
+        }
+      }
+      return false;
+    })
+    .toArray();
+}
+
 export async function isOwner(
   resourceId: Hash,
   publicKey: PublicKey,
