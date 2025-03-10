@@ -210,3 +210,17 @@ export function parseEventFormData(
     resources: selectedResources,
   };
 }
+
+// Availability
+
+function isValidAvailability(
+  startDate: Date,
+  endTate: Date | undefined,
+  timeSpan: TimeSpan,
+): boolean {
+  if (endTate == undefined) {
+    return timeSpan.end > startDate;
+  }
+
+  return timeSpan.end > startDate || timeSpan.start < endTate;
+}

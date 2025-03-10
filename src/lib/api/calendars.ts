@@ -11,7 +11,6 @@ import { TopicFactory } from "./topics";
  */
 
 export function findMany(): Promise<Calendar[]> {
-
   // TODO: check if have access to each calendar and return it alongside calendar
   // TODO: return a livequery
   return db.calendars.toArray();
@@ -35,7 +34,9 @@ export function inviteCode(calendar: Calendar): string {
  * Returns the id of the currently active calendar
  */
 export function getActiveCalendarId(): Promise<string | undefined> {
-  return db.settings.get("activeCalendar").then((activeCalendar) => activeCalendar?.value);
+  return db.settings
+    .get("activeCalendar")
+    .then((activeCalendar) => activeCalendar?.value);
 }
 
 /*
@@ -53,7 +54,7 @@ export const getActiveCalendar = liveQuery(async () => {
  */
 export async function getShareCode() {
   const activeCalendarId = await db.settings.get("activeCalendar");
-  if (!activeCalendarId) return '';
+  if (!activeCalendarId) return "";
   return activeCalendarId.value.slice(0, 4);
 }
 
@@ -200,13 +201,29 @@ async function onCalendarUpdated(
   validateFields(data.fields);
   await validateUpdateDelete(meta.author, data.id);
 
-  let { name, dates } = data.fields;
-  let timeSpan = dates[0];
+  const calendarId = data.id;
+  const { name, dates } = data.fields;
+  const timeSpan = dates[0];
 
-  await db.calendars.update(data.id, {
-    name,
-    startDate: timeSpan.start,
-    endDate: timeSpan.end,
+  db.transaction("rw", db.calendars, db.events, async () => {
+    // Update `validAvailability` field of all events associated with this calendar.
+    await db.events
+      .where({ calendarId })
+      .filter((event) => event.startDate >= timeSpan.end)
+      .modify({ validAvailability: false });
+    await db.events
+      .where({ calendarId })
+      .filter((event) => event.endDate <= timeSpan.start)
+      .modify({ validAvailability: false });
+
+    // @TODO: we could show a toast to the user if a previously valid event timespan now became
+    // invalid.
+
+    await db.calendars.update(data.id, {
+      name,
+      startDate: timeSpan.start,
+      endDate: timeSpan.end,
+    });
   });
 }
 
@@ -215,7 +232,19 @@ async function onCalendarDeleted(
   data: CalendarDeleted["data"],
 ) {
   await validateUpdateDelete(meta.author, data.id);
-  await db.calendars.delete(data.id);
+  const calendarId = data.id;
+
+  db.transaction("rw", db.calendars, db.events, async () => {
+    // Update `validAvailability` field of all events associated with this calendar.
+    await db.events
+      .where({ calendarId })
+      .modify({ validAvailability: false });
+
+    // @TODO: we could show a toast to the user if a previously valid event timespan now became
+    // invalid.
+
+    await db.calendars.delete(data.id);
+  });
 }
 
 /**
