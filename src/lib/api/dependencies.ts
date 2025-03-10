@@ -73,9 +73,9 @@ async function onBookingRequest(data: BookingRequested["data"]) {
 
   let resource;
   if (data.type == "space") {
-    resource = await spaces.findById(data.eventId);
+    resource = await spaces.findById(data.resourceId);
   } else {
-    resource = await resources.findById(data.eventId);
+    resource = await resources.findById(data.resourceId);
   }
 
   if (!resource) {
