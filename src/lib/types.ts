@@ -615,6 +615,7 @@ type CalendarEvent = {
   id: Hash;
   calendarId: Hash;
   ownerId: PublicKey;
+  validAvailability?: boolean;
 } & EventFields;
 
 type Space = {
@@ -622,6 +623,7 @@ type Space = {
   calendarId: Hash;
   ownerId: PublicKey;
   booked: BookedTimeSpan[];
+  validAvailability?: boolean;
 } & SpaceFields;
 
 type Resource = {
@@ -629,6 +631,7 @@ type Resource = {
   calendarId: Hash;
   ownerId: PublicKey;
   booked: BookedTimeSpan[];
+  validAvailability?: boolean;
 } & ResourceFields;
 
 type BookingRequest = {
@@ -641,6 +644,7 @@ type BookingRequest = {
   resourceOwner: PublicKey;
   message: string;
   timeSpan: TimeSpan;
+  validAvailability?: boolean;
 };
 
 type ResourceType = "space" | "resource";
