@@ -121,8 +121,8 @@
     <ul>
       {#each spaces as space}
         <li>
-          <!-- <input type="radio" id={space.id} name="selected-space" />
-          <label for={space.id}>{space.name}</label> -->
+          <input type="radio" id={space.id} name="selected-space" />
+          <label for={space.id}>{space.name}</label>
         </li>
       {/each}
     </ul>

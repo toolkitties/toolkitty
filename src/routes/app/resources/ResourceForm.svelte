@@ -5,7 +5,6 @@
   import SuperDebug from "sveltekit-superforms";
   import AvailabilitySetter from "$lib/components/AvailabilitySetter.svelte";
   import { resources, calendars } from "$lib/api";
-  import { parseResourceFormData } from "$lib/utils";
   import { resourceSchema } from "$lib/schemas";
   import { zod } from "sveltekit-superforms/adapters";
   import { toast } from "$lib/toast.svelte";
@@ -83,7 +82,6 @@
   }
 </script>
 
-<SuperDebug data={{ $form, $errors }} />
 <form method="POST" use:enhance>
   <label for="name">Resource Name*</label>
   <input

@@ -9,7 +9,7 @@
 
   const handleDelete = async () => {
     try {
-      await events.delete(data.event!.id);
+      await events.delete(data.form.id);
       toast.success("Event deleted!");
       goto("/app/events");
     } catch (error) {
