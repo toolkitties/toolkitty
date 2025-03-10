@@ -82,6 +82,7 @@
   }
 </script>
 
+<SuperDebug data={{ $form, $errors }} />
 <form method="POST" use:enhance>
   <label for="name">Resource Name*</label>
   <input

@@ -104,7 +104,17 @@ export const eventSchema = z.object({
   images: z.array(imageSchema),
 });
 
+// Calendar schema
+export const calendarSchema = z.object({
+  id: z.string().optional(),
+  dates: z.array(timeSpanSchema),
+  festivalInstructions: z.string().nullable(),
+  spacePageText: z.string().nullable(),
+  resourcePageText: z.string().nullable(),
+});
+
 // Schema types for zod
 export type ResourceSchema = typeof resourceSchema;
 export type SpaceSchema = typeof spaceSchema;
 export type EventSchema = typeof eventSchema;
+export type CalendarSchema = typeof calendarSchema;
