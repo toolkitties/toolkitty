@@ -1,10 +1,8 @@
 import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
-import { invoke } from "@tauri-apps/api/core";
-import { TopicFactory } from "./topics";
 import { toast } from "$lib/toast.svelte";
-import { publish, identity, spaces, resources } from ".";
-import { liveQuery } from "dexie";
+import { publish, identity, spaces, resources, bookings } from ".";
+import { isSubTimespan } from "$lib/utils";
 /**
  * Queries
  */
@@ -33,37 +31,14 @@ export function findAll(
 /**
  * Search the database for any pending booking requests matching the passed filter object.
  */
-// @TODO: It's tricky to test live queries, and maybe anyway it's nice to differentiate between
-// methods which are "live" and those which are not. Could we post-fix their name with 'Live'? and
-// have them as wrappers around a "non-live" variant?
-export async function findPending(
-  calendarId: Hash,
-  filter: BookingQueryFilter,
-) {
-  let responsesFilter = {
-    calendarId,
-  };
-
-  const approvals = await db.bookingResponses.where(responsesFilter).toArray();
-
+export function findPending(calendarId: Hash, filter: BookingQueryFilter) {
   return db.bookingRequests
     .where({
       calendarId,
+      status: "pending",
       ...filter,
     })
-    .filter((request) => isPending(request, approvals))
     .toArray();
-}
-
-function isPending(
-  request: BookingRequest,
-  approvals: BookingResponse[],
-): boolean {
-  return (
-    approvals.find((response) => {
-      return response.requestId == request.id;
-    }) == undefined
-  );
 }
 
 /**
@@ -187,30 +162,72 @@ export async function process(message: ApplicationMessage) {
 async function onBookingRequested(
   meta: StreamMessageMeta,
   data: BookingRequested["data"],
-) {
+): Promise<void> {
+  await db.transaction(
+    "rw",
+    db.bookingRequests,
+    db.bookingResponses,
+    db.resources,
+    db.spaces,
+    async () => {
+      let resource;
+      if (data.type == "resource") {
+        resource = await db.resources.get(data.resourceId);
+      } else {
+        resource = await db.spaces.get(data.resourceId);
+      }
+
+      const resourceAvailability = resource!.availability;
+
+      const resourceRequest: BookingRequest = {
+        id: meta.operationId,
+        calendarId: meta.stream.id,
+        requester: meta.author,
+        resourceType: data.type,
+        resourceOwner: resource!.ownerId,
+        isValid: "false",
+        status: "pending",
+        ...data,
+      };
+
+      if (resourceAvailability == "always") {
+        resourceRequest.isValid = "true";
+      } else {
+        for (const span of resourceAvailability) {
+          const isSub = isSubTimespan(
+            span.start,
+            span.end,
+            resourceRequest.timeSpan,
+          );
+
+          if (isSub) {
+            resourceRequest.isValid = "true";
+          }
+        }
+      }
+
+      const acceptResponses = await db.bookingResponses
+        .where({ requestId: meta.operationId, answer: "accept" })
+        .toArray();
+      const rejectResponses = await db.bookingResponses
+        .where({ requestId: meta.operationId, answer: "reject" })
+        .toArray();
+
+      if (acceptResponses.length > 0 && rejectResponses.length == 0) {
+        resourceRequest.status = "accepted";
+      }
+
+      await db.bookingRequests.add(resourceRequest);
+    },
+  );
+
+  const publicKey = await identity.publicKey();
   let resource;
   if (data.type == "resource") {
-    resource = await resources.findById(data.resourceId);
+    resource = await db.resources.get(data.resourceId);
   } else {
-    resource = await spaces.findById(data.resourceId);
+    resource = await db.spaces.get(data.resourceId);
   }
-
-  const resourceRequest: BookingRequest = {
-    id: meta.operationId,
-    calendarId: meta.stream.id,
-    requester: meta.author,
-    resourceType: data.type,
-    resourceOwner: resource!.ownerId,
-    ...data,
-  };
-
-  await db.bookingRequests.add(resourceRequest);
-
-  // @TODO: move this into new "crdt" API.
-  // Replay un-ack'd messages which we may have received out-of-order.
-  const topic = new TopicFactory(meta.stream.id);
-  await invoke("replay", { topic: topic.calendar() });
-  const publicKey = await identity.publicKey();
 
   // Check if we own the resource, otherwise do nothing
   if (resource?.ownerId == publicKey) {
@@ -219,39 +236,62 @@ async function onBookingRequested(
       await accept(meta.operationId);
     } else {
       // Show toast if we are the owner of the resource and we didn't make the request.
-      toast.bookingRequest(resourceRequest);
+      const resourceRequest = await bookings.findRequest(meta.operationId);
+      toast.bookingRequest(resourceRequest!);
     }
   }
 }
 
-async function onBookingRequestAccepted(
+function onBookingRequestAccepted(
   meta: StreamMessageMeta,
   data: BookingRequestAccepted["data"],
-) {
-  const resourceRequest = await db.bookingRequests.get(data.requestId);
-  const resourceResponse: BookingResponse = {
-    id: meta.operationId,
-    calendarId: meta.stream.id,
-    eventId: resourceRequest!.eventId,
-    responder: meta.author,
-    requestId: data.requestId,
-    answer: "accept",
-  };
-  await db.bookingResponses.add(resourceResponse);
+): Promise<void> {
+  return db.transaction(
+    "rw",
+    db.bookingRequests,
+    db.bookingResponses,
+    async () => {
+      const resourceRequest = await db.bookingRequests.get(data.requestId);
+      const resourceResponse: BookingResponse = {
+        id: meta.operationId,
+        calendarId: meta.stream.id,
+        eventId: resourceRequest!.eventId,
+        responder: meta.author,
+        requestId: data.requestId,
+        answer: "accept",
+      };
+
+      // Only update the resource request to `accepted` if the previous value was `pending`.
+      // Already rejected requests cannot be later accepted.
+      if (resourceRequest!.status == "pending") {
+        await db.bookingRequests.update(data.requestId, { status: "accepted" });
+      }
+      await db.bookingResponses.add(resourceResponse);
+    },
+  );
 }
 
 async function onBookingRequestRejected(
   meta: StreamMessageMeta,
   data: BookingRequestRejected["data"],
-) {
-  const resourceRequest = await db.bookingRequests.get(data.requestId);
-  const resourceResponse: BookingResponse = {
-    id: meta.operationId,
-    calendarId: meta.stream.id,
-    eventId: resourceRequest!.eventId,
-    responder: meta.author,
-    requestId: data.requestId,
-    answer: "reject",
-  };
-  await db.bookingResponses.add(resourceResponse);
+): Promise<void> {
+  return db.transaction(
+    "rw",
+    db.bookingRequests,
+    db.bookingResponses,
+    async () => {
+      const resourceRequest = await db.bookingRequests.get(data.requestId);
+      const resourceResponse: BookingResponse = {
+        id: meta.operationId,
+        calendarId: meta.stream.id,
+        eventId: resourceRequest!.eventId,
+        responder: meta.author,
+        requestId: data.requestId,
+        answer: "reject",
+      };
+
+      await db.bookingRequests.update(data.requestId, { status: "rejected" });
+      await db.bookingResponses.add(resourceResponse);
+    },
+  );
 }

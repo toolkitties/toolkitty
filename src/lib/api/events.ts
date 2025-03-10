@@ -2,6 +2,7 @@
 
 import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
+import { isSubTimespan } from "$lib/utils";
 import { invoke } from "@tauri-apps/api/core";
 import { auth, events, publish, roles } from ".";
 import { TopicFactory } from "./topics";
@@ -75,7 +76,7 @@ export async function create(calendarId: Hash, fields: EventFields) {
 export async function update(eventId: Hash, fields: EventFields) {
   const event = await events.findById(eventId);
 
-  const amAdmin = await roles.amAdmin(event!.calendarId);
+  const amAdmin = await auth.amAdmin(event!.calendarId);
   const amOwner = await events.amOwner(eventId);
   if (!amAdmin && !amOwner) {
     throw new Error("user does not have permission to update this event");
@@ -104,7 +105,7 @@ export async function update(eventId: Hash, fields: EventFields) {
 async function deleteEvent(eventId: Hash) {
   const event = await events.findById(eventId);
 
-  const amAdmin = await roles.amAdmin(event!.calendarId);
+  const amAdmin = await auth.amAdmin(event!.calendarId);
   const amOwner = await events.amOwner(eventId);
   if (!amAdmin && !amOwner) {
     throw new Error("user does not have permission to delete this event");
@@ -147,30 +148,48 @@ export async function process(message: ApplicationMessage) {
   }
 }
 
-async function onEventCreated(
+function onEventCreated(
   meta: StreamMessageMeta,
   data: EventCreated["data"],
-) {
-  await db.events.add({
+): Promise<string> {
+  return db.events.add({
     id: meta.operationId,
     calendarId: meta.stream.id,
     ownerId: meta.stream.owner,
     ...data.fields,
   });
-
-  // Replay un-ack'd messages which we may have received out-of-order.
-  const topic = new TopicFactory(meta.stream.id);
-  await invoke("replay", { topic: topic.calendar() });
 }
 
-async function onEventUpdated(
-  data: EventUpdated["data"],
-) {
-  await db.events.update(data.id, data.fields);
+function onEventUpdated(data: EventUpdated["data"]): Promise<void> {
+  const eventId = data.id;
+  const { endDate, startDate } = data.fields;
+
+  return db.transaction("rw", db.events, db.bookingRequests, async () => {
+    // Update `validTime` field of all booking requests associated with this event.
+    await db.bookingRequests.where({ eventId }).modify((request) => {
+      const isValid = isSubTimespan(startDate, endDate, request.timeSpan);
+      request.isValid = isValid ? "true" : "false";
+    });
+
+    // @TODO: we could show a toast to the user if a previously valid event timespan now became
+    // invalid.
+
+    await db.events.update(data.id, {
+      ...data.fields,
+    });
+  });
 }
 
-async function onEventDeleted(
-  data: EventDeleted["data"],
-) {
-  await db.events.delete(data.id);
+function onEventDeleted(data: EventDeleted["data"]): Promise<void> {
+  const eventId = data.id;
+
+  return db.transaction("rw", db.events, db.bookingRequests, async () => {
+    // Update `validTime` field of all booking requests associated with this space.
+    await db.bookingRequests.where({ eventId }).modify({ isValid: "false" });
+
+    // @TODO: we could show a toast to the user if a previously valid space timespan now became
+    // invalid.
+
+    await db.events.delete(data.id);
+  });
 }
