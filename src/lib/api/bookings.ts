@@ -5,6 +5,7 @@ import { TopicFactory } from "./topics";
 import { toast } from "$lib/toast.svelte";
 import { publish, identity, spaces, resources } from ".";
 import { liveQuery } from "dexie";
+import { isSubTimespan } from "$lib/utils";
 /**
  * Queries
  */
@@ -33,7 +34,10 @@ export function findAll(
 /**
  * Search the database for any pending booking requests matching the passed filter object.
  */
-export async function findPending(calendarId: Hash, filter: BookingQueryFilter) {
+export async function findPending(
+  calendarId: Hash,
+  filter: BookingQueryFilter,
+) {
   let responsesFilter = {
     calendarId,
   };
@@ -189,14 +193,34 @@ async function onBookingRequested(
     resource = await spaces.findById(data.resourceId);
   }
 
+  const resourceAvailability = resource!.availability;
+
   const resourceRequest: BookingRequest = {
     id: meta.operationId,
     calendarId: meta.stream.id,
     requester: meta.author,
     resourceType: data.type,
     resourceOwner: resource!.ownerId,
+    validTime: false,
     ...data,
   };
+
+  if (resourceAvailability == "always") {
+    resourceRequest.validTime = true;
+  } else {
+    for (const span of resourceAvailability) {
+      const isSub = isSubTimespan(
+        span.start,
+        span.end,
+        resourceRequest.timeSpan,
+      );
+
+      if (isSub) {
+        resourceRequest.validTime = true;
+        break;
+      }
+    }
+  }
 
   await db.bookingRequests.add(resourceRequest);
 
