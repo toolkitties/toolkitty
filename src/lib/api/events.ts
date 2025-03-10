@@ -158,10 +158,6 @@ async function onEventCreated(
     ownerId: meta.stream.owner,
     ...data.fields,
   });
-
-  // Replay un-ack'd messages which we may have received out-of-order.
-  const topic = new TopicFactory(meta.stream.id);
-  await invoke("replay", { topic: topic.calendar() });
 }
 
 async function onEventUpdated(
