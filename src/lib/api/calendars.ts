@@ -211,10 +211,13 @@ async function onCalendarUpdated(
       .where({ calendarId })
       .filter((event) => event.startDate >= timeSpan.end)
       .modify({ validAvailability: false });
+
     await db.events
       .where({ calendarId })
       .filter((event) => event.endDate <= timeSpan.start)
       .modify({ validAvailability: false });
+
+    // @TODO: also update resources, spaces and booking requests.
 
     // @TODO: we could show a toast to the user if a previously valid event timespan now became
     // invalid.
