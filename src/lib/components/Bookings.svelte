@@ -1,14 +1,8 @@
 <script lang="ts">
-  // booked eventually becomes prop.
-  // Convert availability strings to Date objects
   let { availability } = $props();
 
-  // for now placing data below so its easier to understand
-
-  // const availability = {
-  //   start: new Date("2025-02-10T10:00Z"),
-  //   end: new Date("2025-02-10T23:00Z"),
-  // };
+  let start = new Date(availability.start);
+  let end = new Date(availability.end);
 
   const booked = [
     {
@@ -78,9 +72,9 @@
    */
   function getHours(): string[] {
     const hours: string[] = [];
-    let current = availability.start;
+    let current = start;
 
-    while (current < availability.end) {
+    while (current < end) {
       hours.push(current.getUTCHours().toString() + ":00");
       current.setUTCHours(current.getUTCHours() + 1);
     }

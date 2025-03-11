@@ -19,10 +19,6 @@
   let availability: TimeSpan[] = $state([]);
   let alwaysAvailable = $state(false);
 
-  function updateAvailability(newAvailability: TimeSpan[]) {
-    availability = newAvailability;
-  }
-
   const { form, errors, message, constraints, enhance } = superForm(data, {
     SPA: true,
     validators: zod(spaceSchema),

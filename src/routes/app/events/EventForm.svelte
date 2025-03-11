@@ -150,15 +150,21 @@
     <ul>
       {#each spaces as space}
         <li>
-          <input type="radio" id={space.id} name="selected-space" />
+          <input
+            type="radio"
+            id={space.id}
+            name="selected-space"
+            bind:group={selectedSpace}
+            onchange={() => handleSpaceSelection(space)}
+          />
           <label for={space.id}>{space.name}</label>
         </li>
       {/each}
     </ul>
-
     {#if selectedSpace}
+      <!-- view space availability -->
       <div class="space-availability">
-        <p>View availability</p>
+        <p>View availability for {selectedSpace.name}</p>
         <AvailabilityViewer
           availability={Array.isArray(selectedSpace.availability)
             ? selectedSpace.availability
@@ -166,80 +172,54 @@
           multiBookable={selectedSpace.multiBookable}
         />
       </div>
+
+      <!-- request access to space at certain times -->
+      <p>Request access to selected space</p>
+      <div class="flex flex-row">
+        <label for="startDate">Access Start *</label>
+        <input
+          type="datetime-local"
+          name="startDate"
+          required
+          aria-invalid={$errors.startDate ? "true" : undefined}
+          bind:value={$form.startDate}
+        />
+        {#if $errors.startDate}<span class="form-error"
+            >{$errors.startDate}</span
+          >{/if}
+
+        <label for="endDate">Access End *</label>
+        <input
+          type="datetime-local"
+          name="endDate"
+          required
+          aria-invalid={$errors.endDate ? "true" : undefined}
+          bind:value={$form.endDate}
+        />
+        {#if $errors.endDate}<span class="form-error">{$errors.endDate}</span
+          >{/if}
+      </div>
+
+      <!-- {#if resources.length > 0}
+        <label for="resource-list">Select resources</label>
+        <ul id="resource-list">
+          {#each resources as resource}
+            <li>
+              <input
+                type="checkbox"
+                id="resource-{resource.id}"
+                value={resource.id}
+              />
+              <label for="resource-{resource.id}">{resource.name}</label>
+            </li>
+          {/each}
+        </ul>
+      {:else}
+        <p>No available resources available.</p>
+      {/if} -->
     {/if}
-    <p>Request selected space</p>
-    <div class="flex flex-row">
-      <label for="startDate">Access Start *</label>
-      <input
-        type="datetime-local"
-        name="startDate"
-        required
-        aria-invalid={$errors.startDate ? "true" : undefined}
-        bind:value={$form.startDate}
-      />
-      {#if $errors.startDate}<span class="form-error">{$errors.startDate}</span
-        >{/if}
-
-      <label for="endDate">Access End *</label>
-      <input
-        type="datetime-local"
-        name="endDate"
-        required
-        aria-invalid={$errors.endDate ? "true" : undefined}
-        bind:value={$form.endDate}
-      />
-      {#if $errors.endDate}<span class="form-error">{$errors.endDate}</span
-        >{/if}
-    </div>
   {:else}
-    <p>No spaces found.</p>
+    <p>No available spaces found.</p>
   {/if}
-
-  <p>Event time (excluding set-up)</p>
-  <div class="flex flex-row">
-    <label for="publicStartDate">Event Start *</label>
-    <input
-      type="datetime-local"
-      name="publicStartDate"
-      required
-      aria-invalid={$errors.publicStartDate ? "true" : undefined}
-      bind:value={$form.publicStartDate}
-    />
-    {#if $errors.publicStartDate}<span class="form-error"
-        >{$errors.publicStartDate}</span
-      >{/if}
-
-    <label for="publicEndDate">Event End *</label>
-    <input
-      type="datetime-local"
-      name="publicEndDate"
-      required
-      aria-invalid={$errors.publicEndDate ? "true" : undefined}
-      bind:value={$form.publicEndDate}
-    />
-    {#if $errors.publicEndDate}<span class="form-error"
-        >{$errors.publicEndDate}</span
-      >{/if}
-  </div>
-
-  <!-- @TODO - validate against space availability -->
-  <!-- {#if resources.length > 0}
-    <label for="resource-list">Select resources</label>
-    <ul id="resource-list">
-      {#each resources as resource}
-        <li>
-          <input
-            type="checkbox"
-            id="resource-{resource.id}"
-            value={resource.id}
-          />
-          <label for="resource-{resource.id}">{resource.name}</label>
-        </li>
-      {/each}
-    </ul>
-  {:else}
-    <p>No resources available.</p>
-  {/if} -->
-
   <button type="submit">{$form.id ? "Update" : "Create"}</button>
 </form>
