@@ -1,9 +1,7 @@
 import { db } from "$lib/db";
 import { auth, publish, resources, roles } from ".";
-import { getActiveCalendarId } from "./calendars";
 import { promiseResult } from "$lib/promiseMap";
-import { invoke } from "@tauri-apps/api/core";
-import { TopicFactory } from "./topics";
+import { isSubTimespan } from "$lib/utils";
 
 /**
  * Queries
@@ -31,6 +29,30 @@ export function findByOwner(
  */
 export function findById(id: Hash): Promise<Resource | undefined> {
   return db.resources.get({ id: id });
+}
+
+/**
+ * Returns a collection of resources which have _some_ availability in the timespan provided.
+ */
+export function findByTimespan(
+  calendarId: Hash,
+  timeSpan: TimeSpan,
+): Promise<Resource[]> {
+  return db.resources
+    .where({ calendarId })
+    .filter((resource) => {
+      if (resource.availability == "always") {
+        return true;
+      }
+      for (const span of resource.availability) {
+        const isSub = isSubTimespan(timeSpan.start, timeSpan.end, span);
+        if (isSub) {
+          return true;
+        }
+      }
+      return false;
+    })
+    .toArray();
 }
 
 export async function isOwner(
@@ -80,7 +102,7 @@ export async function update(
 ): Promise<Hash> {
   const resource = await resources.findById(resourceId);
 
-  const amAdmin = await roles.amAdmin(resource!.calendarId);
+  const amAdmin = await auth.amAdmin(resource!.calendarId);
   const amOwner = await resources.amOwner(resourceId);
   if (!amAdmin && !amOwner) {
     throw new Error("user does not have permission to update this resource");
@@ -109,7 +131,7 @@ export async function update(
 export async function deleteResource(resourceId: Hash): Promise<Hash> {
   const resource = await resources.findById(resourceId);
 
-  const amAdmin = await roles.amAdmin(resource!.calendarId);
+  const amAdmin = await auth.amAdmin(resource!.calendarId);
   const amOwner = await resources.amOwner(resourceId);
   if (!amAdmin && !amOwner) {
     throw new Error("user does not have permission to delete this resource");
@@ -153,31 +175,60 @@ export async function process(message: ApplicationMessage) {
   }
 }
 
-async function onResourceCreated(
+function onResourceCreated(
   meta: StreamMessageMeta,
   data: ResourceCreated["data"],
-) {
-  await db.resources.add({
+): Promise<string> {
+  return db.resources.add({
     id: meta.operationId,
     calendarId: meta.stream.id,
     ownerId: meta.author,
     booked: [],
     ...data.fields,
   });
-
-  // Replay un-ack'd messages which we may have received out-of-order.
-  const topic = new TopicFactory(meta.stream.id);
-  await invoke("replay", { topic: topic.calendar() });
 }
 
-async function onResourceUpdated(
-  data: ResourceUpdated["data"],
-) {
-  await db.resources.update(data.id, data.fields);
+function onResourceUpdated(data: ResourceUpdated["data"]): Promise<void> {
+  const resourceId = data.id;
+  const resourceAvailability = data.fields.availability;
+
+  return db.transaction("rw", db.resources, db.bookingRequests, async () => {
+    // Update `isavalid` field of all booking requests associated with this space.
+    await db.bookingRequests.where({ resourceId }).modify((request) => {
+      if (resourceAvailability == "always") {
+        request.isValid = "true";
+        return;
+      }
+      request.isValid = "false";
+      for (const span of resourceAvailability) {
+        const isValid = isSubTimespan(span.start, span.end, request.timeSpan);
+
+        if (isValid) {
+          request.isValid = "true";
+          break;
+        }
+      }
+      request.isValid = "false";
+    });
+
+    // @TODO: we could show a toast to the user if a previously valid request timespan now became
+    // invalid.
+
+    // @TODO: add related location to spaces object.
+    await db.resources.update(data.id, data.fields);
+  });
 }
 
-async function onResourceDeleted(
-  data: ResourceDeleted["data"],
-) {
-  await db.resources.delete(data.id);
+function onResourceDeleted(data: ResourceDeleted["data"]): Promise<void> {
+  const resourceId = data.id;
+
+  return db.transaction("rw", db.resources, db.bookingRequests, async () => {
+    // Update `isavalid` field of all booking requests associated with this resource.
+    await db.bookingRequests.where({ resourceId }).modify({ isValid: "false" });
+
+    // @TODO: we could show a toast to the user if a previously valid event timespan now became
+    // invalid.
+
+    await db.resources.delete(resourceId);
+  });
 }
