@@ -335,12 +335,12 @@ type ResourceFields = {
 type EventFields = {
   name: string;
   description: string;
-  location?: SpaceRequestId; // ref to a space
+  spaceRequest?: SpaceRequestId; // ref to a space
   startDate: string; // allocated time of a space
   endDate: string; // allocated time of a space
   publicStartDate?: string; // public facing
   publicEndDate?: string; // public facing
-  resources?: ReservationRequestId[];
+  resourcesRequests?: ReservationRequestId[];
   links: Link[];
   images: Image[];
 };
@@ -626,6 +626,7 @@ type CalendarEvent = {
   calendarId: Hash;
   ownerId: PublicKey;
   space?: Space;
+  resources?: Resource[];
 } & EventFields;
 
 type Space = {

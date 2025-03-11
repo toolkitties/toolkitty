@@ -20,7 +20,7 @@
     <span>🗓️ {event.startDate}</span>
     <span>🕣 {event.startDate}</span>
     <span
-      >📍 {event.location ? event.location : "no space yet"}</span
+      >📍 {event.space ? event.space : "no space yet"}</span
     >
   </div>
 </a>
