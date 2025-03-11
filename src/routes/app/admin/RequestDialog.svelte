@@ -1,15 +1,13 @@
-<script>
-  import AccessRequestDialog from "$lib/components/dialog/AccessRequestDialog.svelte";
+<script lang="ts">
+  import AccessRoleDialog from "$lib/components/dialog/AccessRoleDialog.svelte";
   import * as AlertDialog from "$lib/components/dialog/index";
-
-  let { request } = $props();
-
+  let { user }: { user: RequestDialogUser } = $props();
   let open = $state(false);
 </script>
 
 <AlertDialog.Root bind:open>
   <AlertDialog.Trigger class="button">
-    <p>Update permission for {request.name}</p>
-    <AccessRequestDialog {request} bind:open />
+    <p>{user.name} {user.role}</p>
+    <AccessRoleDialog {user} bind:open />
   </AlertDialog.Trigger>
 </AlertDialog.Root>

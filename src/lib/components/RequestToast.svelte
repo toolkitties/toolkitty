@@ -1,7 +1,7 @@
 <script lang="ts">
   import { toast } from "$lib/toast.svelte";
   import { tick } from "svelte";
-  import AccessRequestDialog from "./dialog/AccessRequestDialog.svelte";
+  import AccessRoleDialog from "./dialog/AccessRoleDialog.svelte";
   import BookingRequestDialog from "./dialog/BookingRequestDialog.svelte";
   import * as AlertDialog from "$lib/components/dialog/index";
 
@@ -32,7 +32,14 @@
   <AlertDialog.Trigger class="button">
     <p>{toastie.message}</p>
     {#if toastie.request.type == "access_request"}
-      <AccessRequestDialog request={toastie.request.data} bind:open />
+      <AccessRoleDialog
+        user={{
+          publicKey: toastie.request.from,
+          calendarId: toastie.requset.calendarId,
+          pendingRequest: toastie.request.data,
+        }}
+        bind:open
+      />
     {:else if toastie.request.type == "booking_request"}
       <BookingRequestDialog request={toastie.request.data} bind:open />
     {/if}
