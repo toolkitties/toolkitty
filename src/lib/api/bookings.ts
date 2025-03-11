@@ -7,7 +7,7 @@ import { isSubTimespan } from "$lib/utils";
  * Queries
  */
 
-export function findRequest(
+export function findById(
   requestId: Hash,
 ): Promise<BookingRequest | undefined> {
   return db.bookingRequests.get(requestId);
@@ -236,7 +236,7 @@ async function onBookingRequested(
       await accept(meta.operationId);
     } else {
       // Show toast if we are the owner of the resource and we didn't make the request.
-      const resourceRequest = await bookings.findRequest(meta.operationId);
+      const resourceRequest = await bookings.findById(meta.operationId);
       toast.bookingRequest(resourceRequest!);
     }
   }
