@@ -48,6 +48,10 @@ const db = new Dexie("Toolkitty") as Dexie & {
     Settings,
     "name" // primary key
   >;
+  users: Table<
+    User,
+    [CalendarId, PublicKey] // primary key
+  >;
 };
 
 /**
@@ -68,10 +72,11 @@ db.version(1).stores({
   spaces: "&id, calendarId",
   resources: "&id, calendarId",
   events: "&id, name, date, calendarId",
-  bookingRequests: "&id, eventId, calendarId, requester, resourceType",
+  bookingRequests: "&id, eventId, calendarId, requester, resourceType, resourceId, validTime, status",
   bookingResponses: "&id, eventId, requestId, calendarId, answer",
   streams: "&id",
   settings: "&name",
+  users: "&[calendarId+publicKey]",
 });
 
 export { db };

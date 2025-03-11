@@ -278,6 +278,7 @@ type BookedTimeSpan = TimeSpan & {
 
 // TODO: TBC from open street maps
 type PhysicalLocation = {
+  type: "physical";
   street: string;
   city: string;
   state: string;
@@ -286,11 +287,15 @@ type PhysicalLocation = {
 };
 
 type GPSLocation = {
+  type: "gps";
   lat: string;
   lon: string;
 };
 
-type VirtualLocation = string;
+type VirtualLocation = {
+  type: "virtual";
+  link: string;
+};
 
 type Answer = "accept" | "reject";
 
@@ -303,10 +308,9 @@ type CalendarFields = {
 };
 
 type SpaceFields = {
-  type: "physical" | "gps" | "virtual";
   name: string;
   location: PhysicalLocation | GPSLocation | VirtualLocation;
-  capacity: number;
+  capacity: number | null;
   accessibility: string;
   description: string;
   contact: string;
@@ -331,11 +335,11 @@ type EventFields = {
   name: string;
   description: string;
   location?: SpaceRequestId; // ref to a space
-  startDate: Date; // allocated time of a space
-  endDate: Date; // allocated time of a space
-  publicStartDate?: Date; // public facing
-  publicEndDate?: Date; // public facing
-  resources: ReservationRequestId[];
+  startDate: string; // allocated time of a space
+  endDate: string; // allocated time of a space
+  publicStartDate?: string; // public facing
+  publicEndDate?: string; // public facing
+  resources?: ReservationRequestId[];
   links: Link[];
   images: Image[];
 };
@@ -362,7 +366,6 @@ type UserProfileUpdated = {
 type CalendarAccessRequested = {
   type: "calendar_access_requested";
   data: {
-    // @TODO(sam): we should switch to using the streamId as the "access reference" for a calendar.
     calendarId: Hash;
     name: string;
     message: string;
@@ -405,6 +408,7 @@ type CalendarUpdated = {
 type PageUpdated = {
   type: "page_updated";
   data: {
+    id: Hash;
     page_type: "spaces" | "resources" | "about";
     description: string;
   };
@@ -552,11 +556,13 @@ type BookingRequestAcceptanceRevoked = {
  * Roles
  */
 
+type Role = "organiser" | "admin";
+
 type UserRoleAssigned = {
   type: "user_role_assigned";
   data: {
     publicKey: PublicKey;
-    role: "publisher" | "organiser" | "admin";
+    role: Role;
   };
 };
 
@@ -579,8 +585,11 @@ type Subscription = {
  */
 
 type User = {
-  id: PublicKey;
-  name: string;
+  publicKey: PublicKey;
+  calendarId: CalendarId;
+  // @TODO: currently this value is undefined for calendar creators: https://github.com/toolkitties/toolkitty/issues/177
+  name?: string;
+  role?: Role;
 };
 
 type Calendar = {
@@ -641,6 +650,8 @@ type BookingRequest = {
   resourceOwner: PublicKey;
   message: string;
   timeSpan: TimeSpan;
+  isValid: "true" | "false";
+  status: "accepted" | "rejected" | "pending";
 };
 
 type ResourceType = "space" | "resource";
@@ -676,4 +687,5 @@ type BookingQueryFilter = {
   requester?: PublicKey;
   resourceType?: ResourceType;
   resourceOwner?: PublicKey;
+  isValid?: "true" | "false";
 };

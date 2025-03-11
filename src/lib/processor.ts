@@ -7,6 +7,9 @@ import {
   resources,
   events,
   bookings,
+  auth,
+  roles,
+  dependencies,
 } from "$lib/api";
 import { rejectPromise, resolvePromise } from "$lib/promiseMap";
 
@@ -153,7 +156,29 @@ export async function processMessage(message: ChannelMessage) {
 
 async function onApplicationMessage(message: ApplicationMessage) {
   try {
+    // **Dependencies**
+    //
+    // Confirm that all dependencies for this message are met. If they are not not, eg. if this is
+    // an `event_updated` message then the `event_created` message must already have been received,
+    // then error here. Additionally we want to trigger a replay if messages which may have
+    // dependants arrives, eg. an `event_created` message should trigger a replay in case there are
+    // waiting event_updated events.
+    await dependencies.process(message);
+
+    // **Auth**
+    //
+    // Confirm that the author has been given “read” access to the calendar with a
+    // calendar_access_accepted message, and that they they have permission to perform the action
+    // they are proposing, eg. a calendar_updated message requires that the author is the calendar
+    // owner or that they were assigned the admin role. If not error here.
+    await auth.process(message);
     await access.process(message);
+
+    // **Database**
+    //
+    // Apply state changes to the database. Updates are applied using last-write-win strategy
+    // based on highest timestamp.
+    await roles.process(message);
     await calendars.process(message);
     await events.process(message);
     await spaces.process(message);

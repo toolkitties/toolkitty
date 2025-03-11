@@ -5,9 +5,9 @@ import { processMessage } from "$lib/processor";
 import {
   CALENDAR_ID,
   LOG_PATH,
-  PUBLIC_KEY,
+  OWNER_PUBLIC_KEY,
   STREAM,
-  calendarTestMessages,
+  seedTestMessages,
 } from "./data";
 import { access, identity } from "$lib/api";
 import {
@@ -23,11 +23,11 @@ import { mockIPC } from "@tauri-apps/api/mocks";
 beforeAll(async () => {
   mockIPC((cmd, args) => {
     if (cmd === "public_key") {
-      return PUBLIC_KEY;
+      return OWNER_PUBLIC_KEY;
     }
   });
 
-  for (const message of calendarTestMessages) {
+  for (const message of seedTestMessages) {
     await processMessage(message);
   }
 });
@@ -65,7 +65,7 @@ describe("access tests", () => {
     let acceptCalendarAccessRequest: ApplicationMessage = {
       meta: {
         operationId: "accept_access_request_001",
-        author: PUBLIC_KEY,
+        author: OWNER_PUBLIC_KEY,
         stream: STREAM,
         logPath: LOG_PATH,
       },
@@ -86,7 +86,7 @@ describe("access tests", () => {
     let rejectAccessRequest: ApplicationMessage = {
       meta: {
         operationId: "reject_access_request_001",
-        author: PUBLIC_KEY,
+        author: OWNER_PUBLIC_KEY,
         stream: STREAM,
         logPath: LOG_PATH,
       },
@@ -106,7 +106,10 @@ describe("access tests", () => {
   });
 
   test("calendar owner has access", async () => {
-    const accessStatus = await access.checkStatus(PUBLIC_KEY, CALENDAR_ID);
+    const accessStatus = await access.checkStatus(
+      OWNER_PUBLIC_KEY,
+      CALENDAR_ID,
+    );
     expect(accessStatus).toBe("accepted");
   });
 });

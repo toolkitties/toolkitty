@@ -15,7 +15,6 @@ use crate::rpc::{
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-
     // Setup logging.
     let writer = std::io::stderr;
     tracing_subscriber::fmt()
