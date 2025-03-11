@@ -22,9 +22,6 @@
   } = $props();
 
   let selectedSpace: Space | null = $state<Space | null>(null);
-  function handleSpaceSelection(space: Space) {
-    selectedSpace = space;
-  }
 
   const { form, errors, enhance } = superForm(data, {
     SPA: true,
@@ -147,7 +144,7 @@
   {#if spaces.length > 0}
     <p>Select a space:</p>
     <ul>
-      {#each spaces as space}
+      {#each spaces as space (space.id)}
         <li>
           <input type="radio" id={space.id} name="selected-space" />
           <label for={space.id}>{space.name}</label>

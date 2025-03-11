@@ -20,12 +20,6 @@
     $state([]);
   let alwaysAvailable = $state(false);
 
-  function updateAvailability(
-    newAvailability: { date: string; startTime: string; endTime: string }[],
-  ) {
-    availability = newAvailability;
-  }
-
   const { form, errors, enhance } = superForm(data, {
     SPA: true,
     validators: zod(spaceSchema),

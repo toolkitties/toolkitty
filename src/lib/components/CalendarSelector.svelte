@@ -1,7 +1,7 @@
 <script lang="ts">
   import { calendars } from "$lib/api";
   import { onMount } from "svelte";
-  import { goto, invalidateAll } from "$app/navigation";
+  import { invalidateAll } from "$app/navigation";
   import { Select } from "bits-ui";
   import ChevronIcon from "$lib/components/icons/ChevronIcon.svelte";
 

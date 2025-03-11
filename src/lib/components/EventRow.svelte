@@ -1,6 +1,6 @@
 <script type="ts">
   // TODO: Define the type of the event prop
-  // @ts-ignore
+
   let { event } = $props();
 
   // TODO: possibly need to convert date to nice format from ISO 8601. TBC.
