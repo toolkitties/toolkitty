@@ -1,5 +1,5 @@
 type ResolveFn = () => void;
-type RejectFn = (err: any) => void;
+type RejectFn = (err: unknown) => void;
 
 // Map to store promises and their resolve and reject functions.
 const promiseMap: Map<
@@ -47,7 +47,7 @@ export function resolvePromise(id: string): void {
 /**
  * Reject the promise with the given id including an optional error value.
  */
-export function rejectPromise(id: string, err: any): void {
+export function rejectPromise(id: string, err: unknown): void {
   const task = promiseMap.get(id);
   if (task) {
     task.reject(err);
