@@ -59,7 +59,7 @@
     {/each}
   {/if}
   {#if $calendarUsers}
-    {#each $calendarUsers as user}
+    {#each $calendarUsers as user (user.publicKey)}
       <RequestDialog {user} />
     {/each}
   {/if}

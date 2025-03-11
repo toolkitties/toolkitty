@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as AlertDialog from "./index";
-  import { access, roles, calendars, identity } from "$lib/api";
+  import { access, roles, calendars } from "$lib/api";
   import { toast } from "$lib/toast.svelte";
 
   let {
