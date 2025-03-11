@@ -58,10 +58,7 @@ export async function create(calendarId: Hash, fields: EventFields) {
       fields,
     },
   };
-  const [operationId] = await publish.toCalendar(
-    calendarId!,
-    eventCreated,
-  );
+  const [operationId] = await publish.toCalendar(calendarId!, eventCreated);
 
   await promiseResult(operationId);
 
@@ -165,7 +162,11 @@ function onEventUpdated(data: EventUpdated["data"]): Promise<void> {
   return db.transaction("rw", db.events, db.bookingRequests, async () => {
     // Update `validTime` field of all booking requests associated with this event.
     await db.bookingRequests.where({ eventId }).modify((request) => {
-      const isValid = isSubTimespan(new Date(startDate), new Date(endDate), request.timeSpan);
+      const isValid = isSubTimespan(
+        new Date(startDate),
+        new Date(endDate),
+        request.timeSpan,
+      );
       request.isValid = isValid ? "true" : "false";
     });
 

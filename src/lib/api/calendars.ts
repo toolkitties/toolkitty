@@ -126,10 +126,7 @@ export async function update(
     },
   };
 
-  const [operationId] = await publish.toCalendar(
-    calendarId,
-    calendarUpdated,
-  );
+  const [operationId] = await publish.toCalendar(calendarId, calendarUpdated);
 
   await promiseResult(operationId);
 
@@ -150,10 +147,7 @@ export async function deleteCalendar(calendarId: Hash): Promise<Hash> {
     },
   };
 
-  const [operationId] = await publish.toCalendar(
-    calendarId,
-    calendarDeleted,
-  );
+  const [operationId] = await publish.toCalendar(calendarId, calendarDeleted);
 
   await promiseResult(operationId);
 
@@ -237,7 +231,6 @@ async function onCalendarUpdated(data: CalendarUpdated["data"]) {
     startDate: timeSpan.start,
     endDate: timeSpan.end,
   });
-
 }
 
 async function onCalendarDeleted(data: CalendarDeleted["data"]) {
