@@ -20,6 +20,7 @@ export function findMany(calendarId: Hash): Promise<CalendarEvent[]> {
     db.spaces,
     async () => {
       const events = await db.events.where({ calendarId }).toArray();
+      // Add space to each event.
       for (const event of events) {
         if (event.location) {
           const request = await db.bookingRequests.get(event.location);
@@ -45,16 +46,35 @@ export function findByOwner(
     "r",
     db.events,
     db.bookingRequests,
+    db.resources,
     db.spaces,
     async () => {
       const events = await db.events.where({ ownerId, calendarId }).toArray();
       for (const event of events) {
+        // Add space to each event.
         if (event.location) {
           const request = await db.bookingRequests.get(event.location);
           if (!request) {
             continue;
           }
           event.space = await db.spaces.get({ id: request.resourceId });
+        }
+
+        if (!event.resources) {
+          continue;
+        }
+
+        // Add resources to each event.
+        const resources: Resource[] = [];
+        for (const requestId of event.resources) {
+          const request = await db.bookingRequests.get(requestId);
+          if (!request) {
+            continue;
+          }
+          const resource = await db.resources.get(request.resourceId);
+          if (resource) {
+            resources.push(resource);
+          }
         }
       }
       return events;
@@ -73,6 +93,7 @@ export function findById(id: Hash): Promise<CalendarEvent | undefined> {
     db.spaces,
     async () => {
       const event = await db.events.get({ id });
+      // Add space to event.
       if (event?.location) {
         const request = await db.bookingRequests.get(event.location);
         if (!request) {
