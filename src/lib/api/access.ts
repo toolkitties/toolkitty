@@ -4,7 +4,6 @@ import {
   identity,
   inviteCodes,
   publish,
-  roles,
   topics,
   users,
 } from "./";
@@ -13,7 +12,6 @@ import { publicKey } from "./identity";
 import { db } from "$lib/db";
 import { TopicFactory } from "./topics";
 import { toast } from "$lib/toast.svelte";
-import { liveQuery } from "dexie";
 import { promiseResult } from "$lib/promiseMap";
 
 /*
@@ -24,7 +22,7 @@ import { promiseResult } from "$lib/promiseMap";
  * Get pending access requests that have not been accepted yet.
  */
 export async function getPending(activeCalendarId: Hash) {
-  let accessRequests = await db.accessRequests
+  const accessRequests = await db.accessRequests
     .where({ calendarId: activeCalendarId })
     .toArray();
   // TODO: this function should return a list of users and their respective role/access status
@@ -52,8 +50,8 @@ export async function resolveInviteCode(
 }
 
 export async function hasRequested(calendarId: Hash): Promise<boolean> {
-  let myPublicKey = await publicKey();
-  let request = (await db.accessRequests.toArray()).find(
+  const myPublicKey = await publicKey();
+  const request = (await db.accessRequests.toArray()).find(
     (request) =>
       request.calendarId == calendarId && request.from == myPublicKey,
   );
@@ -62,7 +60,7 @@ export async function hasRequested(calendarId: Hash): Promise<boolean> {
 }
 
 export async function wasRejected(requestId: Hash): Promise<boolean> {
-  let response = (await db.accessResponses.toArray()).find(
+  const response = (await db.accessResponses.toArray()).find(
     (response) =>
       response.requestId == requestId && response.answer == "reject",
   );
@@ -81,7 +79,7 @@ export async function checkStatus(
   publicKey: PublicKey,
   calendarId: Hash,
 ): Promise<"not requested yet" | "pending" | "accepted" | "rejected"> {
-  let calendar = await calendars.findOne(calendarId);
+  const calendar = await calendars.findOne(calendarId);
 
   // The owner of the calendar automatically has access.
   if (calendar?.ownerId == publicKey) {
@@ -90,7 +88,7 @@ export async function checkStatus(
 
   // Check if peer has requested access.
   // TODO: use where query instead of find.
-  let request = (await db.accessRequests.toArray()).find(
+  const request = (await db.accessRequests.toArray()).find(
     (request) => request.from == publicKey && request.calendarId == calendarId,
   );
 
@@ -102,13 +100,13 @@ export async function checkStatus(
   // @TODO: We need to be able to check if the response came from the calendar owner but at
   // this point we haven't received the "calendar_created" event yet. It will help when the
   // actual calendar id contains the owner information.
-  let rejected = await db.accessResponses.get([request.id, "reject"]);
+  const rejected = await db.accessResponses.get([request.id, "reject"]);
 
   if (rejected) {
     return "rejected";
   }
 
-  let accepted = await db.accessResponses.get([request.id, "accept"]);
+  const accepted = await db.accessResponses.get([request.id, "accept"]);
 
   if (accepted) {
     return "accepted";
@@ -128,7 +126,7 @@ export async function requestAccess(
     data,
   };
 
-  const [operationId, streamId] = await publish.toInbox(
+  const [operationId] = await publish.toInbox(
     data.calendarId,
     calendarAccessRequested,
   );
@@ -160,7 +158,7 @@ export async function acceptAccessRequest(
     data,
   };
 
-  const [operationId, streamId] = await publish.toInbox(
+  const [operationId] = await publish.toInbox(
     calendarId!,
     calendarAccessAccepted,
   );
@@ -191,7 +189,7 @@ export async function rejectAccessRequest(
     data,
   };
 
-  const [operationId, streamId] = await publish.toInbox(
+  const [operationId] = await publish.toInbox(
     calendarId!,
     calendarAccessRejected,
   );
@@ -266,8 +264,8 @@ async function onCalendarAccessRequested(
   };
 
   await db.accessRequests.add(accessRequest);
-  let publicKey = await identity.publicKey();
-  let accessStatus = await checkStatus(publicKey, calendarId);
+  const publicKey = await identity.publicKey();
+  const accessStatus = await checkStatus(publicKey, calendarId);
 
   // Show toast to user with request if owner or admin.
   const amOwner = await calendars.amOwner(calendarId);
@@ -299,12 +297,12 @@ async function onCalendarAccessAccepted(
     answer: "accept",
   });
 
-  let request = await db.accessRequests.get(data.requestId);
+  const request = await db.accessRequests.get(data.requestId);
   if (!request) {
     return;
   }
 
-  let accessStatus = await checkStatus(request.from, calendarId);
+  const accessStatus = await checkStatus(request.from, calendarId);
 
   // Process new calendar author if access was accepted.
   if (accessStatus == "accepted") {
@@ -335,7 +333,7 @@ export async function processNewCalendarAuthor(
   calendarId: Hash,
   publicKey: PublicKey,
 ) {
-  let stream = await db.streams.get(calendarId);
+  const stream = await db.streams.get(calendarId);
 
   // Inform the backend that there is a new author who may contribute to the calendar.
   const topic = new TopicFactory(calendarId);
@@ -348,7 +346,7 @@ export async function processNewCalendarAuthor(
     logPath: publish.CALENDAR_INBOX_LOG_PATH,
   });
 
-  let myPublicKey = await identity.publicKey();
+  const myPublicKey = await identity.publicKey();
   if (myPublicKey != publicKey) {
     return;
   }

@@ -62,8 +62,8 @@ class Toasts {
    * Show access request toast to the user
    */
   accessRequest(data: AccessRequest) {
-    let message = data.name + ' requested access'
-    let request: RequestEvent = {
+    const message = data.name + ' requested access'
+    const request: RequestEvent = {
       type: 'access_request',
       data
     }
@@ -74,8 +74,8 @@ class Toasts {
    * Show booking request toast to the user
    */
   bookingRequest(data: BookingRequest) {
-    let message = "new booking request: " + data.id
-    let request: RequestEvent = {
+    const message = "new booking request: " + data.id
+    const request: RequestEvent = {
       type: 'booking_request',
       data
     }

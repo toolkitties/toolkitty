@@ -3,9 +3,7 @@
 import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
 import { isSubTimespan } from "$lib/utils";
-import { invoke } from "@tauri-apps/api/core";
-import { auth, events, publish, roles } from ".";
-import { TopicFactory } from "./topics";
+import { auth, events, publish } from ".";
 
 /**
  * Queries
@@ -54,13 +52,13 @@ export async function amOwner(eventId: Hash): Promise<boolean> {
  * Create a calendar event.
  */
 export async function create(calendarId: Hash, fields: EventFields) {
-  let eventCreated: EventCreated = {
+  const eventCreated: EventCreated = {
     type: "event_created",
     data: {
       fields,
     },
   };
-  const [operationId, streamId] = await publish.toCalendar(
+  const [operationId] = await publish.toCalendar(
     calendarId!,
     eventCreated,
   );
@@ -82,14 +80,14 @@ export async function update(eventId: Hash, fields: EventFields) {
     throw new Error("user does not have permission to update this event");
   }
 
-  let eventUpdated: EventUpdated = {
+  const eventUpdated: EventUpdated = {
     type: "event_updated",
     data: {
       id: eventId,
       fields,
     },
   };
-  const [operationId, streamId] = await publish.toCalendar(
+  const [operationId] = await publish.toCalendar(
     event!.calendarId,
     eventUpdated,
   );
@@ -111,13 +109,13 @@ async function deleteEvent(eventId: Hash) {
     throw new Error("user does not have permission to delete this event");
   }
 
-  let eventDeleted: EventDeleted = {
+  const eventDeleted: EventDeleted = {
     type: "event_deleted",
     data: {
       id: eventId,
     },
   };
-  const [operationId, streamId] = await publish.toCalendar(
+  const [operationId] = await publish.toCalendar(
     event!.calendarId,
     eventDeleted,
   );
@@ -167,7 +165,7 @@ function onEventUpdated(data: EventUpdated["data"]): Promise<void> {
   return db.transaction("rw", db.events, db.bookingRequests, async () => {
     // Update `validTime` field of all booking requests associated with this event.
     await db.bookingRequests.where({ eventId }).modify((request) => {
-      const isValid = isSubTimespan(startDate, endDate, request.timeSpan);
+      const isValid = isSubTimespan(new Date(startDate), new Date(endDate), request.timeSpan);
       request.isValid = isValid ? "true" : "false";
     });
 

@@ -2,9 +2,12 @@
   import { Calendar } from "bits-ui";
   import type { DateValue } from "@internationalized/date";
 
-  let { availability = $bindable() } = $props<{
-    availability: { date: string; startTime: string; endTime: string }[];
-  }>();
+  type Availability = { date: string; startTime: string; endTime: string };
+
+  let { availability = $bindable() }: { availability: Availability[] } =
+    $props<{
+      availability: Availability[];
+    }>();
   let availableDates = $state(
     new Set(availability.map((entry: { date: string }) => entry.date)),
   );
@@ -58,7 +61,10 @@
   const handleRemoveAvailability = (e: Event, index: number) => {
     e.preventDefault();
     const removedDate = availability[index].date;
-    availability = availability.filter((_: any, i: number) => i !== index);
+    availability = availability.filter(
+      (_: { date: string; startTime: string; endTime: string }, i: number) =>
+        i !== index,
+    );
 
     if (
       !availability.some(
@@ -82,19 +88,19 @@
       <Calendar.NextButton class="w-8 ml-2">→</Calendar.NextButton>
     </Calendar.Header>
 
-    {#each months as month}
+    {#each months as month (month.value)}
       <Calendar.Grid>
         <Calendar.GridHead>
           <Calendar.GridRow>
-            {#each weekdays as day}
+            {#each weekdays as day (day)}
               <Calendar.HeadCell>{day}</Calendar.HeadCell>
             {/each}
           </Calendar.GridRow>
         </Calendar.GridHead>
         <Calendar.GridBody>
-          {#each month.weeks as weekDates}
+          {#each month.weeks as weekDates, i (i)}
             <Calendar.GridRow>
-              {#each weekDates as date}
+              {#each weekDates as date (date)}
                 <Calendar.Cell {date} month={month.value}>
                   <Calendar.Day
                     class={"data-[outside-month]:pointer-events-none data-[outside-month]:text-gray-300 data-[selected]:bg-black data-[selected]:text-white " +
@@ -138,7 +144,7 @@
 {#if availability.length > 0}
   <h3>Current Availability:</h3>
   <ul>
-    {#each availability as entry, index}
+    {#each availability as entry, index (entry)}
       {#if entry.date === currentlySelectedDate?.toString()}
         <li>
           <span>{entry.startTime} - {entry.endTime}</span>

@@ -1,5 +1,5 @@
 import { db } from "$lib/db";
-import { auth, publish, resources, roles } from ".";
+import { auth, publish, resources } from ".";
 import { promiseResult } from "$lib/promiseMap";
 import { isSubTimespan } from "$lib/utils";
 
@@ -77,13 +77,13 @@ export async function create(
   calendarId: Hash,
   fields: ResourceFields,
 ): Promise<Hash> {
-  let resourceCreated: ResourceCreated = {
+  const resourceCreated: ResourceCreated = {
     type: "resource_created",
     data: {
       fields,
     },
   };
-  const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
+  const [operationId]: [Hash, Hash] = await publish.toCalendar(
     calendarId!,
     resourceCreated,
   );
@@ -115,7 +115,7 @@ export async function update(
       fields,
     },
   };
-  const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
+  const [operationId]: [Hash, Hash] = await publish.toCalendar(
     resource!.calendarId,
     resourceUpdated,
   );
@@ -144,7 +144,7 @@ export async function deleteResource(resourceId: Hash): Promise<Hash> {
     },
   };
 
-  const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
+  const [operationId]: [Hash, Hash] = await publish.toCalendar(
     resource!.calendarId,
     resourceDeleted,
   );

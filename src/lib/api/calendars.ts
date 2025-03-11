@@ -8,7 +8,6 @@ import {
   calendars,
   identity,
   publish,
-  roles,
   streams,
   topics,
   users,
@@ -119,7 +118,7 @@ export async function update(
     throw new Error("user does not have permission to update this calendar");
   }
 
-  let calendarUpdated: CalendarUpdated = {
+  const calendarUpdated: CalendarUpdated = {
     type: "calendar_updated",
     data: {
       id: calendarId,
@@ -127,7 +126,7 @@ export async function update(
     },
   };
 
-  const [operationId, streamId] = await publish.toCalendar(
+  const [operationId] = await publish.toCalendar(
     calendarId,
     calendarUpdated,
   );
@@ -151,7 +150,7 @@ export async function deleteCalendar(calendarId: Hash): Promise<Hash> {
     },
   };
 
-  const [operationId, streamId] = await publish.toCalendar(
+  const [operationId] = await publish.toCalendar(
     calendarId,
     calendarDeleted,
   );
@@ -194,8 +193,8 @@ async function onCalendarCreated(
 
   // @TODO(sam): validate that header hash and owner match those contained in stream.
 
-  let { name, dates } = data.fields;
-  let timeSpan = dates[0];
+  const { name, dates } = data.fields;
+  const timeSpan = dates[0];
 
   await db.calendars.add({
     id: meta.stream.id,
@@ -250,7 +249,7 @@ async function onCalendarDeleted(data: CalendarDeleted["data"]) {
  */
 
 function validateFields(fields: CalendarFields) {
-  let { dates } = fields;
+  const { dates } = fields;
   if (dates.length == 0) {
     throw new Error("calendar dates must contain at least on time span");
   }
