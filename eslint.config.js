@@ -38,12 +38,15 @@ export default ts.config(
         // explicitly specifying it ensures better compatibility and functionality.
         svelteConfig
       }
-    }
+    },
+    rules: {
+      'no-undef': 'off', // Disable no-undef for Svelte files and let Typescript handle it
+    },
   },
   {
     rules: {
       // Override or add rule settings here, such as:
       // 'svelte/rule-name': 'error'
     }
-  }
+  },
 );
