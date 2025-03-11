@@ -39,6 +39,7 @@
       open = false;
       goto(`/app/${type}s`);
     } catch (error) {
+      open = false;
       toast.error(`Failed to delete ${name}`);
       console.error(`Failed to delete ${type}`, error);
     }

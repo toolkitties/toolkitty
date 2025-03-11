@@ -7,4 +7,4 @@
 </script>
 
 <ResourceForm data={data.form} activeCalendarId={data.activeCalendarId!} />
-<Delete id={data.form.data.id!} name={data.form.data.name} type="event" />
+<Delete id={data.form.data.id!} name={data.form.data.name} type="resource" />
