@@ -118,3 +118,9 @@ html {
     @apply fill-pink-hot;
   }
 }
+
+@layer theme {
+  .form-error {
+    @apply text-red-500 block mb-2;
+  }
+}

@@ -47,7 +47,7 @@
   </p> -->
 
   {#if $pendingAccessRequests}
-    {#each $pendingAccessRequests as request}
+    {#each $pendingAccessRequests as request (request.id)}
       <!-- TODO: go through users instead of pending requests -->
       <RequestDialog
         user={{

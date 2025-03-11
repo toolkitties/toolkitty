@@ -16,7 +16,7 @@
 <section>
   {#if $pendingRequests}
     <h3>Pending requests</h3>
-    {#each $pendingRequests as request}
+    {#each $pendingRequests as request (request.id)}
       <RequestDialog {request} />
     {/each}
   {/if}

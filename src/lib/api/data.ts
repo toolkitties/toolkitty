@@ -2,7 +2,7 @@ import { bookings, calendars, events, resources, spaces } from ".";
 import { setActiveCalendar } from "./calendars";
 
 export async function seedData() {
-  const [operationId, calendarId] = await calendars.create({
+  const [, calendarId] = await calendars.create({
     fields: {
       name: "Antiuniversity",
       dates: [
@@ -13,7 +13,7 @@ export async function seedData() {
       ],
       festivalInstructions: null,
       spacePageText: null,
-      resourcePageText: null
+      resourcePageText: null,
     },
   });
 
@@ -28,7 +28,7 @@ export async function seedData() {
       ],
       festivalInstructions: null,
       spacePageText: null,
-      resourcePageText: null
+      resourcePageText: null,
     },
   });
 
@@ -43,16 +43,22 @@ export async function seedData() {
       ],
       festivalInstructions: null,
       spacePageText: null,
-      resourcePageText: null
+      resourcePageText: null,
     },
   });
 
   await setActiveCalendar(calendarId);
 
   const spaceOneId = await spaces.create(calendarId, {
-    type: "physical",
     name: "1",
-    location: "123 Street Street",
+    location: {
+      type: "physical",
+      street: "123 My Street",
+      city: "My City",
+      state: "My State",
+      zip: "123ABC",
+      country: "UK",
+    },
     capacity: 0,
     accessibility: "Wheelchair accessible",
     description: "A stage, a main one",
@@ -76,10 +82,16 @@ export async function seedData() {
     multiBookable: false,
   });
 
-  const spaceTwoId = await spaces.create(calendarId, {
-    type: "physical",
+  await spaces.create(calendarId, {
     name: "Recording Studio",
-    location: "34 Road Avenue",
+    location: {
+      type: "physical",
+      street: "123 My Street",
+      city: "My City",
+      state: "My State",
+      zip: "123ABC",
+      country: "UK",
+    },
     capacity: 20,
     accessibility: "www.website.com/accessibility",
     description:
@@ -149,19 +161,19 @@ export async function seedData() {
   const eventOneId = await events.create(calendarId, {
     name: "Kitty Fest 25",
     description: "A grand music festival with various artists.",
-    startDate: new Date("2025-01-06T14:00:00Z"),
-    endDate: new Date("2025-01-06T20:00:00Z"),
+    startDate: "2025-01-06T14:00:00Z",
+    endDate: "2025-01-06T20:00:00Z",
     location: `${spaceOneId}`,
     images: [],
     resources: [`${resourceOneId}`],
     links: [],
   });
 
-  const eventTwoId = await events.create(calendarId, {
+  await events.create(calendarId, {
     name: "Art Exhibition",
     description: "An exhibition showcasing modern art.",
-    startDate: new Date("2025-02-10T10:00:00.000Z"),
-    endDate: new Date("2025-02-10T17:00:00.000Z"),
+    startDate: "2025-02-10T10:00:00.000Z",
+    endDate: "2025-02-10T17:00:00.000Z",
     location: "",
     images: [],
     resources: [],
@@ -179,9 +191,9 @@ export async function seedData() {
     },
   );
 
-  const resourceResponseId = await bookings.accept(resourceRequestId);
+  await bookings.accept(resourceRequestId);
 
-  const resourceTwoResponseId = await bookings.request(
+  await bookings.request(
     eventOneId,
     resourceTwoId,
     "resource",

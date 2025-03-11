@@ -53,7 +53,7 @@
       onComplete={join}
     >
       {#snippet children({ cells })}
-        {#each cells as cell}
+        {#each cells as cell, i (i)}
           <PinInput.Cell
             class="flex items-center justify-center h-16 w-10 border rounded data-active:outline-primary data-active:outline-1"
             {cell}

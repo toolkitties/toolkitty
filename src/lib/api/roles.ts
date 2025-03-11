@@ -34,7 +34,7 @@ export async function assignRole(
     },
   };
 
-  const [operationId, streamId] = await publish.toCalendar(
+  const [operationId] = await publish.toCalendar(
     calendarId,
     user_role_assigned,
   );

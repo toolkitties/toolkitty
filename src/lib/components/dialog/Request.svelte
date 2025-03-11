@@ -1,6 +1,5 @@
 <script lang="ts">
   import * as AlertDialog from "./index";
-  import { access } from "$lib/api";
 
   let { request } = $props();
 

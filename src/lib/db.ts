@@ -1,7 +1,7 @@
 import Dexie, { type EntityTable, type Table } from "dexie";
 
 /**
- * (ノ ˘_˘)ノ　ζ|||ζ　ζ|||ζ
+ * (ノ ˘_˘)ノ ζ|||ζ ζ|||ζ
  * Create the database
  *
  * We extend the Dexie instance with our custom table definitions for type-safety.
@@ -72,7 +72,8 @@ db.version(1).stores({
   spaces: "&id, calendarId",
   resources: "&id, calendarId",
   events: "&id, name, date, calendarId",
-  bookingRequests: "&id, eventId, calendarId, requester, resourceType",
+  bookingRequests:
+    "&id, eventId, calendarId, requester, resourceType, resourceId, validTime, status",
   bookingResponses: "&id, eventId, requestId, calendarId, answer",
   streams: "&id",
   settings: "&name",

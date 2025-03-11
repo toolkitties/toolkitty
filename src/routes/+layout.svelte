@@ -27,7 +27,7 @@
         // calendar (add them to the topic map).
       });
 
-      // @ts-ignore
+      // @ts-expect-error isInit does not exist on window
       window.isInit = true;
     }
   });

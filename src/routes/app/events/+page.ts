@@ -5,5 +5,9 @@ export const load: PageLoad = async () => {
   const activeCalendarId = await calendars.getActiveCalendarId();
   const eventsList = await events.findMany(activeCalendarId!);
 
-  return { title: "home", activeCalendarId, eventsList };
+  return {
+    title: "home",
+    activeCalendarId,
+    eventsList,
+  };
 };

@@ -1,14 +1,12 @@
 <script lang="ts">
   import { toast } from "$lib/toast.svelte";
   import { fly } from "svelte/transition";
-  import * as AlertDialog from "./dialog";
-  // import Request from "./dialog/Request.svelte";
   import RequestToast from "./RequestToast.svelte";
 </script>
 
 <section class="fixed top-8 right-0 p-3 w-full z-30">
   <ol tabIndex={-1} class="space-y-2">
-    {#each toast.toasts as toastie}
+    {#each toast.toasts as toastie (toastie.id)}
       <li
         aria-live="polite"
         class={`toast ${toastie.type}`}

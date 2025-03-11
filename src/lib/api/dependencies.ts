@@ -36,6 +36,8 @@ export async function process(message: ApplicationMessage) {
     data.type == "booking_request_rejected"
   ) {
     return await onBookingResponse(data.data);
+  } else if (data.type == "booking_requested") {
+    return await onBookingRequest(data.data);
   } else if (
     data.type == "calendar_access_accepted" ||
     data.type == "calendar_access_rejected"
@@ -63,6 +65,24 @@ export async function process(message: ApplicationMessage) {
   }
 }
 
+async function onBookingRequest(data: BookingRequested["data"]) {
+  const event = await events.findById(data.eventId);
+  if (!event) {
+    throw new Error("resource request event not yet received");
+  }
+
+  let resource;
+  if (data.type == "space") {
+    resource = await spaces.findById(data.resourceId);
+  } else {
+    resource = await resources.findById(data.resourceId);
+  }
+
+  if (!resource) {
+    throw new Error("resource request resource not yet received");
+  }
+}
+
 async function onBookingResponse(
   data: BookingRequestAccepted["data"] | BookingRequestRejected["data"],
 ) {
@@ -75,14 +95,14 @@ async function onBookingResponse(
 async function onCalendarEdit(
   data: CalendarUpdated["data"] | CalendarDeleted["data"] | PageUpdated["data"],
 ) {
-  let calendar = await calendars.findOne(data.id);
+  const calendar = await calendars.findOne(data.id);
   if (!calendar) {
     throw new Error("calendar not yet received");
   }
 }
 
 async function onSpaceEdit(data: SpaceUpdated["data"] | SpaceDeleted["data"]) {
-  let space = await spaces.findById(data.id);
+  const space = await spaces.findById(data.id);
   if (!space) {
     throw new Error("space not yet received");
   }
@@ -91,14 +111,14 @@ async function onSpaceEdit(data: SpaceUpdated["data"] | SpaceDeleted["data"]) {
 async function onResourceEdit(
   data: ResourceUpdated["data"] | ResourceDeleted["data"],
 ) {
-  let resource = await resources.findById(data.id);
+  const resource = await resources.findById(data.id);
   if (!resource) {
     throw new Error("resource not yet received");
   }
 }
 
 async function onEventEdit(data: EventUpdated["data"] | EventDeleted["data"]) {
-  let event = await events.findById(data.id);
+  const event = await events.findById(data.id);
   if (!event) {
     throw new Error("event not yet received");
   }
