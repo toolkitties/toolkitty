@@ -76,6 +76,8 @@ export function findByOwner(
             resources.push(resource);
           }
         }
+
+        event.resources = resources;
       }
       return events;
     },
