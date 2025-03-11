@@ -5,6 +5,7 @@
 import { db } from "$lib/db";
 import { identity, users } from ".";
 
+// TODO: rename findById and pass in array.
 export function get(
   calendarId: CalendarId,
   publicKey: PublicKey,

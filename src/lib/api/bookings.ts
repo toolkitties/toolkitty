@@ -51,7 +51,7 @@ export async function request(
   message: string,
   timeSpan: TimeSpan,
 ) {
-  let event = await db.events.get(eventId);
+  const event = await db.events.get(eventId);
   const resourceRequested: BookingRequested = {
     type: "booking_requested",
     data: {
@@ -63,7 +63,7 @@ export async function request(
     },
   };
 
-  const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
+  const [operationId]: [Hash, Hash] = await publish.toCalendar(
     event!.calendarId,
     resourceRequested,
   );
@@ -77,7 +77,7 @@ export async function request(
  * Accept a booking request.
  */
 export async function accept(requestId: Hash) {
-  let bookingRequest = await db.bookingRequests.get(requestId);
+  const bookingRequest = await db.bookingRequests.get(requestId);
   const amOwner = await spaces.amOwner(bookingRequest!.resourceId);
   if (bookingRequest!.resourceType == "space") {
     if (!amOwner) {
@@ -101,7 +101,7 @@ export async function accept(requestId: Hash) {
     },
   };
 
-  const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
+  const [operationId]: [Hash, Hash] = await publish.toCalendar(
     bookingRequest!.calendarId,
     bookingRequested,
   );
@@ -115,7 +115,7 @@ export async function accept(requestId: Hash) {
  * Reject a booking request.
  */
 export async function reject(requestId: Hash) {
-  let bookingRequest = await db.bookingRequests.get(requestId);
+  const bookingRequest = await db.bookingRequests.get(requestId);
 
   const amOwner = await resources.amOwner(bookingRequest!.resourceId);
   if (!amOwner) {
@@ -131,7 +131,7 @@ export async function reject(requestId: Hash) {
     },
   };
 
-  const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
+  const [operationId]: [Hash, Hash] = await publish.toCalendar(
     bookingRequest!.calendarId,
     bookingRequested,
   );

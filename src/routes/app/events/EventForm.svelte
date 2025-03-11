@@ -4,7 +4,7 @@
   import { toast } from "$lib/toast.svelte";
   import type { SuperValidated, Infer } from "sveltekit-superforms";
   import type { EventSchema } from "$lib/schemas";
-  import { superForm, setMessage, setError } from "sveltekit-superforms";
+  import { superForm } from "sveltekit-superforms";
   import SuperDebug from "sveltekit-superforms";
   import { eventSchema } from "$lib/schemas";
   import { zod } from "sveltekit-superforms/adapters";
@@ -14,7 +14,6 @@
     data,
     activeCalendarId,
     spaces,
-    resources,
   }: {
     data: SuperValidated<Infer<EventSchema>>;
     activeCalendarId: Hash;
@@ -23,11 +22,8 @@
   } = $props();
 
   let selectedSpace: Space | null = $state<Space | null>(null);
-  function handleSpaceSelection(space: Space) {
-    selectedSpace = space;
-  }
 
-  const { form, errors, message, constraints, enhance } = superForm(data, {
+  const { form, errors, enhance } = superForm(data, {
     SPA: true,
     validators: zod(eventSchema),
     resetForm: false,
@@ -148,7 +144,7 @@
   {#if spaces.length > 0}
     <p>Select a space:</p>
     <ul>
-      {#each spaces as space}
+      {#each spaces as space (space.id)}
         <li>
           <input type="radio" id={space.id} name="selected-space" />
           <label for={space.id}>{space.name}</label>

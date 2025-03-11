@@ -13,7 +13,7 @@
 <a href="/app/calendars/{data.activeCalendarId}/edit">Edit Calendar</a>
 <a href="/app/events/create">Create event</a>
 
-{#each data.eventsList as event}
+{#each data.eventsList as event (event.id)}
   <EventRow {event} />
 {/each}
 

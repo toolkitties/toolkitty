@@ -20,13 +20,7 @@
     $state([]);
   let alwaysAvailable = $state(false);
 
-  function updateAvailability(
-    newAvailability: { date: string; startTime: string; endTime: string }[],
-  ) {
-    availability = newAvailability;
-  }
-
-  const { form, errors, message, constraints, enhance } = superForm(data, {
+  const { form, errors, enhance } = superForm(data, {
     SPA: true,
     validators: zod(spaceSchema),
     resetForm: false,
@@ -85,7 +79,10 @@
         lon: "",
       };
     } else if ($form.location.type === "virtual") {
-      ($form.location.type = "virtual"), ($form.location.link = "");
+      $form.location = {
+        type: "virtual",
+        link: "",
+      };
     }
   }
 </script>

@@ -56,8 +56,8 @@ export const seedTestMessages: ChannelMessage[] = [
           name: "Team Meeting",
           description: "Monthly team meeting to discuss project updates.",
           location: "space_001",
-          startDate: new Date("2025-03-05T10:00:00Z"),
-          endDate: new Date("2025-03-05T11:00:00Z"),
+          startDate: "2025-03-05T10:00:00Z",
+          endDate: "2025-03-05T11:00:00Z",
           resources: ["resource_001"],
           links: [
             {
@@ -110,13 +110,13 @@ export const seedTestMessages: ChannelMessage[] = [
       type: "space_created",
       data: {
         fields: {
-          type: "physical",
           name: "Conference Room A",
           location: {
-            street: "123 My St",
-            city: "London",
-            state: "London",
-            zip: "E11",
+            type: "physical",
+            street: "123 My Street",
+            city: "My City",
+            state: "My State",
+            zip: "123ABC",
             country: "UK",
           },
           messageForRequesters: "Please leave the space tidy after use",

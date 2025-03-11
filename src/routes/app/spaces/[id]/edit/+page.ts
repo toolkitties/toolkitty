@@ -1,9 +1,9 @@
 import type { PageLoad } from "./$types";
 import { spaceSchema } from "$lib/schemas";
-import { error } from '@sveltejs/kit';
+import { error } from "@sveltejs/kit";
 import { spaces } from "$lib/api";
-import { superValidate } from 'sveltekit-superforms';
-import { zod } from 'sveltekit-superforms/adapters';
+import { superValidate } from "sveltekit-superforms";
+import { zod } from "sveltekit-superforms/adapters";
 
 export const load: PageLoad = async ({ params }) => {
   const spaceId = params.id;
@@ -12,11 +12,12 @@ export const load: PageLoad = async ({ params }) => {
 
   if (!space) {
     error(404, {
-      message: 'Space not found'
+      message: "Space not found",
     });
   }
 
-  const { calendarId, ownerId, booked, ...spaceFields } = space
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { calendarId, ownerId, booked, ...spaceFields } = space;
   const activeCalendarId = calendarId;
   const form = await superValidate(spaceFields, zod(spaceSchema));
 

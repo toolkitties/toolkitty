@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * ദ്ദി(˵ •̀ ᴗ - ˵ ) ✧
  * Core Types
@@ -173,7 +174,7 @@ type SubscribedToCalendar = {
 type NetworkEvent = {
   event: "network_event";
   // @TODO: define all possible system events we will receive on the frontend
-  data: any;
+  data: unknown;
 };
 
 /**

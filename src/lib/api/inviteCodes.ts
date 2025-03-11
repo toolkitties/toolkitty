@@ -1,4 +1,3 @@
-import { invoke } from "@tauri-apps/api/core";
 import { calendars, publish, streams } from "$lib/api";
 
 type InviteCodesState = {
@@ -73,7 +72,7 @@ function reset() {
 }
 
 async function sendRequest(inviteCode: string) {
-  let payload: ResolveInviteCodeRequest = {
+  const payload: ResolveInviteCodeRequest = {
     messageType: "request",
     timestamp: Date.now(),
     inviteCode,
@@ -105,7 +104,7 @@ async function onRequest(inviteCode: string) {
 
   const stream = await streams.findById(calendar.id);
 
-  let payload: ResolveInviteCodeResponse = {
+  const payload: ResolveInviteCodeResponse = {
     messageType: "response",
     timestamp: Date.now(),
     inviteCode,

@@ -1,8 +1,8 @@
 import type { PageLoad } from "./$types";
 import { error } from "@sveltejs/kit";
-import { resources, calendars } from "$lib/api";
+import { resources } from "$lib/api";
 import { superValidate } from "sveltekit-superforms";
-import { zod } from 'sveltekit-superforms/adapters';
+import { zod } from "sveltekit-superforms/adapters";
 import { resourceSchema } from "$lib/schemas";
 
 export const load: PageLoad = async ({ params }) => {
@@ -11,11 +11,12 @@ export const load: PageLoad = async ({ params }) => {
 
   if (!resource) {
     error(404, {
-      message: 'Resource not found'
+      message: "Resource not found",
     });
   }
 
-  const { calendarId, ownerId, booked, ...resourceFields } = resource
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { calendarId, ownerId, booked, ...resourceFields } = resource;
   const activeCalendarId = calendarId;
 
   const form = await superValidate(resourceFields, zod(resourceSchema));
