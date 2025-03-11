@@ -6,7 +6,7 @@
   // TODO: possibly need to convert date to nice format from ISO 8601. TBC.
 
   // tag colour possibly comes from event rather than hard coded light this.
-  let tagColours = ["bg-yellow-light", "bg-fluro-green-light", "bg-red-light"];
+  // let tagColours = ["bg-yellow-light", "bg-fluro-green-light", "bg-red-light"];
 </script>
 
 <a href={`/app/events/${event.id}`} class="flex border-black border event-row">

@@ -42,7 +42,7 @@
     <Select.Portal>
       <Select.Content>
         <Select.Viewport class="bg-bg border p-2 flex flex-col w-full">
-          {#each calendarList as calendar}
+          {#each calendarList as calendar (calendar.id)}
             <Select.Item value={calendar.id} label={calendar.name}
               >{calendar.name}</Select.Item
             >

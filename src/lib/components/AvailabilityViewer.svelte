@@ -51,7 +51,6 @@
       return;
     }
 
-    const selectedDate = new Date(value.year, value.month - 1, value.day);
     timeAvailability = null;
 
     if (Array.isArray(availability)) {
@@ -77,19 +76,19 @@
         <Calendar.Heading />
         <Calendar.NextButton class="w-8 ml-2">→</Calendar.NextButton>
       </Calendar.Header>
-      {#each months as month}
+      {#each months as month (month.value)}
         <Calendar.Grid>
           <Calendar.GridHead>
             <Calendar.GridRow>
-              {#each weekdays as day}
+              {#each weekdays as day, index (index)}
                 <Calendar.HeadCell>{day}</Calendar.HeadCell>
               {/each}
             </Calendar.GridRow>
           </Calendar.GridHead>
           <Calendar.GridBody>
-            {#each month.weeks as weekDates}
+            {#each month.weeks as weekDates, i (i)}
               <Calendar.GridRow>
-                {#each weekDates as date}
+                {#each weekDates as date (date)}
                   <Calendar.Cell {date} month={month.value}>
                     <Calendar.Day
                       class={`data-[outside-month]:pointer-events-none

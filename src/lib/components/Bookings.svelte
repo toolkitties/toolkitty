@@ -96,13 +96,13 @@
   <div class="flex">
     <!-- availability as hours -->
     <ul class="divide-black-200 divide-y-2">
-      {#each hours as hour}
+      {#each hours as hour (hour)}
         <li class="h-12">{hour}</li>
       {/each}
     </ul>
     <!-- bookings -->
     <div class="grow relative">
-      {#each bookedBlocks as block}
+      {#each bookedBlocks as block (block.start)}
         <div
           class="bg-red-light absolute w-full"
           style="top: {block.start}%; height: {block.length}%"

@@ -57,7 +57,7 @@
   </div>
   <nav class="fixed bottom-0 right-0 w-full py-2.5 px-6 border-t border-black">
     <ul class="flex gap-6 justify-between items-center h-full">
-      {#each menu as { name, url, icon: Icon }}
+      {#each menu as { name, url, icon: Icon } (name)}
         <li>
           <a
             href={url}

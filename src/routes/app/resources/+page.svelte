@@ -10,7 +10,7 @@
 <h1 class="font-pixel">Resources</h1>
 <a href="/app/resources/create">Create resource</a>
 
-{#each data.resourcesList as resource}
+{#each data.resourcesList as resource (resource.id)}
   <a
     href={`/app/resources/${resource.id}`}
     class="flex border-black border event-row"
