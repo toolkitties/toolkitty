@@ -309,19 +309,14 @@
 
   <p>Can this space have multiple bookings at the same time?</p>
   <fieldset>
-    <label for="multi-bookable">Yes</label>
+    <label for="multiBookable"
+      >Can this resource have multiple bookings at the same time?
+    </label>
     <input
-      type="radio"
-      name="multi-bookable"
-      value="true"
-      bind:group={$form.multiBookable}
-    />
-    <label for="multi-bookable">No</label>
-    <input
-      type="radio"
-      name="multi-bookable"
-      value="false"
-      bind:group={$form.multiBookable}
+      id="multiBookable"
+      type="checkbox"
+      name="multiBookable"
+      bind:checked={$form.multiBookable}
     />
   </fieldset>
   {#if $errors.multiBookable}<span class="form-error"
