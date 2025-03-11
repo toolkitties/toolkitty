@@ -6,7 +6,7 @@ import { zod } from "sveltekit-superforms/adapters";
 
 export const load: PageLoad = async () => {
   const activeCalendarId = await calendars.getActiveCalendarId();
-  let spacesList = await spaces.findMany(activeCalendarId!);
+  let spacesList = await spaces.findManyWithinCalendarDates(activeCalendarId!);
   let resourcesList = await resources.findMany(activeCalendarId!);
 
   const form = defaults(zod(eventSchema));

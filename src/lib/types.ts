@@ -589,7 +589,7 @@ type User = {
   calendarId: CalendarId;
   // @TODO: currently this value is undefined for calendar creators: https://github.com/toolkitties/toolkitty/issues/177
   name?: string;
-  role?: Role
+  role?: Role;
 };
 
 type Calendar = {
@@ -650,6 +650,8 @@ type BookingRequest = {
   resourceOwner: PublicKey;
   message: string;
   timeSpan: TimeSpan;
+  isValid: "true" | "false";
+  status: "accepted" | "rejected" | "pending";
 };
 
 type ResourceType = "space" | "resource";
@@ -685,4 +687,5 @@ type BookingQueryFilter = {
   requester?: PublicKey;
   resourceType?: ResourceType;
   resourceOwner?: PublicKey;
+  isValid?: "true" | "false";
 };

@@ -70,11 +70,24 @@
 <SuperDebug data={{ $form, $errors }} />
 <form method="POST" use:enhance>
   <label for="name">Event name*</label>
-  <input type="text" name="name" required bind:value={$form.name} />
+  <input
+    type="text"
+    name="name"
+    aria-invalid={$errors.name ? "true" : undefined}
+    required
+    bind:value={$form.name}
+  />
+  {#if $errors.name}<span class="form-error">{$errors.name}</span>{/if}
 
   <label for="description">Event description*</label>
-  <textarea name="description" required bind:value={$form.description}
+  <textarea
+    name="description"
+    required
+    aria-invalid={$errors.description ? "true" : undefined}
+    bind:value={$form.description}
   ></textarea>
+  {#if $errors.description}<span class="form-error">{$errors.description}</span
+    >{/if}
 
   <p>🎫 Ticket Link</p>
   <div class="flex flex-row">
@@ -83,16 +96,24 @@
       <input
         type="text"
         name="ticket-link-text"
+        aria-invalid={$errors.links?.[0].title ? "true" : undefined}
         bind:value={$form.links[0].title}
       />
+      {#if $errors.links?.[0].title}<span class="form-error"
+          >{$errors.links?.[0].title}</span
+        >{/if}
     </div>
     <div>
       <label for="ticket-link-url">URL</label>
       <input
         type="url"
         name="ticket-link-url"
+        aria-invalid={$errors.links?.[0].url ? "true" : undefined}
         bind:value={$form.links[0].url}
       />
+      {#if $errors.links?.[0].url}<span class="form-error"
+          >{$errors.links?.[0].url}</span
+        >{/if}
     </div>
   </div>
 
@@ -103,16 +124,24 @@
       <input
         type="text"
         name="additional-link-text"
+        aria-invalid={$errors.links?.[1].title ? "true" : undefined}
         bind:value={$form.links[1].title}
       />
+      {#if $errors.links?.[1].title}<span class="form-error"
+          >{$errors.links?.[1].title}</span
+        >{/if}
     </div>
     <div>
       <label for="additional-link-url">URL</label>
       <input
         type="url"
         name="additional-link-url"
+        aria-invalid={$errors.links?.[1].url ? "true" : undefined}
         bind:value={$form.links[1].url}
       />
+      {#if $errors.links?.[1].url}<span class="form-error"
+          >{$errors.links?.[1].url}</span
+        >{/if}
     </div>
   </div>
 
@@ -145,16 +174,22 @@
         type="datetime-local"
         name="startDate"
         required
+        aria-invalid={$errors.startDate ? "true" : undefined}
         bind:value={$form.startDate}
       />
+      {#if $errors.startDate}<span class="form-error">{$errors.startDate}</span
+        >{/if}
 
       <label for="endDate">Access End *</label>
       <input
         type="datetime-local"
         name="endDate"
         required
+        aria-invalid={$errors.endDate ? "true" : undefined}
         bind:value={$form.endDate}
       />
+      {#if $errors.endDate}<span class="form-error">{$errors.endDate}</span
+        >{/if}
     </div>
   {:else}
     <p>No spaces found.</p>
@@ -167,16 +202,24 @@
       type="datetime-local"
       name="publicStartDate"
       required
+      aria-invalid={$errors.publicStartDate ? "true" : undefined}
       bind:value={$form.publicStartDate}
     />
+    {#if $errors.publicStartDate}<span class="form-error"
+        >{$errors.publicStartDate}</span
+      >{/if}
 
     <label for="publicEndDate">Event End *</label>
     <input
       type="datetime-local"
       name="publicEndDate"
       required
+      aria-invalid={$errors.publicEndDate ? "true" : undefined}
       bind:value={$form.publicEndDate}
     />
+    {#if $errors.publicEndDate}<span class="form-error"
+        >{$errors.publicEndDate}</span
+      >{/if}
   </div>
 
   <!-- @TODO - validate against space availability -->

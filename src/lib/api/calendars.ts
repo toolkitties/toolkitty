@@ -230,14 +230,15 @@ async function onCalendarUpdated(data: CalendarUpdated["data"]) {
   // actually error here anyway?)
   validateFields(data.fields);
 
-  let { name, dates } = data.fields;
-  let timeSpan = dates[0];
+  const { name, dates } = data.fields;
+  const timeSpan = dates[0];
 
   await db.calendars.update(data.id, {
     name,
     startDate: timeSpan.start,
     endDate: timeSpan.end,
   });
+
 }
 
 async function onCalendarDeleted(data: CalendarDeleted["data"]) {
