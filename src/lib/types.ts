@@ -625,6 +625,7 @@ type CalendarEvent = {
   id: Hash;
   calendarId: Hash;
   ownerId: PublicKey;
+  space?: Space;
 } & EventFields;
 
 type Space = {

@@ -86,7 +86,7 @@ async function onBookingRequest(data: BookingRequested["data"]) {
 async function onBookingResponse(
   data: BookingRequestAccepted["data"] | BookingRequestRejected["data"],
 ) {
-  const request = await bookings.findRequest(data.requestId);
+  const request = await bookings.findById(data.requestId);
   if (!request) {
     throw new Error("resource request not yet received");
   }

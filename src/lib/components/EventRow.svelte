@@ -1,7 +1,7 @@
-<script type="ts">
+<script lang="ts">
   // TODO: Define the type of the event prop
 
-  let { event } = $props();
+  let { event }: { event: CalendarEvent } = $props();
 
   // TODO: possibly need to convert date to nice format from ISO 8601. TBC.
 
@@ -19,7 +19,9 @@
     <h3>{event.name}</h3>
     <span>🗓️ {event.startDate}</span>
     <span>🕣 {event.startDate}</span>
-    <span>📍 {event.location ? event.location : "no space yet"}</span>
+    <span
+      >📍 {event.location ? event.location : "no space yet"}</span
+    >
   </div>
 </a>
 

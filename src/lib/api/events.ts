@@ -13,7 +13,25 @@ import { auth, events, publish } from ".";
  * Get events that are associated with the passed calendar
  */
 export function findMany(calendarId: Hash): Promise<CalendarEvent[]> {
-  return db.events.where({ calendarId }).toArray();
+  return db.transaction(
+    "r",
+    db.events,
+    db.bookingRequests,
+    db.spaces,
+    async () => {
+      const events = await db.events.where({ calendarId }).toArray();
+      for (const event of events) {
+        if (event.location) {
+          const request = await db.bookingRequests.get(event.location);
+          if (!request) {
+            continue;
+          }
+          event.space = await db.spaces.get({ id: request.resourceId });
+        }
+      }
+      return events;
+    },
+  );
 }
 
 /**
@@ -23,14 +41,48 @@ export function findByOwner(
   calendarId: Hash,
   ownerId: PublicKey,
 ): Promise<CalendarEvent[]> {
-  return db.events.where({ ownerId, calendarId }).toArray();
+  return db.transaction(
+    "r",
+    db.events,
+    db.bookingRequests,
+    db.spaces,
+    async () => {
+      const events = await db.events.where({ ownerId, calendarId }).toArray();
+      for (const event of events) {
+        if (event.location) {
+          const request = await db.bookingRequests.get(event.location);
+          if (!request) {
+            continue;
+          }
+          event.space = await db.spaces.get({ id: request.resourceId });
+        }
+      }
+      return events;
+    },
+  );
 }
 
 /**
  * Get one event via its id
  */
 export function findById(id: Hash): Promise<CalendarEvent | undefined> {
-  return db.events.get({ id });
+  return db.transaction(
+    "r",
+    db.events,
+    db.bookingRequests,
+    db.spaces,
+    async () => {
+      const event = await db.events.get({ id });
+      if (event?.location) {
+        const request = await db.bookingRequests.get(event.location);
+        if (!request) {
+          return event;
+        }
+        event.space = await db.spaces.get({ id: request.resourceId });
+      }
+      return event;
+    },
+  );
 }
 
 export async function isOwner(
