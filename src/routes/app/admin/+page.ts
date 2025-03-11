@@ -8,6 +8,6 @@ export const load: PageLoad = async () => {
   return {
     title: `share`,
     shareCode,
-    activeCalendarId
+    activeCalendarId,
   };
 };
