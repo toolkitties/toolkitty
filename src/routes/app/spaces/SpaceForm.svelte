@@ -79,7 +79,10 @@
         lon: "",
       };
     } else if ($form.location.type === "virtual") {
-      ($form.location.type = "virtual"), ($form.location.link = "");
+      $form.location = {
+        type: "virtual",
+        link: "",
+      };
     }
   }
 </script>

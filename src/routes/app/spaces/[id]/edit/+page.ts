@@ -16,6 +16,7 @@ export const load: PageLoad = async ({ params }) => {
     });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { calendarId, ownerId, booked, ...spaceFields } = space
   const activeCalendarId = calendarId;
   const form = await superValidate(spaceFields, zod(spaceSchema));
