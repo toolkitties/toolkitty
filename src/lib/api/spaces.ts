@@ -1,8 +1,7 @@
 import { db } from "$lib/db";
 import { auth, publish, roles, spaces } from ".";
 import { promiseResult } from "$lib/promiseMap";
-import { TopicFactory } from "./topics";
-import { invoke } from "@tauri-apps/api/core";
+import { isSubTimespan } from "$lib/utils";
 
 /**
  * Queries
@@ -30,6 +29,30 @@ export function findByOwner(
  */
 export function findById(id: Hash): Promise<Space | undefined> {
   return db.spaces.get({ id });
+}
+
+/**
+ * Returns a collection of spaces which have _some_ availability in the timespan provided.
+ */
+export function findByTimespan(
+  calendarId: Hash,
+  timeSpan: TimeSpan,
+): Promise<Space[]> {
+  return db.spaces
+    .where({ calendarId })
+    .filter((space) => {
+      if (space.availability == "always") {
+        return true;
+      }
+      for (const span of space.availability) {
+        const isSub = isSubTimespan(timeSpan.start, timeSpan.end, span);
+        if (isSub) {
+          return true;
+        }
+      }
+      return false;
+    })
+    .toArray();
 }
 
 export async function isOwner(
@@ -80,7 +103,7 @@ export async function update(
 ): Promise<Hash> {
   const space = await spaces.findById(spaceId);
 
-  const amAdmin = await roles.amAdmin(space!.calendarId);
+  const amAdmin = await auth.amAdmin(space!.calendarId);
   const amOwner = await spaces.amOwner(spaceId);
   if (!amAdmin && !amOwner) {
     throw new Error("user does not have permission to update this space");
@@ -109,7 +132,7 @@ export async function update(
 export async function deleteSpace(spaceId: Hash): Promise<Hash> {
   const space = await spaces.findById(spaceId);
 
-  const amAdmin = await roles.amAdmin(space!.calendarId);
+  const amAdmin = await auth.amAdmin(space!.calendarId);
   const amOwner = await spaces.amOwner(spaceId);
   if (!amAdmin && !amOwner) {
     throw new Error("user does not have permission to delete this space");
@@ -153,27 +176,65 @@ export async function process(message: ApplicationMessage) {
   }
 }
 
-async function onSpaceCreated(
+function onSpaceCreated(
   meta: StreamMessageMeta,
   data: SpaceCreated["data"],
-) {
-  await db.spaces.add({
+): Promise<string> {
+  return db.spaces.add({
     id: meta.operationId,
     calendarId: meta.stream.id,
     ownerId: meta.author,
     booked: [],
     ...data.fields,
   });
-
-  // Replay un-ack'd messages which we may have received out-of-order.
-  const topic = new TopicFactory(meta.stream.id);
-  await invoke("replay", { topic: topic.calendar() });
 }
 
-async function onSpaceUpdated(data: SpaceUpdated["data"]) {
-  await db.spaces.update(data.id, data.fields);
+function onSpaceUpdated(data: SpaceUpdated["data"]): Promise<void> {
+  const spaceId = data.id;
+  const spaceAvailability = data.fields.availability;
+
+  return db.transaction("rw", db.spaces, db.bookingRequests, async () => {
+    // Update `isValid` field of all booking requests associated with this space.
+    await db.bookingRequests
+      .where({ resourceId: spaceId })
+      .modify((request) => {
+        console.log("modify booking request: ", request.id);
+        if (spaceAvailability == "always") {
+          request.isValid = "true";
+          return;
+        }
+        request.isValid = "false";
+        for (const span of spaceAvailability) {
+          const isValid = isSubTimespan(span.start, span.end, request.timeSpan);
+
+          if (isValid) {
+            request.isValid = "true";
+            break;
+          }
+        }
+        request.isValid = "false";
+      });
+
+    // @TODO: we could show a toast to the user if a previously valid request timespan now became
+    // invalid.
+
+    // @TODO: add related location to spaces object.
+    await db.spaces.update(data.id, data.fields);
+  });
 }
 
-async function onSpaceDeleted(data: SpaceDeleted["data"]) {
-  await db.spaces.delete(data.id);
+function onSpaceDeleted(data: SpaceDeleted["data"]): Promise<void> {
+  const spaceId = data.id;
+
+  return db.transaction("rw", db.spaces, db.bookingRequests, async () => {
+    // Update `isValid` field of all booking requests associated with this event.
+    await db.bookingRequests
+      .where({ resourceId: spaceId })
+      .modify({ isValid: "false" });
+
+    // @TODO: we could show a toast to the user if a previously valid event timespan now became
+    // invalid.
+
+    await db.spaces.delete(spaceId);
+  });
 }
