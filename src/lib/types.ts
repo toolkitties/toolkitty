@@ -647,8 +647,11 @@ type BookingRequest = {
   id: Hash;
   calendarId: Hash;
   eventId: Hash;
+  event?: CalendarEvent;
   requester: PublicKey;
   resourceId: Hash;
+  resource?: Resource;
+  space?: Space;
   resourceType: ResourceType;
   resourceOwner: PublicKey;
   message: string;
