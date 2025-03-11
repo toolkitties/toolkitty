@@ -269,7 +269,7 @@ type Link = {
 
 type TimeSpan = {
   start: Date;
-  end: Date;
+  end: Date | undefined; // for calendar (festival) dates with no end
 };
 
 type BookedTimeSpan = TimeSpan & {
