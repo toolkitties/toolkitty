@@ -7,7 +7,7 @@ export const load: PageLoad = async () => {
   const form = defaults(zod(calendarSchema));
 
   return {
-    title: "edit calendar",
+    title: "create calendar",
     form,
   };
 };
