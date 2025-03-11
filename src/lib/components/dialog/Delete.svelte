@@ -5,10 +5,12 @@
   import { goto } from "$app/navigation";
 
   let {
-    entity,
+    id,
+    name,
     type,
   }: {
-    entity: CalendarEvent | Space | Resource;
+    id: Hash;
+    name: string;
     type: "event" | "space" | "resource";
   } = $props();
 
@@ -21,23 +23,23 @@
     try {
       switch (type) {
         case "event":
-          await events.delete(entity.id);
+          await events.delete(id);
           break;
         case "space":
-          await spaces.delete(entity.id);
+          await spaces.delete(id);
           break;
         case "resource":
-          await resources.delete(entity.id);
+          await resources.delete(id);
           break;
         default:
           throw new Error("Unknown type");
       }
-      toast.success(`Successfully deleted ${entity.name}`);
+      toast.success(`Successfully deleted ${name}`);
       // close the dialog
       open = false;
       goto(`/app/${type}s`);
     } catch (error) {
-      toast.error(`Failed to delete ${entity.name}`);
+      toast.error(`Failed to delete ${name}`);
       console.error(`Failed to delete ${type}`, error);
     }
   }
@@ -48,7 +50,7 @@
   <AlertDialog.Portal>
     <AlertDialog.Content>
       <AlertDialog.Title
-        >Are you sure you want to delete {entity.name}?</AlertDialog.Title
+        >Are you sure you want to delete {name}?</AlertDialog.Title
       >
       <AlertDialog.Description>
         {#if type === "event"}
