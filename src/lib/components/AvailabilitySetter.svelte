@@ -7,18 +7,38 @@
   }>();
 
   // used to color available dates in the calendar
-  let availableDates = $state(
-    new Set(availability.map((entry: { date: string }) => entry.date)),
-  );
+  let availableDates: { date: string }[] = $state([]);
 
   // Keep a list of availability as destructured strings to show to user
   let availabilityList: { date: string; startTime: string; endTime: string }[] =
     $state([]);
 
-  // keep track of the currently selected date to show in UI
   let currentlySelectedDate: DateValue | undefined = $state(undefined);
+  let lastEnteredTime = $state<{ startTime: string; endTime: string } | null>(
+    null,
+  );
+  const startTimeInput = document.querySelector<HTMLInputElement>(
+    'input[name="availability-start-time"]',
+  );
+  const endTimeInput = document.querySelector<HTMLInputElement>(
+    'input[name="availability-end-time"]',
+  );
+
   const handleDateSelect = (value: DateValue | undefined) => {
     currentlySelectedDate = value || undefined;
+
+    if (
+      currentlySelectedDate &&
+      !availableDates.some(
+        (d) => d.date === currentlySelectedDate?.toString(),
+      ) &&
+      lastEnteredTime
+    ) {
+      if (startTimeInput && endTimeInput) {
+        startTimeInput.value = lastEnteredTime.startTime;
+        endTimeInput.value = lastEnteredTime.endTime;
+      }
+    }
   };
 
   const handleAddAvailability = (e: Event) => {
@@ -51,6 +71,9 @@
       return;
     }
 
+    // Store the last entered times for autofill
+    lastEnteredTime = { startTime, endTime };
+
     let newAvailabilityListEntry = {
       date: selectedDate,
       startTime: startTime,
@@ -65,38 +88,14 @@
 
     availability = [...availability, newTimeSpan];
     availabilityList = [...availabilityList, newAvailabilityListEntry];
-
-    // Update availableDates set
-    availableDates = new Set([...availableDates, selectedDate]);
-
-    alert("Availability added successfully!");
+    availableDates = [...availableDates, { date: selectedDate }];
   };
 
   const handleRemoveAvailability = (e: Event, index: number) => {
     e.preventDefault();
-    const removedDate = availability[index].date;
     availability = availability.filter((_: any, i: number) => i !== index);
-
-    const removedDateFromList = availabilityList[index].date;
-    availabilityList = availabilityList.filter(
-      (_: any, i: number) => i !== index,
-    );
-
-    if (
-      !availability.some(
-        (entry: { date: string }) => entry.date === removedDate,
-      )
-    ) {
-      availableDates.delete(removedDate);
-    }
-
-    if (
-      !availabilityList.some(
-        (entry: { date: string }) => entry.date === removedDateFromList,
-      )
-    ) {
-      availableDates.delete(removedDateFromList);
-    }
+    availabilityList = availabilityList.filter((_, i) => i !== index);
+    availableDates = availableDates.filter((_, i) => i !== index);
   };
 </script>
 
@@ -128,15 +127,17 @@
                 <Calendar.Cell {date} month={month.value}>
                   <Calendar.Day
                     class={"data-[outside-month]:pointer-events-none data-[outside-month]:text-gray-300 data-[selected]:bg-black data-[selected]:text-white " +
-                      (availableDates.has(date.toString())
+                      (availableDates.some((d) => d.date === date.toString())
                         ? "bg-green-500 text-white"
                         : "")}
                     aria-label={"Date " +
                       date.toString() +
-                      (availableDates.has(date.toString())
+                      (availableDates.some((d) => d.date === date.toString())
                         ? " - Availability set"
                         : " - No availability")}
-                    title={availableDates.has(date.toString())
+                    title={availableDates.some(
+                      (d) => d.date === date.toString(),
+                    )
                       ? "Availability set"
                       : "No availability"}
                     aria-disabled={"outside-month" in date}
@@ -150,8 +151,21 @@
     {/each}
   {/snippet}
 </Calendar.Root>
+{#if availabilityList.length > 0}
+  <h3>Current Availability:</h3>
+  <ul>
+    {#each availabilityList as entry, index}
+      <li>
+        <span>{entry.date}: {entry.startTime} - {entry.endTime}</span>
+        <button onclick={(e: Event) => handleRemoveAvailability(e, index)}
+          >Remove</button
+        >
+      </li>
+    {/each}
+  </ul>
+{/if}
 
-{#if currentlySelectedDate && !availableDates.has(currentlySelectedDate.toString())}
+{#if currentlySelectedDate && !availableDates.some((d) => d.date === currentlySelectedDate!.toString())}
   <p>
     What time is the space available on {currentlySelectedDate?.toString() ||
       ""}?
@@ -163,18 +177,4 @@
     <input name="availability-end-time" type="time" required />
   </div>
   <button onclick={(e: Event) => handleAddAvailability(e)}>Add</button>
-{/if}
-
-{#if availabilityList.length > 0}
-  <h3>Current Availability:</h3>
-  <ul>
-    {#each availabilityList as entry, index}
-      <li>
-        <span>{entry.startTime} - {entry.endTime}</span>
-        <button onclick={(e: Event) => handleRemoveAvailability(e, index)}
-          >Remove</button
-        >
-      </li>
-    {/each}
-  </ul>
 {/if}

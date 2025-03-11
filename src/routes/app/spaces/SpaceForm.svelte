@@ -303,10 +303,9 @@
     Always Available
   </label>
 
-  <p>Can this space have multiple bookings at the same time?</p>
   <fieldset>
     <label for="multiBookable"
-      >Can this resource have multiple bookings at the same time?
+      >Can this space have multiple bookings at the same time?
     </label>
     <input
       id="multiBookable"
