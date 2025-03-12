@@ -1,4 +1,12 @@
-import { auth, calendars, identity, inviteCodes, publish, users } from "./";
+import {
+  auth,
+  calendars,
+  identity,
+  inviteCodes,
+  publish,
+  topics,
+  users,
+} from "./";
 import type { ResolvedCalendar } from "$lib/api/inviteCodes";
 import { publicKey } from "./identity";
 import { db } from "$lib/db";
@@ -300,14 +308,24 @@ async function onCalendarAccessAccepted(
   // Process new calendar author if access was accepted.
   if (accessStatus == "accepted") {
     // Create a new user.
-    if (!(await users.get(calendarId, request.from))) {
-      await users.create(calendarId, request.from, request!.name);
+    const user = await users.get(calendarId, request.from);
+    if (!user) {
+      await users.create(calendarId, request.from, request.name);
     }
 
-    // Process new calendar author if access was accepted.
-    //
-    // @TODO: add author to topic map.
-    // await processNewCalendarAuthor(calendarId, request.from);
+    // Add the new author to the calendar topics.
+    await topics.addAuthorToCalendar(meta.author, meta.stream);
+    await topics.addAuthorToInbox(meta.author, meta.stream);
+
+    // If this is our own access request then also add ourselves and the calendar owner to the
+    // topic may as we won't have done this before.
+    const myPublicKey = await identity.publicKey();
+    if (myPublicKey == request.from) {
+      await topics.subscribeToCalendar(meta.stream.id);
+      await topics.addAuthorToCalendar(myPublicKey, meta.stream);
+      await topics.addAuthorToCalendar(meta.stream.owner, meta.stream);
+      await topics.addAuthorToInbox(meta.stream.owner, meta.stream);
+    }
   }
 }
 
