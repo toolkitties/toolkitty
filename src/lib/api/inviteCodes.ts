@@ -1,4 +1,5 @@
-import { calendars, publish, streams } from "$lib/api";
+import { calendars, publish } from "$lib/api";
+import { db } from "$lib/db";
 
 type InviteCodesState = {
   inviteCode: string | null;
@@ -29,11 +30,9 @@ export async function resolve(inviteCode: string): Promise<ResolvedCalendar> {
   const calendar = await calendars.findByInviteCode(inviteCode);
 
   // Check if we already have calendar locally and return before broadcasting
-  if (calendar) {
-    // Get the calendar stream
-    const stream = await streams.findById(calendar.id);
+  if (calendar && calendar.name) {
     return {
-      stream: stream!,
+      stream: calendar.stream,
       name: calendar.name,
     };
   }
@@ -97,18 +96,16 @@ export async function process(
 async function onRequest(inviteCode: string) {
   const calendar = await calendars.findByInviteCode(inviteCode);
 
-  if (!calendar) {
+  if (!calendar || !calendar.name) {
     // We can't answer this request, ignore it.
     return;
   }
-
-  const stream = await streams.findById(calendar.id);
 
   const payload: ResolveInviteCodeResponse = {
     messageType: "response",
     timestamp: Date.now(),
     inviteCode,
-    calendarStream: stream!,
+    calendarStream: calendar.stream!,
     calendarName: calendar.name,
   };
   await publish.toInviteOverlay(payload);
@@ -125,7 +122,12 @@ async function onResponse(response: ResolveInviteCodeResponse) {
     return;
   }
 
-  await streams.add(response.calendarStream);
+  await db.calendars.add({
+    id: response.calendarStream.id,
+    ownerId: response.calendarStream.owner,
+    stream: response.calendarStream,
+    // don't add the name to the database yet, we wait for the "calendar_created" event for this.
+  });
 
   pendingInviteCode.onResolved({
     stream: response.calendarStream,

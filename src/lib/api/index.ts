@@ -6,7 +6,6 @@ export * as resources from "./resources";
 export * as access from "./access";
 export * as topics from "./topics";
 export * as data from "./data";
-export * as streams from "./streams";
 export * as publish from "./publish";
 export * as identity from "./identity";
 export * as bookings from "./bookings";

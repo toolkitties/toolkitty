@@ -6,7 +6,7 @@ import { zod } from "sveltekit-superforms/adapters";
 
 export const load: PageLoad = async () => {
   const activeCalendarId = await calendars.getActiveCalendarId();
-  const spacesList = await spaces.findManyWithinCalendarDates(
+  const spacesList = await spaces.findMany(
     activeCalendarId!,
   );
   const resourcesList = await resources.findMany(activeCalendarId!);

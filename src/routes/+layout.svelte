@@ -2,7 +2,6 @@
   import { init } from "$lib/channel";
   import { onMount } from "svelte";
   import Toasts from "$lib/components/Toasts.svelte";
-  import { topics } from "$lib/api";
   import { seedData } from "$lib/api/data";
   import { db } from "$lib/db";
 
@@ -17,14 +16,11 @@
         // Delete any old version of db
         await db.delete({ disableAutoOpen: false });
 
-        // TODO(sam): for testing publish some events to the network.
+        // @TODO(sam): for testing publish some events to the network.
         await seedData();
 
-        // After init subscribe to all calendars we know about.
-        await topics.subscribeToAll();
-
-        // @TODO(sam): inform the backend of all authors we want to sync data with for each
-        // calendar (add them to the topic map).
+        // @TODO(sam): we have no persistence layer at the moment so we don't need to subscribe to
+        // calendars we already know about.
       });
 
       // @ts-expect-error isInit does not exist on window

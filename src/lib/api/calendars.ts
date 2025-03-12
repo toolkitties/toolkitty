@@ -1,18 +1,7 @@
-import { invoke } from "@tauri-apps/api/core";
 import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
 import { liveQuery } from "dexie";
-import {
-  access,
-  auth,
-  calendars,
-  identity,
-  publish,
-  streams,
-  topics,
-  users,
-} from ".";
-import { TopicFactory } from "./topics";
+import { auth, calendars, identity, publish, users } from ".";
 
 /*
  * Queries
@@ -92,12 +81,6 @@ export async function create(
   };
 
   const [operationId, streamId] = await publish.createCalendar(calendarCreated);
-  const topic = new TopicFactory(streamId);
-  await topics.subscribe(topic.calendar());
-  await topics.subscribe(topic.calendarInbox());
-
-  await invoke("replay", { topic: topic.calendar() });
-
   // Register this operation hash to wait until it's later resolved by the
   // processor. Like this we can conveniently return from this method as soon as
   // this application event has actually been processed. This allows us to build
@@ -190,32 +173,34 @@ async function onCalendarCreated(
   const { name, dates } = data.fields;
   const timeSpan = dates[0];
 
-  await db.calendars.add({
-    id: meta.stream.id,
-    ownerId: meta.stream.owner,
-    name,
-    startDate: timeSpan.start,
-    endDate: timeSpan.end,
-  });
-
-  // If we were the creator of this calendar then add it as a new stream to the streams table as
-  // well. In the case of calendars that we join (via requesting access) the stream is added to
-  // the database on the "calendar_access_accepted" message.
   const myPublicKey = await identity.publicKey();
-  if (meta.author === myPublicKey) {
-    await streams.add(meta.stream);
+
+  // We need to distinguish between the case where we (the local user) created the calendar, or
+  // where we have requested and gained access as a new member.
+  if (meta.stream.owner == myPublicKey) {
+    // In the case that we created this calendar then simply add it straight to the database.
+    await db.calendars.add({
+      id: meta.stream.id,
+      ownerId: meta.stream.owner,
+      stream: meta.stream,
+      name,
+      startDate: timeSpan.start,
+      endDate: timeSpan.end,
+    });
+
+    // And then create our user for the calendar.
+    //
+    // @TODO: currently there is no UI for the calendar owner to create a username.
+    await users.create(meta.stream.id, meta.stream.owner);
+  } else {
+    // In the case where we are _not_ the calendar creator, then we actually should have already
+    // added the calendar and our user to the database when we first resolved our invite code.
+    await db.calendars.update(meta.stream.id, {
+      name,
+      startDate: timeSpan.start,
+      endDate: timeSpan.end,
+    });
   }
-
-  // @TODO: the calendar creator has no way to set a username.
-  await users.create(meta.stream.id, meta.stream.owner);
-
-  // Add the calendar creator to the list of authors who's data we want to
-  // sync for this calendar.
-  access.processNewCalendarAuthor(meta.stream.id, meta.stream.owner);
-
-  // Replay un-ack'd messages which we may have received out-of-order.
-  const topic = new TopicFactory(meta.stream.id);
-  await invoke("replay", { topic: topic.calendar() });
 }
 
 async function onCalendarUpdated(data: CalendarUpdated["data"]) {

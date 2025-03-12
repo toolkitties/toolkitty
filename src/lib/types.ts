@@ -590,12 +590,13 @@ type User = {
 type Calendar = {
   id: Hash;
   ownerId: PublicKey;
-  name: string;
+  stream: Stream;
+  name?: string;
   // TODO: Should we support non-consecutive dates? It could be arrays of TimeSpan? The
   // `CalendarCreated` fields contains a TimeSpan[] so it's possible to encode non-consecutive
   // dates there, but we don't need to support that in the app right now. Here I've left it as a
   // single time range.
-  startDate: Date;
+  startDate?: Date;
   endDate?: Date;
 };
 

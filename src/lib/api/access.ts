@@ -1,16 +1,7 @@
-import {
-  auth,
-  calendars,
-  identity,
-  inviteCodes,
-  publish,
-  topics,
-  users,
-} from "./";
+import { auth, calendars, identity, inviteCodes, publish, users } from "./";
 import type { ResolvedCalendar } from "$lib/api/inviteCodes";
 import { publicKey } from "./identity";
 import { db } from "$lib/db";
-import { TopicFactory } from "./topics";
 import { toast } from "$lib/toast.svelte";
 import { promiseResult } from "$lib/promiseMap";
 
@@ -280,7 +271,9 @@ async function onCalendarAccessRequested(
       await users.create(calendarId, meta.author, data.name);
     }
     // Process new calendar author if access was accepted.
-    await processNewCalendarAuthor(calendarId, meta.author);
+    //
+    // @TODO: add author to topic map.
+    // await processNewCalendarAuthor(calendarId, meta.author);
   }
 }
 
@@ -312,7 +305,9 @@ async function onCalendarAccessAccepted(
     }
 
     // Process new calendar author if access was accepted.
-    await processNewCalendarAuthor(calendarId, request.from);
+    //
+    // @TODO: add author to topic map.
+    // await processNewCalendarAuthor(calendarId, request.from);
   }
 }
 
@@ -327,33 +322,4 @@ async function onCalendarAccessRejected(
     requestId: data.requestId,
     answer: "reject",
   });
-}
-
-export async function processNewCalendarAuthor(
-  calendarId: Hash,
-  publicKey: PublicKey,
-) {
-  const stream = await db.streams.get(calendarId);
-
-  // Inform the backend that there is a new author who may contribute to the calendar.
-  const topic = new TopicFactory(calendarId);
-  await topics.addCalendarAuthor(publicKey, topic.calendar(), {
-    stream: stream!,
-    logPath: publish.CALENDAR_LOG_PATH,
-  });
-  await topics.addCalendarAuthor(publicKey, topic.calendarInbox(), {
-    stream: stream!,
-    logPath: publish.CALENDAR_INBOX_LOG_PATH,
-  });
-
-  const myPublicKey = await identity.publicKey();
-  if (myPublicKey != publicKey) {
-    return;
-  }
-
-  // We are now added to the calendar and will be able to decrypt payloads sent on the calendar
-  // data overlay so we subscribe to the data topic now finally. This will mean we receive the
-  // "calendar_created" event on the stream, which in turn means the calendar will be inserted
-  // into our database.
-  await topics.subscribe(topic.calendar());
 }
