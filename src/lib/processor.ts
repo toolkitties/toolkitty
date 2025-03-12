@@ -11,6 +11,7 @@ import {
   roles,
   dependencies,
   topics,
+  identity,
 } from "$lib/api";
 import { rejectPromise, resolvePromise } from "$lib/promiseMap";
 
@@ -197,7 +198,12 @@ async function onApplicationMessage(message: ApplicationMessage) {
     await invoke("ack", { operationId: message.meta.operationId });
   } catch (err) {
     console.error(`failed processing application event: ${err}`, message);
-    rejectPromise(message.meta.operationId, err);
+    const myPublicKey = await identity.publicKey();
+    if (message.meta.author == myPublicKey) {
+      rejectPromise(message.meta.operationId, err);      
+    } else {
+      resolvePromise(message.meta.operationId);
+    }
   }
 }
 
