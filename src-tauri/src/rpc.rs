@@ -60,7 +60,7 @@ pub async fn replay(rpc: State<'_, Rpc>, topic: String) -> Result<(), RpcError> 
     Ok(())
 }
 
-/// Add a log to the topic log map. 
+/// Add a log to the topic log map.
 #[tauri::command]
 pub async fn add_topic_log(
     rpc: State<'_, Rpc>,
@@ -75,7 +75,7 @@ pub async fn add_topic_log(
         "RPC request received"
     );
 
-    rpc.add_topic_log(&public_key, &topic, &log_id).await?;
+    rpc.add_topic_log(&public_key, topic, &log_id).await?;
     Ok(())
 }
 
@@ -125,7 +125,7 @@ pub async fn publish_persisted(
             &payload,
             &stream_args,
             log_path.map(Into::into).as_ref(),
-            topic.as_ref().map(|x| x.as_str())
+            topic.as_deref(),
         )
         .await?;
     Ok(result)
