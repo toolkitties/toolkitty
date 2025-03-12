@@ -45,7 +45,7 @@ export async function addCalendarAuthor(
  * which calendar events are forwarded to the frontend.
  */
 export async function subscribe(topic: Topic) {
-  await invoke("subscribe", { topic });
+  await invoke("subscribe_persisted", { topic });
 }
 
 export async function subscribeEphemeral(topic: Topic) {

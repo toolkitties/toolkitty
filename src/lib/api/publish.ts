@@ -10,7 +10,7 @@ export const CALENDAR_INBOX_TOPIC_PREFIX: string = "calendar/inbox";
 export async function createCalendar(
   payload: ApplicationEvent,
 ): Promise<[OperationId, StreamId]> {
-  const result: [OperationId, StreamId] = await invoke("publish", {
+  const result: [OperationId, StreamId] = await invoke("publish_persisted", {
     payload,
     streamArgs: {},
     logPath: CALENDAR_LOG_PATH,
@@ -30,7 +30,7 @@ export async function toCalendar(
 
   const stream = await db.streams.get(calendarId);
 
-  const result: [OperationId, StreamId] = await invoke("publish", {
+  const result: [OperationId, StreamId] = await invoke("publish_persisted", {
     payload,
     streamArgs: { rootHash: stream?.rootHash, owner: stream?.owner },
     logPath: CALENDAR_LOG_PATH,
@@ -46,7 +46,7 @@ export async function toInbox(
 ): Promise<[OperationId, StreamId]> {
   const stream = await db.streams.get(calendarId);
 
-  const result: [OperationId, StreamId] = await invoke("publish", {
+  const result: [OperationId, StreamId] = await invoke("publish_persisted", {
     payload,
     streamArgs: { rootHash: stream?.rootHash, owner: stream?.owner },
     logPath: CALENDAR_INBOX_LOG_PATH,
