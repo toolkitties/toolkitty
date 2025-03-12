@@ -9,8 +9,8 @@ use tauri::Builder;
 use tracing_subscriber::EnvFilter;
 
 use crate::rpc::{
-    ack, add_topic_log, init, public_key, publish, publish_ephemeral, replay, subscribe,
-    subscribe_ephemeral, upload_file,
+    ack, add_topic_log, init, public_key, publish_ephemeral, publish_persisted, replay,
+    subscribe_ephemeral, subscribe_persisted, upload_file,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -49,10 +49,10 @@ pub fn run() {
             ack,
             public_key,
             add_topic_log,
-            publish,
+            publish_persisted,
             publish_ephemeral,
             replay,
-            subscribe,
+            subscribe_persisted,
             subscribe_ephemeral,
             upload_file,
         ])
