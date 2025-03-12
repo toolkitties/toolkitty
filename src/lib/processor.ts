@@ -200,7 +200,7 @@ async function onApplicationMessage(message: ApplicationMessage) {
     console.error(`failed processing application event: ${err}`, message);
     const myPublicKey = await identity.publicKey();
     if (message.meta.author == myPublicKey) {
-      rejectPromise(message.meta.operationId, err);      
+      rejectPromise(message.meta.operationId, err);
     } else {
       resolvePromise(message.meta.operationId);
     }

@@ -1,11 +1,8 @@
 <script lang="ts">
   import { PinInput, Toggle } from "bits-ui";
   import { goto } from "$app/navigation";
-  import { topics } from "$lib/api";
   import { toast } from "$lib/toast.svelte";
   import { resolveInviteCode } from "$lib/api/access";
-  import { calendars } from "$lib/api";
-  import { db } from "$lib/db";
 
   let value = $state("");
   let show = $state(true);
