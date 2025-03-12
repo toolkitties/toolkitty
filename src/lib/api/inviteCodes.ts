@@ -1,4 +1,4 @@
-import { calendars, publish } from "$lib/api";
+import { calendars, identity, publish, topics } from "$lib/api";
 import { db } from "$lib/db";
 
 type InviteCodesState = {
@@ -122,15 +122,27 @@ async function onResponse(response: ResolveInviteCodeResponse) {
     return;
   }
 
+  const stream = response.calendarStream;
   await db.calendars.add({
-    id: response.calendarStream.id,
-    ownerId: response.calendarStream.owner,
-    stream: response.calendarStream,
+    id: stream.id,
+    ownerId: stream.owner,
+    stream,
     // don't add the name to the database yet, we wait for the "calendar_created" event for this.
   });
 
+  // Subscribe to the calendar inbox topic.
+  await topics.subscribeToInbox(stream.id);
+
+  // Add ourselves and the calendar owner to the inbox topic log map.
+  const myPublicKey = await identity.publicKey();
+  await topics.addAuthorToInbox(myPublicKey, stream);
+  await topics.addAuthorToInbox(stream.owner, stream);
+
+  // Set this calendar as the active calendar.
+  await calendars.setActiveCalendar(stream.id);
+
   pendingInviteCode.onResolved({
-    stream: response.calendarStream,
+    stream: stream,
     name: response.calendarName,
   });
 }
