@@ -47,9 +47,7 @@
     },
   ];
 
-  let calendar = liveQuery(() => {
-    return calendars.findOne(data.activeCalendarId);
-  });
+  let calendar = liveQuery(() => calendars.findOne(data.activeCalendarId));
 </script>
 
 <svelte:head>
@@ -60,7 +58,6 @@
 
 {#if $calendar}
   <Header title={page.data.title} />
-
   <main class="h-dvh">
     <div class="p-8">
       {@render children()}

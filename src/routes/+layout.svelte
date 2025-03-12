@@ -6,6 +6,7 @@
   import { topics } from "$lib/api";
   import { seedData } from "$lib/api/data";
   import { db } from "$lib/db";
+  import { invalidateAll } from "$app/navigation";
 
   let { children }: LayoutProps = $props();
 
@@ -18,7 +19,7 @@
     if (!("isInit" in window)) {
       init().then(async () => {
         if (import.meta.env.DEV && !sessionStorage.getItem("seeded_db")) {
-          console.log("seeding db");
+          console.info("seeding db");
 
           // Delete any old version of db
           await db.delete({ disableAutoOpen: false });
@@ -26,7 +27,13 @@
           // TODO(sam): for testing publish some events to the network.
           await seedData();
 
+          // invalidate all data in load functions so we get latest data that just seeded.
+          invalidateAll();
+
+          // set session storage so we don't reseed database on HMR or page reload.
           sessionStorage.setItem("seeded_db", "true");
+
+          console.info("finished seeding db");
         }
 
         // After init subscribe to all calendars we know about.
