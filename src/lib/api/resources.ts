@@ -175,17 +175,21 @@ export async function process(message: ApplicationMessage) {
   }
 }
 
-function onResourceCreated(
+async function onResourceCreated(
   meta: StreamMessageMeta,
   data: ResourceCreated["data"],
-): Promise<string> {
-  return db.resources.add({
-    id: meta.operationId,
-    calendarId: meta.stream.id,
-    ownerId: meta.author,
-    booked: [],
-    ...data.fields,
-  });
+): Promise<void> {
+  try {
+    await db.resources.add({
+      id: meta.operationId,
+      calendarId: meta.stream.id,
+      ownerId: meta.author,
+      booked: [],
+      ...data.fields,
+    });
+  } catch (e) {
+    console.error(e);
+  }
 }
 
 function onResourceUpdated(data: ResourceUpdated["data"]): Promise<void> {

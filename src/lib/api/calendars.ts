@@ -179,14 +179,18 @@ async function onCalendarCreated(
   // where we have requested and gained access as a new member.
   if (meta.stream.owner == myPublicKey) {
     // In the case that we created this calendar then simply add it straight to the database.
-    await db.calendars.add({
-      id: meta.stream.id,
-      ownerId: meta.stream.owner,
-      stream: meta.stream,
-      name,
-      startDate: timeSpan.start,
-      endDate: timeSpan.end,
-    });
+    try {
+      await db.calendars.add({
+        id: meta.stream.id,
+        ownerId: meta.stream.owner,
+        stream: meta.stream,
+        name,
+        startDate: timeSpan.start,
+        endDate: timeSpan.end,
+      });
+    } catch (e) {
+      console.error(e);
+    }
 
     // And then create our user for the calendar.
     //
