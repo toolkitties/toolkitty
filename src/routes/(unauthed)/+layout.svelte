@@ -1,9 +1,11 @@
-<script>
-  import "../../app.css";
+<script lang="ts">
+  import type { LayoutProps } from "./$types";
   import Back from "$lib/components/Back.svelte";
   import { page } from "$app/state";
 
   let indexPage = $derived(page.url.pathname == "/");
+
+  let { children }: LayoutProps = $props();
 </script>
 
 <main class="p-8 flex flex-col gap-4 h-dvh">
@@ -13,5 +15,5 @@
       <Back />
     </div>
   {/if}
-  <slot />
+  {@render children()}
 </main>

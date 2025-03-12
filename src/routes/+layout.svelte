@@ -1,13 +1,18 @@
 <script lang="ts">
+  import type { LayoutProps } from "./$types";
   import { init } from "$lib/channel";
   import { onMount } from "svelte";
   import Toasts from "$lib/components/Toasts.svelte";
-  import { seedData } from "$lib/api/data";
-  import { db } from "$lib/db";
   import { topics } from "$lib/api";
+  import { data } from "$lib/api";
+  import { db } from "$lib/db";
+  import { invalidateAll } from "$app/navigation";
   import { INVITE_TOPIC } from "$lib/api/publish";
+  import "../app.css";
 
-  onMount(() => {
+  let { children }: LayoutProps = $props();
+
+  onMount(async () => {
     // Hacky workaround to only call "init" once in a Svelte HMR life-cycle.
     //
     // @TODO(adz): This might need some more investigation as it currently
@@ -15,9 +20,23 @@
     // fully and calls "init" again.
     if (!("isInit" in window)) {
       init().then(async () => {
-        // Delete any old version of db
-        await db.delete({ disableAutoOpen: false });
+        if (import.meta.env.DEV && !sessionStorage.getItem("seeded_db")) {
+          console.info("seeding db");
 
+          // Delete any old version of db
+          await db.delete({ disableAutoOpen: false });
+
+          // TODO(sam): for testing publish some events to the network.
+          await data.seedData();
+
+          // invalidate all data in load functions so we get latest data that just seeded.
+          invalidateAll();
+
+          // set session storage so we don't reseed database on HMR or page reload.
+          sessionStorage.setItem("seeded_db", "true");
+
+          console.info("finished seeding db");
+        }
         // @TODO(sam): for testing publish some events to the network.
         await seedData();
 
@@ -34,4 +53,4 @@
 </script>
 
 <Toasts />
-<slot />
+{@render children()}
