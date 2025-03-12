@@ -163,9 +163,9 @@ export async function seedData() {
     description: "A grand music festival with various artists.",
     startDate: "2025-01-06T14:00:00Z",
     endDate: "2025-01-06T20:00:00Z",
-    location: `${spaceOneId}`,
+    spaceRequest: `${spaceOneId}`,
     images: [],
-    resources: [`${resourceOneId}`],
+    resourcesRequests: [`${resourceOneId}`],
     links: [],
   });
 
@@ -174,9 +174,9 @@ export async function seedData() {
     description: "An exhibition showcasing modern art.",
     startDate: "2025-02-10T10:00:00.000Z",
     endDate: "2025-02-10T17:00:00.000Z",
-    location: "",
+    spaceRequest: "",
     images: [],
-    resources: [],
+    resourcesRequests: [],
     links: [],
   });
 
