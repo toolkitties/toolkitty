@@ -60,9 +60,16 @@ export async function subscribeEphemeral(topic: Topic) {
   await invoke("subscribe_ephemeral", { topic });
 }
 
-export async function replay(topic: Topic) {
+async function replay(topic: Topic) {
   await invoke("replay", { topic });
 }
+
+const debouncedReplay = debounce(replay, 1000);
+
+// We want to debounce calls to replay as they can happen quite often and we want to avoid
+// unnecessary work. When replays are triggered in quick succession the same operations can be
+// sent from the backend multiple times. This doesn't break any logic, but it is very noisy...
+export { debouncedReplay as replay };
 
 export async function process(message: ApplicationMessage) {
   const { meta, data } = message;
@@ -79,4 +86,21 @@ async function onCalendarCreated(meta: StreamMessageMeta) {
     await topics.subscribeToInbox(meta.stream.id);
     await topics.subscribeToCalendar(meta.stream.id);
   }
+}
+
+function debounce(
+  func: (topic: Topic) => Promise<void>,
+  wait: number,
+): (topic: Topic) => void {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+
+  return function (topic: Topic) {
+    if (timeout !== undefined) {
+      clearTimeout(timeout);
+    }
+
+    timeout = setTimeout(async () => {
+      await func(topic);
+    }, wait);
+  };
 }
