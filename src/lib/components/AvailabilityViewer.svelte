@@ -58,27 +58,27 @@
       <Calendar.Heading />
       <Calendar.NextButton class="w-8 ml-2">→</Calendar.NextButton>
     </Calendar.Header>
-    {#each months as month}
+    {#each months as month, monthIndex (month.value)}
       <Calendar.Grid>
         <Calendar.GridHead>
           <Calendar.GridRow>
-            {#each weekdays as day}
+            {#each weekdays as day, dayIndex (day)}
               <Calendar.HeadCell>{day}</Calendar.HeadCell>
             {/each}
           </Calendar.GridRow>
         </Calendar.GridHead>
         <Calendar.GridBody>
-          {#each month.weeks as weekDates}
+          {#each month.weeks as weekDates, weekIndex (weekIndex)}
             <Calendar.GridRow>
-              {#each weekDates as date}
+              {#each weekDates as date, dateIndex (date.toString())}
                 <Calendar.Cell {date} month={month.value}>
                   <Calendar.Day
                     class={`data-[outside-month]:pointer-events-none
-                            data-[outside-month]:text-gray-300
-                            data-[selected]:bg-black
-                            data-[selected]:text-white
-                            ${isAvailableDay(date) ? "bg-green-300" : ""}
-                            ${!isAvailableDay(date) ? "text-gray-400 pointer-events-none" : ""}`}
+                data-[outside-month]:text-gray-300
+                data-[selected]:bg-black
+                data-[selected]:text-white
+                ${isAvailableDay(date) ? "bg-green-300" : ""}
+                ${!isAvailableDay(date) ? "text-gray-400 pointer-events-none" : ""}`}
                     aria-disabled={!isAvailableDay(date) ? "true" : undefined}
                   />
                 </Calendar.Cell>

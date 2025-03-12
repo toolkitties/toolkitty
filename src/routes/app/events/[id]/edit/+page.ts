@@ -1,5 +1,5 @@
 import type { PageLoad } from "./$types";
-import { events, spaces, resources, calendars } from "$lib/api";
+import { events, spaces, resources } from "$lib/api";
 import { eventSchema } from "$lib/schemas";
 import { error } from "@sveltejs/kit";
 import { superValidate } from "sveltekit-superforms";
@@ -21,12 +21,12 @@ export const load: PageLoad = async ({ params }) => {
   const form = await superValidate(eventFields, zod(eventSchema));
 
   // return spaces and resources with availability within the calendar dates
-  let activeCalendar = await db.calendars.get(calendarId!);
-  let timeSpan = {
+  const activeCalendar = await db.calendars.get(calendarId!);
+  const timeSpan = {
     start: activeCalendar!.startDate!,
     end: activeCalendar!.endDate,
   };
-  let spacesList = await spaces.findByTimespan(calendarId!, timeSpan);
+  const spacesList = await spaces.findByTimespan(calendarId!, timeSpan);
   const resourcesList = await resources.findByTimespan(calendarId!, timeSpan);
 
   return {

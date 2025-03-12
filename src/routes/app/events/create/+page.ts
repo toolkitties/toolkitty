@@ -9,13 +9,13 @@ export const load: PageLoad = async () => {
   const activeCalendarId = await calendars.getActiveCalendarId();
 
   // return spaces and resources with availability within the calendar dates
-  let activeCalendar = await db.calendars.get(activeCalendarId!);
-  let timeSpan = {
+  const activeCalendar = await db.calendars.get(activeCalendarId!);
+  const timeSpan = {
     start: activeCalendar!.startDate!,
     end: activeCalendar!.endDate,
   };
-  let spacesList = await spaces.findByTimespan(activeCalendarId!, timeSpan);
-  let resourcesList = await resources.findByTimespan(
+  const spacesList = await spaces.findByTimespan(activeCalendarId!, timeSpan);
+  const resourcesList = await resources.findByTimespan(
     activeCalendarId!,
     timeSpan,
   );

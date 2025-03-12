@@ -4,7 +4,7 @@
   import { toast } from "$lib/toast.svelte";
   import type { SuperValidated, Infer } from "sveltekit-superforms";
   import type { EventSchema } from "$lib/schemas";
-  import { superForm, setMessage, setError } from "sveltekit-superforms";
+  import { superForm, setError } from "sveltekit-superforms";
   import SuperDebug from "sveltekit-superforms";
   import { eventSchema } from "$lib/schemas";
   import { zod } from "sveltekit-superforms/adapters";
@@ -49,7 +49,7 @@
     };
   }
 
-  const { form, errors, message, constraints, enhance } = superForm(data, {
+  const { form, errors, enhance } = superForm(data, {
     SPA: true,
     validators: zod(eventSchema),
     resetForm: false,
@@ -240,7 +240,7 @@
   {#if spaces.length > 0}
     <p>Select a space:</p>
     <ul>
-      {#each spaces as space}
+      {#each spaces as space (space.id)}
         <li>
           <input
             type="radio"
@@ -320,7 +320,7 @@
       {#if availableResources.length > 0}
         <label for="resource-list">Select from available resources</label>
         <ul id="resource-list">
-          {#each availableResources as resource}
+          {#each availableResources as resource (resource.id)}
             <li>
               <input
                 type="checkbox"
