@@ -9,6 +9,8 @@ export const load: LayoutLoad = async ({ parent }) => {
     goto("/");
   }
 
+  // TODO: Add auth checks to ensure we still have access to the active calendar
+
   return {
     activeCalendarId: activeCalendarId as string,
   };
