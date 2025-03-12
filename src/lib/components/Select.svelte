@@ -38,7 +38,7 @@
     <div
       class={`bg-black/10 max-h-60 o overflow-auto ${isOpen ? "block" : "hidden"}`}
     >
-      {#each items as item}
+      {#each items as item (item.value)}
         <Select.Item
           disabled={item.disabled}
           class={`flex h-10 w-full select-none items-center p-2.5 ${item.disabled ? "opacity-50" : ""}`}

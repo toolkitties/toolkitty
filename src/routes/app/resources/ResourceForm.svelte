@@ -1,10 +1,10 @@
 <script lang="ts">
   import type { SuperValidated, Infer } from "sveltekit-superforms";
   import type { ResourceSchema } from "$lib/schemas";
-  import { superForm, setMessage, setError } from "sveltekit-superforms";
+  import { superForm } from "sveltekit-superforms";
   import SuperDebug from "sveltekit-superforms";
   import AvailabilitySetter from "$lib/components/AvailabilitySetter.svelte";
-  import { resources, calendars } from "$lib/api";
+  import { resources } from "$lib/api";
   import { resourceSchema } from "$lib/schemas";
   import { zod } from "sveltekit-superforms/adapters";
   import { toast } from "$lib/toast.svelte";
@@ -36,7 +36,7 @@
     $form.availability = parsedAvailability;
   }
 
-  const { form, errors, message, constraints, enhance } = superForm(data, {
+  const { form, errors, enhance } = superForm(data, {
     SPA: true,
     validators: zod(resourceSchema),
     resetForm: false,

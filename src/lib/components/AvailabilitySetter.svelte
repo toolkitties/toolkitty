@@ -86,19 +86,19 @@
       <Calendar.NextButton class="w-8 ml-2">→</Calendar.NextButton>
     </Calendar.Header>
 
-    {#each months as month}
+    {#each months as month (month.value)}
       <Calendar.Grid>
         <Calendar.GridHead>
           <Calendar.GridRow>
-            {#each weekdays as day}
+            {#each weekdays as day (day)}
               <Calendar.HeadCell>{day}</Calendar.HeadCell>
             {/each}
           </Calendar.GridRow>
         </Calendar.GridHead>
         <Calendar.GridBody>
-          {#each month.weeks as weekDates}
+          {#each month.weeks as weekDates, i (i)}
             <Calendar.GridRow>
-              {#each weekDates as date}
+              {#each weekDates as date (date)}
                 <Calendar.Cell {date} month={month.value}>
                   <Calendar.Day
                     class={"data-[outside-month]:pointer-events-none data-[outside-month]:text-gray-300 data-[selected]:bg-black data-[selected]:text-white " +
@@ -152,4 +152,20 @@
     <input name="availability-end-time" type="time" required />
   </div>
   <button onclick={(e: Event) => handleAddAvailability(e)}>Add</button>
+{/if}
+
+{#if availability.length > 0}
+  <h3>Current Availability:</h3>
+  <ul>
+    {#each availability as entry, index (entry)}
+      {#if entry.date === currentlySelectedDate?.toString()}
+        <li>
+          <span>{entry.startTime} - {entry.endTime}</span>
+          <button onclick={(e: Event) => handleRemoveAvailability(e, index)}
+            >Remove</button
+          >
+        </li>
+      {/if}
+    {/each}
+  </ul>
 {/if}

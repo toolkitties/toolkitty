@@ -95,14 +95,14 @@ async function onBookingResponse(
 async function onCalendarEdit(
   data: CalendarUpdated["data"] | CalendarDeleted["data"] | PageUpdated["data"],
 ) {
-  let calendar = await calendars.findOne(data.id);
+  const calendar = await calendars.findOne(data.id);
   if (!calendar) {
     throw new Error("calendar not yet received");
   }
 }
 
 async function onSpaceEdit(data: SpaceUpdated["data"] | SpaceDeleted["data"]) {
-  let space = await spaces.findById(data.id);
+  const space = await spaces.findById(data.id);
   if (!space) {
     throw new Error("space not yet received");
   }
@@ -111,14 +111,14 @@ async function onSpaceEdit(data: SpaceUpdated["data"] | SpaceDeleted["data"]) {
 async function onResourceEdit(
   data: ResourceUpdated["data"] | ResourceDeleted["data"],
 ) {
-  let resource = await resources.findById(data.id);
+  const resource = await resources.findById(data.id);
   if (!resource) {
     throw new Error("resource not yet received");
   }
 }
 
 async function onEventEdit(data: EventUpdated["data"] | EventDeleted["data"]) {
-  let event = await events.findById(data.id);
+  const event = await events.findById(data.id);
   if (!event) {
     throw new Error("event not yet received");
   }

@@ -16,8 +16,8 @@ export const load: PageLoad = async ({ params }) => {
     });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { calendarId, ownerId, ...eventFields } = event;
-  const activeCalendarId = calendarId;
   const form = await superValidate(eventFields, zod(eventSchema));
 
   // return spaces and resources with availability within the calendar dates

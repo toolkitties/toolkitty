@@ -1,5 +1,5 @@
 import { db } from "$lib/db";
-import { auth, publish, roles, spaces } from ".";
+import { auth, publish, spaces } from ".";
 import { promiseResult } from "$lib/promiseMap";
 import { isSubTimespan } from "$lib/utils";
 
@@ -84,7 +84,7 @@ export async function create(
     },
   };
 
-  const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
+  const [operationId]: [Hash, Hash] = await publish.toCalendar(
     calendarId,
     spaceCreated,
   );
@@ -116,7 +116,7 @@ export async function update(
       fields,
     },
   };
-  const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
+  const [operationId]: [Hash, Hash] = await publish.toCalendar(
     space!.calendarId,
     spaceUpdated,
   );
@@ -145,7 +145,7 @@ export async function deleteSpace(spaceId: Hash): Promise<Hash> {
     },
   };
 
-  const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
+  const [operationId]: [Hash, Hash] = await publish.toCalendar(
     space!.calendarId,
     spaceDeleted,
   );

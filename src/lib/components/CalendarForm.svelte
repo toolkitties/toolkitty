@@ -14,7 +14,7 @@
 
   let noEndDate = $state(false);
 
-  const { form, errors, message, constraints, enhance } = superForm(data, {
+  const { form, errors, enhance } = superForm(data, {
     SPA: true,
     validators: zod(calendarSchema),
     resetForm: false,

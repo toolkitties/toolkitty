@@ -9,11 +9,9 @@ import {
   STREAM,
   seedTestMessages,
 } from "./data";
-import { access, identity } from "$lib/api";
+import { access } from "$lib/api";
 import {
-  afterEach,
   beforeAll,
-  beforeEach,
   describe,
   expect,
   test,
@@ -21,7 +19,7 @@ import {
 import { mockIPC } from "@tauri-apps/api/mocks";
 
 beforeAll(async () => {
-  mockIPC((cmd, args) => {
+  mockIPC((cmd) => {
     if (cmd === "public_key") {
       return OWNER_PUBLIC_KEY;
     }
@@ -39,7 +37,7 @@ describe("access tests", () => {
     let accessStatus = await access.checkStatus(requestingAuthor, CALENDAR_ID);
     expect(accessStatus).toBe("not requested yet");
 
-    let requestCalendarAccess: ApplicationMessage = {
+    const requestCalendarAccess: ApplicationMessage = {
       meta: {
         operationId: "access_request_001",
         author: requestingAuthor,
@@ -62,7 +60,7 @@ describe("access tests", () => {
     accessStatus = await access.checkStatus(requestingAuthor, CALENDAR_ID);
     expect(accessStatus).toBe("pending");
 
-    let acceptCalendarAccessRequest: ApplicationMessage = {
+    const acceptCalendarAccessRequest: ApplicationMessage = {
       meta: {
         operationId: "accept_access_request_001",
         author: OWNER_PUBLIC_KEY,
@@ -83,7 +81,7 @@ describe("access tests", () => {
     accessStatus = await access.checkStatus(requestingAuthor, CALENDAR_ID);
     expect(accessStatus).toBe("accepted");
 
-    let rejectAccessRequest: ApplicationMessage = {
+    const rejectAccessRequest: ApplicationMessage = {
       meta: {
         operationId: "reject_access_request_001",
         author: OWNER_PUBLIC_KEY,

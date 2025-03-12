@@ -13,16 +13,7 @@ const Portal = AlertDialogPrimitive.Portal;
 const Description = AlertDialogPrimitive.Description;
 
 // export both custom and default.
-export {
-  Root,
-  Title,
-  Trigger,
-  Content,
-  Description,
-  Action,
-  Cancel,
-  Portal
-};
+export { Root, Title, Trigger, Content, Description, Action, Cancel, Portal };
 
 /*
 HOW TO USE THE COMPONENT

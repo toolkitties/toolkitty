@@ -150,7 +150,7 @@ async function maybeSubscribe(
     logs = topicLogs.get(topic);
   }
 
-  let logId = { stream, logPath };
+  const logId = { stream, logPath };
   if (!logs?.has(logId)) {
     logs?.add(logId);
     await addCalendarAuthor(publicKey, topic, logId);

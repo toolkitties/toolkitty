@@ -24,7 +24,7 @@
 <br />
 <EventForm
   data={data.form}
-  activeCalendarId={data.activeCalendarId}
+  activeCalendarId={data.activeCalendarId!}
   spaces={data.spacesList}
   resources={data.resourcesList}
 />

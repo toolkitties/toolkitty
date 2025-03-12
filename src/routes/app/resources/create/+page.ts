@@ -1,7 +1,7 @@
 import { resourceSchema } from "$lib/schemas";
 import type { PageLoad } from "./$types";
-import { superValidate, defaults } from 'sveltekit-superforms';
-import { zod } from 'sveltekit-superforms/adapters';
+import { defaults } from "sveltekit-superforms";
+import { zod } from "sveltekit-superforms/adapters";
 import { calendars } from "$lib/api";
 
 export const load: PageLoad = async () => {

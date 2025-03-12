@@ -1,10 +1,9 @@
 <script>
   import "../../app.css";
   import Back from "$lib/components/Back.svelte";
-  import { page } from "$app/stores";
-  import CalendarSelector from "$lib/components/CalendarSelector.svelte";
+  import { page } from "$app/state";
 
-  let indexPage = $derived($page.url.pathname == "/");
+  let indexPage = $derived(page.url.pathname == "/");
 </script>
 
 <main class="p-8 flex flex-col gap-4 h-dvh">

@@ -1,5 +1,5 @@
 import type { PageLoad } from "./$types";
-import { calendars, events, spaces, resources } from "$lib/api";
+import { calendars, events } from "$lib/api";
 
 export const load: PageLoad = async () => {
   const activeCalendarId = await calendars.getActiveCalendarId();
