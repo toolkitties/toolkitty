@@ -134,7 +134,6 @@ export async function processMessage(message: ChannelMessage) {
   // @TODO: We need to validate here if the received messages are correctly
   // formatted and contain all the required fields.
   // Related issue: https://github.com/toolkitties/toolkitty/issues/77
-
   if (message.event == "application") {
     console.debug("received application message", message);
     await onApplicationMessage(message);
@@ -143,7 +142,8 @@ export async function processMessage(message: ChannelMessage) {
     await onInviteCodesMessage(message);
   } else if (
     message.event == "calendar_selected" ||
-    message.event == "subscribed_to_calendar" ||
+    message.event == "subscribed_to_persisted_topic" ||
+    message.event == "subscribed_to_ephemeral_topic" ||
     message.event == "network_event"
   ) {
     // Filter out network events for now.
@@ -214,7 +214,9 @@ async function onInviteCodesMessage(message: EphemeralMessage) {
 async function onSystemMessage(message: SystemMessage) {
   if (message.event === "calendar_selected") {
     // @TODO
-  } else if (message.event === "subscribed_to_calendar") {
+  } else if (message.event === "subscribed_to_ephemeral_topic") {
+    // @TODO
+  } else if (message.event === "subscribed_to_persisted_topic") {
     // @TODO
   } else if (message.event === "network_event") {
     // @TODO
