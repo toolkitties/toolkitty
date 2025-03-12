@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { SuperValidated, Infer } from "sveltekit-superforms";
   import type { SpaceSchema } from "$lib/schemas";
-  import { AvailabilitySetter } from "$lib/components/AvailabilitySetter.svelte";
+  import AvailabilitySetter from "$lib/components/AvailabilitySetter.svelte";
   import { spaces } from "$lib/api";
   import { goto } from "$app/navigation";
   import { toast } from "$lib/toast.svelte";
@@ -16,12 +16,9 @@
   }: { data: SuperValidated<Infer<SpaceSchema>>; activeCalendarId: Hash } =
     $props();
 
-  let availability: TimeSpan[] = $state([]);
   let alwaysAvailable = $state(false);
 
   const { form, errors, enhance } = superForm(data, {
-
-  const { form, errors, message, constraints, enhance } = superForm(data, {
     SPA: true,
     validators: zod(spaceSchema),
     resetForm: false,
@@ -32,7 +29,7 @@
       const { id, ...payload } = form.data;
       if (form.data.id) {
         console.log("update space");
-        handleUpdateSpace(id, payload);
+        handleUpdateSpace(id!, payload);
       } else {
         console.log("create space");
         handleCreateSpace(payload);
@@ -298,16 +295,25 @@
     >{/if}
 
   <p>Space availability</p>
-
+  {#if alwaysAvailable}
+    <p>This space is always available</p>
+  {/if}
   {#if !alwaysAvailable}
-    <AvailabilitySetter {availability} />
+    <AvailabilitySetter bind:availability={$form.availability as TimeSpan[]} />
   {/if}
 
   <label>
-    <input type="checkbox" bind:checked={alwaysAvailable} />
+    <input
+      type="checkbox"
+      bind:checked={alwaysAvailable}
+      onchange={() => {
+        if (alwaysAvailable) {
+          $form.availability = "always";
+        }
+      }}
+    />
     Always Available
   </label>
-
   <fieldset>
     <label for="multiBookable"
       >Can this space have multiple bookings at the same time?
