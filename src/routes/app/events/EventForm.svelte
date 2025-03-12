@@ -68,9 +68,12 @@
 
         const startDate = new Date(form.data.startDate);
         const endDate = new Date(form.data.endDate);
+        const publicStartDate = new Date(form.data.publicStartDate);
+        const publicEndDate = new Date(form.data.publicEndDate);
         const earliestStart = new Date(spaceTimeSpan.start);
         const latestEnd = new Date(spaceTimeSpan.end!);
 
+        // Validation of dates against space availability
         if (startDate < earliestStart) {
           setError(
             form,
@@ -79,7 +82,6 @@
           );
           return;
         }
-
         if (startDate > latestEnd) {
           setError(
             form,
@@ -88,12 +90,36 @@
           );
           return;
         }
-
         if (endDate > latestEnd) {
           setError(
             form,
             "endDate",
             "End date cannot be after the space's latest availability.",
+          );
+          return;
+        }
+
+        if (publicStartDate < earliestStart) {
+          setError(
+            form,
+            "publicStartDate",
+            "Public start date cannot be before the space's earliest availability.",
+          );
+          return;
+        }
+        if (publicStartDate > latestEnd) {
+          setError(
+            form,
+            "publicStartDate",
+            "Public start date cannot be after the space's latest availability.",
+          );
+          return;
+        }
+        if (publicEndDate > latestEnd) {
+          setError(
+            form,
+            "publicEndDate",
+            "Public end date cannot be after the space's latest availability.",
           );
           return;
         }
@@ -261,6 +287,33 @@
           bind:value={$form.endDate}
         />
         {#if $errors.endDate}<span class="form-error">{$errors.endDate}</span
+          >{/if}
+      </div>
+
+      <p>Set public event start and end</p>
+      <div class="flex flex-row">
+        <label for="publicStartDate">Start *</label>
+        <input
+          type="datetime-local"
+          name="startDate"
+          required
+          aria-invalid={$errors.startDate ? "true" : undefined}
+          bind:value={$form.publicStartDate}
+        />
+        {#if $errors.publicStartDate}<span class="form-error"
+            >{$errors.publicStartDate}</span
+          >{/if}
+
+        <label for="publicEndDate">End *</label>
+        <input
+          type="datetime-local"
+          name="publicEndDate"
+          required
+          aria-invalid={$errors.publicEndDate ? "true" : undefined}
+          bind:value={$form.publicEndDate}
+        />
+        {#if $errors.publicEndDate}<span class="form-error"
+            >{$errors.publicEndDate}</span
           >{/if}
       </div>
 
