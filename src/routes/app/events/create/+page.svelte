@@ -15,5 +15,5 @@
   data={data.form}
   activeCalendarId={data.activeCalendarId!}
   spaces={data.spacesList}
-  resources={data.resourcesList}
+  resourcesList={data.resourcesList}
 />

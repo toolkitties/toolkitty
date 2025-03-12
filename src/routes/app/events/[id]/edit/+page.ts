@@ -21,21 +21,18 @@ export const load: PageLoad = async ({ params }) => {
   const form = await superValidate(eventFields, zod(eventSchema));
 
   // return spaces and resources with availability within the calendar dates
-  let activeCalendar = await db.calendars.get(activeCalendarId!);
+  let activeCalendar = await db.calendars.get(calendarId!);
   let timeSpan = {
     start: activeCalendar!.startDate,
     end: activeCalendar!.endDate,
   };
-  let spacesList = await spaces.findByTimespan(activeCalendarId!, timeSpan);
-  const resourcesList = await resources.findByTimespan(
-    activeCalendarId!,
-    timeSpan,
-  );
+  let spacesList = await spaces.findByTimespan(calendarId!, timeSpan);
+  const resourcesList = await resources.findByTimespan(calendarId!, timeSpan);
 
   return {
     title: "edit space",
     form,
-    activeCalendarId,
+    calendarId,
     spacesList,
     resourcesList,
   };

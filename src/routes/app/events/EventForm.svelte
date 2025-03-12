@@ -4,26 +4,52 @@
   import { toast } from "$lib/toast.svelte";
   import type { SuperValidated, Infer } from "sveltekit-superforms";
   import type { EventSchema } from "$lib/schemas";
-  import { superForm } from "sveltekit-superforms";
+  import { superForm, setMessage, setError } from "sveltekit-superforms";
   import SuperDebug from "sveltekit-superforms";
   import { eventSchema } from "$lib/schemas";
   import { zod } from "sveltekit-superforms/adapters";
   import { events } from "$lib/api";
+  import { resources } from "$lib/api";
 
   let {
     data,
     activeCalendarId,
     spaces,
+    resourcesList,
   }: {
     data: SuperValidated<Infer<EventSchema>>;
     activeCalendarId: Hash;
     spaces: Space[];
-    resources: Resource[];
+    resourcesList: Resource[];
   } = $props();
 
   let selectedSpace: Space | null = $state<Space | null>(null);
+  let availableResources: Resource[] = $state([]);
+  async function handleSpaceSelection(space: Space) {
+    selectedSpace = space;
+    if (selectedSpace.availability == "always") {
+      availableResources = resourcesList;
+    } else {
+      let spaceTimeSpan = calculateSpaceTimespan(selectedSpace.availability);
+      availableResources = await resources.findByTimespan(
+        activeCalendarId,
+        spaceTimeSpan,
+      );
+    }
+  }
 
-  const { form, errors, enhance } = superForm(data, {
+  function calculateSpaceTimespan(availability: TimeSpan[]): TimeSpan {
+    return {
+      start: availability.reduce((acc, curr) =>
+        acc.start < curr.start ? acc : curr,
+      ).start,
+      end: availability.reduce((acc, curr) =>
+        acc.end! > curr.end! ? acc : curr,
+      ).end,
+    };
+  }
+
+  const { form, errors, message, constraints, enhance } = superForm(data, {
     SPA: true,
     validators: zod(eventSchema),
     resetForm: false,
@@ -144,7 +170,7 @@
   {#if spaces.length > 0}
     <p>Select a space:</p>
     <ul>
-      {#each spaces as space (space.id)}
+      {#each spaces as space}
         <li>
           <input
             type="radio"
@@ -158,7 +184,6 @@
       {/each}
     </ul>
     {#if selectedSpace}
-      <!-- view space availability -->
       <div class="space-availability">
         <p>View availability for {selectedSpace.name}</p>
         <AvailabilityViewer
@@ -169,7 +194,6 @@
         />
       </div>
 
-      <!-- request access to space at certain times -->
       <p>Request access to selected space</p>
       <div class="flex flex-row">
         <label for="startDate">Access Start *</label>
@@ -196,10 +220,10 @@
           >{/if}
       </div>
 
-      <!-- {#if resources.length > 0}
-        <label for="resource-list">Select resources</label>
+      {#if availableResources.length > 0}
+        <label for="resource-list">Select from available resources</label>
         <ul id="resource-list">
-          {#each resources as resource}
+          {#each availableResources as resource}
             <li>
               <input
                 type="checkbox"
@@ -212,7 +236,7 @@
         </ul>
       {:else}
         <p>No available resources available.</p>
-      {/if} -->
+      {/if}
     {/if}
   {:else}
     <p>No available spaces found.</p>

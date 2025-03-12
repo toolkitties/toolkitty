@@ -24,8 +24,8 @@
 <br />
 <EventForm
   data={data.form}
-  activeCalendarId={data.activeCalendarId!}
+  activeCalendarId={data.calendarId!}
   spaces={data.spacesList}
-  resources={data.resourcesList}
+  resourcesList={data.resourcesList}
 />
 <button onclick={() => handleDelete()}>Delete</button>
