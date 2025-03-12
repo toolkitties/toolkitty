@@ -58,7 +58,7 @@
   </title>
 </svelte:head>
 
-{#if $activeCalendar}
+{#if $activeCalendar?.name}
   <Header title={page.data.title} />
   <main class="h-dvh">
     <div class="p-8">
