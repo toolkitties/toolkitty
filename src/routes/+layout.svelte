@@ -4,6 +4,8 @@
   import Toasts from "$lib/components/Toasts.svelte";
   import { seedData } from "$lib/api/data";
   import { db } from "$lib/db";
+  import { topics } from "$lib/api";
+  import { INVITE_TOPIC } from "$lib/api/publish";
 
   onMount(() => {
     // Hacky workaround to only call "init" once in a Svelte HMR life-cycle.
@@ -18,6 +20,8 @@
 
         // @TODO(sam): for testing publish some events to the network.
         await seedData();
+
+        await topics.subscribeEphemeral(INVITE_TOPIC);
 
         // @TODO(sam): we have no persistence layer at the moment so we don't need to subscribe to
         // calendars we already know about.
