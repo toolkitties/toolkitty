@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { roles } from "$lib/api";
   import AccessRoleDialog from "$lib/components/dialog/AccessRoleDialog.svelte";
   import * as AlertDialog from "$lib/components/dialog/index";
   let { data }: { data: User | AccessRequest } = $props();
