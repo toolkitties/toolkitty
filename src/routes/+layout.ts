@@ -4,15 +4,15 @@
 export const prerender = true;
 export const ssr = false;
 
-import type { LayoutLoad } from './$types';
-import { calendars, identity } from '$lib/api';
+import type { LayoutLoad } from "./$types";
+import { calendars, identity } from "$lib/api";
 
 export const load: LayoutLoad = async () => {
-  const activeCalendarId = await calendars.getActiveCalendarId()
-  const publicKey = await identity.publicKey()
+  const activeCalendarId = await calendars.getActiveCalendarId();
+  const publicKey = await identity.publicKey();
 
   return {
     activeCalendarId,
-    publicKey
-  }
+    publicKey,
+  };
 };

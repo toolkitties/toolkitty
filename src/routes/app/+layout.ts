@@ -1,5 +1,5 @@
-import type { LayoutLoad } from './$types';
-import { goto } from '$app/navigation';
+import type { LayoutLoad } from "./$types";
+import { goto } from "$app/navigation";
 
 export const load: LayoutLoad = async ({ parent }) => {
   const parentData = await parent();
@@ -10,6 +10,6 @@ export const load: LayoutLoad = async ({ parent }) => {
   }
 
   return {
-    activeCalendarId: activeCalendarId as string
-  }
+    activeCalendarId: activeCalendarId as string,
+  };
 };
