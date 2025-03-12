@@ -70,7 +70,7 @@
         <Calendar.GridBody>
           {#each month.weeks as weekDates, weekIndex (weekIndex)}
             <Calendar.GridRow>
-              {#each weekDates as date, dateIndex (date.toString())}
+              {#each weekDates as date (date.toString())}
                 <Calendar.Cell {date} month={month.value}>
                   <Calendar.Day
                     class={`data-[outside-month]:pointer-events-none
