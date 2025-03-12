@@ -25,7 +25,10 @@ pub enum Topic {
 
 impl Display for Topic {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self)
+        match self {
+            Topic::Ephemeral(topic) => write!(f, "ephemeral/{}", topic),
+            Topic::Persisted(topic) => write!(f, "persisted/{}", topic),
+        }
     }
 }
 
