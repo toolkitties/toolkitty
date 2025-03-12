@@ -7,7 +7,9 @@ import { isSubTimespan } from "$lib/utils";
  * Queries
  */
 
-export function findById(requestId: Hash): Promise<BookingRequest | undefined> {
+export function findById(
+  requestId: Hash,
+): Promise<BookingRequestEnriched | undefined> {
   return db.transaction(
     "r",
     db.bookingRequests,
@@ -15,7 +17,8 @@ export function findById(requestId: Hash): Promise<BookingRequest | undefined> {
     db.spaces,
     db.events,
     async () => {
-      const bookingRequest = await db.bookingRequests.get(requestId);
+      const bookingRequest: BookingRequestEnriched | undefined =
+        await db.bookingRequests.get(requestId);
       if (!bookingRequest) {
         return;
       }
@@ -43,7 +46,7 @@ export function findById(requestId: Hash): Promise<BookingRequest | undefined> {
 export function findAll(
   calendarId: Hash,
   filter: BookingQueryFilter,
-): Promise<BookingRequest[]> {
+): Promise<BookingRequestEnriched[]> {
   return db.transaction(
     "r",
     db.bookingRequests,
@@ -51,7 +54,7 @@ export function findAll(
     db.spaces,
     db.events,
     async () => {
-      const bookingRequests = await db.bookingRequests
+      const bookingRequests: BookingRequestEnriched[] = await db.bookingRequests
         .where({
           calendarId,
           ...filter,
@@ -80,7 +83,10 @@ export function findAll(
 /**
  * Search the database for any pending booking requests matching the passed filter object.
  */
-export function findPending(calendarId: Hash, filter: BookingQueryFilter) {
+export function findPending(
+  calendarId: Hash,
+  filter: BookingQueryFilter,
+): Promise<BookingRequestEnriched[]> {
   return db.transaction(
     "r",
     db.bookingRequests,
@@ -88,7 +94,7 @@ export function findPending(calendarId: Hash, filter: BookingQueryFilter) {
     db.spaces,
     db.events,
     async () => {
-      const bookingRequests = await db.bookingRequests
+      const bookingRequests: BookingRequestEnriched[] = await db.bookingRequests
         .where({
           calendarId,
           status: "pending",

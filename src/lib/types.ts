@@ -625,9 +625,12 @@ type CalendarEvent = {
   id: Hash;
   calendarId: Hash;
   ownerId: PublicKey;
+} & EventFields;
+
+type CalendarEventEnriched = {
   space?: Space;
   resources?: Resource[];
-} & EventFields;
+} & CalendarEvent;
 
 type Space = {
   id: Hash;
@@ -647,11 +650,8 @@ type BookingRequest = {
   id: Hash;
   calendarId: Hash;
   eventId: Hash;
-  event?: CalendarEvent;
   requester: PublicKey;
   resourceId: Hash;
-  resource?: Resource;
-  space?: Space;
   resourceType: ResourceType;
   resourceOwner: PublicKey;
   message: string;
@@ -659,6 +659,12 @@ type BookingRequest = {
   isValid: "true" | "false";
   status: "accepted" | "rejected" | "pending";
 };
+
+type BookingRequestEnriched = {
+  event?: CalendarEvent;
+  resource?: Resource;
+  space?: Space;
+} & BookingRequest;
 
 type ResourceType = "space" | "resource";
 

@@ -12,14 +12,16 @@ import { auth, events, publish } from ".";
 /**
  * Get events that are associated with the passed calendar
  */
-export function findMany(calendarId: Hash): Promise<CalendarEvent[]> {
+export function findMany(calendarId: Hash): Promise<CalendarEventEnriched[]> {
   return db.transaction(
     "r",
     db.events,
     db.bookingRequests,
     db.spaces,
     async () => {
-      const events = await db.events.where({ calendarId }).toArray();
+      const events: CalendarEventEnriched[] = await db.events
+        .where({ calendarId })
+        .toArray();
       // Add space to each event.
       for (const event of events) {
         if (event.spaceRequest) {
@@ -41,7 +43,7 @@ export function findMany(calendarId: Hash): Promise<CalendarEvent[]> {
 export function findByOwner(
   calendarId: Hash,
   ownerId: PublicKey,
-): Promise<CalendarEvent[]> {
+): Promise<CalendarEventEnriched[]> {
   return db.transaction(
     "r",
     db.events,
@@ -49,7 +51,9 @@ export function findByOwner(
     db.resources,
     db.spaces,
     async () => {
-      const events = await db.events.where({ ownerId, calendarId }).toArray();
+      const events: CalendarEventEnriched[] = await db.events
+        .where({ ownerId, calendarId })
+        .toArray();
       for (const event of events) {
         // Add space to each event.
         if (event.spaceRequest) {
@@ -87,14 +91,16 @@ export function findByOwner(
 /**
  * Get one event via its id
  */
-export function findById(id: Hash): Promise<CalendarEvent | undefined> {
+export function findById(id: Hash): Promise<CalendarEventEnriched | undefined> {
   return db.transaction(
     "r",
     db.events,
     db.bookingRequests,
     db.spaces,
     async () => {
-      const event = await db.events.get({ id });
+      const event: CalendarEventEnriched | undefined = await db.events.get({
+        id,
+      });
       // Add space to event.
       if (event?.spaceRequest) {
         const request = await db.bookingRequests.get(event.spaceRequest);
