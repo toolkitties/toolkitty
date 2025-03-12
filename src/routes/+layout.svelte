@@ -7,6 +7,7 @@
   import { data } from "$lib/api";
   import { db } from "$lib/db";
   import { invalidateAll } from "$app/navigation";
+  import "../app.css";
 
   let { children }: LayoutProps = $props();
 

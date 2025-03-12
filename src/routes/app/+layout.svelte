@@ -1,6 +1,5 @@
 <script lang="ts">
   import type { LayoutProps } from "./$types";
-  import "../../app.css";
   import { page } from "$app/state";
   import Header from "$lib/components/Header.svelte";
   import CalendarIcon from "$lib/components/icons/CalendarIcon.svelte";
@@ -47,7 +46,10 @@
     },
   ];
 
-  let calendar = liveQuery(() => calendars.findOne(data.activeCalendarId));
+  // Get active calendar to make sure we have received the calendar_created event
+  let activeCalendar = liveQuery(() =>
+    calendars.findOne(data.activeCalendarId),
+  );
 </script>
 
 <svelte:head>
@@ -56,7 +58,7 @@
   </title>
 </svelte:head>
 
-{#if $calendar}
+{#if $activeCalendar}
   <Header title={page.data.title} />
   <main class="h-dvh">
     <div class="p-8">
@@ -81,5 +83,6 @@
     </nav>
   </main>
 {:else}
+  <!-- Show pending state if active calendar is undefined -->
   <p>Waiting for calendar data from peers...</p>
 {/if}
