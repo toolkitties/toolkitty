@@ -141,7 +141,6 @@ export async function processMessage(message: ChannelMessage) {
     console.debug("received invite message", message);
     await onInviteCodesMessage(message);
   } else if (
-    message.event == "calendar_selected" ||
     message.event == "subscribed_to_persisted_topic" ||
     message.event == "subscribed_to_ephemeral_topic" ||
     message.event == "network_event"
@@ -191,9 +190,7 @@ async function onApplicationMessage(message: ApplicationMessage) {
     resolvePromise(message.meta.operationId);
 
     // Acknowledge that we have received and processed this operation.
-    if (process.env.NODE_ENV !== "test") {
       await invoke("ack", { operationId: message.meta.operationId });
-    }
   } catch (err) {
     console.error(`failed processing application event: ${err}`, message);
     rejectPromise(message.meta.operationId, err);
@@ -212,9 +209,7 @@ async function onInviteCodesMessage(message: EphemeralMessage) {
 }
 
 async function onSystemMessage(message: SystemMessage) {
-  if (message.event === "calendar_selected") {
-    // @TODO
-  } else if (message.event === "subscribed_to_ephemeral_topic") {
+   if (message.event === "subscribed_to_ephemeral_topic") {
     // @TODO
   } else if (message.event === "subscribed_to_persisted_topic") {
     // @TODO

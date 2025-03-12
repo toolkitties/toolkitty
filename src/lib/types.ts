@@ -150,15 +150,7 @@ type StreamMessageMeta = {
  * backend state change.
  */
 
-type SystemMessage = CalendarSelected | SubscribedToTopic | NetworkEvent;
-
-/**
- * We have selected a new calendar and are ready to receive it's events.
- */
-type CalendarSelected = {
-  event: "calendar_selected";
-  calendarId: string;
-};
+type SystemMessage = SubscribedToTopic | NetworkEvent;
 
 /**
  * We have successfully subscribed to (but not necessarily selected) a new calendar.
