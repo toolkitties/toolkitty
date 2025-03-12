@@ -90,13 +90,13 @@
       <Calendar.Grid>
         <Calendar.GridHead>
           <Calendar.GridRow>
-            {#each weekdays as day (day)}
+            {#each weekdays as day, i ("day" + i)}
               <Calendar.HeadCell>{day}</Calendar.HeadCell>
             {/each}
           </Calendar.GridRow>
         </Calendar.GridHead>
         <Calendar.GridBody>
-          {#each month.weeks as weekDates, i (i)}
+          {#each month.weeks as weekDates, i ("weekDates" + i)}
             <Calendar.GridRow>
               {#each weekDates as date (date)}
                 <Calendar.Cell {date} month={month.value}>

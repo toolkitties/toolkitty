@@ -150,23 +150,17 @@ type StreamMessageMeta = {
  * backend state change.
  */
 
-type SystemMessage = CalendarSelected | SubscribedToCalendar | NetworkEvent;
-
-/**
- * We have selected a new calendar and are ready to receive it's events.
- */
-type CalendarSelected = {
-  event: "calendar_selected";
-  calendarId: string;
-};
+type SystemMessage = SubscribedToTopic | NetworkEvent;
 
 /**
  * We have successfully subscribed to (but not necessarily selected) a new calendar.
  */
-type SubscribedToCalendar = {
-  event: "subscribed_to_calendar";
-  calendarId: string;
-};
+type SubscribedToTopic =
+  | {
+      event: "subscribed_to_persisted_topic";
+      topic: string;
+    }
+  | { event: "subscribed_to_ephemeral_topic"; topic: string };
 
 /**
  * We received a network system event from the backend node.
@@ -596,12 +590,13 @@ type User = {
 type Calendar = {
   id: Hash;
   ownerId: PublicKey;
-  name: string;
+  stream: Stream;
+  name?: string;
   // TODO: Should we support non-consecutive dates? It could be arrays of TimeSpan? The
   // `CalendarCreated` fields contains a TimeSpan[] so it's possible to encode non-consecutive
   // dates there, but we don't need to support that in the app right now. Here I've left it as a
   // single time range.
-  startDate: Date;
+  startDate?: Date;
   endDate?: Date;
 };
 

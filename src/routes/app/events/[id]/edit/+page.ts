@@ -10,7 +10,7 @@ export const load: PageLoad = async ({ params }) => {
   const eventId = params.id;
   const event = await events.findById(eventId);
 
-  if (!event) {
+  if (!event || !event.id) {
     error(404, {
       message: "Event not found",
     });

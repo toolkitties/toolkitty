@@ -176,17 +176,21 @@ export async function process(message: ApplicationMessage) {
   }
 }
 
-function onSpaceCreated(
+async function onSpaceCreated(
   meta: StreamMessageMeta,
   data: SpaceCreated["data"],
-): Promise<string> {
-  return db.spaces.add({
-    id: meta.operationId,
-    calendarId: meta.stream.id,
-    ownerId: meta.author,
-    booked: [],
-    ...data.fields,
-  });
+): Promise<void> {
+  try {
+    await db.spaces.add({
+      id: meta.operationId,
+      calendarId: meta.stream.id,
+      ownerId: meta.author,
+      booked: [],
+      ...data.fields,
+    });
+  } catch (e) {
+    console.error(e);
+  }
 }
 
 function onSpaceUpdated(data: SpaceUpdated["data"]): Promise<void> {

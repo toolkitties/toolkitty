@@ -10,7 +10,7 @@ export const load: PageLoad = async ({ params }) => {
 
   const space = await spaces.findById(spaceId);
 
-  if (!space) {
+  if (!space || !space.id) {
     error(404, {
       message: "Space not found",
     });

@@ -25,7 +25,7 @@ const availabilitySchema = z
 
 // Resource form Schema
 export const resourceSchema = z.object({
-  id: z.string(),
+  id: z.string().optional(),
   name: z.string().min(1, "Resource name is required"),
   description: z.string().min(1, "Description is required"),
   contact: z.string().min(1, "Contact details are required"),
@@ -57,7 +57,7 @@ const virtualLocationSchema = z.object({
 });
 
 export const spaceSchema = z.object({
-  id: z.string(),
+  id: z.string().optional(),
   name: z.string().min(1, "Space name is required"),
   location: z
     .discriminatedUnion("type", [

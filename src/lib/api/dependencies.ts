@@ -27,7 +27,7 @@ export async function process(message: ApplicationMessage) {
     data.type == "user_role_assigned"
   ) {
     const topic = new TopicFactory(meta.stream.id);
-    await topics.replay(topic.calendar());
+    topics.replay(topic.calendar());
   }
 
   // Next check that dependencies are met for the following message types.
