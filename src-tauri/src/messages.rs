@@ -31,12 +31,20 @@ impl Serialize for ChannelEvent {
     {
         match self {
             ChannelEvent::Stream(stream_event) => stream_event.serialize(serializer),
-            ChannelEvent::SubscribedToTopic(topic) => {
-                let mut state = serializer.serialize_struct("StreamEvent", 2)?;
-                state.serialize_field("event", "subscribed_to_calendar")?;
-                state.serialize_field("topic", &topic)?;
-                state.end()
-            }
+            ChannelEvent::SubscribedToTopic(topic) => match topic {
+                Topic::Ephemeral(topic) => {
+                    let mut state = serializer.serialize_struct("StreamEvent", 2)?;
+                    state.serialize_field("event", "subscribed_to_ephemeral_topic")?;
+                    state.serialize_field("topic", &topic)?;
+                    state.end()
+                }
+                Topic::Persisted(topic) => {
+                    let mut state = serializer.serialize_struct("StreamEvent", 2)?;
+                    state.serialize_field("event", "subscribed_to_persisted_topic")?;
+                    state.serialize_field("topic", &topic)?;
+                    state.end()
+                }
+            },
             ChannelEvent::NetworkEvent(ref event) => {
                 let mut state = serializer.serialize_struct("StreamEvent", 2)?;
                 state.serialize_field("event", "network_event")?;

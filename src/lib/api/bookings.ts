@@ -163,6 +163,11 @@ async function onBookingRequested(
   meta: StreamMessageMeta,
   data: BookingRequested["data"],
 ): Promise<void> {
+  const request = await db.bookingRequests.get(meta.operationId);
+  if (request) {
+    return;
+  }
+
   await db.transaction(
     "rw",
     db.bookingRequests,
@@ -242,10 +247,15 @@ async function onBookingRequested(
   }
 }
 
-function onBookingRequestAccepted(
+async function onBookingRequestAccepted(
   meta: StreamMessageMeta,
   data: BookingRequestAccepted["data"],
 ): Promise<void> {
+  const response = await db.bookingResponses.get(meta.operationId);
+  if (response) {
+    return;
+  }
+
   return db.transaction(
     "rw",
     db.bookingRequests,
@@ -275,6 +285,11 @@ async function onBookingRequestRejected(
   meta: StreamMessageMeta,
   data: BookingRequestRejected["data"],
 ): Promise<void> {
+  const response = await db.bookingResponses.get(meta.operationId);
+  if (response) {
+    return;
+  }
+
   return db.transaction(
     "rw",
     db.bookingRequests,

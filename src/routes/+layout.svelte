@@ -7,6 +7,7 @@
   import { data } from "$lib/api";
   import { db } from "$lib/db";
   import { invalidateAll } from "$app/navigation";
+  import { INVITE_TOPIC } from "$lib/api/publish";
   import "../app.css";
 
   let { children }: LayoutProps = $props();
@@ -36,12 +37,13 @@
 
           console.info("finished seeding db");
         }
+        // @TODO(sam): for testing publish some events to the network.
+        await seedData();
 
-        // After init subscribe to all calendars we know about.
-        await topics.subscribeToAll();
+        await topics.subscribeEphemeral(INVITE_TOPIC);
 
-        // @TODO(sam): inform the backend of all authors we want to sync data with for each
-        // calendar (add them to the topic map).
+        // @TODO(sam): we have no persistence layer at the moment so we don't need to subscribe to
+        // calendars we already know about.
       });
 
       // @ts-expect-error isInit does not exist on window

@@ -143,16 +143,20 @@ export async function process(message: ApplicationMessage) {
   }
 }
 
-function onEventCreated(
+async function onEventCreated(
   meta: StreamMessageMeta,
   data: EventCreated["data"],
-): Promise<string> {
-  return db.events.add({
-    id: meta.operationId,
-    calendarId: meta.stream.id,
-    ownerId: meta.stream.owner,
-    ...data.fields,
-  });
+): Promise<void> {
+  try {
+    await db.events.add({
+      id: meta.operationId,
+      calendarId: meta.stream.id,
+      ownerId: meta.stream.owner,
+      ...data.fields,
+    });
+  } catch (e) {
+    console.error(e);
+  }
 }
 
 function onEventUpdated(data: EventUpdated["data"]): Promise<void> {

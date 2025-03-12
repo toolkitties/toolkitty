@@ -1,11 +1,8 @@
 <script lang="ts">
   import { PinInput, Toggle } from "bits-ui";
   import { goto } from "$app/navigation";
-  import { topics } from "$lib/api";
   import { toast } from "$lib/toast.svelte";
   import { resolveInviteCode } from "$lib/api/access";
-  import { TopicFactory } from "$lib/api/topics";
-  import { calendars } from "$lib/api";
 
   let value = $state("");
   let show = $state(true);
@@ -22,13 +19,9 @@
 
     if (!value) return;
 
-    let calendar;
     try {
       searching = true;
-      calendar = await resolveInviteCode(value);
-      const topic = new TopicFactory(calendar.stream.id);
-      await topics.subscribe(topic.calendarInbox());
-      await calendars.setActiveCalendar(calendar.stream.id);
+      await resolveInviteCode(value);
     } catch (err) {
       searching = false;
       console.error(err);
