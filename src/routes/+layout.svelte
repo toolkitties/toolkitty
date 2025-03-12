@@ -15,10 +15,10 @@
     if (!("isInit" in window)) {
       init().then(async () => {
         // Delete any old version of db
-        await db.delete({ disableAutoOpen: false });
+        // await db.delete({ disableAutoOpen: false });
 
         // TODO(sam): for testing publish some events to the network.
-        await seedData();
+        // await seedData();
 
         // After init subscribe to all calendars we know about.
         await topics.subscribeToAll();
