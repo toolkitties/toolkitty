@@ -58,11 +58,11 @@
       <Calendar.Heading />
       <Calendar.NextButton class="w-8 ml-2">→</Calendar.NextButton>
     </Calendar.Header>
-    {#each months as month, monthIndex (month.value)}
+    {#each months as month (month.value)}
       <Calendar.Grid>
         <Calendar.GridHead>
           <Calendar.GridRow>
-            {#each weekdays as day, dayIndex (day)}
+            {#each weekdays as day (day)}
               <Calendar.HeadCell>{day}</Calendar.HeadCell>
             {/each}
           </Calendar.GridRow>

@@ -68,9 +68,14 @@
 
   const handleRemoveAvailability = (e: Event, index: number) => {
     e.preventDefault();
-    availability = availability.filter((_: any, i: number) => i !== index);
-    availabilityList = availabilityList.filter((_, i) => i !== index);
-    availableDates = availableDates.filter((_, i) => i !== index);
+    availability = availability.filter((_: TimeSpan, i: number) => i !== index);
+    availabilityList = availabilityList.filter(
+      (_: { date: string; startTime: string; endTime: string }, i) =>
+        i !== index,
+    );
+    availableDates = availableDates.filter(
+      (_: { date: string }, i) => i !== index,
+    );
   };
 </script>
 
@@ -129,7 +134,7 @@
 {#if availabilityList.length > 0}
   <h3>Current Availability:</h3>
   <ul>
-    {#each availabilityList as entry, index}
+    {#each availabilityList as entry, index (entry.date + entry.startTime + entry.endTime)}
       <li>
         <span>{entry.date}: {entry.startTime} - {entry.endTime}</span>
         <button onclick={(e: Event) => handleRemoveAvailability(e, index)}
