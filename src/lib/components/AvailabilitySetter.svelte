@@ -14,31 +14,9 @@
     $state([]);
 
   let currentlySelectedDate: DateValue | undefined = $state(undefined);
-  let lastEnteredTime = $state<{ startTime: string; endTime: string } | null>(
-    null,
-  );
-  const startTimeInput = document.querySelector<HTMLInputElement>(
-    'input[name="availability-start-time"]',
-  );
-  const endTimeInput = document.querySelector<HTMLInputElement>(
-    'input[name="availability-end-time"]',
-  );
 
   const handleDateSelect = (value: DateValue | undefined) => {
     currentlySelectedDate = value || undefined;
-
-    if (
-      currentlySelectedDate &&
-      !availableDates.some(
-        (d) => d.date === currentlySelectedDate?.toString(),
-      ) &&
-      lastEnteredTime
-    ) {
-      if (startTimeInput && endTimeInput) {
-        startTimeInput.value = lastEnteredTime.startTime;
-        endTimeInput.value = lastEnteredTime.endTime;
-      }
-    }
   };
 
   const handleAddAvailability = (e: Event) => {
@@ -70,9 +48,6 @@
       alert("End time must be later than start time.");
       return;
     }
-
-    // Store the last entered times for autofill
-    lastEnteredTime = { startTime, endTime };
 
     let newAvailabilityListEntry = {
       date: selectedDate,
