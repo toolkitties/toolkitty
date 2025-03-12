@@ -55,6 +55,50 @@
     resetForm: false,
     dataType: "json",
     async onUpdate({ form }) {
+      if (!selectedSpace) {
+        setError(form, "startDate", "Please select a space first.");
+        return;
+      }
+
+      // If availability is "always", skip validation
+      if (selectedSpace.availability !== "always") {
+        let spaceTimeSpan = calculateSpaceTimespan(
+          selectedSpace.availability as TimeSpan[],
+        );
+
+        const startDate = new Date(form.data.startDate);
+        const endDate = new Date(form.data.endDate);
+        const earliestStart = new Date(spaceTimeSpan.start);
+        const latestEnd = new Date(spaceTimeSpan.end!);
+
+        if (startDate < earliestStart) {
+          setError(
+            form,
+            "startDate",
+            "Start date cannot be before the space's earliest availability.",
+          );
+          return;
+        }
+
+        if (startDate > latestEnd) {
+          setError(
+            form,
+            "startDate",
+            "Start date cannot be after the space's latest availability.",
+          );
+          return;
+        }
+
+        if (endDate > latestEnd) {
+          setError(
+            form,
+            "endDate",
+            "End date cannot be after the space's latest availability.",
+          );
+          return;
+        }
+      }
+
       const { id, ...payload } = form.data;
       if (form.data.id) {
         console.log("update event");

@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import { Calendar } from "bits-ui";
   import type { DateValue } from "@internationalized/date";
   import { fromDate } from "@internationalized/date";
@@ -48,9 +47,6 @@
   }
 </script>
 
-<!-- {#if alwaysAvailable}
-  <p>Always available</p>
-{:else} -->
 <Calendar.Root
   type="single"
   bind:value={currentlySelectedDate}
