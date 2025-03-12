@@ -32,14 +32,7 @@
   <AlertDialog.Trigger class="button">
     <p>{toastie.message}</p>
     {#if toastie.request.type == "access_request"}
-      <AccessRoleDialog
-        user={{
-          publicKey: toastie.request.from,
-          calendarId: toastie.requset.calendarId,
-          pendingRequest: toastie.request.data,
-        }}
-        bind:open
-      />
+      <AccessRoleDialog data={toastie.request.data} bind:open />
     {:else if toastie.request.type == "booking_request"}
       <BookingRequestDialog request={toastie.request.data} bind:open />
     {/if}

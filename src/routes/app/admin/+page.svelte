@@ -49,18 +49,12 @@
   {#if $pendingAccessRequests}
     {#each $pendingAccessRequests as request (request.id)}
       <!-- TODO: go through users instead of pending requests -->
-      <RequestDialog
-        user={{
-          publicKey: request.from,
-          calendarId: request.calendarId,
-          pendingRequest: request,
-        }}
-      />
+      <RequestDialog data={request} />
     {/each}
   {/if}
   {#if $calendarUsers}
     {#each $calendarUsers as user (user.publicKey)}
-      <RequestDialog {user} />
+      <RequestDialog data={user} />
     {/each}
   {/if}
 </section>

@@ -690,7 +690,3 @@ type BookingQueryFilter = {
   resourceOwner?: PublicKey;
   isValid?: "true" | "false";
 };
-
-type RequestDialogUser = User & {
-  pendingRequest?: AccessRequest;
-};
