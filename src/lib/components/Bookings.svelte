@@ -19,24 +19,15 @@
     },
   ];
 
-  /**
-   * Calculate the difference in hours between two dates
-   * */
   function getHoursDifference(start: Date, end: Date): number {
     const diffMillis = end.getTime() - start.getTime();
-    return diffMillis / (1000 * 60 * 60); // Convert milliseconds to hours
+    return diffMillis / (1000 * 60 * 60);
   }
 
-  /**
-   * Convert booked TimeSpan into slots that are a percentage
-   * of the total availability for the day, this allows us to
-   * then display them as absolutely positioned elements with
-   * start being % from top and length being % height.
-   */
   function getBookedBlocks() {
     const availabilityStart = new Date(
       availability.start.year,
-      availability.start.month - 1, // JS months are 0-based
+      availability.start.month - 1,
       availability.start.day,
       availability.start.hour,
       availability.start.minute,
@@ -67,15 +58,13 @@
       return { start, length };
     });
   }
-  /**
-   * Get the availability split into hours
-   */
+
   function getHours(): string[] {
     const hours: string[] = [];
-    let current = start;
+    let current = new Date(start);
 
     while (current < end) {
-      hours.push(current.getUTCHours().toString() + ":00");
+      hours.push(current.toISOString());
       current.setUTCHours(current.getUTCHours() + 1);
     }
 
@@ -88,15 +77,13 @@
 
 <div class="max-h-[400px] overflow-auto">
   <div class="flex">
-    <!-- availability as hours -->
     <ul class="divide-black-200 divide-y-2">
-      {#each hours as hour (hour)}
-        <li class="h-12">{hour}</li>
+      {#each hours as hour, index (index)}
+        <li class="h-12">{new Date(hour).getUTCHours()}:00</li>
       {/each}
     </ul>
-    <!-- bookings -->
     <div class="grow relative">
-      {#each bookedBlocks as block (block.start)}
+      {#each bookedBlocks as block, i (i)}
         <div
           class="bg-red-light absolute w-full"
           style="top: {block.start}%; height: {block.length}%"
