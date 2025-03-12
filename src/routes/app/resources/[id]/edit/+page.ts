@@ -9,7 +9,7 @@ export const load: PageLoad = async ({ params }) => {
   const resourceId = params.id;
   const resource = await resources.findById(resourceId);
 
-  if (!resource) {
+  if (!resource || !resource.id) {
     error(404, {
       message: "Resource not found",
     });
