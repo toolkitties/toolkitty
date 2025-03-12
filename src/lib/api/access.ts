@@ -10,7 +10,6 @@ import {
 import type { ResolvedCalendar } from "$lib/api/inviteCodes";
 import { publicKey } from "./identity";
 import { db } from "$lib/db";
-import { TopicFactory } from "./topics";
 import { toast } from "$lib/toast.svelte";
 import { promiseResult } from "$lib/promiseMap";
 
@@ -280,7 +279,9 @@ async function onCalendarAccessRequested(
       await users.create(calendarId, meta.author, data.name);
     }
     // Process new calendar author if access was accepted.
-    await processNewCalendarAuthor(calendarId, meta.author);
+    //
+    // @TODO: add author to topic map.
+    // await processNewCalendarAuthor(calendarId, meta.author);
   }
 }
 
@@ -307,12 +308,24 @@ async function onCalendarAccessAccepted(
   // Process new calendar author if access was accepted.
   if (accessStatus == "accepted") {
     // Create a new user.
-    if (!(await users.get(calendarId, request.from))) {
-      await users.create(calendarId, request.from, request!.name);
+    const user = await users.get(calendarId, request.from);
+    if (!user) {
+      await users.create(calendarId, request.from, request.name);
     }
 
-    // Process new calendar author if access was accepted.
-    await processNewCalendarAuthor(calendarId, request.from);
+    // Add the new author to the calendar topics.
+    await topics.addAuthorToCalendar(meta.author, meta.stream);
+    await topics.addAuthorToInbox(meta.author, meta.stream);
+
+    // If this is our own access request then also add ourselves and the calendar owner to the
+    // topic may as we won't have done this before.
+    const myPublicKey = await identity.publicKey();
+    if (myPublicKey == request.from) {
+      await topics.subscribeToCalendar(meta.stream.id);
+      await topics.addAuthorToCalendar(myPublicKey, meta.stream);
+      await topics.addAuthorToCalendar(meta.stream.owner, meta.stream);
+      await topics.addAuthorToInbox(meta.stream.owner, meta.stream);
+    }
   }
 }
 
@@ -327,33 +340,4 @@ async function onCalendarAccessRejected(
     requestId: data.requestId,
     answer: "reject",
   });
-}
-
-export async function processNewCalendarAuthor(
-  calendarId: Hash,
-  publicKey: PublicKey,
-) {
-  const stream = await db.streams.get(calendarId);
-
-  // Inform the backend that there is a new author who may contribute to the calendar.
-  const topic = new TopicFactory(calendarId);
-  await topics.addCalendarAuthor(publicKey, topic.calendar(), {
-    stream: stream!,
-    logPath: publish.CALENDAR_LOG_PATH,
-  });
-  await topics.addCalendarAuthor(publicKey, topic.calendarInbox(), {
-    stream: stream!,
-    logPath: publish.CALENDAR_INBOX_LOG_PATH,
-  });
-
-  const myPublicKey = await identity.publicKey();
-  if (myPublicKey != publicKey) {
-    return;
-  }
-
-  // We are now added to the calendar and will be able to decrypt payloads sent on the calendar
-  // data overlay so we subscribe to the data topic now finally. This will mean we receive the
-  // "calendar_created" event on the stream, which in turn means the calendar will be inserted
-  // into our database.
-  await topics.subscribe(topic.calendar());
 }
