@@ -4,7 +4,7 @@
   import { onMount } from "svelte";
   import Toasts from "$lib/components/Toasts.svelte";
   import { topics } from "$lib/api";
-  import { seedData } from "$lib/api/data";
+  import { data } from "$lib/api";
   import { db } from "$lib/db";
   import { invalidateAll } from "$app/navigation";
 
@@ -25,7 +25,7 @@
           await db.delete({ disableAutoOpen: false });
 
           // TODO(sam): for testing publish some events to the network.
-          await seedData();
+          await data.seedData();
 
           // invalidate all data in load functions so we get latest data that just seeded.
           invalidateAll();
