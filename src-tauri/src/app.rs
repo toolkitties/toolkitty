@@ -278,18 +278,31 @@ impl Rpc {
         if context
             .subscriptions
             .insert(topic.id(), topic.clone())
-            .is_none()
+            .is_some()
         {
-            context
-                .node
-                .subscribe_ephemeral(topic)
-                .await
-                .expect("can subscribe to topic");
+            return Ok(());
+        };
 
-            context
-                .to_app_tx
-                .send(ChannelEvent::SubscribedToTopic(topic.clone()))?;
+        match topic {
+            Topic::Ephemeral(_) => {
+                context
+                    .node
+                    .subscribe_ephemeral(topic)
+                    .await
+                    .expect("can subscribe to topic");
+            }
+            Topic::Persisted(_) => {
+                context
+                    .node
+                    .subscribe_processed(topic)
+                    .await
+                    .expect("can subscribe to topic");
+            }
         }
+
+        context
+            .to_app_tx
+            .send(ChannelEvent::SubscribedToTopic(topic.clone()))?;
 
         Ok(())
     }
@@ -422,7 +435,7 @@ mod tests {
         let result = rpc.init(channel_tx).await;
         assert!(result.is_ok());
 
-        let topic = "some_topic".into();
+        let topic = Topic::Persisted("some_topic".into());
         let result = rpc.subscribe(&topic).await;
         assert!(result.is_ok());
 
@@ -444,8 +457,8 @@ mod tests {
         let result = rpc.init(channel_tx).await;
         assert!(result.is_ok());
 
-        let topic = "some_topic".into();
-        let result = rpc.subscribe_ephemeral(&topic).await;
+        let topic = Topic::Ephemeral("some_topic".to_string());
+        let result = rpc.subscribe(&topic).await;
         assert!(result.is_ok());
 
         let event = channel_rx.recv().await.unwrap();
@@ -479,7 +492,7 @@ mod tests {
             owner: None,
         };
 
-        let topic: Topic = "some_topic".into();
+        let topic = Topic::Persisted("some_topic".to_string());
         let result = rpc
             .publish(
                 &serde_json::to_vec(&payload).unwrap(),
@@ -538,7 +551,7 @@ mod tests {
         let result = peer_b.init(peer_b_tx).await;
         assert!(result.is_ok());
 
-        let topic = "some_topic".into();
+        let topic = Topic::Persisted("some_topic".into());
         let result = peer_a.subscribe_ephemeral(&topic).await;
         assert!(result.is_ok());
 
@@ -599,7 +612,7 @@ mod tests {
         let result = peer_b.init(peer_b_tx).await;
         assert!(result.is_ok());
 
-        let topic = "messages".into();
+        let topic = Topic::Persisted("messages".into());
         let log_path = json!("messages").into();
         let stream_args = StreamArgs::default();
 
