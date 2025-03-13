@@ -10,6 +10,11 @@
 
 <CalendarSelector />
 <h1 class="font-pixel">{data.title}</h1>
+{#if data.festivalInstructions}
+  {data.festivalInstructions}
+{:else}
+  <p>Add festival information in the Edit Calendar page.</p>
+{/if}
 <a href="/app/calendars/{data.activeCalendarId}/edit">Edit Calendar</a>
 <a href="/app/events/create">Create event</a>
 
@@ -36,4 +41,4 @@
   </div>
 </div>
 
-<p>Invite code: (first 4 chars): {data.activeCalendarId}</p>
+<p>Invite code: {data.activeCalendarId}.slice(0,4)</p>
