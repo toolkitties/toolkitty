@@ -231,75 +231,83 @@ impl Rpc {
         Ok(())
     }
 
-    pub async fn replay(&self, topic: Topic) -> Result<(), RpcError> {
+    /// Replay any un-ack'd messages on a persisted topic.
+    pub async fn replay(&self, topic: &str) -> Result<(), RpcError> {
         let mut context = self.context.write().await;
+        let topic = Topic::Persisted(topic.to_string());
         if let Some(logs) = context.topic_map.get(&topic).await {
             context.node.replay(logs).await?;
         };
         Ok(())
     }
 
+    /// Add a persisted topic to the topic log map.
     pub async fn add_topic_log(
         &self,
-        public_key: PublicKey,
-        topic: Topic,
-        log_id: LogId,
+        public_key: &PublicKey,
+        topic: &str,
+        log_id: &LogId,
     ) -> Result<(), RpcError> {
         let context = self.context.write().await;
-        context.topic_map.add_log(topic, public_key, log_id).await;
+        let topic = Topic::Persisted(topic.to_string());
+        context.topic_map.add_log(&topic, public_key, log_id).await;
         Ok(())
     }
 
-    pub async fn subscribe(&self, topic: &Topic) -> Result<(), RpcError> {
+    /// Subscribe to a persisted topic.
+    pub async fn subscribe_persisted(&self, topic: &str) -> Result<(), RpcError> {
+        let topic = Topic::Persisted(topic.to_string());
+        return self.subscribe(&topic).await;
+    }
+
+    /// Subscribe to a ephemeral topic.
+    pub async fn subscribe_ephemeral(&self, topic: &str) -> Result<(), RpcError> {
+        let topic = Topic::Ephemeral(topic.to_string());
+        return self.subscribe(&topic).await;
+    }
+
+    async fn subscribe(&self, topic: &Topic) -> Result<(), RpcError> {
         let mut context = self.context.write().await;
 
         if context
             .subscriptions
             .insert(topic.id(), topic.clone())
-            .is_none()
+            .is_some()
         {
-            context
-                .node
-                .subscribe_processed(topic)
-                .await
-                .expect("can subscribe to topic");
+            return Ok(());
+        };
 
-            context
-                .to_app_tx
-                .send(ChannelEvent::SubscribedToTopic(topic.clone()))?;
+        match topic {
+            Topic::Ephemeral(_) => {
+                context
+                    .node
+                    .subscribe_ephemeral(topic)
+                    .await
+                    .expect("can subscribe to topic");
+            }
+            Topic::Persisted(_) => {
+                context
+                    .node
+                    .subscribe_processed(topic)
+                    .await
+                    .expect("can subscribe to topic");
+            }
         }
+
+        context
+            .to_app_tx
+            .send(ChannelEvent::SubscribedToTopic(topic.clone()))?;
 
         Ok(())
     }
 
-    pub async fn subscribe_ephemeral(&self, topic: &Topic) -> Result<(), RpcError> {
-        let mut context = self.context.write().await;
-
-        if context
-            .subscriptions
-            .insert(topic.id(), topic.clone())
-            .is_none()
-        {
-            context
-                .node
-                .subscribe_ephemeral(topic)
-                .await
-                .expect("can subscribe to topic");
-
-            context
-                .to_app_tx
-                .send(ChannelEvent::SubscribedToTopic(topic.clone()))?;
-        }
-
-        Ok(())
-    }
-
-    pub async fn publish(
+    /// Publish to a persisted topic.
+    pub async fn publish_persisted(
         &self,
         payload: &[u8],
         stream_args: &StreamArgs,
         log_path: Option<&LogPath>,
-        topic: Option<&Topic>,
+        topic: Option<&str>,
     ) -> Result<(Hash, Hash), RpcError> {
         let mut context = self.context.write().await;
         let private_key = context.node.private_key.clone();
@@ -321,9 +329,10 @@ impl Rpc {
 
         match topic {
             Some(topic) => {
+                let topic = Topic::Persisted(topic.to_string());
                 context
                     .node
-                    .publish_to_stream(topic, &header, body.as_ref())
+                    .publish_to_stream(&topic, &header, body.as_ref())
                     .await?;
             }
             None => {
@@ -338,12 +347,15 @@ impl Rpc {
         Ok((header.hash(), stream.id()))
     }
 
-    pub async fn publish_ephemeral(&self, topic: &Topic, payload: &[u8]) -> Result<(), RpcError> {
+    /// Publish to an ephemeral topic.
+    pub async fn publish_ephemeral(&self, topic: &str, payload: &[u8]) -> Result<(), RpcError> {
         let mut context = self.context.write().await;
-        context.node.publish_ephemeral(topic, payload).await?;
+        let topic = Topic::Ephemeral(topic.to_string());
+        context.node.publish_ephemeral(&topic, payload).await?;
         Ok(())
     }
 
+    /// Upload a file.
     pub async fn upload_file(&self, path: PathBuf) -> Result<Hash, RpcError> {
         let context = self.context.read().await;
         let file_hash = context.node.upload_file(path).await?;
@@ -388,7 +400,7 @@ mod tests {
     use crate::{
         messages::{ChannelEvent, StreamArgs},
         node::{
-            extensions::{LogPath, StreamOwner, StreamRootHash},
+            extensions::{LogId, LogPath, Stream, StreamOwner, StreamRootHash},
             stream::{EventData, EventMeta},
             StreamEvent,
         },
@@ -422,7 +434,7 @@ mod tests {
         let result = rpc.init(channel_tx).await;
         assert!(result.is_ok());
 
-        let topic = "some_topic".into();
+        let topic = Topic::Persisted("some_topic".into());
         let result = rpc.subscribe(&topic).await;
         assert!(result.is_ok());
 
@@ -444,8 +456,8 @@ mod tests {
         let result = rpc.init(channel_tx).await;
         assert!(result.is_ok());
 
-        let topic = "some_topic".into();
-        let result = rpc.subscribe_ephemeral(&topic).await;
+        let topic = Topic::Ephemeral("some_topic".to_string());
+        let result = rpc.subscribe(&topic).await;
         assert!(result.is_ok());
 
         let event = channel_rx.recv().await.unwrap();
@@ -461,6 +473,8 @@ mod tests {
     async fn publish() {
         let context = Service::run().await;
         let private_key = context.read().await.node.private_key.clone();
+        let topic = "some_topic";
+
         let rpc = Rpc { context };
 
         let (channel_tx, mut channel_rx) = broadcast::channel(10);
@@ -479,9 +493,8 @@ mod tests {
             owner: None,
         };
 
-        let topic: Topic = "some_topic".into();
         let result = rpc
-            .publish(
+            .publish_persisted(
                 &serde_json::to_vec(&payload).unwrap(),
                 &stream_args,
                 Some(&log_path.clone().into()),
@@ -538,7 +551,7 @@ mod tests {
         let result = peer_b.init(peer_b_tx).await;
         assert!(result.is_ok());
 
-        let topic = "some_topic".into();
+        let topic = "some_topic";
         let result = peer_a.subscribe_ephemeral(&topic).await;
         assert!(result.is_ok());
 
@@ -572,6 +585,141 @@ mod tests {
                 assert_eq!(send_payload, payload);
                 message_received = true;
                 break;
+            }
+        }
+
+        assert!(message_received);
+    }
+
+    #[tokio::test]
+    async fn two_peers_sync() {
+        let peer_a = Rpc {
+            context: Service::run().await,
+        };
+        let peer_b = Rpc {
+            context: Service::run().await,
+        };
+
+        let peer_a_public_key = peer_a.public_key().await.unwrap();
+        let peer_b_public_key = peer_b.public_key().await.unwrap();
+
+        let (peer_a_tx, mut peer_a_rx) = broadcast::channel(100);
+        let (peer_b_tx, mut peer_b_rx) = broadcast::channel(100);
+
+        let result = peer_a.init(peer_a_tx).await;
+        assert!(result.is_ok());
+
+        let result = peer_b.init(peer_b_tx).await;
+        assert!(result.is_ok());
+
+        let topic = "messages";
+        let log_path = json!("messages").into();
+        let stream_args = StreamArgs::default();
+
+        let peer_a_payload = json!({
+            "message": "organize!"
+        });
+
+        // Peer A publishes the first message to a new stream.
+        let result = peer_a
+            .publish_persisted(
+                &serde_json::to_vec(&peer_a_payload).unwrap(),
+                &stream_args,
+                Some(&log_path),
+                Some(&topic),
+            )
+            .await;
+        assert!(result.is_ok());
+
+        // We need these values so Peer B can subscribe and publish to the correct stream.
+        let (operation_id, stream_id) = result.unwrap();
+
+        let stream_args = StreamArgs {
+            id: Some(stream_id),
+            root_hash: Some(operation_id.clone()),
+            owner: Some(peer_a_public_key.clone()),
+        };
+
+        let peer_b_payload = json!({
+            "message": "Hell yeah!"
+        });
+
+        // Peer B publishes it's own message to the stream.
+        let result = peer_b
+            .publish_persisted(
+                &serde_json::to_vec(&peer_b_payload).unwrap(),
+                &stream_args,
+                Some(&log_path),
+                Some(&topic),
+            )
+            .await;
+        assert!(result.is_ok());
+
+        // Both peers add themselves and each other to their topic map.
+        let stream = Stream {
+            root_hash: operation_id.into(),
+            owner: peer_a_public_key.into(),
+        };
+        let log_id = LogId {
+            stream,
+            log_path: Some(log_path),
+        };
+
+        peer_a
+            .add_topic_log(&peer_a_public_key, &topic, &log_id)
+            .await
+            .unwrap();
+        peer_a
+            .add_topic_log(&peer_b_public_key, &topic, &log_id)
+            .await
+            .unwrap();
+
+        peer_b
+            .add_topic_log(&peer_a_public_key, &topic, &log_id)
+            .await
+            .unwrap();
+        peer_b
+            .add_topic_log(&peer_b_public_key, &topic, &log_id)
+            .await
+            .unwrap();
+
+        // Finally they both subscribe to the topic.
+        let result = peer_a.subscribe_persisted(&topic).await;
+        assert!(result.is_ok());
+        let result = peer_b.subscribe_persisted(&topic).await;
+        assert!(result.is_ok());
+
+        // Peer A should receive Peer B's message via sync.
+        let mut message_received = false;
+        while let Ok(event) = peer_a_rx.recv().await {
+            if let ChannelEvent::Stream(StreamEvent {
+                data: EventData::Application(payload),
+                meta: Some(EventMeta { author, .. }),
+            }) = event
+            {
+                if author == peer_b_public_key {
+                    assert_eq!(peer_b_payload, payload);
+                    message_received = true;
+                    break;
+                }
+            }
+        }
+
+        assert!(message_received);
+
+        // Peer B should receive Peer A's message via sync.
+        let mut message_received = false;
+        while let Ok(event) = peer_b_rx.recv().await {
+            if let ChannelEvent::Stream(StreamEvent {
+                data: EventData::Application(payload),
+                meta: Some(EventMeta { author, .. }),
+            }) = event
+            {
+                if author == peer_a_public_key {
+                    assert_eq!(peer_a_payload, payload);
+                    message_received = true;
+                    break;
+                }
             }
         }
 

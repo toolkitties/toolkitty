@@ -9,7 +9,13 @@ class Toast {
   link?: string;
   request?: RequestEvent; // opens a modal for the user to respond to the request quickly
 
-  constructor(message: string, id: number, type: ToastType, link: string, request: RequestEvent) {
+  constructor(
+    message: string,
+    id: number,
+    type: ToastType,
+    link: string,
+    request: RequestEvent,
+  ) {
     this.message = message;
     this.id = id;
     this.type = type;
@@ -20,22 +26,22 @@ class Toast {
 
 /**
  * ```
- *  _   __   
- * ( `︶` )) 
- * |     ||  
- * |     || 
+ *  _   __
+ * ( `︶` ))
+ * |     ||
+ * |     ||
  * '-----'`
  * ```
  * Toasts are temporary messages shown to the user when certain events happen.
  * They can contain a link which will direct the user to another page.
- * 
+ *
  */
 
 class Toasts {
   /**
    * Determines if toasts disappear automatically, false when dialog is open so user doesn't miss any new toasts
    */
-  autoDismiss: boolean = $state(true)
+  autoDismiss: boolean = $state(true);
   /**
    * Array of toasts to show the user
    */
@@ -54,20 +60,32 @@ class Toasts {
     this.addToast("error", message, options);
   }
 
-  info(message: string, options?: { link?: string, request?: RequestEvent }) {
-    this.addToast("info", message, options)
+  info(message: string, options?: { link?: string; request?: RequestEvent }) {
+    this.addToast("info", message, options);
   }
 
   /**
    * Show access request toast to the user
    */
   accessRequest(data: AccessRequest) {
-    let message = data.name + ' requested access'
-    let request: RequestEvent = {
-      type: 'access_request',
-      data
-    }
-    this.addToast("info", message, { request })
+    const message = data.name + " requested access";
+    const request: RequestEvent = {
+      type: "access_request",
+      data,
+    };
+    this.addToast("info", message, { request });
+  }
+
+  /**
+   * Show booking request toast to the user
+   */
+  bookingRequest(data: BookingRequest) {
+    const message = "new booking request: " + data.id;
+    const request: RequestEvent = {
+      type: "booking_request",
+      data,
+    };
+    this.addToast("info", message, { request });
   }
 
   dismissToast(id: number) {
@@ -75,8 +93,11 @@ class Toasts {
   }
 
   //TODO: Only show new toasts to the user when dialog is closed
-  private addToast(type: ToastType, message: string, options?: { link?: string, request?: RequestEvent }) {
-
+  private addToast(
+    type: ToastType,
+    message: string,
+    options?: { link?: string; request?: RequestEvent },
+  ) {
     // Create unique id for toast so it can be easily removed.
     const id = Math.floor(Math.random() * 1000000);
 
@@ -85,13 +106,13 @@ class Toasts {
       message,
       type,
       link: options?.link,
-      request: options?.request
-    }
+      request: options?.request,
+    };
 
     // Push new toast to top of list
-    this.toasts.push(toast)
+    this.toasts.push(toast);
 
-    this.dismissToastTimeout(toast.id)
+    this.dismissToastTimeout(toast.id);
   }
 
   /**
@@ -100,7 +121,7 @@ class Toasts {
    */
   private dismissToastTimeout(id: number) {
     const timeout = setTimeout(() => {
-      console.log('dismissing toast: ' + this.autoDismiss)
+      console.log("dismissing toast: " + this.autoDismiss);
       if (this.autoDismiss) {
         clearTimeout(timeout);
         this.dismissToast(id);
@@ -108,7 +129,7 @@ class Toasts {
         clearTimeout(timeout);
         this.dismissToastTimeout(id);
       }
-    }, TOAST_TIMEOUT)
+    }, TOAST_TIMEOUT);
   }
 }
 

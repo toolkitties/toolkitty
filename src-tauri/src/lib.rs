@@ -6,17 +6,23 @@ mod rpc;
 mod topic;
 
 use tauri::Builder;
+use tracing_subscriber::EnvFilter;
 
 use crate::rpc::{
-    ack, add_topic_log, init, public_key, publish, publish_ephemeral, replay, subscribe,
-    subscribe_ephemeral, upload_file,
+    ack, add_topic_log, init, public_key, publish_ephemeral, publish_persisted, replay,
+    subscribe_ephemeral, subscribe_persisted, upload_file,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let logger = tauri_plugin_log::Builder::new()
-        .filter(|metadata| metadata.target().starts_with("toolkitty_lib"))
-        .build();
+    // Setup logging.
+    let writer = std::io::stderr;
+    tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::from_default_env())
+        .with_line_number(true)
+        .with_target(true)
+        .with_writer(writer)
+        .init();
 
     #[allow(unused_mut)]
     let mut builder = Builder::default();
@@ -35,7 +41,7 @@ pub fn run() {
             blobs::BLOBSTORE_URI_SCHEME,
             blobs::blobstore_protocol,
         )
-        .plugin(logger)
+        // .plugin(logger)
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
@@ -43,10 +49,10 @@ pub fn run() {
             ack,
             public_key,
             add_topic_log,
-            publish,
+            publish_persisted,
             publish_ephemeral,
             replay,
-            subscribe,
+            subscribe_persisted,
             subscribe_ephemeral,
             upload_file,
         ])

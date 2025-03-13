@@ -1,7 +1,7 @@
 import { db } from "$lib/db";
-import { publish, resources } from ".";
-import { getActiveCalendarId } from "./calendars";
+import { auth, publish, resources } from ".";
 import { promiseResult } from "$lib/promiseMap";
+import { isSubTimespan } from "$lib/utils";
 
 /**
  * Queries
@@ -32,20 +32,58 @@ export function findById(id: Hash): Promise<Resource | undefined> {
 }
 
 /**
+ * Returns a collection of resources which have _some_ availability in the timespan provided.
+ */
+export function findByTimespan(
+  calendarId: Hash,
+  timeSpan: TimeSpan,
+): Promise<Resource[]> {
+  return db.resources
+    .where({ calendarId })
+    .filter((resource) => {
+      if (resource.availability == "always") {
+        return true;
+      }
+      for (const span of resource.availability) {
+        const isSub = isSubTimespan(timeSpan.start, timeSpan.end, span);
+        if (isSub) {
+          return true;
+        }
+      }
+      return false;
+    })
+    .toArray();
+}
+
+export async function isOwner(
+  resourceId: Hash,
+  publicKey: PublicKey,
+): Promise<boolean> {
+  return auth.isOwner(resourceId, publicKey, "resource");
+}
+
+export async function amOwner(resourceId: Hash): Promise<boolean> {
+  return auth.amOwner(resourceId, "resource");
+}
+
+/**
  * Commands
  */
 
 /**
  * Create a calendar resource.
  */
-export async function create(calendarId: Hash, fields: ResourceFields): Promise<Hash> {
-  let resourceCreated: ResourceCreated = {
+export async function create(
+  calendarId: Hash,
+  fields: ResourceFields,
+): Promise<Hash> {
+  const resourceCreated: ResourceCreated = {
     type: "resource_created",
     data: {
       fields,
     },
   };
-  const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
+  const [operationId]: [Hash, Hash] = await publish.toCalendar(
     calendarId!,
     resourceCreated,
   );
@@ -62,15 +100,22 @@ export async function update(
   resourceId: Hash,
   fields: ResourceFields,
 ): Promise<Hash> {
-  let resource = await resources.findById(resourceId);
-  let resourceUpdated: ResourceUpdated = {
+  const resource = await resources.findById(resourceId);
+
+  const amAdmin = await auth.amAdmin(resource!.calendarId);
+  const amOwner = await resources.amOwner(resourceId);
+  if (!amAdmin && !amOwner) {
+    throw new Error("user does not have permission to update this resource");
+  }
+
+  const resourceUpdated: ResourceUpdated = {
     type: "resource_updated",
     data: {
       id: resourceId,
       fields,
     },
   };
-  const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
+  const [operationId]: [Hash, Hash] = await publish.toCalendar(
     resource!.calendarId,
     resourceUpdated,
   );
@@ -84,15 +129,22 @@ export async function update(
  * Delete a calendar resource.
  */
 export async function deleteResource(resourceId: Hash): Promise<Hash> {
-  let resource = await resources.findById(resourceId);
-  let resourceDeleted: ResourceDeleted = {
+  const resource = await resources.findById(resourceId);
+
+  const amAdmin = await auth.amAdmin(resource!.calendarId);
+  const amOwner = await resources.amOwner(resourceId);
+  if (!amAdmin && !amOwner) {
+    throw new Error("user does not have permission to delete this resource");
+  }
+
+  const resourceDeleted: ResourceDeleted = {
     type: "resource_deleted",
     data: {
       id: resourceId,
     },
   };
 
-  const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
+  const [operationId]: [Hash, Hash] = await publish.toCalendar(
     resource!.calendarId,
     resourceDeleted,
   );
@@ -117,90 +169,70 @@ export async function process(message: ApplicationMessage) {
     case "resource_created":
       return await onResourceCreated(meta, data);
     case "resource_updated":
-      return await onResourceUpdated(meta, data);
+      return await onResourceUpdated(data);
     case "resource_deleted":
-      return await onResourceDeleted(meta, data);
+      return await onResourceDeleted(data);
   }
 }
 
 async function onResourceCreated(
   meta: StreamMessageMeta,
   data: ResourceCreated["data"],
-) {
-  let {
-    name,
-    description,
-    contact,
-    link,
-    images,
-    availability,
-    multiBookable,
-  } = data.fields;
+): Promise<void> {
+  try {
+    await db.resources.add({
+      id: meta.operationId,
+      calendarId: meta.stream.id,
+      ownerId: meta.author,
+      booked: [],
+      ...data.fields,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+}
 
-  await db.resources.add({
-    id: meta.operationId,
-    calendarId: meta.stream.id,
-    ownerId: meta.author,
-    booked: [],
-    name,
-    description,
-    contact,
-    link,
-    images,
-    availability,
-    multiBookable,
+function onResourceUpdated(data: ResourceUpdated["data"]): Promise<void> {
+  const resourceId = data.id;
+  const resourceAvailability = data.fields.availability;
+
+  return db.transaction("rw", db.resources, db.bookingRequests, async () => {
+    // Update `isavalid` field of all booking requests associated with this space.
+    await db.bookingRequests.where({ resourceId }).modify((request) => {
+      if (resourceAvailability == "always") {
+        request.isValid = "true";
+        return;
+      }
+      request.isValid = "false";
+      for (const span of resourceAvailability) {
+        const isValid = isSubTimespan(span.start, span.end, request.timeSpan);
+
+        if (isValid) {
+          request.isValid = "true";
+          break;
+        }
+      }
+      request.isValid = "false";
+    });
+
+    // @TODO: we could show a toast to the user if a previously valid request timespan now became
+    // invalid.
+
+    // @TODO: add related location to spaces object.
+    await db.resources.update(data.id, data.fields);
   });
 }
 
-async function onResourceUpdated(
-  meta: StreamMessageMeta,
-  data: ResourceUpdated["data"],
-) {
-  await validateUpdateDelete(meta.author, data.id);
+function onResourceDeleted(data: ResourceDeleted["data"]): Promise<void> {
+  const resourceId = data.id;
 
-  let {
-    name,
-    description,
-    contact,
-    link,
-    images,
-    availability,
-    multiBookable,
-  } = data.fields;
+  return db.transaction("rw", db.resources, db.bookingRequests, async () => {
+    // Update `isavalid` field of all booking requests associated with this resource.
+    await db.bookingRequests.where({ resourceId }).modify({ isValid: "false" });
 
-  await db.resources.update(data.id, {
-    name,
-    description,
-    contact,
-    link,
-    images,
-    availability,
-    multiBookable,
+    // @TODO: we could show a toast to the user if a previously valid event timespan now became
+    // invalid.
+
+    await db.resources.delete(resourceId);
   });
-}
-
-async function onResourceDeleted(
-  meta: StreamMessageMeta,
-  data: ResourceDeleted["data"],
-) {
-  await validateUpdateDelete(meta.author, data.id);
-  await db.resources.delete(data.id);
-}
-
-/**
- * Validation
- */
-
-async function validateUpdateDelete(publicKey: PublicKey, resourceId: Hash) {
-  let resource = await db.resources.get(resourceId);
-
-  // The resource must already exist.
-  if (!resource) {
-    throw new Error("resource does not exist");
-  }
-
-  // Only the resource owner can perform updates and deletes.
-  if (resource.ownerId != publicKey) {
-    throw new Error("non-owner update or delete on resource");
-  }
 }

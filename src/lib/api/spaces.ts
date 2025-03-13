@@ -1,6 +1,7 @@
 import { db } from "$lib/db";
-import { publish, spaces } from ".";
+import { auth, publish, spaces } from ".";
 import { promiseResult } from "$lib/promiseMap";
+import { isSubTimespan } from "$lib/utils";
 
 /**
  * Queries
@@ -31,13 +32,51 @@ export function findById(id: Hash): Promise<Space | undefined> {
 }
 
 /**
+ * Returns a collection of spaces which have _some_ availability in the timespan provided.
+ */
+export function findByTimespan(
+  calendarId: Hash,
+  timeSpan: TimeSpan,
+): Promise<Space[]> {
+  return db.spaces
+    .where({ calendarId })
+    .filter((space) => {
+      if (space.availability == "always") {
+        return true;
+      }
+      for (const span of space.availability) {
+        const isSub = isSubTimespan(timeSpan.start, timeSpan.end, span);
+        if (isSub) {
+          return true;
+        }
+      }
+      return false;
+    })
+    .toArray();
+}
+
+export async function isOwner(
+  spaceId: Hash,
+  publicKey: PublicKey,
+): Promise<boolean> {
+  return auth.isOwner(spaceId, publicKey, "space");
+}
+
+export async function amOwner(spaceId: Hash): Promise<boolean> {
+  return auth.amOwner(spaceId, "space");
+}
+
+/**
  * Commands
  */
 
 /**
  * Create a calendar space.
  */
-export async function create(calendarId: Hash, fields: SpaceFields): Promise<Hash> {
+export async function create(
+  calendarId: Hash,
+  fields: SpaceFields,
+): Promise<Hash> {
   const spaceCreated: SpaceCreated = {
     type: "space_created",
     data: {
@@ -45,7 +84,7 @@ export async function create(calendarId: Hash, fields: SpaceFields): Promise<Has
     },
   };
 
-  const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
+  const [operationId]: [Hash, Hash] = await publish.toCalendar(
     calendarId,
     spaceCreated,
   );
@@ -63,6 +102,13 @@ export async function update(
   fields: SpaceFields,
 ): Promise<Hash> {
   const space = await spaces.findById(spaceId);
+
+  const amAdmin = await auth.amAdmin(space!.calendarId);
+  const amOwner = await spaces.amOwner(spaceId);
+  if (!amAdmin && !amOwner) {
+    throw new Error("user does not have permission to update this space");
+  }
+
   const spaceUpdated: SpaceUpdated = {
     type: "space_updated",
     data: {
@@ -70,7 +116,7 @@ export async function update(
       fields,
     },
   };
-  const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
+  const [operationId]: [Hash, Hash] = await publish.toCalendar(
     space!.calendarId,
     spaceUpdated,
   );
@@ -85,6 +131,13 @@ export async function update(
  */
 export async function deleteSpace(spaceId: Hash): Promise<Hash> {
   const space = await spaces.findById(spaceId);
+
+  const amAdmin = await auth.amAdmin(space!.calendarId);
+  const amOwner = await spaces.amOwner(spaceId);
+  if (!amAdmin && !amOwner) {
+    throw new Error("user does not have permission to delete this space");
+  }
+
   const spaceDeleted: SpaceDeleted = {
     type: "space_deleted",
     data: {
@@ -92,7 +145,7 @@ export async function deleteSpace(spaceId: Hash): Promise<Hash> {
     },
   };
 
-  const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
+  const [operationId]: [Hash, Hash] = await publish.toCalendar(
     space!.calendarId,
     spaceDeleted,
   );
@@ -117,108 +170,75 @@ export async function process(message: ApplicationMessage) {
     case "space_created":
       return await onSpaceCreated(meta, data);
     case "space_updated":
-      return await onSpaceUpdated(meta, data);
+      return await onSpaceUpdated(data);
     case "space_deleted":
-      return await onSpaceDeleted(meta, data);
+      return await onSpaceDeleted(data);
   }
 }
 
 async function onSpaceCreated(
   meta: StreamMessageMeta,
   data: SpaceCreated["data"],
-) {
-  const {
-    type,
-    name,
-    location,
-    capacity,
-    accessibility,
-    description,
-    contact,
-    link,
-    messageForRequesters,
-    images,
-    availability,
-    multiBookable,
-  } = data.fields;
+): Promise<void> {
+  try {
+    await db.spaces.add({
+      id: meta.operationId,
+      calendarId: meta.stream.id,
+      ownerId: meta.author,
+      booked: [],
+      ...data.fields,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+}
 
-  await db.spaces.add({
-    id: meta.operationId,
-    calendarId: meta.stream.id,
-    ownerId: meta.author,
-    booked: [],
-    type,
-    name,
-    location,
-    capacity,
-    accessibility,
-    description,
-    contact,
-    link,
-    messageForRequesters,
-    images,
-    availability,
-    multiBookable,
+function onSpaceUpdated(data: SpaceUpdated["data"]): Promise<void> {
+  const spaceId = data.id;
+  const spaceAvailability = data.fields.availability;
+
+  return db.transaction("rw", db.spaces, db.bookingRequests, async () => {
+    // Update `isValid` field of all booking requests associated with this space.
+    await db.bookingRequests
+      .where({ resourceId: spaceId })
+      .modify((request) => {
+        console.log("modify booking request: ", request.id);
+        if (spaceAvailability == "always") {
+          request.isValid = "true";
+          return;
+        }
+        request.isValid = "false";
+        for (const span of spaceAvailability) {
+          const isValid = isSubTimespan(span.start, span.end, request.timeSpan);
+
+          if (isValid) {
+            request.isValid = "true";
+            break;
+          }
+        }
+        request.isValid = "false";
+      });
+
+    // @TODO: we could show a toast to the user if a previously valid request timespan now became
+    // invalid.
+
+    // @TODO: add related location to spaces object.
+    await db.spaces.update(data.id, data.fields);
   });
 }
 
-async function onSpaceUpdated(
-  meta: StreamMessageMeta,
-  data: SpaceUpdated["data"],
-) {
-  await validateUpdateDelete(meta.author, data.id);
+function onSpaceDeleted(data: SpaceDeleted["data"]): Promise<void> {
+  const spaceId = data.id;
 
-  const {
-    type,
-    name,
-    location,
-    capacity,
-    accessibility,
-    description,
-    contact,
-    link,
-    images,
-    availability,
-    multiBookable,
-  } = data.fields;
+  return db.transaction("rw", db.spaces, db.bookingRequests, async () => {
+    // Update `isValid` field of all booking requests associated with this event.
+    await db.bookingRequests
+      .where({ resourceId: spaceId })
+      .modify({ isValid: "false" });
 
-  await db.spaces.update(data.id, {
-    type,
-    name,
-    location,
-    capacity,
-    accessibility,
-    description,
-    contact,
-    link,
-    images,
-    availability,
-    multiBookable,
+    // @TODO: we could show a toast to the user if a previously valid event timespan now became
+    // invalid.
+
+    await db.spaces.delete(spaceId);
   });
-}
-
-async function onSpaceDeleted(
-  meta: StreamMessageMeta,
-  data: SpaceDeleted["data"],
-) {
-  await validateUpdateDelete(meta.author, data.id);
-  await db.spaces.delete(data.id);
-}
-
-/**
- * Validation
- */
-
-async function validateUpdateDelete(publicKey: PublicKey, spaceId: Hash) {
-  const space = await db.spaces.get(spaceId);
-
-  // The space must already exist.
-  if (!space) {
-    throw new Error("space does not exist");
-  }
-
-  // Only the space owner can perform updates and deletes.
-  if (space.ownerId != publicKey) {
-    throw new Error("non-owner update or delete");
-  }
 }

@@ -2,7 +2,8 @@
 
 import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
-import { events, publish } from ".";
+import { isSubTimespan } from "$lib/utils";
+import { auth, events, publish } from ".";
 
 /**
  * Queries
@@ -11,8 +12,29 @@ import { events, publish } from ".";
 /**
  * Get events that are associated with the passed calendar
  */
-export function findMany(calendarId: Hash): Promise<CalendarEvent[]> {
-  return db.events.where({ calendarId }).toArray();
+export function findMany(calendarId: Hash): Promise<CalendarEventEnriched[]> {
+  return db.transaction(
+    "r",
+    db.events,
+    db.bookingRequests,
+    db.spaces,
+    async () => {
+      const events: CalendarEventEnriched[] = await db.events
+        .where({ calendarId })
+        .toArray();
+      // Add space to each event.
+      for (const event of events) {
+        if (event.spaceRequest) {
+          const request = await db.bookingRequests.get(event.spaceRequest);
+          if (!request) {
+            continue;
+          }
+          event.space = await db.spaces.get({ id: request.resourceId });
+        }
+      }
+      return events;
+    },
+  );
 }
 
 /**
@@ -21,15 +43,86 @@ export function findMany(calendarId: Hash): Promise<CalendarEvent[]> {
 export function findByOwner(
   calendarId: Hash,
   ownerId: PublicKey,
-): Promise<CalendarEvent[]> {
-  return db.events.where({ ownerId, calendarId }).toArray();
+): Promise<CalendarEventEnriched[]> {
+  return db.transaction(
+    "r",
+    db.events,
+    db.bookingRequests,
+    db.resources,
+    db.spaces,
+    async () => {
+      const events: CalendarEventEnriched[] = await db.events
+        .where({ ownerId, calendarId })
+        .toArray();
+      for (const event of events) {
+        // Add space to each event.
+        if (event.spaceRequest) {
+          const request = await db.bookingRequests.get(event.spaceRequest);
+          if (!request) {
+            continue;
+          }
+          event.space = await db.spaces.get({ id: request.resourceId });
+        }
+
+        if (!event.resources) {
+          continue;
+        }
+
+        // Add resources to each event.
+        const resources: Resource[] = [];
+        for (const requestId of event.resources) {
+          const request = await db.bookingRequests.get(requestId);
+          if (!request) {
+            continue;
+          }
+          const resource = await db.resources.get(request.resourceId);
+          if (resource) {
+            resources.push(resource);
+          }
+        }
+
+        event.resources = resources;
+      }
+      return events;
+    },
+  );
 }
 
 /**
  * Get one event via its id
  */
-export function findById(id: Hash): Promise<CalendarEvent | undefined> {
-  return db.events.get({ id });
+export function findById(id: Hash): Promise<CalendarEventEnriched | undefined> {
+  return db.transaction(
+    "r",
+    db.events,
+    db.bookingRequests,
+    db.spaces,
+    async () => {
+      const event: CalendarEventEnriched | undefined = await db.events.get({
+        id,
+      });
+      // Add space to event.
+      if (event?.spaceRequest) {
+        const request = await db.bookingRequests.get(event.spaceRequest);
+        if (!request) {
+          return event;
+        }
+        event.space = await db.spaces.get({ id: request.resourceId });
+      }
+      return event;
+    },
+  );
+}
+
+export async function isOwner(
+  eventId: Hash,
+  publicKey: PublicKey,
+): Promise<boolean> {
+  return auth.isOwner(eventId, publicKey, "event");
+}
+
+export async function amOwner(eventId: Hash): Promise<boolean> {
+  return auth.amOwner(eventId, "event");
 }
 
 /**
@@ -40,16 +133,13 @@ export function findById(id: Hash): Promise<CalendarEvent | undefined> {
  * Create a calendar event.
  */
 export async function create(calendarId: Hash, fields: EventFields) {
-  let eventCreated: EventCreated = {
+  const eventCreated: EventCreated = {
     type: "event_created",
     data: {
       fields,
     },
   };
-  const [operationId, streamId] = await publish.toCalendar(
-    calendarId!,
-    eventCreated,
-  );
+  const [operationId] = await publish.toCalendar(calendarId!, eventCreated);
 
   await promiseResult(operationId);
 
@@ -61,14 +151,21 @@ export async function create(calendarId: Hash, fields: EventFields) {
  */
 export async function update(eventId: Hash, fields: EventFields) {
   const event = await events.findById(eventId);
-  let eventUpdated: EventUpdated = {
+
+  const amAdmin = await auth.amAdmin(event!.calendarId);
+  const amOwner = await events.amOwner(eventId);
+  if (!amAdmin && !amOwner) {
+    throw new Error("user does not have permission to update this event");
+  }
+
+  const eventUpdated: EventUpdated = {
     type: "event_updated",
     data: {
       id: eventId,
       fields,
     },
   };
-  const [operationId, streamId] = await publish.toCalendar(
+  const [operationId] = await publish.toCalendar(
     event!.calendarId,
     eventUpdated,
   );
@@ -83,13 +180,20 @@ export async function update(eventId: Hash, fields: EventFields) {
  */
 async function deleteEvent(eventId: Hash) {
   const event = await events.findById(eventId);
-  let eventDeleted: EventDeleted = {
+
+  const amAdmin = await auth.amAdmin(event!.calendarId);
+  const amOwner = await events.amOwner(eventId);
+  if (!amAdmin && !amOwner) {
+    throw new Error("user does not have permission to delete this event");
+  }
+
+  const eventDeleted: EventDeleted = {
     type: "event_deleted",
     data: {
       id: eventId,
     },
   };
-  const [operationId, streamId] = await publish.toCalendar(
+  const [operationId] = await publish.toCalendar(
     event!.calendarId,
     eventDeleted,
   );
@@ -114,77 +218,62 @@ export async function process(message: ApplicationMessage) {
     case "event_created":
       return await onEventCreated(meta, data);
     case "event_updated":
-      return await onEventUpdated(meta, data);
+      return await onEventUpdated(data);
     case "event_deleted":
-      return await onEventDeleted(meta, data);
+      return await onEventDeleted(data);
   }
 }
 
 async function onEventCreated(
   meta: StreamMessageMeta,
   data: EventCreated["data"],
-) {
-  let { name, description, startDate, endDate, resources, links, images } =
-    data.fields;
+): Promise<void> {
+  try {
+    await db.events.add({
+      id: meta.operationId,
+      calendarId: meta.stream.id,
+      ownerId: meta.stream.owner,
+      ...data.fields,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+}
 
-  await db.events.add({
-    id: meta.operationId,
-    name,
-    calendarId: meta.stream.id,
-    ownerId: meta.stream.owner,
-    description,
-    startDate,
-    endDate,
-    resources,
-    links,
-    images,
+function onEventUpdated(data: EventUpdated["data"]): Promise<void> {
+  const eventId = data.id;
+  const { endDate, startDate } = data.fields;
+
+  return db.transaction("rw", db.events, db.bookingRequests, async () => {
+    // Update `validTime` field of all booking requests associated with this event.
+    await db.bookingRequests.where({ eventId }).modify((request) => {
+      const isValid = isSubTimespan(
+        new Date(startDate),
+        new Date(endDate),
+        request.timeSpan,
+      );
+      request.isValid = isValid ? "true" : "false";
+    });
+
+    // @TODO: we could show a toast to the user if a previously valid event timespan now became
+    // invalid.
+
+    await db.events.update(data.id, {
+      ...data.fields,
+    });
   });
 }
 
-async function onEventUpdated(
-  meta: StreamMessageMeta,
-  data: EventUpdated["data"],
-) {
-  await validateUpdateDelete(meta.author, data.id);
+function onEventDeleted(data: EventDeleted["data"]): Promise<void> {
+  const eventId = data.id;
 
-  let { name, description, startDate, endDate, resources, links, images } =
-    data.fields;
+  return db.transaction("rw", db.events, db.bookingRequests, async () => {
+    // Update `validTime` field of all booking requests associated with this space.
+    await db.bookingRequests.where({ eventId }).modify({ isValid: "false" });
 
-  await db.events.update(data.id, {
-    name,
-    calendarId: meta.stream.id,
-    ownerId: meta.stream.owner,
-    description,
-    startDate,
-    endDate,
-    resources,
-    links,
-    images,
+    // @TODO: we could show a toast to the user if a previously valid space timespan now became
+    // invalid.
+
+    await db.events.delete(data.id);
   });
-}
-
-async function onEventDeleted(
-  meta: StreamMessageMeta,
-  data: EventDeleted["data"],
-) {
-  await validateUpdateDelete(meta.author, data.id);
-  await db.events.delete(data.id);
-}
-
-/**
- * Validation
- */
-
-async function validateUpdateDelete(publicKey: PublicKey, resourceId: Hash) {
-  let resource = await db.events.get(resourceId);
-
-  // The resource must already exist.
-  if (!resource) {
-    throw new Error("resource does not exist");
-  }
-
-  // Only the resource owner can perform updates and deletes.
-  if (resource.ownerId != publicKey) {
-    throw new Error("non-owner update or delete on resource");
-  }
 }

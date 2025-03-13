@@ -1,26 +1,26 @@
-import { invoke } from "@tauri-apps/api/core";
 import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
 import { liveQuery } from "dexie";
-import { publicKey } from "./identity";
-import { publish, topics } from ".";
-import { TopicFactory } from "./topics";
+import { auth, calendars, identity, publish, users } from ".";
 
 /*
  * Queries
  */
 
 export function findMany(): Promise<Calendar[]> {
+  // TODO: check if have access to each calendar and return it alongside calendar
+  // TODO: return a livequery
   return db.calendars.toArray();
 }
 
+// @TODO: for consistency this query should be named `findById`
 export function findOne(id: Hash): Promise<Calendar | undefined> {
   return db.calendars.get({ id });
 }
 
 export function findByInviteCode(code: string): Promise<undefined | Calendar> {
   return db.calendars
-    .filter((calendar) => inviteCode(calendar) === code)
+    .filter((calendar) => inviteCode(calendar) === code.toLowerCase())
     .first();
 }
 
@@ -68,6 +68,17 @@ export async function getShareCode() {
   return activeCalendarId.value.slice(0, 4);
 }
 
+export async function isOwner(
+  calendarId: Hash,
+  publicKey: PublicKey,
+): Promise<boolean> {
+  return auth.isOwner(calendarId, publicKey, "calendar");
+}
+
+export async function amOwner(calendarId: Hash): Promise<boolean> {
+  return auth.amOwner(calendarId, "calendar");
+}
+
 /*
  * Commands
  */
@@ -75,8 +86,6 @@ export async function getShareCode() {
 export async function create(
   data: CalendarCreated["data"],
 ): Promise<[OperationId, StreamId]> {
-  const myPublicKey = await publicKey();
-
   // Define the "calendar created" application event.
   const calendarCreated: CalendarCreated = {
     type: "calendar_created",
@@ -84,12 +93,6 @@ export async function create(
   };
 
   const [operationId, streamId] = await publish.createCalendar(calendarCreated);
-  const topic = new TopicFactory(streamId);
-  await topics.subscribe(topic.calendar());
-  await topics.subscribe(topic.calendarInbox());
-
-  await invoke("replay", { topic: topic.calendar() });
-
   // Register this operation hash to wait until it's later resolved by the
   // processor. Like this we can conveniently return from this method as soon as
   // this application event has actually been processed. This allows us to build
@@ -104,7 +107,13 @@ export async function update(
   calendarId: Hash,
   fields: CalendarFields,
 ): Promise<Hash> {
-  let calendarUpdated: CalendarUpdated = {
+  const amAdmin = await auth.amAdmin(calendarId);
+  const amOwner = await calendars.amOwner(calendarId);
+  if (!amAdmin && !amOwner) {
+    throw new Error("user does not have permission to update this calendar");
+  }
+
+  const calendarUpdated: CalendarUpdated = {
     type: "calendar_updated",
     data: {
       id: calendarId,
@@ -112,10 +121,7 @@ export async function update(
     },
   };
 
-  const [operationId, streamId] = await publish.toCalendar(
-    calendarId,
-    calendarUpdated,
-  );
+  const [operationId] = await publish.toCalendar(calendarId, calendarUpdated);
 
   await promiseResult(operationId);
 
@@ -123,6 +129,12 @@ export async function update(
 }
 
 export async function deleteCalendar(calendarId: Hash): Promise<Hash> {
+  const amAdmin = await auth.amAdmin(calendarId);
+  const amOwner = await calendars.amOwner(calendarId);
+  if (!amAdmin && !amOwner) {
+    throw new Error("user does not have permission to delete this calendar");
+  }
+
   const calendarDeleted: CalendarDeleted = {
     type: "calendar_deleted",
     data: {
@@ -130,10 +142,7 @@ export async function deleteCalendar(calendarId: Hash): Promise<Hash> {
     },
   };
 
-  const [operationId, streamId] = await publish.toCalendar(
-    calendarId,
-    calendarDeleted,
-  );
+  const [operationId] = await publish.toCalendar(calendarId, calendarDeleted);
 
   await promiseResult(operationId);
 
@@ -159,9 +168,9 @@ export async function process(message: ApplicationMessage) {
     case "calendar_created":
       return await onCalendarCreated(meta, data);
     case "calendar_updated":
-      return await onCalendarUpdated(meta, data);
+      return await onCalendarUpdated(data);
     case "calendar_deleted":
-      return await onCalendarDeleted(meta, data);
+      return await onCalendarDeleted(data);
   }
 }
 
@@ -173,46 +182,50 @@ async function onCalendarCreated(
 
   // @TODO(sam): validate that header hash and owner match those contained in stream.
 
-  let { name, dates } = data.fields;
-  let timeSpan = dates[0];
+  const { name, dates } = data.fields;
+  const timeSpan = dates[0];
 
-  await db.calendars.add({
-    id: meta.stream.id,
-    ownerId: meta.stream.owner,
-    name,
-    startDate: timeSpan.start,
-    endDate: timeSpan.end,
-  });
+  const myPublicKey = await identity.publicKey();
 
-  let stream = {
-    id: meta.stream.id,
-    rootHash: meta.stream.rootHash,
-    owner: meta.stream.owner,
-  };
-  await db.streams.add(stream);
+  // We need to distinguish between the case where we (the local user) created the calendar, or
+  // where we have requested and gained access as a new member.
+  if (meta.stream.owner == myPublicKey) {
+    // In the case that we created this calendar then simply add it straight to the database.
+    try {
+      await db.calendars.add({
+        id: meta.stream.id,
+        ownerId: meta.stream.owner,
+        stream: meta.stream,
+        name,
+        startDate: timeSpan.start,
+        endDate: timeSpan.end,
+      });
+    } catch (e) {
+      console.error(e);
+    }
 
-  // Add the calendar creator to the list of authors who's data we want to
-  // sync for this calendar.
-  const topic = new TopicFactory(meta.stream.id);
-  await topics.addCalendarAuthor(meta.author, topic.calendarInbox(), {
-    stream,
-    logPath: publish.CALENDAR_INBOX_LOG_PATH,
-  });
-  await topics.addCalendarAuthor(meta.author, topic.calendar(), {
-    stream,
-    logPath: publish.CALENDAR_LOG_PATH,
-  });
+    // And then create our user for the calendar.
+    //
+    // @TODO: currently there is no UI for the calendar owner to create a username.
+    await users.create(meta.stream.id, meta.stream.owner);
+  } else {
+    // In the case where we are _not_ the calendar creator, then we actually should have already
+    // added the calendar and our user to the database when we first resolved our invite code.
+    await db.calendars.update(meta.stream.id, {
+      name,
+      startDate: timeSpan.start,
+      endDate: timeSpan.end,
+    });
+  }
 }
 
-async function onCalendarUpdated(
-  meta: StreamMessageMeta,
-  data: CalendarUpdated["data"],
-) {
+async function onCalendarUpdated(data: CalendarUpdated["data"]) {
+  // @TODO: move validation into own "validation" processor module (and maybe we don't want to
+  // actually error here anyway?)
   validateFields(data.fields);
-  await validateUpdateDelete(meta.author, data.id);
 
-  let { name, dates } = data.fields;
-  let timeSpan = dates[0];
+  const { name, dates } = data.fields;
+  const timeSpan = dates[0];
 
   await db.calendars.update(data.id, {
     name,
@@ -221,11 +234,7 @@ async function onCalendarUpdated(
   });
 }
 
-async function onCalendarDeleted(
-  meta: StreamMessageMeta,
-  data: CalendarDeleted["data"],
-) {
-  await validateUpdateDelete(meta.author, data.id);
+async function onCalendarDeleted(data: CalendarDeleted["data"]) {
   await db.calendars.delete(data.id);
 }
 
@@ -234,22 +243,8 @@ async function onCalendarDeleted(
  */
 
 function validateFields(fields: CalendarFields) {
-  let { dates } = fields;
+  const { dates } = fields;
   if (dates.length == 0) {
     throw new Error("calendar dates must contain at least on time span");
-  }
-}
-
-async function validateUpdateDelete(publicKey: PublicKey, calendarId: Hash) {
-  let calendar = await db.calendars.get(calendarId);
-
-  // The calendar must already exist.
-  if (!calendar) {
-    throw new Error("calendar does not exist");
-  }
-
-  // Only the calendar owner can perform updates and deletes.
-  if (calendar.ownerId != publicKey) {
-    throw new Error("non-owner update or delete on calendar");
   }
 }

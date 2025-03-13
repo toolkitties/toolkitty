@@ -2,7 +2,7 @@ import { bookings, calendars, events, resources, spaces } from ".";
 import { setActiveCalendar } from "./calendars";
 
 export async function seedData() {
-  const [operationId, calendarId] = await calendars.create({
+  const [, calendarId] = await calendars.create({
     fields: {
       name: "Antiuniversity",
       dates: [
@@ -11,21 +11,54 @@ export async function seedData() {
           end: new Date("2025-01-27T00:00:00Z"),
         },
       ],
-      festivalInstructions:
-        "The Antiuniversity is an ongoing programme of self organised radical  learning and mutual education events. It is a collaborative experiment  to challenge academic and class hierarchy - in, outside and against  existing institutional structures.",
-      spacePageText:
-        "Below is a list of all the venues that are available to host events,  with time slots that you can book. If you have organised a place to hold your event yourself, you can register a new venue and even make your  space available to other Antiuni organisers.",
-      resourcePageText:
-        "Fellow contributors are offering things that might be helpful to make this festival happen, when booking the items, you will be given the owner’s contact so you can arrange the logistics.",
+      calendarInstructions: null,
+      spacePageText: null,
+      resourcePageText: null,
+    },
+  });
+
+  await calendars.create({
+    fields: {
+      name: "Pedals 3000",
+      dates: [
+        {
+          start: new Date("2025-01-20T00:00:00Z"),
+          end: new Date("2025-01-27T00:00:00Z"),
+        },
+      ],
+      calendarInstructions: null,
+      spacePageText: null,
+      resourcePageText: null,
+    },
+  });
+
+  await calendars.create({
+    fields: {
+      name: "Cute venue",
+      dates: [
+        {
+          start: new Date("2025-01-20T00:00:00Z"),
+          end: new Date("2025-01-27T00:00:00Z"),
+        },
+      ],
+      calendarInstructions: null,
+      spacePageText: null,
+      resourcePageText: null,
     },
   });
 
   await setActiveCalendar(calendarId);
 
   const spaceOneId = await spaces.create(calendarId, {
-    type: "physical",
     name: "1",
-    location: "123 Street Street",
+    location: {
+      type: "physical",
+      street: "123 My Street",
+      city: "My City",
+      state: "My State",
+      zip: "123ABC",
+      country: "UK",
+    },
     capacity: 0,
     accessibility: "Wheelchair accessible",
     description: "A stage, a main one",
@@ -49,10 +82,16 @@ export async function seedData() {
     multiBookable: false,
   });
 
-  const spaceTwoId = await spaces.create(calendarId, {
-    type: "physical",
+  await spaces.create(calendarId, {
     name: "Recording Studio",
-    location: "34 Road Avenue",
+    location: {
+      type: "physical",
+      street: "123 My Street",
+      city: "My City",
+      state: "My State",
+      zip: "123ABC",
+      country: "UK",
+    },
     capacity: 20,
     accessibility: "www.website.com/accessibility",
     description:
@@ -122,22 +161,22 @@ export async function seedData() {
   const eventOneId = await events.create(calendarId, {
     name: "Kitty Fest 25",
     description: "A grand music festival with various artists.",
-    startDate: new Date("2025-01-06T14:00:00Z"),
-    endDate: new Date("2025-01-06T20:00:00Z"),
-    location: `${spaceOneId}`,
+    startDate: "2025-01-06T14:00:00Z",
+    endDate: "2025-01-06T20:00:00Z",
+    spaceRequest: `${spaceOneId}`,
     images: [],
-    resources: [`${resourceOneId}`],
+    resourcesRequests: [`${resourceOneId}`],
     links: [],
   });
 
-  const eventTwoId = await events.create(calendarId, {
+  await events.create(calendarId, {
     name: "Art Exhibition",
     description: "An exhibition showcasing modern art.",
-    startDate: new Date("2025-02-10T10:00:00.000Z"),
-    endDate: new Date("2025-02-10T17:00:00.000Z"),
-    location: "",
+    startDate: "2025-02-10T10:00:00.000Z",
+    endDate: "2025-02-10T17:00:00.000Z",
+    spaceRequest: "",
     images: [],
-    resources: [],
+    resourcesRequests: [],
     links: [],
   });
 
@@ -152,5 +191,16 @@ export async function seedData() {
     },
   );
 
-  const resourceResponseId = await bookings.accept(resourceRequestId);
+  await bookings.accept(resourceRequestId);
+
+  await bookings.request(
+    eventOneId,
+    resourceTwoId,
+    "resource",
+    "please can i haz?",
+    {
+      start: new Date("2025-01-20T00:00:00Z"),
+      end: new Date("2025-01-22T00:00:00Z"),
+    },
+  );
 }

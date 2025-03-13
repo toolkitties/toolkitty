@@ -7,6 +7,11 @@ import {
   resources,
   events,
   bookings,
+  auth,
+  roles,
+  dependencies,
+  topics,
+  identity,
 } from "$lib/api";
 import { rejectPromise, resolvePromise } from "$lib/promiseMap";
 
@@ -131,7 +136,6 @@ export async function processMessage(message: ChannelMessage) {
   // @TODO: We need to validate here if the received messages are correctly
   // formatted and contain all the required fields.
   // Related issue: https://github.com/toolkitties/toolkitty/issues/77
-
   if (message.event == "application") {
     console.debug("received application message", message);
     await onApplicationMessage(message);
@@ -139,21 +143,42 @@ export async function processMessage(message: ChannelMessage) {
     console.debug("received invite message", message);
     await onInviteCodesMessage(message);
   } else if (
-    message.event == "calendar_selected" ||
-    message.event == "subscribed_to_calendar" ||
+    message.event == "subscribed_to_persisted_topic" ||
+    message.event == "subscribed_to_ephemeral_topic" ||
     message.event == "network_event"
   ) {
-    // Filter out network events for now.
-    if (message.event != "network_event") {
-      console.debug("received system message", message);
-    }
-    await onSystemMessage(message);
+    onSystemMessage(message);
   }
 }
 
 async function onApplicationMessage(message: ApplicationMessage) {
   try {
+    // **Dependencies**
+    //
+    // Confirm that all dependencies for this message are met. If they are not not, eg. if this is
+    // an `event_updated` message then the `event_created` message must already have been received,
+    // then error here. Additionally we want to trigger a replay if messages which may have
+    // dependants arrives, eg. an `event_created` message should trigger a replay in case there are
+    // waiting event_updated events.
+    await dependencies.process(message);
+
+    // **Auth**
+    //
+    // Confirm that the author has been given “read” access to the calendar with a
+    // calendar_access_accepted message, and that they they have permission to perform the action
+    // they are proposing, eg. a calendar_updated message requires that the author is the calendar
+    // owner or that they were assigned the admin role. If not error here.
     await access.process(message);
+    await auth.process(message);
+
+    // **Topics**
+    await topics.process(message);
+
+    // **Database**
+    //
+    // Apply state changes to the database. Updates are applied using last-write-win strategy
+    // based on highest timestamp.
+    await roles.process(message);
     await calendars.process(message);
     await events.process(message);
     await spaces.process(message);
@@ -166,12 +191,15 @@ async function onApplicationMessage(message: ApplicationMessage) {
     resolvePromise(message.meta.operationId);
 
     // Acknowledge that we have received and processed this operation.
-    if (process.env.NODE_ENV !== "test") {
-      await invoke("ack", { operationId: message.meta.operationId });
-    }
+    await invoke("ack", { operationId: message.meta.operationId });
   } catch (err) {
     console.error(`failed processing application event: ${err}`, message);
-    rejectPromise(message.meta.operationId, err);
+    const myPublicKey = await identity.publicKey();
+    if (message.meta.author == myPublicKey) {
+      rejectPromise(message.meta.operationId, err);
+    } else {
+      resolvePromise(message.meta.operationId);
+    }
   }
 }
 
@@ -186,12 +214,20 @@ async function onInviteCodesMessage(message: EphemeralMessage) {
   }
 }
 
-async function onSystemMessage(message: SystemMessage) {
-  if (message.event === "calendar_selected") {
-    // @TODO
-  } else if (message.event === "subscribed_to_calendar") {
-    // @TODO
+function onSystemMessage(message: SystemMessage) {
+  if (
+    message.event === "subscribed_to_ephemeral_topic" ||
+    message.event === "subscribed_to_persisted_topic"
+  ) {
+    console.log("system event: ", message);
   } else if (message.event === "network_event") {
-    // @TODO
+    if (
+      message.data.type == "peer_discovered" ||
+      message.data.type == "sync_done"
+    ) {
+      console.log("network event: ", message.data);
+    } else if (message.data.type == "sync_failed") {
+      console.error(message.data);
+    }
   }
 }

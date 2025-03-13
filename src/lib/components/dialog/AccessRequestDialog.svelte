@@ -7,8 +7,6 @@
     open = $bindable(false),
   }: { request: AccessRequest; open: boolean } = $props();
 
-  console.log(request);
-
   /**
    * Accept request for calendar access
    */

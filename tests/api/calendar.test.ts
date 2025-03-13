@@ -2,15 +2,24 @@
 import "fake-indexeddb/auto";
 
 import { processMessage } from "$lib/processor";
-import { CALENDAR_ID, calendarTestMessages } from "./data";
+import { CALENDAR_ID, seedTestMessages, OWNER_PUBLIC_KEY } from "./data";
 import { calendars } from "$lib/api";
-import { expect, test } from "vitest";
+import { beforeAll, expect, test } from "vitest";
+import { mockIPC } from "@tauri-apps/api/mocks";
 
-test("processes a calendar_created message", async () => {
-  for (const message of calendarTestMessages) {
+beforeAll(async () => {
+  mockIPC((cmd) => {
+    if (cmd === "public_key") {
+      return OWNER_PUBLIC_KEY;
+    }
+  });
+
+  for (const message of seedTestMessages()) {
     await processMessage(message);
   }
+});
 
+test("processes a calendar_created message", async () => {
   const calendar = await calendars.findOne(CALENDAR_ID);
   expect(calendar).toBeTruthy();
   expect(calendar!.id).toBe(CALENDAR_ID);

@@ -35,7 +35,7 @@
     them in!
   </p> -->
   {#if data.pendingRequests.length > 0}
-    {#each data.pendingRequests as request}
+    {#each data.pendingRequests as request (request.id)}
       <RequestDialog {request} />
     {/each}
   {:else}

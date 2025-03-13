@@ -7,12 +7,14 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "dev": "vite dev",
-    "lint": "prettier ./src --check",
-    "lint:apply": "prettier ./src --write",
+    "format": "prettier ./src ./tests --check",
+    "format:apply": "prettier ./src ./tests --write",
+    "lint": "eslint src tests",
+    "lint:apply": "eslint --fix --quiet src tests",
     "peer": "./scripts/peer.sh",
     "preview": "vite preview",
     "tauri": "tauri",
-    "test": "vitest"
+    "test": "vitest --no-file-parallelism"
   },
   "license": "GPL-3.0",
   "dependencies": {
@@ -24,22 +26,30 @@
     "dexie": "^4.0.10"
   },
   "devDependencies": {
+    "@faker-js/faker": "^9.6.0",
     "@iconify/svelte": "^4.0.2",
     "@sveltejs/adapter-static": "^3.0.5",
     "@sveltejs/kit": "^2.7.0",
     "@sveltejs/vite-plugin-svelte": "^4.0.0",
     "@tauri-apps/cli": "^2",
     "autoprefixer": "^10.4.20",
+    "eslint": "^9.21.0",
+    "eslint-plugin-svelte": "^3.0.2",
     "fake-indexeddb": "^6.0.0",
+    "globals": "^16.0.0",
+    "jsdom": "^26.0.0",
     "postcss": "^8.4.49",
     "prettier": "^3.4.2",
     "prettier-plugin-svelte": "^3.3.3",
     "svelte": "^5.21.0",
     "svelte-check": "^4.0.0",
+    "sveltekit-superforms": "^2.23.1",
     "tailwindcss": "^3.4.14",
     "tslib": "^2.8.0",
     "typescript": "^5.5.0",
+    "typescript-eslint": "^8.25.0",
     "vite": "^5.4.10",
-    "vitest": "^3.0.7"
+    "vitest": "^3.0.7",
+    "zod": "^3.24.2"
   }
 }
