@@ -300,12 +300,7 @@
     {#if selectedSpace}
       <div class="space-availability">
         <p>View availability for {selectedSpace.name}</p>
-        <AvailabilityViewer
-          availability={Array.isArray(selectedSpace.availability)
-            ? selectedSpace.availability
-            : []}
-          multiBookable={selectedSpace.multiBookable}
-        />
+        <AvailabilityViewer space={selectedSpace} />
       </div>
 
       <p>Request access to selected space</p>

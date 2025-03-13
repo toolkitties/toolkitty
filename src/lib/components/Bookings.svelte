@@ -1,23 +1,10 @@
 <script lang="ts">
-  let { availability } = $props();
+  let { space } = $props();
 
+  let availability = space.availability;
+  let booked = space.booked;
   let start = new Date(availability.start);
   let end = new Date(availability.end);
-
-  const booked = [
-    {
-      start: new Date("2025-02-10T11:00Z"),
-      end: new Date("2025-02-10T12:00Z"),
-    },
-    {
-      start: new Date("2025-02-10T13:00Z"),
-      end: new Date("2025-02-10T15:00Z"),
-    },
-    {
-      start: new Date("2025-02-10T20:30Z"),
-      end: new Date("2025-02-10T22:00Z"),
-    },
-  ];
 
   function getHoursDifference(start: Date, end: Date): number {
     const diffMillis = end.getTime() - start.getTime();
@@ -46,7 +33,7 @@
       availabilityEnd,
     );
 
-    return booked.map((booking) => {
+    return booked.map((booking: { start: Date; end: Date }) => {
       const start =
         (getHoursDifference(availabilityStart, booking.start) /
           availabilityLength) *

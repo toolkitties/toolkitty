@@ -4,9 +4,11 @@
   import { fromDate } from "@internationalized/date";
   import Bookings from "./Bookings.svelte";
 
-  let { availability = [], multiBookable } = $props();
+  let { space } = $props();
 
+  let availability: TimeSpan[] = $state(space.availability);
   let availabilityByDay: TimeSpan | null = $state(null);
+  let multiBookable: boolean = $state(space.multiBookable);
   let currentlySelectedDate: DateValue | undefined = $state(undefined);
 
   const handleDateSelect = (value: DateValue | DateValue[] | undefined) => {
@@ -92,7 +94,7 @@
 </Calendar.Root>
 {#if currentlySelectedDate}
   bookings
-  <Bookings availability={availabilityByDay} />
+  <Bookings {space} />
 {/if}
 {#if multiBookable}
   <p>This space can have multiple bookings at the same time.</p>
