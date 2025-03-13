@@ -8,13 +8,13 @@ import { beforeAll, expect, test } from "vitest";
 import { mockIPC } from "@tauri-apps/api/mocks";
 
 beforeAll(async () => {
-  mockIPC((cmd, args) => {
+  mockIPC((cmd) => {
     if (cmd === "public_key") {
       return OWNER_PUBLIC_KEY;
     }
   });
 
-  for (const message of seedTestMessages) {
+  for (const message of seedTestMessages()) {
     await processMessage(message);
   }
 });
