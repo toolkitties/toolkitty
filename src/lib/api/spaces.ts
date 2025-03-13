@@ -66,6 +66,24 @@ export function findByTimespan(
     .toArray();
 }
 
+/**
+ * Find all accepted bookings for a space and time span.
+ */
+export function findBookings(
+  spaceId: Hash,
+  timeSpan: TimeSpan,
+): Promise<BookingRequest[]> {
+  return db.bookingRequests
+    .where({
+      resourceId: spaceId,
+      status: "accepted",
+    })
+    .filter((booking) => {
+      return isSubTimespan(timeSpan.start, timeSpan.end, booking.timeSpan);
+    })
+    .toArray();
+}
+
 export async function isOwner(
   spaceId: Hash,
   publicKey: PublicKey,
