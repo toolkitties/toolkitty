@@ -39,17 +39,17 @@
   <h3>my events & requests</h3>
   {#if $myEvents?.length > 0}
     {#each $myEvents as event (event.id)}
-      <a
-        href={`/app/events/${event.id}`}
-        class="p-2 border-black border justify-between flex"
-      >
-        {event.name}
-        {event.startDate}
-        {event.space ? event.space.name : "no space yet"}
+      <a href={`/app/events/${event.id}`} class="p-2 border-black border block">
+        <h4>{event.name}</h4>
+        <p>{event.startDate}</p>
+        <p>{event.space ? event.space.name : "no space yet"}</p>
+        {#if event.space}
+          <div>{event.space.name} {event.space.bookingRequest?.status}</div>
+        {/if}
         {#if event.resources}
           {#each event.resources as resource (resource.id)}
             <div>
-              <p>{resource.name}</p>
+              <p>{resource.name} {resource.bookingRequest?.status}</p>
             </div>
           {/each}
         {/if}
@@ -68,8 +68,8 @@
         class="p-2 border-black border justify-between flex"
       >
         <p>{space.name}</p>
-        {#if space.pendingRequests}
-          <p>pending requests ({space.pendingRequests.length})</p>
+        {#if space.pendingBookingRequests}
+          <p>pending requests ({space.pendingBookingRequests.length})</p>
         {/if}
       </a>
     {/each}
@@ -86,8 +86,8 @@
         class="p-2 border-black border justify-between flex"
       >
         <p>{resource.name}</p>
-        {#if resource.pendingRequests}
-          <p>pending requests ({resource.pendingRequests.length})</p>
+        {#if resource.pendingBookingRequests}
+          <p>pending requests ({resource.pendingBookingRequests.length})</p>
         {/if}
       </a>
     {/each}

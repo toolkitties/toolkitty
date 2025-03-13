@@ -62,6 +62,9 @@ export function findByOwner(
             continue;
           }
           event.space = await db.spaces.get({ id: request.resourceId });
+          if (event.space) {
+            event.space.bookingRequest = request;
+          }
         }
 
         if (!event.resources) {
@@ -69,14 +72,15 @@ export function findByOwner(
         }
 
         // Add resources to each event.
-        const resources: Resource[] = [];
+        const resources: CalendarEventResourceEnriched[] = [];
         for (const requestId of event.resources) {
           const request = await db.bookingRequests.get(requestId);
           if (!request) {
             continue;
           }
-          const resource = await db.resources.get(request.resourceId);
+          const resource: CalendarEventResourceEnriched | undefined = await db.resources.get(request.resourceId);
           if (resource) {
+            resource.bookingRequest = request;
             resources.push(resource);
           }
         }

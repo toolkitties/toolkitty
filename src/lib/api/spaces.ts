@@ -27,7 +27,7 @@ export function findByOwner(
       .toArray();
     // For each space check if there are any pending bookings
     for (const space of mySpaces) {
-      space.pendingRequests = await db.bookingRequests
+      space.pendingBookingRequests = await db.bookingRequests
         .where({ resourceId: space.id })
         .toArray();
     }
