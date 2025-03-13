@@ -8,8 +8,7 @@
   import SuperDebug from "sveltekit-superforms";
   import { eventSchema } from "$lib/schemas";
   import { zod } from "sveltekit-superforms/adapters";
-  import { events } from "$lib/api";
-  import { resources } from "$lib/api";
+  import { events, resources, bookings } from "$lib/api";
 
   let {
     data,
@@ -25,6 +24,7 @@
 
   let selectedSpace: Space | null = $state<Space | null>(null);
   let availableResources: Resource[] = $state([]);
+  let selectedResources: Resource[] = $state([]);
   async function handleSpaceSelection(space: Space) {
     selectedSpace = space;
     if (selectedSpace.availability == "always") {
@@ -60,6 +60,7 @@
         return;
       }
 
+      // Validation of dates against space availability
       // If availability is "always", skip validation
       if (selectedSpace.availability !== "always") {
         let spaceTimeSpan = calculateSpaceTimespan(
@@ -73,7 +74,6 @@
         const earliestStart = new Date(spaceTimeSpan.start);
         const latestEnd = new Date(spaceTimeSpan.end!);
 
-        // Validation of dates against space availability
         if (startDate < earliestStart) {
           setError(
             form,
@@ -139,6 +139,49 @@
   async function handleCreateEvent(payload: EventFields) {
     try {
       const eventId = await events.create(activeCalendarId, payload);
+
+      let spaceBookingId: string | undefined = undefined;
+      let resourceBookingIds: string[] = [];
+
+      // Request selected space booking
+      if (selectedSpace) {
+        const spaceBooking = await bookings.request(
+          eventId,
+          selectedSpace.id,
+          "space",
+          "Requesting access to space",
+          {
+            start: new Date(payload.startDate),
+            end: new Date(payload.endDate),
+          },
+        );
+        spaceBookingId = spaceBooking; // store to update event with booking id
+      }
+
+      // Request selected resources booking
+      if (selectedResources.length > 0) {
+        for (const resource of selectedResources) {
+          const resourceBooking = await bookings.request(
+            eventId,
+            resource.id,
+            "resource",
+            "Requesting resource",
+            {
+              start: new Date(payload.startDate),
+              end: new Date(payload.endDate),
+            },
+          );
+          resourceBookingIds.push(resourceBooking);
+        }
+      }
+
+      // after booking request are sent, update event with booking ids
+      await events.update(eventId, {
+        ...payload,
+        location: spaceBookingId,
+        resources: resourceBookingIds ? resourceBookingIds : undefined,
+      });
+
       toast.success("Event created!");
       goto(`/app/events/${eventId}`);
     } catch (error) {
@@ -150,8 +193,9 @@
   async function handleUpdateEvent(eventId: Hash, payload: EventFields) {
     try {
       await events.update(eventId, payload);
+
       toast.success("Event updated!");
-      goto(`/app/events/${data.id}`);
+      goto(`/app/events/${eventId}`);
     } catch (error) {
       console.error("Error updating event: ", error);
       toast.error("Error updating event!");
@@ -325,7 +369,8 @@
               <input
                 type="checkbox"
                 id="resource-{resource.id}"
-                value={resource.id}
+                value={resource}
+                bind:group={selectedResources}
               />
               <label for="resource-{resource.id}">{resource.name}</label>
             </li>

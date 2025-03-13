@@ -62,7 +62,7 @@
       <Calendar.Grid>
         <Calendar.GridHead>
           <Calendar.GridRow>
-            {#each weekdays as day (day)}
+            {#each weekdays as day, index (index)}
               <Calendar.HeadCell>{day}</Calendar.HeadCell>
             {/each}
           </Calendar.GridRow>
