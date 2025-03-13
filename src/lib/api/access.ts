@@ -292,10 +292,6 @@ async function onCalendarAccessRequested(
     if (!(await users.get(calendarId, meta.author))) {
       await users.create(calendarId, meta.author, data.name);
     }
-    // Process new calendar author if access was accepted.
-    //
-    // @TODO: add author to topic map.
-    // await processNewCalendarAuthor(calendarId, meta.author);
   }
 }
 
