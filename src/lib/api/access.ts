@@ -77,7 +77,7 @@ export async function wasRejected(requestId: Hash): Promise<boolean> {
 export async function checkStatus(
   publicKey: PublicKey,
   calendarId: Hash,
-): Promise<AccessResponseStatus> {
+): Promise<AccessRequestStatus> {
   const calendar = await calendars.findOne(calendarId);
 
   // The owner of the calendar automatically has access.

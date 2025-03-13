@@ -753,7 +753,7 @@ type BookingRequestEnriched = {
   space?: Space;
 } & BookingRequest;
 
-type AccessResponseStatus =
+type AccessRequestStatus =
   | "not requested yet"
   | "pending"
   | "accepted"
