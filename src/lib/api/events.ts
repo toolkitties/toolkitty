@@ -237,7 +237,7 @@ async function onEventCreated(
     await db.events.add({
       id: meta.operationId,
       calendarId: meta.stream.id,
-      ownerId: meta.stream.owner,
+      ownerId: meta.author,
       ...data.fields,
     });
   } catch (e) {
