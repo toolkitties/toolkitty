@@ -167,8 +167,61 @@ type SubscribedToTopic =
  */
 type NetworkEvent = {
   event: "network_event";
-  // @TODO: define all possible system events we will receive on the frontend
-  data: unknown;
+  data:
+    | GossipJoined
+    | GossipLeft
+    | GossipNeighborUp
+    | GossipNeighborDown
+    | PeerDiscovered
+    | SyncStarted
+    | SyncDone
+    | SyncFailed;
+};
+
+type GossipJoined = {
+  type: "gossip_joined";
+  topic_id: string;
+  peers: string[];
+};
+
+type GossipLeft = {
+  type: "gossip_left";
+  topic_id: string;
+};
+
+type GossipNeighborUp = {
+  type: "gossip_neighbor_up";
+  topic_id: string;
+  peer: string;
+};
+
+type GossipNeighborDown = {
+  type: "gossip_neighbor_down";
+  topic_id: string;
+  peer: string;
+};
+
+type PeerDiscovered = {
+  type: "peer_discovered";
+  peer: string;
+};
+
+type SyncStarted = {
+  type: "sync_start";
+  topic: string;
+  peer: string;
+};
+
+type SyncDone = {
+  type: "sync_done";
+  topic: string;
+  peer: string;
+};
+
+type SyncFailed = {
+  type: "sync_failed";
+  topic: string;
+  peer: string;
 };
 
 /**

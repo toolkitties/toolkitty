@@ -147,11 +147,7 @@ export async function processMessage(message: ChannelMessage) {
     message.event == "subscribed_to_ephemeral_topic" ||
     message.event == "network_event"
   ) {
-    // Filter out network events for now.
-    if (message.event != "network_event") {
-      console.debug("received system message", message);
-    }
-    await onSystemMessage(message);
+    onSystemMessage(message);
   }
 }
 
@@ -218,12 +214,20 @@ async function onInviteCodesMessage(message: EphemeralMessage) {
   }
 }
 
-async function onSystemMessage(message: SystemMessage) {
-  if (message.event === "subscribed_to_ephemeral_topic") {
-    // @TODO
-  } else if (message.event === "subscribed_to_persisted_topic") {
-    // @TODO
+function onSystemMessage(message: SystemMessage) {
+  if (
+    message.event === "subscribed_to_ephemeral_topic" ||
+    message.event === "subscribed_to_persisted_topic"
+  ) {
+    console.log("system event: ", message);
   } else if (message.event === "network_event") {
-    // @TODO
+    if (
+      message.data.type == "peer_discovered" ||
+      message.data.type == "sync_done"
+    ) {
+      console.log("network event: ", message.data);
+    } else if (message.data.type == "sync_failed") {
+      console.error(message.data);
+    }
   }
 }
