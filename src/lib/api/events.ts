@@ -78,7 +78,8 @@ export function findByOwner(
           if (!request) {
             continue;
           }
-          const resource: CalendarEventResourceEnriched | undefined = await db.resources.get(request.resourceId);
+          const resource: CalendarEventResourceEnriched | undefined =
+            await db.resources.get(request.resourceId);
           if (resource) {
             resource.bookingRequest = request;
             resources.push(resource);

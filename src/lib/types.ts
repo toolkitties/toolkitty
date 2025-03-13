@@ -157,9 +157,9 @@ type SystemMessage = SubscribedToTopic | NetworkEvent;
  */
 type SubscribedToTopic =
   | {
-    event: "subscribed_to_persisted_topic";
-    topic: string;
-  }
+      event: "subscribed_to_persisted_topic";
+      topic: string;
+    }
   | { event: "subscribed_to_ephemeral_topic"; topic: string };
 
 /**
@@ -690,14 +690,14 @@ type BookingQueryFilter = {
 
 type CalendarEventEnriched = {
   space?: {
-    bookingRequest?: BookingRequest
+    bookingRequest?: BookingRequest;
   } & Space;
   resources?: CalendarEventResourceEnriched[];
 } & CalendarEvent;
 
 type CalendarEventResourceEnriched = {
-  bookingRequest?: BookingRequest
-} & Resource
+  bookingRequest?: BookingRequest;
+} & Resource;
 
 type BookingRequestEnriched = {
   event?: CalendarEvent;
