@@ -761,6 +761,12 @@ type BookingRequestEnriched = {
   space?: Space;
 } & BookingRequest;
 
+type AccessRequestStatus =
+  | "not requested yet"
+  | "pending"
+  | "accepted"
+  | "rejected";
+
 type OwnerResourceEnriched = {
   pendingBookingRequests?: BookingRequest[];
 } & Resource;
