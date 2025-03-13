@@ -725,6 +725,8 @@ type Settings = {
 /**
  * (´ヮ´)八(*ﾟ▽ﾟ*)
  * Application Data
+ *
+ * Enriched data used for the UI
  */
 
 type CalendarId = Hash;
@@ -743,12 +745,26 @@ type BookingQueryFilter = {
 };
 
 type CalendarEventEnriched = {
-  space?: Space;
-  resources?: Resource[];
+  space?: {
+    bookingRequest?: BookingRequest;
+  } & Space;
+  resources?: CalendarEventResourceEnriched[];
 } & CalendarEvent;
+
+type CalendarEventResourceEnriched = {
+  bookingRequest?: BookingRequest;
+} & Resource;
 
 type BookingRequestEnriched = {
   event?: CalendarEvent;
   resource?: Resource;
   space?: Space;
 } & BookingRequest;
+
+type OwnerResourceEnriched = {
+  pendingBookingRequests?: BookingRequest[];
+} & Resource;
+
+type OwnerSpaceEnriched = {
+  pendingBookingRequests?: BookingRequest[];
+} & Space;
