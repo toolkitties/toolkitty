@@ -14,7 +14,7 @@ import { beforeEach, expect, test } from "vitest";
 import { mockIPC } from "@tauri-apps/api/mocks";
 
 beforeEach(async () => {
-  mockIPC((cmd, args) => {
+  mockIPC((cmd) => {
     if (cmd === "public_key") {
       return OWNER_PUBLIC_KEY;
     }

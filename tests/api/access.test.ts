@@ -10,12 +10,7 @@ import {
   seedTestMessages,
 } from "./data";
 import { access } from "$lib/api";
-import {
-  beforeAll,
-  describe,
-  expect,
-  test,
-} from "vitest";
+import { beforeAll, describe, expect, test } from "vitest";
 import { mockIPC } from "@tauri-apps/api/mocks";
 
 beforeAll(async () => {

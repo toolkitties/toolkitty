@@ -1,4 +1,9 @@
-import { createCalendarMessage, createEventMessage, createResourceMessage, createSpaceMessage } from "./faker";
+import {
+  createCalendarMessage,
+  createEventMessage,
+  createResourceMessage,
+  createSpaceMessage,
+} from "./faker";
 
 export const STREAM_ROOT_HASH =
   "8e7a6675a5fd2f89d7893200d39698b466fe98e3fbee30b7911c97c30bf65315";
