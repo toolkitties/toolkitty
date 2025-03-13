@@ -85,6 +85,7 @@ export async function checkStatus(
     return "accepted";
   }
 
+  // Get all requests made by this author for this calendar.
   const requests = await db.accessRequests
     .where({
       calendarId,
@@ -92,18 +93,31 @@ export async function checkStatus(
     })
     .toArray();
 
+  let status: AccessRequestStatus = "not requested yet";
   for (const request of requests) {
-    const rejected = await db.accessResponses.get([request.id, "reject"]);
+    // Get all rejections for this request.
+    const rejections = await db.accessResponses
+      .where({ requestId: request.id, answer: "reject" })
+      .toArray();
 
-    if (rejected) {
+    // Try to find any single valid rejections, if so mark "status" as "rejected" and move onto
+    // the next request.
+    for (const rejected of rejections) {
       const isAdmin = await auth.isAdmin(calendarId, rejected.from);
       const isOwner = await calendars.isOwner(calendarId, rejected.from);
+      // Only process responses from calendar admins or owners.
       if (isAdmin || isOwner) {
-        // Only process responses from calendar admins or owners.
-        return "rejected";
+        status = "rejected";
+        break;
       }
     }
 
+    // We found a rejection move onto next request.
+    if (status == "rejected") {
+      continue;
+    }
+
+    // No rejections, now get all "accept" responses.
     const acceptances = await db.accessResponses
       .where({
         requestId: request.id,
@@ -111,21 +125,21 @@ export async function checkStatus(
       })
       .toArray();
 
+    // Try to find any one valid response, if so we're done, return "accepted".
     for (const accepted of acceptances) {
-      if (accepted) {
-        const isAdmin = await auth.isAdmin(calendarId, accepted.from);
-        const isOwner = await calendars.isOwner(calendarId, accepted.from);
-        if (isAdmin || isOwner) {
-          // Only process responses from calendar admins or owners.
-          return "accepted";
-        }
+      const isAdmin = await auth.isAdmin(calendarId, accepted.from);
+      const isOwner = await calendars.isOwner(calendarId, accepted.from);
+      if (isAdmin || isOwner) {
+        // Only process responses from calendar admins or owners.
+        return "accepted";
       }
     }
 
-    return "pending";
+    // No accept responses found, we're in "pending" state.
+    status = "pending";
   }
 
-  return "not requested yet";
+  return status;
 }
 
 /**
