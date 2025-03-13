@@ -37,8 +37,6 @@
 
           console.info("finished seeding db");
         }
-        // @TODO(sam): for testing publish some events to the network.
-        await seedData();
 
         await topics.subscribeEphemeral(INVITE_TOPIC);
 
