@@ -67,12 +67,14 @@
         >{(data as AccessRequest).message}</AlertDialog.Description
       >
     {/if}
-    <AlertDialog.Action onclick={() => assignRole("admin")}
+    <AlertDialog.Action
+      onclick={() => assignRole("admin")}
+      disabled={role === "admin"}
       >admin {role === "admin" ? "(current)" : ""}</AlertDialog.Action
     >
-    <AlertDialog.Action onclick={() => assignRole("organiser")}
-      >organiser {role === "admin" ? "(current)" : ""}
-    </AlertDialog.Action>
+    <!-- <AlertDialog.Action onclick={() => assignRole("organiser")}
+      >organiser {role === "organiser" ? "(current)" : ""}
+    </AlertDialog.Action> -->
     {#if isAccessRequest}
       <AlertDialog.Action onclick={rejectRequest}>reject</AlertDialog.Action>
     {:else}
