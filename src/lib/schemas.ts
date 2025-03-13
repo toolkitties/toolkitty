@@ -101,6 +101,7 @@ export const eventSchema = z.object({
       { title: "", type: "ticket", url: "" },
       { title: "", type: "custom", url: "" },
     ]),
+  selectedSpace: z.string().min(1, "Please select a space first."),
   images: z.array(imageSchema),
 });
 

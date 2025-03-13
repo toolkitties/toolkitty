@@ -55,6 +55,7 @@
     resetForm: false,
     dataType: "json",
     async onUpdate({ form }) {
+      // Additional checks for selectedSpace
       if (!selectedSpace) {
         setError(form, "startDate", "Please select a space first.");
         return;
@@ -378,5 +379,9 @@
   {:else}
     <p>No available spaces found.</p>
   {/if}
+  {#if $errors.selectedSpace}<span class="form-error"
+      >{$errors.selectedSpace}</span
+    >{/if}
+
   <button type="submit">{$form.id ? "Update" : "Create"}</button>
 </form>

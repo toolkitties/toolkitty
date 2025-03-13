@@ -5,8 +5,8 @@
   import { spaces } from "$lib/api";
   import Bookings from "./Bookings.svelte";
 
-  let { space } = $props();
-  let availability: TimeSpan[] = $state(space.availability);
+  let { space }: { space: Space } = $props();
+  let availability: TimeSpan[] = $derived(space.availability) as TimeSpan[];
   let availabilityByDay: TimeSpan | null = $state(null);
   let currentlySelectedDate: DateValue | undefined = $state(undefined);
   let booked: BookingRequest[] = $state([]); // Store bookings
@@ -53,6 +53,7 @@
   }
 </script>
 
+<!-- TODO: Refactor Calendar into one component as we are using in a few places now -->
 <Calendar.Root
   type="single"
   bind:value={currentlySelectedDate}
@@ -99,6 +100,6 @@
 {#if currentlySelectedDate}
   <Bookings availability={availabilityByDay} {space} {booked} />
 {/if}
-<!-- {#if multiBookable}
+{#if space.multiBookable}
   <p>This space can have multiple bookings at the same time.</p>
-{/if} -->
+{/if}

@@ -2,9 +2,11 @@
   import { Calendar } from "bits-ui";
   import type { DateValue } from "@internationalized/date";
 
-  let { availability = $bindable() } = $props<{
+  let {
+    availability = $bindable(),
+  }: {
     availability: TimeSpan[];
-  }>();
+  } = $props();
 
   // used to color available dates in the calendar
   let availableDates: { date: string }[] = $state([]);
@@ -79,6 +81,7 @@
   };
 </script>
 
+<!-- TODO: Refactor Calendar into one component as we are using in a few places now -->
 <Calendar.Root
   type="single"
   bind:value={currentlySelectedDate}
@@ -157,20 +160,4 @@
     <input name="availability-end-time" type="time" required />
   </div>
   <button onclick={(e: Event) => handleAddAvailability(e)}>Add</button>
-{/if}
-
-{#if availability.length > 0}
-  <h3>Current Availability:</h3>
-  <ul>
-    {#each availability as entry, index (entry)}
-      {#if entry.date === currentlySelectedDate?.toString()}
-        <li>
-          <span>{entry.startTime} - {entry.endTime}</span>
-          <button onclick={(e: Event) => handleRemoveAvailability(e, index)}
-            >Remove</button
-          >
-        </li>
-      {/if}
-    {/each}
-  </ul>
 {/if}
