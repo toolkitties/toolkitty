@@ -3,6 +3,7 @@
   import RequestDialog from "./RequestDialog.svelte";
   import { bookings, events, resources, spaces } from "$lib/api";
   import { liveQuery } from "dexie";
+  import PlusIcon from "$lib/components/icons/plusIcon.svelte";
 
   let { data }: PageProps = $props();
 
@@ -55,6 +56,13 @@
         {/if}
       </a>
     {/each}
+    <a
+      href="/app/events/create"
+      class="rounded-full border-black border p-2 inline-block"
+    >
+      <PlusIcon size={10} />
+      <span class="sr-only">Add event</span>
+    </a>
   {:else}
     <p>you don't have any events yet</p>
   {/if}
@@ -76,6 +84,13 @@
   {:else}
     <p>you don't have any spaces yet</p>
   {/if}
+  <a
+    href="/app/spaces/create"
+    class="rounded-full border-black border p-2 inline-block"
+  >
+    <PlusIcon size={10} />
+    <span class="sr-only">Add event</span>
+  </a>
 </section>
 <section class="mb-8">
   <h3>my resources</h3>
@@ -94,4 +109,11 @@
   {:else}
     <p>you don't have any resources yet</p>
   {/if}
+  <a
+    href="/app/spaces/create"
+    class="rounded-full border-black border p-2 inline-block"
+  >
+    <PlusIcon size={10} />
+    <span class="sr-only">Add event</span>
+  </a>
 </section>
