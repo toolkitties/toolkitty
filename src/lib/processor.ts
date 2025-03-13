@@ -15,6 +15,9 @@ import {
 } from "$lib/api";
 import { rejectPromise, resolvePromise } from "$lib/promiseMap";
 
+const peers: Set<PublicKey> = new Set();
+
+// @TODO: update docs for application agnostic backend.
 /**
  * Main entry point to process incoming messages from the backend.
  *
@@ -221,13 +224,19 @@ function onSystemMessage(message: SystemMessage) {
   ) {
     console.log("system event: ", message);
   } else if (message.event === "network_event") {
-    if (
-      message.data.type == "peer_discovered" ||
-      message.data.type == "sync_done"
-    ) {
+    if (message.data.type == "sync_done") {
       console.log("network event: ", message.data);
     } else if (message.data.type == "sync_failed") {
       console.error(message.data);
+    } else if (message.data.type == "peer_discovered") {
+      // Deduplicate peer_discovered messages.
+      //
+      // @TODO: need to think of a better solution here as we don't handle different topics,
+      // neighbor down events or gossip left events.
+      if (!peers.has(message.data.peer)) {
+        peers.add(message.data.peer);
+        console.error(message.data);
+      }
     }
   }
 }
