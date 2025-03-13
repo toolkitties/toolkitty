@@ -35,5 +35,3 @@
     </button>
   </div>
 </div>
-
-<p>Invite code: (first 4 chars): {data.activeCalendarId}</p>
