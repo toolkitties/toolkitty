@@ -2,22 +2,25 @@
   import { Calendar } from "bits-ui";
   import type { DateValue } from "@internationalized/date";
   import { fromDate } from "@internationalized/date";
+  import { spaces } from "$lib/api";
   import Bookings from "./Bookings.svelte";
 
   let { space } = $props();
-
   let availability: TimeSpan[] = $state(space.availability);
   let availabilityByDay: TimeSpan | null = $state(null);
-  let multiBookable: boolean = $state(space.multiBookable);
   let currentlySelectedDate: DateValue | undefined = $state(undefined);
+  let booked: BookingRequest[] = $state([]); // Store bookings
 
-  const handleDateSelect = (value: DateValue | DateValue[] | undefined) => {
+  const handleDateSelect = async (
+    value: DateValue | DateValue[] | undefined,
+  ) => {
     if (Array.isArray(value)) {
       value = value[0];
     }
 
     if (!value) {
       availabilityByDay = null;
+      booked = [];
       return;
     }
 
@@ -28,6 +31,7 @@
       if (isSameDate(timeSpanStartDateValue, value)) {
         availabilityByDay = { start: timeSpan.start, end: timeSpan.end };
 
+        booked = await spaces.findBookings(space.id, availabilityByDay);
         break;
       }
     }
@@ -93,8 +97,8 @@
   {/snippet}
 </Calendar.Root>
 {#if currentlySelectedDate}
-  <Bookings availability={availabilityByDay} {space} />
+  <Bookings availability={availabilityByDay} {space} {booked} />
 {/if}
-{#if multiBookable}
+<!-- {#if multiBookable}
   <p>This space can have multiple bookings at the same time.</p>
-{/if}
+{/if} -->

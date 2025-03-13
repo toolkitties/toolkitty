@@ -178,8 +178,8 @@
       // after booking request are sent, update event with booking ids
       await events.update(eventId, {
         ...payload,
-        location: spaceBookingId,
-        resources: resourceBookingIds ? resourceBookingIds : undefined,
+        spaceRequest: spaceBookingId,
+        resourcesRequests: resourceBookingIds ? resourceBookingIds : undefined,
       });
 
       toast.success("Event created!");
