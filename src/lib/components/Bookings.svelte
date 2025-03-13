@@ -1,20 +1,26 @@
 <script lang="ts">
-  let { space } = $props();
+  let { availability, space } = $props();
 
-  let availability = space.availability;
   let booked = space.booked;
-  let start = new Date(availability.start);
-  let end = new Date(availability.end);
 
+  /**
+   * Calculate the difference in hours between two dates
+   * */
   function getHoursDifference(start: Date, end: Date): number {
     const diffMillis = end.getTime() - start.getTime();
-    return diffMillis / (1000 * 60 * 60);
+    return diffMillis / (1000 * 60 * 60); // Convert milliseconds to hours
   }
 
+  /**
+   * Convert booked TimeSpan into slots that are a percentage
+   * of the total availability for the day, this allows us to
+   * then display them as absolutely positioned elements with
+   * start being % from top and length being % height.
+   */
   function getBookedBlocks() {
     const availabilityStart = new Date(
       availability.start.year,
-      availability.start.month - 1,
+      availability.start.month - 1, // JS months are 0-based
       availability.start.day,
       availability.start.hour,
       availability.start.minute,
@@ -45,13 +51,29 @@
       return { start, length };
     });
   }
-
+  /**
+   * Get the availability split into hours
+   */
   function getHours(): string[] {
     const hours: string[] = [];
-    let current = new Date(start);
+    let current = new Date(
+      availability.start.year,
+      availability.start.month - 1,
+      availability.start.day,
+      availability.start.hour,
+      availability.start.minute,
+    );
 
-    while (current < end) {
-      hours.push(current.toISOString());
+    const availabilityEnd = new Date(
+      availability.end.year,
+      availability.end.month - 1,
+      availability.end.day,
+      availability.end.hour,
+      availability.end.minute,
+    );
+
+    while (current < availabilityEnd) {
+      hours.push(current.getUTCHours().toString() + ":00");
       current.setUTCHours(current.getUTCHours() + 1);
     }
 
@@ -62,20 +84,29 @@
   const hours = getHours();
 </script>
 
-<div class="max-h-[400px] overflow-auto">
-  <div class="flex">
-    <ul class="divide-black-200 divide-y-2">
-      {#each hours as hour, index (index)}
-        <li class="h-12">{new Date(hour).getUTCHours()}:00</li>
-      {/each}
-    </ul>
-    <div class="grow relative">
-      {#each bookedBlocks as block, i (i)}
-        <div
-          class="bg-red-light absolute w-full"
-          style="top: {block.start}%; height: {block.length}%"
-        ></div>
-      {/each}
+<p>
+  {space.name} is available between {availability.start} and {availability.end}
+</p>
+{#if bookedBlocks.length === 0}
+  <p>No bookings yet.</p>
+{:else}
+  <div class="max-h-[400px] overflow-auto">
+    <div class="flex">
+      <!-- availability as hours -->
+      <ul class="divide-black-200 divide-y-2">
+        {#each hours as hour (hour)}
+          <li class="h-12">{hour}</li>
+        {/each}
+      </ul>
+      <!-- bookings -->
+      <div class="grow relative">
+        {#each bookedBlocks as block (block.start)}
+          <div
+            class="bg-red-light absolute w-full"
+            style="top: {block.start}%; height: {block.length}%"
+          ></div>
+        {/each}
+      </div>
     </div>
   </div>
-</div>
+{/if}

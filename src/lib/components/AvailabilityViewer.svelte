@@ -93,8 +93,7 @@
   {/snippet}
 </Calendar.Root>
 {#if currentlySelectedDate}
-  bookings
-  <Bookings {space} />
+  <Bookings availability={availabilityByDay} {space} />
 {/if}
 {#if multiBookable}
   <p>This space can have multiple bookings at the same time.</p>
