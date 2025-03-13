@@ -12,8 +12,29 @@ import { auth, events, publish } from ".";
 /**
  * Get events that are associated with the passed calendar
  */
-export function findMany(calendarId: Hash): Promise<CalendarEvent[]> {
-  return db.events.where({ calendarId }).toArray();
+export function findMany(calendarId: Hash): Promise<CalendarEventEnriched[]> {
+  return db.transaction(
+    "r",
+    db.events,
+    db.bookingRequests,
+    db.spaces,
+    async () => {
+      const events: CalendarEventEnriched[] = await db.events
+        .where({ calendarId })
+        .toArray();
+      // Add space to each event.
+      for (const event of events) {
+        if (event.spaceRequest) {
+          const request = await db.bookingRequests.get(event.spaceRequest);
+          if (!request) {
+            continue;
+          }
+          event.space = await db.spaces.get({ id: request.resourceId });
+        }
+      }
+      return events;
+    },
+  );
 }
 
 /**
@@ -22,15 +43,75 @@ export function findMany(calendarId: Hash): Promise<CalendarEvent[]> {
 export function findByOwner(
   calendarId: Hash,
   ownerId: PublicKey,
-): Promise<CalendarEvent[]> {
-  return db.events.where({ ownerId, calendarId }).toArray();
+): Promise<CalendarEventEnriched[]> {
+  return db.transaction(
+    "r",
+    db.events,
+    db.bookingRequests,
+    db.resources,
+    db.spaces,
+    async () => {
+      const events: CalendarEventEnriched[] = await db.events
+        .where({ ownerId, calendarId })
+        .toArray();
+      for (const event of events) {
+        // Add space to each event.
+        if (event.spaceRequest) {
+          const request = await db.bookingRequests.get(event.spaceRequest);
+          if (!request) {
+            continue;
+          }
+          event.space = await db.spaces.get({ id: request.resourceId });
+        }
+
+        if (!event.resources) {
+          continue;
+        }
+
+        // Add resources to each event.
+        const resources: Resource[] = [];
+        for (const requestId of event.resources) {
+          const request = await db.bookingRequests.get(requestId);
+          if (!request) {
+            continue;
+          }
+          const resource = await db.resources.get(request.resourceId);
+          if (resource) {
+            resources.push(resource);
+          }
+        }
+
+        event.resources = resources;
+      }
+      return events;
+    },
+  );
 }
 
 /**
  * Get one event via its id
  */
-export function findById(id: Hash): Promise<CalendarEvent | undefined> {
-  return db.events.get({ id });
+export function findById(id: Hash): Promise<CalendarEventEnriched | undefined> {
+  return db.transaction(
+    "r",
+    db.events,
+    db.bookingRequests,
+    db.spaces,
+    async () => {
+      const event: CalendarEventEnriched | undefined = await db.events.get({
+        id,
+      });
+      // Add space to event.
+      if (event?.spaceRequest) {
+        const request = await db.bookingRequests.get(event.spaceRequest);
+        if (!request) {
+          return event;
+        }
+        event.space = await db.spaces.get({ id: request.resourceId });
+      }
+      return event;
+    },
+  );
 }
 
 export async function isOwner(

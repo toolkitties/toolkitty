@@ -7,10 +7,37 @@ import { isSubTimespan } from "$lib/utils";
  * Queries
  */
 
-export function findRequest(
+export function findById(
   requestId: Hash,
-): Promise<BookingRequest | undefined> {
-  return db.bookingRequests.get(requestId);
+): Promise<BookingRequestEnriched | undefined> {
+  return db.transaction(
+    "r",
+    db.bookingRequests,
+    db.resources,
+    db.spaces,
+    db.events,
+    async () => {
+      const bookingRequest: BookingRequestEnriched | undefined =
+        await db.bookingRequests.get(requestId);
+      if (!bookingRequest) {
+        return;
+      }
+
+      // Add resource or space to booking.
+      if (bookingRequest.resourceType == "space") {
+        bookingRequest.space = await db.spaces.get(bookingRequest.resourceId);
+      } else {
+        bookingRequest.resource = await db.resources.get(
+          bookingRequest.resourceId,
+        );
+      }
+
+      // Add event to booking.
+      bookingRequest.event = await db.events.get(bookingRequest.eventId);
+
+      return bookingRequest;
+    },
+  );
 }
 
 /**
@@ -19,26 +46,79 @@ export function findRequest(
 export function findAll(
   calendarId: Hash,
   filter: BookingQueryFilter,
-): Promise<BookingRequest[]> {
-  return db.bookingRequests
-    .where({
-      calendarId,
-      ...filter,
-    })
-    .toArray();
+): Promise<BookingRequestEnriched[]> {
+  return db.transaction(
+    "r",
+    db.bookingRequests,
+    db.resources,
+    db.spaces,
+    db.events,
+    async () => {
+      const bookingRequests: BookingRequestEnriched[] = await db.bookingRequests
+        .where({
+          calendarId,
+          ...filter,
+        })
+        .toArray();
+
+      for (const bookingRequest of bookingRequests) {
+        // Add resource or space to booking.
+        if (bookingRequest.resourceType == "space") {
+          bookingRequest.space = await db.spaces.get(bookingRequest.resourceId);
+        } else {
+          bookingRequest.resource = await db.resources.get(
+            bookingRequest.resourceId,
+          );
+        }
+
+        // Add event to booking.
+        bookingRequest.event = await db.events.get(bookingRequest.eventId);
+      }
+
+      return bookingRequests;
+    },
+  );
 }
 
 /**
  * Search the database for any pending booking requests matching the passed filter object.
  */
-export function findPending(calendarId: Hash, filter: BookingQueryFilter) {
-  return db.bookingRequests
-    .where({
-      calendarId,
-      status: "pending",
-      ...filter,
-    })
-    .toArray();
+export function findPending(
+  calendarId: Hash,
+  filter: BookingQueryFilter,
+): Promise<BookingRequestEnriched[]> {
+  return db.transaction(
+    "r",
+    db.bookingRequests,
+    db.resources,
+    db.spaces,
+    db.events,
+    async () => {
+      const bookingRequests: BookingRequestEnriched[] = await db.bookingRequests
+        .where({
+          calendarId,
+          status: "pending",
+          ...filter,
+        })
+        .toArray();
+
+      for (const bookingRequest of bookingRequests) {
+        // Add resource or space to booking.
+        if (bookingRequest.resourceType == "space") {
+          bookingRequest.space = await db.spaces.get(bookingRequest.resourceId);
+        } else {
+          bookingRequest.resource = await db.resources.get(
+            bookingRequest.resourceId,
+          );
+        }
+
+        // Add event to booking.
+        bookingRequest.event = await db.events.get(bookingRequest.eventId);
+      }
+
+      return bookingRequests;
+    },
+  );
 }
 
 /**
@@ -241,7 +321,7 @@ async function onBookingRequested(
       await accept(meta.operationId);
     } else {
       // Show toast if we are the owner of the resource and we didn't make the request.
-      const resourceRequest = await bookings.findRequest(meta.operationId);
+      const resourceRequest = await bookings.findById(meta.operationId);
       toast.bookingRequest(resourceRequest!);
     }
   }

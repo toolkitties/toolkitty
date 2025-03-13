@@ -93,7 +93,7 @@ export const eventSchema = z.object({
   endDate: z.string().min(1, "Access end time is required"),
   publicStartDate: z.string().min(1, "Event start time is required"),
   publicEndDate: z.string(),
-  resources: z.array(z.string()).optional(),
+  resourceRequests: z.array(z.string()).optional(),
   links: z
     .array(linkSchema)
     .optional()
