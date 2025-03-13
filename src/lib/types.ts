@@ -297,7 +297,7 @@ type Answer = "accept" | "reject";
 type CalendarFields = {
   name: string;
   dates: TimeSpan[];
-  festivalInstructions: string | null;
+  calendarInstructions: string | null;
   spacePageText: string | null;
   resourcePageText: string | null;
 };

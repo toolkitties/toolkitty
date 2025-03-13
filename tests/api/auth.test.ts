@@ -140,7 +140,7 @@ describe("non-owners cannot perform updates", () => {
                 end: new Date("2025-03-01T17:00:00Z"),
               },
             ],
-            festivalInstructions: null,
+            calendarInstructions: null,
             spacePageText: null,
             resourcePageText: null,
           },

@@ -274,7 +274,7 @@ export function createCalendarFields(): CalendarFields {
   return {
     name: faker.company.buzzPhrase(),
     dates: [{ start, end }],
-    festivalInstructions: null,
+    calendarInstructions: null,
     spacePageText: null,
     resourcePageText: null,
   };
