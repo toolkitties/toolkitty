@@ -17,6 +17,7 @@ import { rejectPromise, resolvePromise } from "$lib/promiseMap";
 
 const peers: Set<PublicKey> = new Set();
 
+// @TODO: update docs for application agnostic backend.
 /**
  * Main entry point to process incoming messages from the backend.
  *
