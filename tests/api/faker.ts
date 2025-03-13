@@ -287,10 +287,10 @@ export function createEventFields(): EventFields {
   return {
     name: faker.company.buzzPhrase(),
     description: faker.commerce.productDescription(),
-    location: faker.string.hexadecimal({ length: 32 }),
+    spaceRequest: faker.string.hexadecimal({ length: 32 }),
     startDate: start.toISOString(),
     endDate: end.toISOString(),
-    resources: faker.helpers.multiple(() =>
+    resourcesRequests: faker.helpers.multiple(() =>
       faker.string.hexadecimal({ length: 32 }),
     ),
     links: [
