@@ -329,11 +329,11 @@ type ResourceFields = {
 type EventFields = {
   name: string;
   description: string;
-  spaceRequest?: SpaceRequestId; // ref to a space
-  startDate: string; // allocated time of a space
-  endDate: string; // allocated time of a space
-  publicStartDate?: string; // public facing
-  publicEndDate?: string; // public facing
+  spaceRequest?: SpaceRequestId;
+  startDate: string;
+  endDate: string;
+  publicStartDate?: string;
+  publicEndDate?: string;
   resourcesRequests?: ReservationRequestId[];
   links: Link[];
   images: Image[];
@@ -591,6 +591,9 @@ type Calendar = {
   id: Hash;
   ownerId: PublicKey;
   stream: Stream;
+  // This field is optional as when a calendar is first created when the user subscribes to a
+  // calendar stream, but at this point we haven't received the "calendar_created" message yet.
+  // The `name` field becomes set when this message is received.
   name?: string;
   // TODO: Should we support non-consecutive dates? It could be arrays of TimeSpan? The
   // `CalendarCreated` fields contains a TimeSpan[] so it's possible to encode non-consecutive
