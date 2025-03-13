@@ -20,9 +20,9 @@ export function findMany(calendarId: Hash): Promise<Resource[]> {
 export function findByOwner(
   calendarId: Hash,
   ownerId: PublicKey,
-): Promise<MyResourcesEnriched[]> {
+): Promise<OwnerResourceEnriched[]> {
   return db.transaction("r", db.resources, db.bookingRequests, async () => {
-    const myResources: MyResourcesEnriched[] = await db.resources
+    const myResources: OwnerResourceEnriched[] = await db.resources
       .where({ calendarId, ownerId })
       .toArray();
     // For each space check if there are any pending bookings

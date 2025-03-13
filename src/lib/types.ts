@@ -705,10 +705,10 @@ type BookingRequestEnriched = {
   space?: Space;
 } & BookingRequest;
 
-type MyResourcesEnriched = {
+type OwnerResourceEnriched = {
   pendingBookingRequests?: BookingRequest[];
 } & Resource;
 
-type MySpacesEnriched = {
+type OwnerSpaceEnriched = {
   pendingBookingRequests?: BookingRequest[];
 } & Space;
