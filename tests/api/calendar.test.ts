@@ -14,7 +14,7 @@ beforeAll(async () => {
     }
   });
 
-  for (const message of seedTestMessages) {
+  for (const message of seedTestMessages()) {
     await processMessage(message);
   }
 });
