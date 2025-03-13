@@ -25,7 +25,7 @@
 
 <h1>Dashboard</h1>
 
-<section>
+<section class="mb-8">
   <h3>pending requests</h3>
   {#if $pendingRequests?.length > 0}
     {#each $pendingRequests as request (request.id)}
@@ -35,7 +35,7 @@
     <p>no pending requests, you are all caught up ٩(ˊᗜˋ*)و</p>
   {/if}
 </section>
-<section>
+<section class="mb-8">
   <h3>my events & requests</h3>
   {#if $myEvents?.length > 0}
     {#each $myEvents as event (event.id)}
@@ -59,7 +59,7 @@
     <p>you don't have any events yet</p>
   {/if}
 </section>
-<section>
+<section class="mb-8">
   <h3>my spaces</h3>
   {#if $mySpaces?.length > 0}
     {#each $mySpaces as space (space.id)}
@@ -77,7 +77,7 @@
     <p>you don't have any spaces yet</p>
   {/if}
 </section>
-<section>
+<section class="mb-8">
   <h3>my resources</h3>
   {#if $myResources?.length > 0}
     {#each $myResources as resource (resource.id)}
