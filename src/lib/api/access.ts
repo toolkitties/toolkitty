@@ -72,7 +72,7 @@ export async function wasRejected(requestId: Hash): Promise<boolean> {
  * in two possible ways.
  *
  * 1) the peer is owner of the calendar
- * 2) the peer has been given access by the calendar owner
+ * 2) the peer has been given access by the calendar owner or an admin
  */
 export async function checkStatus(
   publicKey: PublicKey,
