@@ -148,7 +148,7 @@ async function onBookingResponse(
   meta: StreamMessageMeta,
   data: BookingRequestAccepted["data"] | BookingRequestRejected["data"],
 ) {
-  const request = await bookings.findRequest(data.requestId);
+  const request = await bookings.findById(data.requestId);
   if (request!.resourceType === "resource") {
     const isOwner = await resources.isOwner(request!.resourceId, meta.author);
     if (!isOwner) {

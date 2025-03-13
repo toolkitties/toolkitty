@@ -14,13 +14,13 @@ import { beforeAll, describe, expect, test } from "vitest";
 import { mockIPC } from "@tauri-apps/api/mocks";
 
 beforeAll(async () => {
-  mockIPC((cmd, args) => {
+  mockIPC((cmd) => {
     if (cmd === "public_key") {
       return OWNER_PUBLIC_KEY;
     }
   });
 
-  for (const message of seedTestMessages) {
+  for (const message of seedTestMessages()) {
     await processMessage(message);
   }
 });
@@ -33,7 +33,7 @@ describe("maintain booking request timespan validity", () => {
     });
     expect(pendingBookings).lengthOf(1);
 
-    let invalidRequest: ApplicationMessage = {
+    const invalidRequest: ApplicationMessage = {
       meta: {
         operationId: "booking_request_003",
         author: OWNER_PUBLIC_KEY,
@@ -66,7 +66,8 @@ describe("maintain booking request timespan validity", () => {
     });
     expect(pendingBookings).lengthOf(1);
 
-    let space = await spaces.findById("space_001");
+    const space = await spaces.findById("space_001");
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { id, calendarId, availability, ...fields } = space!;
     let updateSpace: ApplicationMessage = {
       meta: {
@@ -164,7 +165,7 @@ describe("maintain booking request timespan validity", () => {
     });
     expect(pendingBookings).lengthOf(1);
 
-    let invalidRequest: ApplicationMessage = {
+    const invalidRequest: ApplicationMessage = {
       meta: {
         operationId: "resource_request_004",
         author: OWNER_PUBLIC_KEY,
@@ -197,7 +198,8 @@ describe("maintain booking request timespan validity", () => {
     });
     expect(pendingBookings).lengthOf(2);
 
-    let resource = await resources.findById("resource_001");
+    const resource = await resources.findById("resource_001");
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { id, calendarId, availability, ...fields } = resource!;
     let updateResource: ApplicationMessage = {
       meta: {

@@ -167,8 +167,61 @@ type SubscribedToTopic =
  */
 type NetworkEvent = {
   event: "network_event";
-  // @TODO: define all possible system events we will receive on the frontend
-  data: unknown;
+  data:
+    | GossipJoined
+    | GossipLeft
+    | GossipNeighborUp
+    | GossipNeighborDown
+    | PeerDiscovered
+    | SyncStarted
+    | SyncDone
+    | SyncFailed;
+};
+
+type GossipJoined = {
+  type: "gossip_joined";
+  topic_id: string;
+  peers: string[];
+};
+
+type GossipLeft = {
+  type: "gossip_left";
+  topic_id: string;
+};
+
+type GossipNeighborUp = {
+  type: "gossip_neighbor_up";
+  topic_id: string;
+  peer: string;
+};
+
+type GossipNeighborDown = {
+  type: "gossip_neighbor_down";
+  topic_id: string;
+  peer: string;
+};
+
+type PeerDiscovered = {
+  type: "peer_discovered";
+  peer: string;
+};
+
+type SyncStarted = {
+  type: "sync_start";
+  topic: string;
+  peer: string;
+};
+
+type SyncDone = {
+  type: "sync_done";
+  topic: string;
+  peer: string;
+};
+
+type SyncFailed = {
+  type: "sync_failed";
+  topic: string;
+  peer: string;
 };
 
 /**
@@ -297,7 +350,7 @@ type Answer = "accept" | "reject";
 type CalendarFields = {
   name: string;
   dates: TimeSpan[];
-  festivalInstructions: string | null;
+  calendarInstructions: string | null;
   spacePageText: string | null;
   resourcePageText: string | null;
 };
@@ -329,12 +382,12 @@ type ResourceFields = {
 type EventFields = {
   name: string;
   description: string;
-  location?: SpaceRequestId; // ref to a space
-  startDate: string; // allocated time of a space
-  endDate: string; // allocated time of a space
-  publicStartDate?: string; // public facing
-  publicEndDate?: string; // public facing
-  resources?: ReservationRequestId[];
+  spaceRequest?: SpaceRequestId;
+  startDate: string;
+  endDate: string;
+  publicStartDate?: string;
+  publicEndDate?: string;
+  resourcesRequests?: ReservationRequestId[];
   links: Link[];
   images: Image[];
 };
@@ -591,6 +644,9 @@ type Calendar = {
   id: Hash;
   ownerId: PublicKey;
   stream: Stream;
+  // This field is optional as when a calendar is first created when the user subscribes to a
+  // calendar stream, but at this point we haven't received the "calendar_created" message yet.
+  // The `name` field becomes set when this message is received.
   name?: string;
   // TODO: Should we support non-consecutive dates? It could be arrays of TimeSpan? The
   // `CalendarCreated` fields contains a TimeSpan[] so it's possible to encode non-consecutive
@@ -685,3 +741,14 @@ type BookingQueryFilter = {
   resourceOwner?: PublicKey;
   isValid?: "true" | "false";
 };
+
+type CalendarEventEnriched = {
+  space?: Space;
+  resources?: Resource[];
+} & CalendarEvent;
+
+type BookingRequestEnriched = {
+  event?: CalendarEvent;
+  resource?: Resource;
+  space?: Space;
+} & BookingRequest;

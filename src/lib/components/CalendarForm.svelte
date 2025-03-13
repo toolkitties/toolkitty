@@ -90,13 +90,13 @@
   </div>
   {#if $form.id}
     <label for="description">Festival instructions</label>
-    <textarea name="description" bind:value={$form.festivalInstructions}
+    <textarea name="description" bind:value={$form.calendarInstructions}
     ></textarea>
     <label for="description">Spaces page text</label>
-    <textarea name="description" bind:value={$form.festivalInstructions}
+    <textarea name="description" bind:value={$form.calendarInstructions}
     ></textarea>
     <label for="description">Resources page text</label>
-    <textarea name="description" bind:value={$form.festivalInstructions}
+    <textarea name="description" bind:value={$form.calendarInstructions}
     ></textarea>
     <button type="submit">Update Calendar</button>
   {/if}

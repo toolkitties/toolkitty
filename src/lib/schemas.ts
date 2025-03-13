@@ -93,7 +93,7 @@ export const eventSchema = z.object({
   endDate: z.string().min(1, "Access end time is required"),
   publicStartDate: z.string().min(1, "Event start time is required"),
   publicEndDate: z.string(),
-  resources: z.array(z.string()).optional(),
+  resourceRequests: z.array(z.string()).optional(),
   links: z
     .array(linkSchema)
     .optional()
@@ -109,7 +109,7 @@ export const calendarSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, "Calendar name is required"),
   dates: z.array(timeSpanSchema).min(1, "A start date is required"),
-  festivalInstructions: z.string().nullable(),
+  calendarInstructions: z.string().nullable(),
   spacePageText: z.string().nullable(),
   resourcePageText: z.string().nullable(),
 });

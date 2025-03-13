@@ -2,25 +2,19 @@
 import "fake-indexeddb/auto";
 
 import { processMessage } from "$lib/processor";
-import {
-  CALENDAR_ID,
-  LOG_PATH,
-  OWNER_PUBLIC_KEY,
-  STREAM,
-  seedTestMessages,
-} from "./data";
-import { bookings, resources, spaces } from "$lib/api";
+import { CALENDAR_ID, OWNER_PUBLIC_KEY, seedTestMessages } from "./data";
+import { resources, spaces } from "$lib/api";
 import { beforeAll, describe, expect, test } from "vitest";
 import { mockIPC } from "@tauri-apps/api/mocks";
 
 beforeAll(async () => {
-  mockIPC((cmd, args) => {
+  mockIPC((cmd) => {
     if (cmd === "public_key") {
       return OWNER_PUBLIC_KEY;
     }
   });
 
-  for (const message of seedTestMessages) {
+  for (const message of seedTestMessages()) {
     await processMessage(message);
   }
 });
