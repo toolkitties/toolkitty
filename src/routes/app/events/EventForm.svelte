@@ -4,24 +4,50 @@
   import { toast } from "$lib/toast.svelte";
   import type { SuperValidated, Infer } from "sveltekit-superforms";
   import type { EventSchema } from "$lib/schemas";
-  import { superForm } from "sveltekit-superforms";
+  import { superForm, setError } from "sveltekit-superforms";
   import SuperDebug from "sveltekit-superforms";
   import { eventSchema } from "$lib/schemas";
   import { zod } from "sveltekit-superforms/adapters";
-  import { events } from "$lib/api";
+  import { events, resources, bookings } from "$lib/api";
 
   let {
     data,
     activeCalendarId,
     spaces,
+    resourcesList,
   }: {
     data: SuperValidated<Infer<EventSchema>>;
     activeCalendarId: Hash;
     spaces: Space[];
-    resources: Resource[];
+    resourcesList: Resource[];
   } = $props();
 
   let selectedSpace: Space | null = $state<Space | null>(null);
+  let availableResources: Resource[] = $state([]);
+  let selectedResources: Resource[] = $state([]);
+  async function handleSpaceSelection(space: Space) {
+    selectedSpace = space;
+    if (selectedSpace.availability == "always") {
+      availableResources = resourcesList;
+    } else {
+      let spaceTimeSpan = calculateSpaceTimespan(selectedSpace.availability);
+      availableResources = await resources.findByTimespan(
+        activeCalendarId,
+        spaceTimeSpan,
+      );
+    }
+  }
+
+  function calculateSpaceTimespan(availability: TimeSpan[]): TimeSpan {
+    return {
+      start: availability.reduce((acc, curr) =>
+        acc.start < curr.start ? acc : curr,
+      ).start,
+      end: availability.reduce((acc, curr) =>
+        acc.end! > curr.end! ? acc : curr,
+      ).end,
+    };
+  }
 
   const { form, errors, enhance } = superForm(data, {
     SPA: true,
@@ -29,6 +55,77 @@
     resetForm: false,
     dataType: "json",
     async onUpdate({ form }) {
+      // Additional checks for selectedSpace
+      if (!selectedSpace) {
+        setError(form, "startDate", "Please select a space first.");
+        return;
+      }
+
+      // Validation of dates against space availability
+      // If availability is "always", skip validation
+      if (selectedSpace.availability !== "always") {
+        let spaceTimeSpan = calculateSpaceTimespan(
+          selectedSpace.availability as TimeSpan[],
+        );
+
+        const startDate = new Date(form.data.startDate);
+        const endDate = new Date(form.data.endDate);
+        const publicStartDate = new Date(form.data.publicStartDate);
+        const publicEndDate = new Date(form.data.publicEndDate);
+        const earliestStart = new Date(spaceTimeSpan.start);
+        const latestEnd = new Date(spaceTimeSpan.end!);
+
+        if (startDate < earliestStart) {
+          setError(
+            form,
+            "startDate",
+            "Start date cannot be before the space's earliest availability.",
+          );
+          return;
+        }
+        if (startDate > latestEnd) {
+          setError(
+            form,
+            "startDate",
+            "Start date cannot be after the space's latest availability.",
+          );
+          return;
+        }
+        if (endDate > latestEnd) {
+          setError(
+            form,
+            "endDate",
+            "End date cannot be after the space's latest availability.",
+          );
+          return;
+        }
+
+        if (publicStartDate < earliestStart) {
+          setError(
+            form,
+            "publicStartDate",
+            "Public start date cannot be before the space's earliest availability.",
+          );
+          return;
+        }
+        if (publicStartDate > latestEnd) {
+          setError(
+            form,
+            "publicStartDate",
+            "Public start date cannot be after the space's latest availability.",
+          );
+          return;
+        }
+        if (publicEndDate > latestEnd) {
+          setError(
+            form,
+            "publicEndDate",
+            "Public end date cannot be after the space's latest availability.",
+          );
+          return;
+        }
+      }
+
       const { id, ...payload } = form.data;
       if (form.data.id) {
         console.log("update event");
@@ -43,6 +140,49 @@
   async function handleCreateEvent(payload: EventFields) {
     try {
       const eventId = await events.create(activeCalendarId, payload);
+
+      let spaceBookingId: string | undefined = undefined;
+      let resourceBookingIds: string[] = [];
+
+      // Request selected space booking
+      if (selectedSpace) {
+        const spaceBooking = await bookings.request(
+          eventId,
+          selectedSpace.id,
+          "space",
+          "Requesting access to space",
+          {
+            start: new Date(payload.startDate),
+            end: new Date(payload.endDate),
+          },
+        );
+        spaceBookingId = spaceBooking; // store to update event with booking id
+      }
+
+      // Request selected resources booking
+      if (selectedResources.length > 0) {
+        for (const resource of selectedResources) {
+          const resourceBooking = await bookings.request(
+            eventId,
+            resource.id,
+            "resource",
+            "Requesting resource",
+            {
+              start: new Date(payload.startDate),
+              end: new Date(payload.endDate),
+            },
+          );
+          resourceBookingIds.push(resourceBooking);
+        }
+      }
+
+      // after booking request are sent, update event with booking ids
+      await events.update(eventId, {
+        ...payload,
+        spaceRequest: spaceBookingId,
+        resourcesRequests: resourceBookingIds ? resourceBookingIds : undefined,
+      });
+
       toast.success("Event created!");
       goto(`/app/events/${eventId}`);
     } catch (error) {
@@ -54,8 +194,9 @@
   async function handleUpdateEvent(eventId: Hash, payload: EventFields) {
     try {
       await events.update(eventId, payload);
+
       toast.success("Event updated!");
-      goto(`/app/events/${data.id}`);
+      goto(`/app/events/${eventId}`);
     } catch (error) {
       console.error("Error updating event: ", error);
       toast.error("Error updating event!");
@@ -146,96 +287,101 @@
     <ul>
       {#each spaces as space (space.id)}
         <li>
-          <input type="radio" id={space.id} name="selected-space" />
+          <input
+            type="radio"
+            id={space.id}
+            name="selected-space"
+            bind:group={selectedSpace}
+            onchange={() => handleSpaceSelection(space)}
+          />
           <label for={space.id}>{space.name}</label>
         </li>
       {/each}
     </ul>
-
     {#if selectedSpace}
       <div class="space-availability">
-        <p>View availability</p>
-        <AvailabilityViewer
-          availability={Array.isArray(selectedSpace.availability)
-            ? selectedSpace.availability
-            : []}
-          multiBookable={selectedSpace.multiBookable}
-        />
+        <p>View availability for {selectedSpace.name}</p>
+        <AvailabilityViewer space={selectedSpace} />
       </div>
+
+      <p>Request access to selected space</p>
+      <div class="flex flex-row">
+        <label for="startDate">Access Start *</label>
+        <input
+          type="datetime-local"
+          name="startDate"
+          required
+          aria-invalid={$errors.startDate ? "true" : undefined}
+          bind:value={$form.startDate}
+        />
+        {#if $errors.startDate}<span class="form-error"
+            >{$errors.startDate}</span
+          >{/if}
+
+        <label for="endDate">Access End *</label>
+        <input
+          type="datetime-local"
+          name="endDate"
+          required
+          aria-invalid={$errors.endDate ? "true" : undefined}
+          bind:value={$form.endDate}
+        />
+        {#if $errors.endDate}<span class="form-error">{$errors.endDate}</span
+          >{/if}
+      </div>
+
+      <p>Set public event start and end</p>
+      <div class="flex flex-row">
+        <label for="publicStartDate">Start *</label>
+        <input
+          type="datetime-local"
+          name="startDate"
+          required
+          aria-invalid={$errors.startDate ? "true" : undefined}
+          bind:value={$form.publicStartDate}
+        />
+        {#if $errors.publicStartDate}<span class="form-error"
+            >{$errors.publicStartDate}</span
+          >{/if}
+
+        <label for="publicEndDate">End *</label>
+        <input
+          type="datetime-local"
+          name="publicEndDate"
+          required
+          aria-invalid={$errors.publicEndDate ? "true" : undefined}
+          bind:value={$form.publicEndDate}
+        />
+        {#if $errors.publicEndDate}<span class="form-error"
+            >{$errors.publicEndDate}</span
+          >{/if}
+      </div>
+
+      {#if availableResources.length > 0}
+        <label for="resource-list">Select from available resources</label>
+        <ul id="resource-list">
+          {#each availableResources as resource (resource.id)}
+            <li>
+              <input
+                type="checkbox"
+                id="resource-{resource.id}"
+                value={resource}
+                bind:group={selectedResources}
+              />
+              <label for="resource-{resource.id}">{resource.name}</label>
+            </li>
+          {/each}
+        </ul>
+      {:else}
+        <p>No available resources available.</p>
+      {/if}
     {/if}
-    <p>Request selected space</p>
-    <div class="flex flex-row">
-      <label for="startDate">Access Start *</label>
-      <input
-        type="datetime-local"
-        name="startDate"
-        required
-        aria-invalid={$errors.startDate ? "true" : undefined}
-        bind:value={$form.startDate}
-      />
-      {#if $errors.startDate}<span class="form-error">{$errors.startDate}</span
-        >{/if}
-
-      <label for="endDate">Access End *</label>
-      <input
-        type="datetime-local"
-        name="endDate"
-        required
-        aria-invalid={$errors.endDate ? "true" : undefined}
-        bind:value={$form.endDate}
-      />
-      {#if $errors.endDate}<span class="form-error">{$errors.endDate}</span
-        >{/if}
-    </div>
   {:else}
-    <p>No spaces found.</p>
+    <p>No available spaces found.</p>
   {/if}
-
-  <p>Event time (excluding set-up)</p>
-  <div class="flex flex-row">
-    <label for="publicStartDate">Event Start *</label>
-    <input
-      type="datetime-local"
-      name="publicStartDate"
-      required
-      aria-invalid={$errors.publicStartDate ? "true" : undefined}
-      bind:value={$form.publicStartDate}
-    />
-    {#if $errors.publicStartDate}<span class="form-error"
-        >{$errors.publicStartDate}</span
-      >{/if}
-
-    <label for="publicEndDate">Event End *</label>
-    <input
-      type="datetime-local"
-      name="publicEndDate"
-      required
-      aria-invalid={$errors.publicEndDate ? "true" : undefined}
-      bind:value={$form.publicEndDate}
-    />
-    {#if $errors.publicEndDate}<span class="form-error"
-        >{$errors.publicEndDate}</span
-      >{/if}
-  </div>
-
-  <!-- @TODO - validate against space availability -->
-  <!-- {#if resources.length > 0}
-    <label for="resource-list">Select resources</label>
-    <ul id="resource-list">
-      {#each resources as resource}
-        <li>
-          <input
-            type="checkbox"
-            id="resource-{resource.id}"
-            value={resource.id}
-          />
-          <label for="resource-{resource.id}">{resource.name}</label>
-        </li>
-      {/each}
-    </ul>
-  {:else}
-    <p>No resources available.</p>
-  {/if} -->
+  {#if $errors.selectedSpace}<span class="form-error"
+      >{$errors.selectedSpace}</span
+    >{/if}
 
   <button type="submit">{$form.id ? "Update" : "Create"}</button>
 </form>

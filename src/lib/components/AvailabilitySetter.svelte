@@ -2,15 +2,18 @@
   import { Calendar } from "bits-ui";
   import type { DateValue } from "@internationalized/date";
 
-  type Availability = { date: string; startTime: string; endTime: string };
+  let {
+    availability = $bindable(),
+  }: {
+    availability: TimeSpan[];
+  } = $props();
 
-  let { availability = $bindable() }: { availability: Availability[] } =
-    $props<{
-      availability: Availability[];
-    }>();
-  let availableDates = $state(
-    new Set(availability.map((entry: { date: string }) => entry.date)),
-  );
+  // used to color available dates in the calendar
+  let availableDates: { date: string }[] = $state([]);
+
+  // Keep a list of availability as destructured strings to show to user
+  let availabilityList: { date: string; startTime: string; endTime: string }[] =
+    $state([]);
 
   let currentlySelectedDate: DateValue | undefined = $state(undefined);
 
@@ -48,34 +51,37 @@
       return;
     }
 
-    const newEntry = { date: selectedDate, startTime, endTime };
+    let newAvailabilityListEntry = {
+      date: selectedDate,
+      startTime: startTime,
+      endTime: endTime,
+    };
 
-    // Update availability directly
-    availability = [...availability, newEntry];
+    // Convert to TimeSpan for form submission
+    const newTimeSpan: TimeSpan = {
+      start: new Date(selectedDate + "T" + startTime),
+      end: new Date(selectedDate + "T" + endTime),
+    };
 
-    availableDates = new Set([...availableDates, selectedDate]);
-
-    alert("Availability added successfully!");
+    availability = [...availability, newTimeSpan];
+    availabilityList = [...availabilityList, newAvailabilityListEntry];
+    availableDates = [...availableDates, { date: selectedDate }];
   };
 
   const handleRemoveAvailability = (e: Event, index: number) => {
     e.preventDefault();
-    const removedDate = availability[index].date;
-    availability = availability.filter(
-      (_: { date: string; startTime: string; endTime: string }, i: number) =>
+    availability = availability.filter((_: TimeSpan, i: number) => i !== index);
+    availabilityList = availabilityList.filter(
+      (_: { date: string; startTime: string; endTime: string }, i) =>
         i !== index,
     );
-
-    if (
-      !availability.some(
-        (entry: { date: string }) => entry.date === removedDate,
-      )
-    ) {
-      availableDates.delete(removedDate);
-    }
+    availableDates = availableDates.filter(
+      (_: { date: string }, i) => i !== index,
+    );
   };
 </script>
 
+<!-- TODO: Refactor Calendar into one component as we are using in a few places now -->
 <Calendar.Root
   type="single"
   bind:value={currentlySelectedDate}
@@ -104,15 +110,17 @@
                 <Calendar.Cell {date} month={month.value}>
                   <Calendar.Day
                     class={"data-[outside-month]:pointer-events-none data-[outside-month]:text-gray-300 data-[selected]:bg-black data-[selected]:text-white " +
-                      (availableDates.has(date.toString())
+                      (availableDates.some((d) => d.date === date.toString())
                         ? "bg-green-500 text-white"
                         : "")}
                     aria-label={"Date " +
                       date.toString() +
-                      (availableDates.has(date.toString())
+                      (availableDates.some((d) => d.date === date.toString())
                         ? " - Availability set"
                         : " - No availability")}
-                    title={availableDates.has(date.toString())
+                    title={availableDates.some(
+                      (d) => d.date === date.toString(),
+                    )
                       ? "Availability set"
                       : "No availability"}
                     aria-disabled={"outside-month" in date}
@@ -126,8 +134,21 @@
     {/each}
   {/snippet}
 </Calendar.Root>
+{#if availabilityList.length > 0}
+  <h3>Current Availability:</h3>
+  <ul>
+    {#each availabilityList as entry, index (entry.date + entry.startTime + entry.endTime)}
+      <li>
+        <span>{entry.date}: {entry.startTime} - {entry.endTime}</span>
+        <button onclick={(e: Event) => handleRemoveAvailability(e, index)}
+          >Remove</button
+        >
+      </li>
+    {/each}
+  </ul>
+{/if}
 
-{#if currentlySelectedDate && !availableDates.has(currentlySelectedDate.toString())}
+{#if currentlySelectedDate && !availableDates.some((d) => d.date === currentlySelectedDate!.toString())}
   <p>
     What time is the space available on {currentlySelectedDate?.toString() ||
       ""}?
@@ -139,20 +160,4 @@
     <input name="availability-end-time" type="time" required />
   </div>
   <button onclick={(e: Event) => handleAddAvailability(e)}>Add</button>
-{/if}
-
-{#if availability.length > 0}
-  <h3>Current Availability:</h3>
-  <ul>
-    {#each availability as entry, index (entry)}
-      {#if entry.date === currentlySelectedDate?.toString()}
-        <li>
-          <span>{entry.startTime} - {entry.endTime}</span>
-          <button onclick={(e: Event) => handleRemoveAvailability(e, index)}
-            >Remove</button
-          >
-        </li>
-      {/if}
-    {/each}
-  </ul>
 {/if}

@@ -16,27 +16,6 @@
     $props();
   let alwaysAvailable = $state(false);
 
-  $effect(() => {
-    if (alwaysAvailable) {
-      $form.availability = "always";
-    }
-  });
-
-  let availability: { date: string; startTime: string; endTime: string }[] =
-    $state([]);
-
-  function updateAvailability(
-    newAvailability: { date: string; startTime: string; endTime: string }[],
-  ) {
-    const parsedAvailability = newAvailability.map(
-      ({ date, startTime, endTime }) => ({
-        start: new Date(`${date}T${startTime}`),
-        end: new Date(`${date}T${endTime}`),
-      }),
-    );
-    $form.availability = parsedAvailability;
-  }
-
   const { form, errors, enhance } = superForm(data, {
     SPA: true,
     validators: zod(resourceSchema),
@@ -138,18 +117,22 @@
   </fieldset>
 
   <p>Resource availability</p>
+  {#if alwaysAvailable}
+    <p>This resource is always available</p>
+  {/if}
   {#if !alwaysAvailable}
-    <AvailabilitySetter
-      {availability}
-      onUpdateAvailability={updateAvailability}
-    />
+    <AvailabilitySetter bind:availability={$form.availability as TimeSpan[]} />
   {/if}
 
   <label>
     <input
       type="checkbox"
-      name="alwaysAvailable"
       bind:checked={alwaysAvailable}
+      onchange={() => {
+        if (alwaysAvailable) {
+          $form.availability = "always";
+        }
+      }}
     />
     Always Available
   </label>

@@ -13,7 +13,7 @@
 <p>Hello organisers! Fill this form to upload your event to the program.</p>
 <EventForm
   data={data.form}
-  activeCalendarId={data.activeCalendarId}
+  activeCalendarId={data.activeCalendarId!}
   spaces={data.spacesList}
-  resources={data.resourcesList}
+  resourcesList={data.resourcesList}
 />

@@ -75,8 +75,8 @@ export async function seedData() {
     messageForRequesters: "Call me after 6pm",
     availability: [
       {
-        start: new Date("2025-01-01T00:00:00Z"),
-        end: new Date("2025-02-30T00:00:00Z"),
+        start: new Date("2025-01-01T09:00:00Z"),
+        end: new Date("2025-01-30T23:00:00Z"),
       },
     ],
     multiBookable: false,
@@ -109,8 +109,8 @@ export async function seedData() {
     messageForRequesters: "Call me after 6pm",
     availability: [
       {
-        start: new Date("2025-01-01T00:00:00Z"),
-        end: new Date("2025-02-30T00:00:00Z"),
+        start: new Date("2025-01-01T09:00:00Z"),
+        end: new Date("2025-01-30T23:00:00Z"),
       },
     ],
     multiBookable: false,
@@ -128,12 +128,12 @@ export async function seedData() {
     images: [],
     availability: [
       {
-        start: new Date("2025-01-20T00:00:00Z"),
-        end: new Date("2025-01-22T00:00:00Z"),
+        start: new Date("2025-01-20T09:00:00Z"),
+        end: new Date("2025-01-22T23:00:00Z"),
       },
       {
-        start: new Date("2025-01-24T00:00:00Z"),
-        end: new Date("2025-01-26T00:00:00Z"),
+        start: new Date("2025-01-24T09:00:00Z"),
+        end: new Date("2025-01-26T23:00:00Z"),
       },
     ],
     multiBookable: false,
@@ -151,8 +151,8 @@ export async function seedData() {
     images: [],
     availability: [
       {
-        start: new Date("2025-01-01T00:00:00Z"),
-        end: new Date("2025-02-30T00:00:00Z"),
+        start: new Date("2025-01-01T10:00:00Z"),
+        end: new Date("2025-01-30T13:00:00Z"),
       },
     ],
     multiBookable: false,

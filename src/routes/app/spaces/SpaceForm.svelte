@@ -16,8 +16,6 @@
   }: { data: SuperValidated<Infer<SpaceSchema>>; activeCalendarId: Hash } =
     $props();
 
-  let availability: { date: string; startTime: string; endTime: string }[] =
-    $state([]);
   let alwaysAvailable = $state(false);
 
   const { form, errors, enhance } = superForm(data, {
@@ -31,7 +29,7 @@
       const { id, ...payload } = form.data;
       if (form.data.id) {
         console.log("update space");
-        handleUpdateSpace(id, payload);
+        handleUpdateSpace(id!, payload);
       } else {
         console.log("create space");
         handleCreateSpace(payload);
@@ -297,31 +295,34 @@
     >{/if}
 
   <p>Space availability</p>
-
+  {#if alwaysAvailable}
+    <p>This space is always available</p>
+  {/if}
   {#if !alwaysAvailable}
-    <AvailabilitySetter {availability} />
+    <AvailabilitySetter bind:availability={$form.availability as TimeSpan[]} />
   {/if}
 
   <label>
-    <input type="checkbox" bind:checked={alwaysAvailable} />
+    <input
+      type="checkbox"
+      bind:checked={alwaysAvailable}
+      onchange={() => {
+        if (alwaysAvailable) {
+          $form.availability = "always";
+        }
+      }}
+    />
     Always Available
   </label>
-
-  <p>Can this space have multiple bookings at the same time?</p>
   <fieldset>
-    <label for="multi-bookable">Yes</label>
+    <label for="multiBookable"
+      >Can this space have multiple bookings at the same time?
+    </label>
     <input
-      type="radio"
-      name="multi-bookable"
-      value="true"
-      bind:group={$form.multiBookable}
-    />
-    <label for="multi-bookable">No</label>
-    <input
-      type="radio"
-      name="multi-bookable"
-      value="false"
-      bind:group={$form.multiBookable}
+      id="multiBookable"
+      type="checkbox"
+      name="multiBookable"
+      bind:checked={$form.multiBookable}
     />
   </fieldset>
   {#if $errors.multiBookable}<span class="form-error"

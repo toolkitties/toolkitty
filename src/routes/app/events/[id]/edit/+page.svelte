@@ -11,8 +11,8 @@
 <br />
 <EventForm
   data={data.form}
-  activeCalendarId={data.activeCalendarId!}
+  activeCalendarId={data.calendarId!}
   spaces={data.spacesList}
-  resources={data.resourcesList}
+  resourcesList={data.resourcesList}
 />
 <Delete id={data.form.data.id!} name={data.form.data.name} type="event" />
