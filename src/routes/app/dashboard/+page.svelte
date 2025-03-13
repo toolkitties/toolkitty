@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { PageProps } from "./$types";
   import RequestDialog from "./RequestDialog.svelte";
-  import { bookings } from "$lib/api";
+  import { bookings, events, resources, spaces } from "$lib/api";
   import { liveQuery } from "dexie";
 
   let { data }: PageProps = $props();
@@ -9,15 +9,89 @@
   let pendingRequests = liveQuery(() =>
     bookings.findPending(data.activeCalendarId!, {}),
   );
+
+  let mySpaces = liveQuery(() =>
+    spaces.findByOwner(data.activeCalendarId!, data.publicKey),
+  );
+
+  let myResources = liveQuery(() =>
+    resources.findByOwner(data.activeCalendarId!, data.publicKey),
+  );
+
+  let myEvents = liveQuery(() =>
+    events.findByOwner(data.activeCalendarId!, data.publicKey),
+  );
 </script>
 
 <h1>Dashboard</h1>
 
 <section>
-  {#if $pendingRequests}
-    <h3>Pending requests</h3>
+  <h3>pending requests</h3>
+  {#if $pendingRequests?.length > 0}
     {#each $pendingRequests as request (request.id)}
       <RequestDialog {request} />
     {/each}
+  {:else}
+    <p>no pending requests, you are all caught up ٩(ˊᗜˋ*)و</p>
+  {/if}
+</section>
+<section>
+  <h3>my events & requests</h3>
+  {#if $myEvents?.length > 0}
+    {#each $myEvents as event (event.id)}
+      <a
+        href={`/app/events/${event.id}`}
+        class="p-2 border-black border justify-between flex"
+      >
+        {event.name}
+        {event.startDate}
+        {event.space ? event.space.name : "no space yet"}
+        {#if event.resources}
+          {#each event.resources as resource (resource.id)}
+            <div>
+              <p>{resource.name}</p>
+            </div>
+          {/each}
+        {/if}
+      </a>
+    {/each}
+  {:else}
+    <p>you don't have any events yet</p>
+  {/if}
+</section>
+<section>
+  <h3>my spaces</h3>
+  {#if $mySpaces?.length > 0}
+    {#each $mySpaces as space (space.id)}
+      <a
+        href={`/app/spaces/${space.id}`}
+        class="p-2 border-black border justify-between flex"
+      >
+        <p>{space.name}</p>
+        {#if space.pendingRequests}
+          <p>pending requests ({space.pendingRequests.length})</p>
+        {/if}
+      </a>
+    {/each}
+  {:else}
+    <p>you don't have any spaces yet</p>
+  {/if}
+</section>
+<section>
+  <h3>my resources</h3>
+  {#if $myResources?.length > 0}
+    {#each $myResources as resource (resource.id)}
+      <a
+        href={`/app/resources/${resource.id}`}
+        class="p-2 border-black border justify-between flex"
+      >
+        <p>{resource.name}</p>
+        {#if resource.pendingRequests}
+          <p>pending requests ({resource.pendingRequests.length})</p>
+        {/if}
+      </a>
+    {/each}
+  {:else}
+    <p>you don't have any resources yet</p>
   {/if}
 </section>

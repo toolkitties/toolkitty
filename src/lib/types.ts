@@ -669,6 +669,8 @@ type Settings = {
 /**
  * (´ヮ´)八(*ﾟ▽ﾟ*)
  * Application Data
+ *
+ * Enriched data used for the UI
  */
 
 type CalendarId = Hash;
@@ -696,3 +698,11 @@ type BookingRequestEnriched = {
   resource?: Resource;
   space?: Space;
 } & BookingRequest;
+
+type MyResourcesEnriched = {
+  pendingRequests?: BookingRequest[];
+} & Resource;
+
+type MySpacesEnriched = {
+  pendingRequests?: BookingRequest[];
+} & Space;

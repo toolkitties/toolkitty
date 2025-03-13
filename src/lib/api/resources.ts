@@ -20,8 +20,19 @@ export function findMany(calendarId: Hash): Promise<Resource[]> {
 export function findByOwner(
   calendarId: Hash,
   ownerId: PublicKey,
-): Promise<Resource[]> {
-  return db.resources.where({ calendarId, ownerId }).toArray();
+): Promise<MyResourcesEnriched[]> {
+  return db.transaction("r", db.resources, db.bookingRequests, async () => {
+    const myResources: MyResourcesEnriched[] = await db.resources
+      .where({ calendarId, ownerId })
+      .toArray();
+    // For each space check if there are any pending bookings
+    for (const resource of myResources) {
+      resource.pendingRequests = await db.bookingRequests
+        .where({ resourceId: resource.id })
+        .toArray();
+    }
+    return myResources;
+  });
 }
 
 /**
