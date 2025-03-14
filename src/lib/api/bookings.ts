@@ -2,7 +2,7 @@ import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
 import { toast } from "$lib/toast.svelte";
 import { publish, identity, spaces, resources, bookings } from ".";
-import { isSubTimespan } from "$lib/utils/utils";
+import { TimeSpanClass } from "$lib/timeSpan";
 /**
  * Queries
  */
@@ -58,13 +58,15 @@ export function findAll(
 
       if (from) {
         query.filter((request) => {
-          return request.timeSpan.start >= from;
+          const timeSpan = new TimeSpanClass(request.timeSpan);
+          return timeSpan.startDate() >= from;
         });
       }
 
       if (to) {
         query.filter((request) => {
-          return request.timeSpan.start <= to;
+          const timeSpan = new TimeSpanClass(request.timeSpan);
+          return timeSpan.startDate() <= to;
         });
       }
 
@@ -256,12 +258,9 @@ async function onBookingRequested(
         resourceRequest.isValid = "true";
       } else {
         for (const span of resourceAvailability) {
-          const isSub = isSubTimespan(
-            span.start,
-            span.end,
-            resourceRequest.timeSpan,
-          );
-
+          const availabilityTimeSpan = new TimeSpanClass(span);
+          const requestTimeSpan = new TimeSpanClass(resourceRequest.timeSpan);
+          const isSub = availabilityTimeSpan.contains(requestTimeSpan);
           if (isSub) {
             resourceRequest.isValid = "true";
           }

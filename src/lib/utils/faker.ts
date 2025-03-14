@@ -314,8 +314,8 @@ export function createBookingRequestMessage(
 export function createCalendarFields(
   fieldsOverwrites: Partial<CalendarFields> = {},
 ): CalendarFields {
-  const start = faker.date.soon();
-  const end = faker.date.soon({ refDate: start });
+  const start = faker.date.soon().toISOString();
+  const end = faker.date.soon({ refDate: start }).toISOString();
 
   const fields = {
     name: faker.music.songName(),
@@ -367,7 +367,7 @@ export function createSpaceFields(
       country: faker.location.country(),
     };
   } else if (fieldsOverwrites.location?.type == "gps") {
-    location = { type: "gps", lat: "0", lon: "0" };
+    location = { type: "gps", lat: 0, lon: 0 };
   } else {
     location = { type: "virtual", link: "" };
   }
@@ -386,8 +386,8 @@ export function createSpaceFields(
     },
     images: ["/toolkitty-mascot.png"],
     availability: faker.helpers.multiple(() => {
-      const start = faker.date.future();
-      const end = faker.date.future({ refDate: start });
+      const start = faker.date.future().toISOString();
+      const end = faker.date.future({ refDate: start }).toISOString();
       return {
         start,
         end,
@@ -412,8 +412,8 @@ export function createResourceFields(
     },
     images: ["/toolkitty-mascot.png"],
     availability: faker.helpers.multiple(() => {
-      const start = faker.date.future();
-      const end = faker.date.future({ refDate: start });
+      const start = faker.date.future().toISOString();
+      const end = faker.date.future({ refDate: start }).toISOString();
       return {
         start,
         end,
