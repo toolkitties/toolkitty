@@ -25,7 +25,8 @@
   let selectedSpace: Space | null = $state<Space | null>(null);
   let availableResources: Resource[] = $state([]);
   let selectedResources: Resource[] = $state([]);
-  let selectedResourceBookings: TimeSpan[] = $state([]);
+  let availableResourceBookings: { resourceId: string; timeSpan: TimeSpan }[] =
+    $state([]);
 
   async function handleSpaceSelection(space: Space) {
     selectedSpace = space;
@@ -44,7 +45,13 @@
         );
         if (bookings.length > 0) {
           for (const booking of bookings) {
-            selectedResourceBookings.push(booking.timeSpan);
+            availableResourceBookings.push({
+              resourceId: resource.id,
+              timeSpan: {
+                start: booking.timeSpan.start,
+                end: booking.timeSpan.end,
+              },
+            });
           }
         }
       }
@@ -60,6 +67,29 @@
         acc.end! > curr.end! ? acc : curr,
       ).end,
     };
+  }
+
+  function recalculateResourceAvailbaility() {
+    if (availableResourceBookings.length === 0) return;
+    const eventTimeSpan = {
+      start: $form.startDate,
+      end: $form.endDate,
+    };
+    /*
+    Go through each selectedResourceBooking
+    if the timeSpan overlaps with the selectedResourceBooking
+    then remove the resource from availableResources
+    */
+    for (const booking of availableResourceBookings) {
+      if (
+        eventTimeSpan.start < booking.timeSpan.end! &&
+        eventTimeSpan.end > booking.timeSpan.start
+      ) {
+        availableResources = availableResources.filter(
+          (resource) => resource.id !== booking.resourceId,
+        );
+      }
+    }
   }
 
   const { form, errors, enhance } = superForm(data, {
