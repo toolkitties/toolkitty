@@ -9,6 +9,7 @@
   import { eventSchema } from "$lib/schemas";
   import { zod } from "sveltekit-superforms/adapters";
   import { events, resources, bookings } from "$lib/api";
+  import { TimeSpanClass } from "$lib/timeSpan";
 
   let {
     data,
@@ -34,14 +35,14 @@
       availableResources = resourcesList;
     } else {
       let spaceTimeSpan = calculateSpaceTimespan(selectedSpace.availability);
-      availableResources = await resources.findByTimespan(
+      availableResources = await resources.findByTimeSpan(
         activeCalendarId,
-        spaceTimeSpan,
+        new TimeSpanClass(spaceTimeSpan),
       );
       for (const resource of availableResources) {
         const bookings = await resources.findBookings(
           resource.id,
-          spaceTimeSpan,
+          new TimeSpanClass(spaceTimeSpan),
         );
         if (bookings.length > 0) {
           for (const booking of bookings) {
