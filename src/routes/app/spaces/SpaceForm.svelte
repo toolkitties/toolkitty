@@ -23,9 +23,7 @@
     validators: zod(spaceSchema),
     resetForm: false,
     dataType: "json",
-    // onUpdate is called when we press submit
     async onUpdate({ form }) {
-      // TODO: add additional validation here
       const { id, ...payload } = form.data;
       if (form.data.id) {
         console.log("update space");
@@ -86,38 +84,38 @@
 </script>
 
 <SuperDebug data={{ $form, $errors }} />
-<form method="POST" use:enhance>
-  <fieldset>
-    <label for="physical">Physical Location</label>
-    <input
-      type="radio"
-      name="space-type"
-      value="physical"
-      bind:group={$form.location.type}
-      onchange={updateLocation}
-      checked
-    />
-    <label for="gps">GPS coordinates</label>
-    <input
-      type="radio"
-      name="space-type"
-      value="gps"
-      bind:group={$form.location.type}
-      onchange={updateLocation}
-    />
-    <label for="virtual">Virtual Space</label>
-    <input
-      type="radio"
-      name="space-type"
-      value="virtual"
-      bind:group={$form.location.type}
-      onchange={updateLocation}
-    />
-    {#if $errors.location?.type}<span class="form-error"
-        >{$errors.location?.type}</span
-      >{/if}
-  </fieldset>
+<fieldset>
+  <label for="physical">Physical Location</label>
+  <input
+    type="radio"
+    name="space-type"
+    value="physical"
+    bind:group={$form.location.type}
+    onchange={updateLocation}
+    checked
+  />
+  <label for="gps">GPS coordinates</label>
+  <input
+    type="radio"
+    name="space-type"
+    value="gps"
+    bind:group={$form.location.type}
+    onchange={updateLocation}
+  />
+  <label for="virtual">Virtual Space</label>
+  <input
+    type="radio"
+    name="space-type"
+    value="virtual"
+    bind:group={$form.location.type}
+    onchange={updateLocation}
+  />
+  {#if $errors.location?.type}<span class="form-error"
+      >{$errors.location?.type}</span
+    >{/if}
+</fieldset>
 
+<form method="POST" use:enhance>
   <label for="space-name">Space Name*</label>
   <input type="text" name="space-name" bind:value={$form.name} />
   {#if $form.location.type === "physical"}
