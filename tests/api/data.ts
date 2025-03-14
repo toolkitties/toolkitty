@@ -1,24 +1,29 @@
 import {
+  createBookingRequestMessage,
   createCalendarMessage,
   createEventMessage,
   createResourceMessage,
   createSpaceMessage,
-  LOG_PATH,
   OWNER_PUBLIC_KEY,
-  STREAM,
 } from "$lib/utils/faker";
 
-export const seedTestMessages = (): ApplicationMessage[] => {
-  const calendarStart = new Date("2025-03-01T09:00:00Z");
-  const calendarEnd = new Date("2025-03-01T17:00:00Z");
+export const calendar001Start = "2025-03-01T09:00:00Z";
+export const calendar001End = "2025-07-01T17:00:00Z";
+export const event001Start = "2025-03-01T10:00:00Z";
+export const event001End = "2025-03-01T17:00:00Z";
+export const bookingRequest001Start = "2025-03-01T10:00:00Z";
+export const bookingRequest001End = "2025-03-01T11:00:00Z";
+export const bookingRequest002Start = "2025-03-01T12:00:00Z";
+export const bookingRequest002End = "2025-03-01T13:00:00Z";
 
+export const seedTestMessages = (): ApplicationMessage[] => {
   const calendar001 = createCalendarMessage(
     "calendar_001",
     OWNER_PUBLIC_KEY,
     {
       type: "calendar_created",
     },
-    { dates: [{ start: calendarStart, end: calendarEnd }] },
+    { dates: [{ start: calendar001Start, end: calendar001End }] },
   );
 
   const event001 = createEventMessage(
@@ -28,8 +33,8 @@ export const seedTestMessages = (): ApplicationMessage[] => {
       type: "event_created",
     },
     {
-      startDate: "2025-03-05T10:00:00Z",
-      endDate: "2025-03-05T11:00:00Z",
+      startDate: event001Start,
+      endDate: event001End,
     },
   );
 
@@ -50,10 +55,34 @@ export const seedTestMessages = (): ApplicationMessage[] => {
     {
       availability: [
         {
-          start: new Date("2025-03-01T09:00:00Z"),
-          end: new Date("2025-03-01T17:00:00Z"),
+          start: event001Start,
+          end: event001End,
         },
       ],
+    },
+  );
+
+  const bookingRequest001 = createBookingRequestMessage(
+    "booking_request_001",
+    OWNER_PUBLIC_KEY,
+    "resource",
+    "resource_001",
+    "event_001",
+    {
+      start: bookingRequest001Start,
+      end: bookingRequest001End,
+    },
+  );
+
+  const bookingRequest002 = createBookingRequestMessage(
+    "booking_request_002",
+    OWNER_PUBLIC_KEY,
+    "space",
+    "space_001",
+    "event_001",
+    {
+      start: bookingRequest002Start,
+      end: bookingRequest002End,
     },
   );
 
@@ -62,49 +91,7 @@ export const seedTestMessages = (): ApplicationMessage[] => {
     event001,
     resource001,
     space001,
-    {
-      meta: {
-        operationId: "booking_request_001",
-        author: OWNER_PUBLIC_KEY,
-        stream: STREAM,
-        logPath: LOG_PATH,
-      },
-      event: "application",
-      data: {
-        type: "booking_requested",
-        data: {
-          type: "resource",
-          resourceId: "resource_001",
-          eventId: "event_001",
-          message: "Hi, can I haz your projector?",
-          timeSpan: {
-            start: new Date("2025-03-01T09:00:00Z"),
-            end: new Date("2025-03-01T17:00:00Z"),
-          },
-        },
-      },
-    },
-    {
-      meta: {
-        operationId: "booking_request_002",
-        author: OWNER_PUBLIC_KEY,
-        stream: STREAM,
-        logPath: LOG_PATH,
-      },
-      event: "application",
-      data: {
-        type: "booking_requested",
-        data: {
-          type: "space",
-          resourceId: "space_001",
-          eventId: "event_001",
-          message: "Hi, can I haz your Conference Room A?",
-          timeSpan: {
-            start: new Date("2025-03-01T09:00:00Z"),
-            end: new Date("2025-03-01T17:00:00Z"),
-          },
-        },
-      },
-    },
+    bookingRequest001,
+    bookingRequest002,
   ];
 };

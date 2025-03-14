@@ -1,7 +1,7 @@
 import { db } from "$lib/db";
-import { auth, publish, resources } from ".";
+import { auth, bookings, publish, resources } from ".";
 import { promiseResult } from "$lib/promiseMap";
-import { isSubTimespan } from "$lib/utils/utils";
+import { TimeSpanClass } from "$lib/timeSpan";
 
 /**
  * Queries
@@ -17,22 +17,21 @@ export function findMany(calendarId: Hash): Promise<Resource[]> {
 /**
  * Get all calendar resources that are owned by the passed public key.
  */
-export function findByOwner(
+export async function findByOwner(
   calendarId: Hash,
   ownerId: PublicKey,
 ): Promise<OwnerResourceEnriched[]> {
-  return db.transaction("r", db.resources, db.bookingRequests, async () => {
-    const myResources: OwnerResourceEnriched[] = await db.resources
-      .where({ calendarId, ownerId })
-      .toArray();
-    // For each space check if there are any pending bookings
-    for (const resource of myResources) {
-      resource.pendingBookingRequests = await db.bookingRequests
-        .where({ resourceId: resource.id })
-        .toArray();
-    }
-    return myResources;
-  });
+  const myResources: OwnerResourceEnriched[] = await db.resources
+    .where({ calendarId, ownerId })
+    .toArray();
+  // For each space check if there are any pending bookings
+  for (const resource of myResources) {
+    resource.pendingBookingRequests = await bookings.findAll({
+      resourceId: resource.id,
+      status: "pending",
+    });
+  }
+  return myResources;
 }
 
 /**
@@ -45,9 +44,9 @@ export function findById(id: Hash): Promise<Resource | undefined> {
 /**
  * Returns a collection of resources which have _some_ availability in the timespan provided.
  */
-export function findByTimespan(
+export function findByTimeSpan(
   calendarId: Hash,
-  timeSpan: TimeSpan,
+  timeSpan: TimeSpanClass,
 ): Promise<Resource[]> {
   return db.resources
     .where({ calendarId })
@@ -56,7 +55,8 @@ export function findByTimespan(
         return true;
       }
       for (const span of resource.availability) {
-        const isSub = isSubTimespan(timeSpan.start, timeSpan.end, span);
+        const availabilityTimeSpan = new TimeSpanClass(span);
+        const isSub = timeSpan.contains(availabilityTimeSpan);
         if (isSub) {
           return true;
         }
@@ -71,17 +71,14 @@ export function findByTimespan(
  */
 export function findBookings(
   resourceId: Hash,
-  timeSpan: TimeSpan,
+  timeSpan: TimeSpanClass,
 ): Promise<BookingRequest[]> {
-  return db.bookingRequests
-    .where({
-      resourceId: resourceId,
-      status: "accepted",
-    })
-    .filter((booking) => {
-      return isSubTimespan(timeSpan.start, timeSpan.end, booking.timeSpan);
-    })
-    .toArray();
+  return bookings.findAll({
+    resourceId,
+    from: timeSpan.startDate(),
+    to: timeSpan.endDate(),
+    status: "accepted",
+  });
 }
 
 export async function isOwner(
@@ -228,14 +225,15 @@ function onResourceUpdated(data: ResourceUpdated["data"]): Promise<void> {
   return db.transaction("rw", db.resources, db.bookingRequests, async () => {
     // Update `isavalid` field of all booking requests associated with this space.
     await db.bookingRequests.where({ resourceId }).modify((request) => {
+      const requestTimeSpan = new TimeSpanClass(request.timeSpan);
       if (resourceAvailability == "always") {
         request.isValid = "true";
         return;
       }
       request.isValid = "false";
       for (const span of resourceAvailability) {
-        const isValid = isSubTimespan(span.start, span.end, request.timeSpan);
-
+        const availabilityTimeSpan = new TimeSpanClass(span);
+        const isValid = availabilityTimeSpan.contains(requestTimeSpan);
         if (isValid) {
           request.isValid = "true";
           break;

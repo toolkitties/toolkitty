@@ -67,29 +67,29 @@ export async function seedData() {
 
   // Create some events (associated with our first calendar)
   const eventFields = createEventFields({
-    startDate: startDate.toISOString(),
-    endDate: endDate.toISOString(),
+    startDate: startDate,
+    endDate: endDate,
   });
   const eventId = await events.create(calendarId, eventFields);
   await events.create(
     calendarId,
     createEventFields({
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
+      startDate: startDate,
+      endDate: endDate,
     }),
   );
   await events.create(
     calendarId,
     createEventFields({
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
+      startDate: startDate,
+      endDate: endDate,
     }),
   );
   await events.create(
     calendarId,
     createEventFields({
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
+      startDate: startDate,
+      endDate: endDate,
     }),
   );
 
