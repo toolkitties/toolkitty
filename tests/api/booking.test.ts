@@ -2,7 +2,12 @@
 import "fake-indexeddb/auto";
 
 import { processMessage } from "$lib/processor";
-import { CALENDAR_ID, LOG_PATH, OWNER_PUBLIC_KEY, STREAM } from "$lib/utils/faker";
+import {
+  CALENDAR_ID,
+  LOG_PATH,
+  OWNER_PUBLIC_KEY,
+  STREAM,
+} from "$lib/utils/faker";
 import { seedTestMessages } from "./data";
 import { bookings } from "$lib/api";
 import { beforeEach, expect, test } from "vitest";

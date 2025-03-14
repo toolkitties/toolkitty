@@ -1,11 +1,19 @@
 // This is required to mock the indexedDB API and must be imported at the top of the module.
 import "fake-indexeddb/auto";
 
-import { CALENDAR_ID, LOG_PATH, OWNER_PUBLIC_KEY, STREAM } from "$lib/utils/faker";
+import {
+  CALENDAR_ID,
+  LOG_PATH,
+  OWNER_PUBLIC_KEY,
+  STREAM,
+} from "$lib/utils/faker";
 import { beforeAll, describe, expect, test } from "vitest";
 import { mockIPC } from "@tauri-apps/api/mocks";
 import { dependencies } from "$lib/api";
-import { createCalendarFields, createEventFields } from "../../src/lib/utils/faker";
+import {
+  createCalendarFields,
+  createEventFields,
+} from "../../src/lib/utils/faker";
 
 beforeAll(async () => {
   mockIPC((cmd) => {
