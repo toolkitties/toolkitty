@@ -45,8 +45,9 @@ export function findById(
  */
 export function findAll(
   calendarId: Hash,
-  filter: BookingQueryFilter,
+  bookingQueryFilter: BookingQueryFilter = {},
 ): Promise<BookingRequestEnriched[]> {
+  const { from, to, ...filter } = bookingQueryFilter;
   return db.transaction(
     "r",
     db.bookingRequests,
@@ -54,12 +55,24 @@ export function findAll(
     db.spaces,
     db.events,
     async () => {
-      const bookingRequests: BookingRequestEnriched[] = await db.bookingRequests
-        .where({
-          calendarId,
-          ...filter,
-        })
-        .toArray();
+      const query = db.bookingRequests.where({
+        calendarId,
+        ...filter,
+      });
+
+      if (from) {
+        query.filter((request) => {
+          return request.timeSpan.start >= from;
+        });
+      }
+
+      if (to) {
+        query.filter((request) => {
+          return request.timeSpan.start <= to;
+        });
+      }
+
+      const bookingRequests: BookingRequestEnriched[] = await query.toArray();
 
       for (const bookingRequest of bookingRequests) {
         // Add resource or space to booking.
