@@ -10,8 +10,8 @@ const linkSchema = z.object({
 const imageSchema = z.string();
 
 const timeSpanSchema = z.object({
-  start: z.date(),
-  end: z.date(),
+  start: z.string(),
+  end: z.string(),
 });
 
 const availabilitySchema = z
@@ -112,7 +112,9 @@ export const calendarSchema = z.object({
   dates: z
     .array(timeSpanSchema)
     .min(1, "A start date is required")
-    .default([{ start: new Date(), end: new Date() }]),
+    .default(() => [
+      { start: new Date().toISOString(), end: new Date().toISOString() },
+    ]),
   calendarInstructions: z.string().nullable(),
   spacePageText: z.string().nullable(),
   resourcePageText: z.string().nullable(),
