@@ -17,22 +17,21 @@ export function findMany(calendarId: Hash): Promise<Space[]> {
 /**
  * Get all calendar spaces that are owned by the passed public key.
  */
-export function findByOwner(
+export async function findByOwner(
   calendarId: Hash,
   ownerId: PublicKey,
 ): Promise<OwnerSpaceEnriched[]> {
-  return db.transaction("r", db.spaces, db.bookingRequests, async () => {
-    const mySpaces: OwnerSpaceEnriched[] = await db.spaces
-      .where({ calendarId, ownerId })
-      .toArray();
-    // For each space check if there are any pending bookings
-    for (const space of mySpaces) {
-      space.pendingBookingRequests = await db.bookingRequests
-        .where({ resourceId: space.id })
-        .toArray();
-    }
-    return mySpaces;
-  });
+  const mySpaces: OwnerSpaceEnriched[] = await db.spaces
+    .where({ calendarId, ownerId })
+    .toArray();
+  // For each space check if there are any pending bookings
+  for (const space of mySpaces) {
+    space.pendingBookingRequests = await bookings.findAll({
+      resourceId: space.id,
+      status: "pending",
+    });
+  }
+  return mySpaces;
 }
 
 /**
