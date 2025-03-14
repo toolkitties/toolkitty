@@ -1,8 +1,6 @@
-// import { events } from '$lib/api/data'
-
 import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
-import { isSubTimespan } from "$lib/utils";
+import { isSubTimespan } from "$lib/utils/utils";
 import { auth, events, publish } from ".";
 
 /**

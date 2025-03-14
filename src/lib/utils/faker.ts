@@ -1,8 +1,23 @@
-import { en_GB, de, fr, Faker, base, en } from "@faker-js/faker";
-import { LOG_PATH, STREAM } from "./data";
+import { en_GB, Faker, base, en } from "@faker-js/faker";
+
+export const STREAM_ROOT_HASH =
+  "8e7a6675a5fd2f89d7893200d39698b466fe98e3fbee30b7911c97c30bf65315";
+export const CALENDAR_ID =
+  "40aa69dd28f17d1adb55d560b6295c399e2fc03daa49ae015b4f5ccb151b8ac5";
+export const OWNER_PUBLIC_KEY =
+  "94dae7402bdf9049e96e1a02bbae97baa714c498324538f81c7b4ba0a94bf4d7";
+export const NON_OWNER_PUBLIC_KEY =
+  "24dae7402bdf9049e96e1a02bbae97baa714c498324538f81c7b4ba0a94bf4d7";
+export const LOG_PATH = "calendar";
+
+export const STREAM = {
+  id: CALENDAR_ID,
+  rootHash: STREAM_ROOT_HASH,
+  owner: OWNER_PUBLIC_KEY,
+};
 
 const faker = new Faker({
-  locale: [en_GB, de, fr, en, base],
+  locale: [en_GB, en, base],
 });
 
 export function createCalendarMessage(
@@ -39,7 +54,7 @@ export function createCalendarMessage(
       },
   fieldsOverwrites?: Partial<CalendarFields>,
 ): ApplicationMessage {
-  const calendarFields = { ...createCalendarFields(), ...fieldsOverwrites };
+  const calendarFields = createCalendarFields(fieldsOverwrites);
 
   let data;
   if (headerData.type == "calendar_created") {
@@ -103,7 +118,7 @@ export function createEventMessage(
     | { type: "event_deleted"; eventId: string },
   fieldsOverwrites?: Partial<EventFields>,
 ): ApplicationMessage {
-  const eventFields = { ...createEventFields(), ...fieldsOverwrites };
+  const eventFields = createEventFields(fieldsOverwrites);
 
   let data;
   if (headerData.type == "event_created") {
@@ -167,7 +182,7 @@ export function createResourceMessage(
     | { type: "resource_deleted"; resourceId: string },
   fieldsOverwrites?: Partial<ResourceFields>,
 ): ApplicationMessage {
-  const resourceFields = { ...createResourceFields(), ...fieldsOverwrites };
+  const resourceFields = createResourceFields(fieldsOverwrites);
 
   let data;
   if (headerData.type == "resource_created") {
@@ -231,7 +246,7 @@ export function createSpaceMessage(
     | { type: "space_deleted"; spaceId: string },
   fieldsOverwrites?: Partial<SpaceFields>,
 ): ApplicationMessage {
-  const spaceFields = { ...createSpaceFields(), ...fieldsOverwrites };
+  const spaceFields = createSpaceFields(fieldsOverwrites);
 
   let data;
   if (headerData.type == "space_created") {
@@ -267,32 +282,36 @@ export function createSpaceMessage(
   };
 }
 
-export function createCalendarFields(): CalendarFields {
+export function createCalendarFields(
+  fieldsOverwrites: Partial<CalendarFields> = {},
+): CalendarFields {
   const start = faker.date.soon();
   const end = faker.date.soon({ refDate: start });
 
-  return {
-    name: faker.company.buzzPhrase(),
+  const fields = {
+    name: faker.music.songName(),
     dates: [{ start, end }],
     calendarInstructions: null,
     spacePageText: null,
     resourcePageText: null,
   };
+
+  return { ...fields, ...fieldsOverwrites };
 }
 
-export function createEventFields(): EventFields {
+export function createEventFields(
+  fieldsOverwrites: Partial<EventFields> = {},
+): EventFields {
   const start = faker.date.soon();
   const end = faker.date.soon({ refDate: start });
 
-  return {
-    name: faker.company.buzzPhrase(),
+  const fields = {
+    name: faker.music.songName(),
     description: faker.commerce.productDescription(),
     spaceRequest: faker.string.hexadecimal({ length: 32 }),
     startDate: start.toISOString(),
     endDate: end.toISOString(),
-    resourcesRequests: faker.helpers.multiple(() =>
-      faker.string.hexadecimal({ length: 32 }),
-    ),
+    resourcesRequests: ["/toolkitty-mascot.png"],
     links: [
       {
         type: faker.helpers.arrayElement(["custom", "ticket"]),
@@ -300,36 +319,43 @@ export function createEventFields(): EventFields {
         url: faker.internet.url(),
       },
     ],
-    images: faker.helpers.multiple(() =>
-      faker.string.hexadecimal({ length: 32 }),
-    ),
+    images: ["/toolkitty-mascot.png"],
   };
+  return { ...fields, ...fieldsOverwrites };
 }
 
-export function createSpaceFields(): SpaceFields {
-  return {
-    name: faker.commerce.department(),
-    location: {
+export function createSpaceFields(
+  fieldsOverwrites: Partial<SpaceFields> = {},
+): SpaceFields {
+  let location: PhysicalLocation | GPSLocation | VirtualLocation;
+  if (fieldsOverwrites.location?.type == "physical") {
+    location = {
       type: "physical",
       street: faker.location.street(),
       city: faker.location.city(),
       state: faker.location.state(),
       zip: faker.location.zipCode(),
       country: faker.location.country(),
-    },
-    messageForRequesters: faker.lorem.sentences(),
+    };
+  } else if (fieldsOverwrites.location?.type == "gps") {
+    location = { type: "gps", lat: "0", lon: "0" };
+  } else {
+    location = { type: "virtual", link: "" };
+  }
+  const fields = {
+    name: faker.location.street(),
+    location: location,
+    messageForRequesters: faker.word.words(8),
     capacity: faker.number.int({ max: 1000 }),
-    accessibility: faker.lorem.sentences(),
-    description: faker.lorem.sentences(),
+    accessibility: faker.lorem.sentences(1),
+    description: faker.lorem.sentences(4),
     contact: faker.internet.email(),
     link: {
       type: faker.helpers.arrayElement(["custom", "ticket"]),
       title: faker.company.name(),
       url: faker.internet.url(),
     },
-    images: faker.helpers.multiple(() =>
-      faker.string.hexadecimal({ length: 32 }),
-    ),
+    images: ["/toolkitty-mascot.png"],
     availability: faker.helpers.multiple(() => {
       const start = faker.date.future();
       const end = faker.date.future({ refDate: start });
@@ -340,11 +366,14 @@ export function createSpaceFields(): SpaceFields {
     }),
     multiBookable: false,
   };
+  return { ...fields, ...fieldsOverwrites };
 }
 
-export function createResourceFields(): ResourceFields {
-  return {
-    name: faker.commerce.department(),
+export function createResourceFields(
+  fieldsOverwrites: Partial<ResourceFields> = {},
+): ResourceFields {
+  const fields = {
+    name: faker.commerce.product(),
     description: faker.lorem.sentences(),
     contact: faker.internet.email(),
     link: {
@@ -352,9 +381,7 @@ export function createResourceFields(): ResourceFields {
       title: faker.company.name(),
       url: faker.internet.url(),
     },
-    images: faker.helpers.multiple(() =>
-      faker.string.hexadecimal({ length: 32 }),
-    ),
+    images: ["/toolkitty-mascot.png"],
     availability: faker.helpers.multiple(() => {
       const start = faker.date.future();
       const end = faker.date.future({ refDate: start });
@@ -365,4 +392,5 @@ export function createResourceFields(): ResourceFields {
     }),
     multiBookable: false,
   };
+  return { ...fields, ...fieldsOverwrites };
 }

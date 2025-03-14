@@ -2,7 +2,7 @@ import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
 import { toast } from "$lib/toast.svelte";
 import { publish, identity, spaces, resources, bookings } from ".";
-import { isSubTimespan } from "$lib/utils";
+import { isSubTimespan } from "$lib/utils/utils";
 /**
  * Queries
  */
