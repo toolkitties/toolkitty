@@ -119,7 +119,7 @@
   </fieldset>
 
   <label for="space-name">Space Name*</label>
-  <input type="text" name="space-name" />
+  <input type="text" name="space-name" bind:value={$form.name} />
   {#if $form.location.type === "physical"}
     <fieldset>
       <legend>Address</legend>
