@@ -77,7 +77,7 @@ export function findBookings(
     resourceId,
     from: timeSpan.start,
     to: timeSpan.end,
-    status: "accepted"
+    status: "accepted",
   });
 }
 

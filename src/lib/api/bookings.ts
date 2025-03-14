@@ -95,7 +95,7 @@ export function findAll(
 export function findPending(
   calendarId: Hash,
 ): Promise<BookingRequestEnriched[]> {
-  return bookings.findAll({calendarId, status: "pending" });
+  return bookings.findAll({ calendarId, status: "pending" });
 }
 
 /**
