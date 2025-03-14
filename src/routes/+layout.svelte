@@ -30,7 +30,7 @@
           await data.seedData();
 
           // invalidate all data in load functions so we get latest data that just seeded.
-          invalidateAll();
+          await invalidateAll();
 
           // set session storage so we don't reseed database on HMR or page reload.
           sessionStorage.setItem("seeded_db", "true");
