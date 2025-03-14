@@ -152,8 +152,8 @@
           "space",
           "Requesting access to space",
           {
-            start: new Date(payload.startDate),
-            end: new Date(payload.endDate),
+            start: payload.startDate,
+            end: payload.endDate,
           },
         );
         spaceBookingId = spaceBooking; // store to update event with booking id
@@ -168,8 +168,8 @@
             "resource",
             "Requesting resource",
             {
-              start: new Date(payload.startDate),
-              end: new Date(payload.endDate),
+              start: payload.startDate,
+              end: payload.endDate,
             },
           );
           resourceBookingIds.push(resourceBooking);
