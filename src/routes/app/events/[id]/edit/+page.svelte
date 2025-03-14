@@ -15,4 +15,6 @@
   spaces={data.spacesList}
   resourcesList={data.resourcesList}
 />
-<Delete id={data.form.data.id!} name={data.form.data.name} type="event" />
+{#if data.userRole === "admin"}
+  <Delete id={data.form.data.id!} name={data.form.data.name} type="event" />
+{/if}

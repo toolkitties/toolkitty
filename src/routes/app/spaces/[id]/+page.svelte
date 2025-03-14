@@ -10,4 +10,6 @@
 <br />
 <br />
 <pre>{JSON.stringify(data.space)}</pre>
-<a href="/app/spaces/{data.space!.id}/edit">Edit</a>
+{#if data.userRole == "admin"}
+  <a href="/app/spaces/{data.space!.id}/edit">Edit</a>
+{/if}
