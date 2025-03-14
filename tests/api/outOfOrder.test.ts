@@ -4,14 +4,13 @@ import { processMessage } from "$lib/processor";
 import {
   CALENDAR_ID,
   createBookingRequestMessage,
+  createBookingResponseMessage,
   createCalendarMessage,
   createEventMessage,
   createResourceMessage,
   createSpaceMessage,
-  LOG_PATH,
   NON_OWNER_PUBLIC_KEY,
   OWNER_PUBLIC_KEY,
-  STREAM,
 } from "$lib/utils/faker";
 import { mockIPC } from "@tauri-apps/api/mocks";
 import { beforeAll, expect, test } from "vitest";
@@ -121,21 +120,12 @@ const bookingRequest002 = createBookingRequestMessage(
   "event_001",
 );
 
-const bookingResponse001: ApplicationMessage = {
-  meta: {
-    operationId: "booking_request_response_001",
-    author: OWNER_PUBLIC_KEY,
-    stream: STREAM,
-    logPath: LOG_PATH,
-  },
-  event: "application",
-  data: {
-    type: "booking_request_accepted",
-    data: {
-      requestId: "booking_request_001",
-    },
-  },
-};
+const bookingResponse001 = createBookingResponseMessage(
+  "booking_response=001",
+  OWNER_PUBLIC_KEY,
+  "booking_request_002",
+  "accept",
+);
 
 let messages: ApplicationMessage[] = [
   createCalendar,

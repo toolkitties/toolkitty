@@ -290,8 +290,8 @@ export function createBookingRequestMessage(
   eventId: Hash,
   timeSpan?: TimeSpan,
 ): ApplicationMessage {
-  const start = faker.date.future().toISOString();
-  const end = faker.date.future({ refDate: start }).toISOString();
+  const start = faker.date.future();
+  const end = faker.date.future({ refDate: start });
   const fakeTimeSpan = {
     start,
     end,
@@ -312,6 +312,29 @@ export function createBookingRequestMessage(
         eventId,
         message: faker.word.words({ count: 8 }),
         timeSpan: timeSpan ? timeSpan : fakeTimeSpan,
+      },
+    },
+  };
+}
+
+export function createBookingResponseMessage(
+  id: Hash,
+  author: PublicKey,
+  requestId: Hash,
+  response: "reject" | "accept",
+): ApplicationMessage {
+  return {
+    meta: {
+      operationId: id,
+      author,
+      stream: STREAM,
+      logPath: LOG_PATH,
+    },
+    event: "application",
+    data: {
+      type: response == "accept" ? "booking_request_accepted" : "booking_request_rejected",
+      data: {
+        requestId,
       },
     },
   };
