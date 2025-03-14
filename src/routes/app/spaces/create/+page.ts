@@ -2,6 +2,7 @@ import { spaceSchema } from "$lib/schemas";
 import type { PageLoad } from "./$types";
 import { defaults } from "sveltekit-superforms";
 import { zod } from "sveltekit-superforms/adapters";
+import { calendars } from "$lib/api";
 
 export const load: PageLoad = async ({ parent }) => {
   const parentData = await parent();
@@ -9,5 +10,8 @@ export const load: PageLoad = async ({ parent }) => {
 
   const form = defaults(zod(spaceSchema));
 
-  return { form, activeCalendarId };
+  const calendar = await calendars.findOne(activeCalendarId!);
+  const calendarDates = { start: calendar!.startDate!, end: calendar!.endDate };
+
+  return { form, activeCalendarId, calendarDates };
 };

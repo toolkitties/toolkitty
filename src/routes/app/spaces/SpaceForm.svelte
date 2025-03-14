@@ -2,7 +2,7 @@
   import type { SuperValidated, Infer } from "sveltekit-superforms";
   import type { SpaceSchema } from "$lib/schemas";
   import AvailabilitySetter from "$lib/components/AvailabilitySetter.svelte";
-  import { spaces } from "$lib/api";
+  import { calendars, spaces } from "$lib/api";
   import { goto } from "$app/navigation";
   import { toast } from "$lib/toast.svelte";
   import { spaceSchema } from "$lib/schemas";
@@ -13,8 +13,12 @@
   let {
     data,
     activeCalendarId,
-  }: { data: SuperValidated<Infer<SpaceSchema>>; activeCalendarId: Hash } =
-    $props();
+    calendarDates,
+  }: {
+    data: SuperValidated<Infer<SpaceSchema>>;
+    activeCalendarId: Hash;
+    calendarDates: TimeSpan;
+  } = $props();
 
   let alwaysAvailable = $state(false);
 
@@ -297,7 +301,10 @@
     <p>This space is always available</p>
   {/if}
   {#if !alwaysAvailable}
-    <AvailabilitySetter bind:availability={$form.availability as TimeSpan[]} />
+    <AvailabilitySetter
+      bind:availability={$form.availability as TimeSpan[]}
+      {calendarDates}
+    />
   {/if}
 
   <label>

@@ -4,15 +4,16 @@
 
   let {
     availability = $bindable(),
+    calendarDates,
   }: {
     availability: TimeSpan[];
+    calendarDates: TimeSpan;
   } = $props();
 
   // used to color available dates in the calendar
   let availableDates: { date: string }[] = $state(
     availability.length > 0
       ? availability.map((a) => {
-          console.log(typeof a.start);
           return { date: a.start.split("T")[0] };
         })
       : [],
@@ -29,6 +30,16 @@
           }))
         : [],
     );
+
+  // Disable any calendar dates not inside calendar dates
+  const isDateInRange = (date: DateValue, range: TimeSpan) => {
+    const dateStr = date.toString();
+    const startDate = range.start.split("T")[0];
+    const endDate = range.end ? range.end.split("T")[0] : undefined;
+
+    // If there is no end date, allow all dates after the start date
+    return dateStr >= startDate && (endDate ? dateStr <= endDate : true);
+  };
 
   let currentlySelectedDate: DateValue | undefined = $state(undefined);
 
@@ -127,6 +138,9 @@
                     class={"data-[outside-month]:pointer-events-none data-[outside-month]:text-gray-300 data-[selected]:bg-black data-[selected]:text-white " +
                       (availableDates.some((d) => d.date === date.toString())
                         ? "bg-green-500 text-white"
+                        : "") +
+                      (!isDateInRange(date, calendarDates)
+                        ? " pointer-events-none text-gray-400"
                         : "")}
                     aria-label={"Date " +
                       date.toString() +
@@ -138,7 +152,7 @@
                     )
                       ? "Availability set"
                       : "No availability"}
-                    aria-disabled={"outside-month" in date}
+                    aria-disabled={!isDateInRange(date, calendarDates)}
                   />
                 </Calendar.Cell>
               {/each}
