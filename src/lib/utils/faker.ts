@@ -288,8 +288,14 @@ export function createBookingRequestMessage(
   type: "space" | "resource",
   resourceId: Hash,
   eventId: Hash,
-  timeSpan: TimeSpan,
+  timeSpan?: TimeSpan,
 ): ApplicationMessage {
+  const start = faker.date.future().toISOString();
+  const end = faker.date.future({ refDate: start }).toISOString();
+  const fakeTimeSpan = {
+    start,
+    end,
+  };
   return {
     meta: {
       operationId: id,
@@ -305,7 +311,7 @@ export function createBookingRequestMessage(
         resourceId,
         eventId,
         message: faker.word.words({ count: 8 }),
-        timeSpan,
+        timeSpan: timeSpan ? timeSpan : fakeTimeSpan,
       },
     },
   };
