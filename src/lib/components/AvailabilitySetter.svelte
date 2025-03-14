@@ -9,11 +9,26 @@
   } = $props();
 
   // used to color available dates in the calendar
-  let availableDates: { date: string }[] = $state([]);
+  let availableDates: { date: string }[] = $state(
+    availability.length > 0
+      ? availability.map((a) => {
+          console.log(typeof a.start);
+          return { date: a.start.split("T")[0] };
+        })
+      : [],
+  );
 
   // Keep a list of availability as destructured strings to show to user
   let availabilityList: { date: string; startTime: string; endTime: string }[] =
-    $state([]);
+    $state(
+      availability.length > 0
+        ? availability.map((a) => ({
+            date: a.start.split("T")[0],
+            startTime: a.start.split(" ")[0],
+            endTime: a.end ? a.end.split(" ")[0] : "",
+          }))
+        : [],
+    );
 
   let currentlySelectedDate: DateValue | undefined = $state(undefined);
 
@@ -59,8 +74,8 @@
 
     // Convert to TimeSpan for form submission
     const newTimeSpan: TimeSpan = {
-      start: new Date(selectedDate + "T" + startTime),
-      end: new Date(selectedDate + "T" + endTime),
+      start: selectedDate + "T" + startTime,
+      end: selectedDate + "T" + endTime,
     };
 
     availability = [...availability, newTimeSpan];

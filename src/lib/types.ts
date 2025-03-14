@@ -316,8 +316,8 @@ type Link = {
 };
 
 type TimeSpan = {
-  start: Date;
-  end: Date | undefined;
+  start: string;
+  end: string | undefined;
 };
 
 type BookedTimeSpan = TimeSpan & {
