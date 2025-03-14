@@ -2,13 +2,8 @@
 import "fake-indexeddb/auto";
 
 import { processMessage } from "$lib/processor";
-import {
-  CALENDAR_ID,
-  LOG_PATH,
-  OWNER_PUBLIC_KEY,
-  STREAM,
-  seedTestMessages,
-} from "./data";
+import { CALENDAR_ID, LOG_PATH, OWNER_PUBLIC_KEY, STREAM } from "$lib/utils/faker";
+import { seedTestMessages } from "./data";
 import { bookings, resources, spaces } from "$lib/api";
 import { beforeAll, describe, expect, test } from "vitest";
 import { mockIPC } from "@tauri-apps/api/mocks";

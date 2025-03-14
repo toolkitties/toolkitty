@@ -1,7 +1,7 @@
 import { db } from "$lib/db";
 import { auth, publish, resources } from ".";
 import { promiseResult } from "$lib/promiseMap";
-import { isSubTimespan } from "$lib/utils";
+import { isSubTimespan } from "$lib/utils/utils";
 
 /**
  * Queries
