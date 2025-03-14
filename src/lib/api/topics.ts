@@ -64,7 +64,7 @@ async function replay(topic: Topic) {
   await invoke("replay", { topic });
 }
 
-const debouncedReplay = debounce(replay, 1000);
+const debouncedReplay = debounce(replay, 200);
 
 // We want to debounce calls to replay as they can happen quite often and we want to avoid
 // unnecessary work. When replays are triggered in quick succession the same operations can be
