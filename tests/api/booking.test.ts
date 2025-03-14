@@ -35,13 +35,15 @@ beforeEach(async () => {
 
 test("booking queries", async () => {
   // Test data contains two pending bookings.
-  let bookingRequests = await bookings.findAll(CALENDAR_ID, {
+  let bookingRequests = await bookings.findAll({
+    calendarId: CALENDAR_ID,
     status: "pending",
   });
   expect(bookingRequests).lengthOf(2);
 
   // And there are no accepted bookings.
-  bookingRequests = await bookings.findAll(CALENDAR_ID, {
+  bookingRequests = await bookings.findAll({
+    calendarId: CALENDAR_ID,
     status: "accepted",
   });
   expect(bookingRequests).lengthOf(0);
@@ -65,13 +67,15 @@ test("booking queries", async () => {
   await processMessage(requestResponse);
 
   // One pending booking request now for event001.
-  bookingRequests = await bookings.findAll(CALENDAR_ID, {
+  bookingRequests = await bookings.findAll({
+    calendarId: CALENDAR_ID,
     status: "pending",
   });
   expect(bookingRequests).lengthOf(1);
 
   // One accepted booking for event001.
-  bookingRequests = await bookings.findAll(CALENDAR_ID, {
+  bookingRequests = await bookings.findAll({
+    calendarId: CALENDAR_ID,
     status: "accepted",
   });
   expect(bookingRequests).lengthOf(1);
@@ -96,25 +100,29 @@ test("booking queries", async () => {
   await processMessage(requestResponse);
 
   // No pending requests.
-  bookingRequests = await bookings.findAll(CALENDAR_ID, {
+  bookingRequests = await bookings.findAll({
+    calendarId: CALENDAR_ID,
     status: "pending",
   });
   expect(bookingRequests).lengthOf(0);
 
   // Two accepted booking requests.
-  bookingRequests = await bookings.findAll(CALENDAR_ID, {
+  bookingRequests = await bookings.findAll({
+    calendarId: CALENDAR_ID,
     status: "accepted",
   });
   expect(bookingRequests).lengthOf(2);
 
   // One space booking.
-  bookingRequests = await bookings.findAll(CALENDAR_ID, {
+  bookingRequests = await bookings.findAll({
+    calendarId: CALENDAR_ID,
     resourceType: "space",
   });
   expect(bookingRequests).lengthOf(1);
 
   // One resource booking.
-  bookingRequests = await bookings.findAll(CALENDAR_ID, {
+  bookingRequests = await bookings.findAll({
+    calendarId: CALENDAR_ID,
     eventId: "event_001",
     resourceType: "resource",
   });
@@ -150,56 +158,67 @@ test("booking queries", async () => {
   await processMessage(bookingRequest003);
 
   // Find all pending and accepted.
-  bookingRequests = await bookings.findAll(CALENDAR_ID, {
+  bookingRequests = await bookings.findAll({
+    calendarId: CALENDAR_ID,
     status: "pending",
   });
   expect(bookingRequests).lengthOf(1);
-  bookingRequests = await bookings.findAll(CALENDAR_ID, {
+  bookingRequests = await bookings.findAll({
+    calendarId: CALENDAR_ID,
     status: "accepted",
   });
   expect(bookingRequests).lengthOf(2);
 
   // Find all by requester.
-  bookingRequests = await bookings.findAll(CALENDAR_ID, {
+  bookingRequests = await bookings.findAll({
+    calendarId: CALENDAR_ID,
     requester: OWNER_PUBLIC_KEY,
   });
   expect(bookingRequests).lengthOf(2);
-  bookingRequests = await bookings.findAll(CALENDAR_ID, {
+  bookingRequests = await bookings.findAll({
+    calendarId: CALENDAR_ID,
     requester: NON_OWNER_PUBLIC_KEY,
   });
   expect(bookingRequests).lengthOf(1);
 
   // Find all by event.
-  bookingRequests = await bookings.findAll(CALENDAR_ID, {
+  bookingRequests = await bookings.findAll({
+    calendarId: CALENDAR_ID,
     eventId: "event_001",
   });
   expect(bookingRequests).lengthOf(2);
-  bookingRequests = await bookings.findAll(CALENDAR_ID, {
+  bookingRequests = await bookings.findAll({
+    calendarId: CALENDAR_ID,
     eventId: "event_002",
   });
   expect(bookingRequests).lengthOf(1);
 
   // Find all by timespan.
-  bookingRequests = await bookings.findAll(CALENDAR_ID, {
+  bookingRequests = await bookings.findAll({
+    calendarId: CALENDAR_ID,
     from: event001Start,
   });
   expect(bookingRequests).lengthOf(3);
-  bookingRequests = await bookings.findAll(CALENDAR_ID, {
+  bookingRequests = await bookings.findAll({
+    calendarId: CALENDAR_ID,
     from: event001End,
   });
   expect(bookingRequests).lengthOf(0);
-  bookingRequests = await bookings.findAll(CALENDAR_ID, {
+  bookingRequests = await bookings.findAll({
+    calendarId: CALENDAR_ID,
     from: event001Start,
     to: bookingRequest001End,
   });
   expect(bookingRequests).lengthOf(2);
 
   // Find all by resource type.
-  bookingRequests = await bookings.findAll(CALENDAR_ID, {
+  bookingRequests = await bookings.findAll({
+    calendarId: CALENDAR_ID,
     resourceType: "space",
   });
   expect(bookingRequests).lengthOf(1);
-  bookingRequests = await bookings.findAll(CALENDAR_ID, {
+  bookingRequests = await bookings.findAll({
+    calendarId: CALENDAR_ID,
     resourceType: "resource",
   });
   expect(bookingRequests).lengthOf(2);

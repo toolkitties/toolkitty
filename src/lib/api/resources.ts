@@ -1,5 +1,5 @@
 import { db } from "$lib/db";
-import { auth, publish, resources } from ".";
+import { auth, bookings, publish, resources } from ".";
 import { promiseResult } from "$lib/promiseMap";
 import { isSubTimespan } from "$lib/utils/utils";
 
@@ -73,15 +73,12 @@ export function findBookings(
   resourceId: Hash,
   timeSpan: TimeSpan,
 ): Promise<BookingRequest[]> {
-  return db.bookingRequests
-    .where({
-      resourceId: resourceId,
-      status: "accepted",
-    })
-    .filter((booking) => {
-      return isSubTimespan(timeSpan.start, timeSpan.end, booking.timeSpan);
-    })
-    .toArray();
+  return bookings.findAll({
+    resourceId,
+    from: timeSpan.start,
+    to: timeSpan.end,
+    status: "accepted"
+  });
 }
 
 export async function isOwner(

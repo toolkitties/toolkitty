@@ -44,7 +44,6 @@ export function findById(
  * Search the database for any booking requests matching the passed filter object.
  */
 export function findAll(
-  calendarId: Hash,
   bookingQueryFilter: BookingQueryFilter = {},
 ): Promise<BookingRequestEnriched[]> {
   const { from, to, ...filter } = bookingQueryFilter;
@@ -55,10 +54,7 @@ export function findAll(
     db.spaces,
     db.events,
     async () => {
-      const query = db.bookingRequests.where({
-        calendarId,
-        ...filter,
-      });
+      const query = db.bookingRequests.where(filter);
 
       if (from) {
         query.filter((request) => {
@@ -99,7 +95,7 @@ export function findAll(
 export function findPending(
   calendarId: Hash,
 ): Promise<BookingRequestEnriched[]> {
-  return bookings.findAll(calendarId, { status: "pending" });
+  return bookings.findAll({calendarId, status: "pending" });
 }
 
 /**
