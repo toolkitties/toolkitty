@@ -25,6 +25,8 @@
   let selectedSpace: Space | null = $state<Space | null>(null);
   let availableResources: Resource[] = $state([]);
   let selectedResources: Resource[] = $state([]);
+  let selectedResourceBookings: TimeSpan[] = $state([]);
+
   async function handleSpaceSelection(space: Space) {
     selectedSpace = space;
     if (selectedSpace.availability == "always") {
@@ -35,6 +37,17 @@
         activeCalendarId,
         spaceTimeSpan,
       );
+      for (const resource of availableResources) {
+        const bookings = await resources.findBookings(
+          resource.id,
+          spaceTimeSpan,
+        );
+        if (bookings.length > 0) {
+          for (const booking of bookings) {
+            selectedResourceBookings.push(booking.timeSpan);
+          }
+        }
+      }
     }
   }
 
@@ -313,6 +326,7 @@
           required
           aria-invalid={$errors.startDate ? "true" : undefined}
           bind:value={$form.startDate}
+          onchange={recalculateResourceAvailbaility}
         />
         {#if $errors.startDate}<span class="form-error"
             >{$errors.startDate}</span
@@ -325,6 +339,7 @@
           required
           aria-invalid={$errors.endDate ? "true" : undefined}
           bind:value={$form.endDate}
+          onchange={recalculateResourceAvailbaility}
         />
         {#if $errors.endDate}<span class="form-error">{$errors.endDate}</span
           >{/if}
