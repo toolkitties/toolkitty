@@ -44,9 +44,9 @@ export function findById(
  * Search the database for any booking requests matching the passed filter object.
  */
 export function findAll(
-  calendarId: Hash,
-  filter: BookingQueryFilter,
+  bookingQueryFilter: BookingQueryFilter = {},
 ): Promise<BookingRequestEnriched[]> {
+  const { from, to, ...filter } = bookingQueryFilter;
   return db.transaction(
     "r",
     db.bookingRequests,
@@ -54,12 +54,21 @@ export function findAll(
     db.spaces,
     db.events,
     async () => {
-      const bookingRequests: BookingRequestEnriched[] = await db.bookingRequests
-        .where({
-          calendarId,
-          ...filter,
-        })
-        .toArray();
+      const query = db.bookingRequests.where(filter);
+
+      if (from) {
+        query.filter((request) => {
+          return request.timeSpan.start >= from;
+        });
+      }
+
+      if (to) {
+        query.filter((request) => {
+          return request.timeSpan.start <= to;
+        });
+      }
+
+      const bookingRequests: BookingRequestEnriched[] = await query.toArray();
 
       for (const bookingRequest of bookingRequests) {
         // Add resource or space to booking.
@@ -85,40 +94,8 @@ export function findAll(
  */
 export function findPending(
   calendarId: Hash,
-  filter: BookingQueryFilter,
 ): Promise<BookingRequestEnriched[]> {
-  return db.transaction(
-    "r",
-    db.bookingRequests,
-    db.resources,
-    db.spaces,
-    db.events,
-    async () => {
-      const bookingRequests: BookingRequestEnriched[] = await db.bookingRequests
-        .where({
-          calendarId,
-          status: "pending",
-          ...filter,
-        })
-        .toArray();
-
-      for (const bookingRequest of bookingRequests) {
-        // Add resource or space to booking.
-        if (bookingRequest.resourceType == "space") {
-          bookingRequest.space = await db.spaces.get(bookingRequest.resourceId);
-        } else {
-          bookingRequest.resource = await db.resources.get(
-            bookingRequest.resourceId,
-          );
-        }
-
-        // Add event to booking.
-        bookingRequest.event = await db.events.get(bookingRequest.eventId);
-      }
-
-      return bookingRequests;
-    },
-  );
+  return bookings.findAll({ calendarId, status: "pending" });
 }
 
 /**
