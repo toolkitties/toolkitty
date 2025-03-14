@@ -47,8 +47,8 @@ const physicalLocationSchema = z.object({
 
 const gpsLocationSchema = z.object({
   type: z.literal("gps"),
-  lat: z.string(),
-  lon: z.string(),
+  lat: z.number(),
+  lon: z.number(),
 });
 
 const virtualLocationSchema = z.object({

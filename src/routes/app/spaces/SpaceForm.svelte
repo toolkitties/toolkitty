@@ -71,8 +71,8 @@
     } else if ($form.location.type === "gps") {
       $form.location = {
         type: "gps",
-        lat: "",
-        lon: "",
+        lat: 0,
+        lon: 0,
       };
     } else if ($form.location.type === "virtual") {
       $form.location = {

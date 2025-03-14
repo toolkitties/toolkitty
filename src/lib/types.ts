@@ -336,8 +336,8 @@ type PhysicalLocation = {
 
 type GPSLocation = {
   type: "gps";
-  lat: string;
-  lon: string;
+  lat: number;
+  lon: number;
 };
 
 type VirtualLocation = {
