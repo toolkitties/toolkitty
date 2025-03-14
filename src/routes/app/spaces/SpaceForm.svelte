@@ -2,7 +2,7 @@
   import type { SuperValidated, Infer } from "sveltekit-superforms";
   import type { SpaceSchema } from "$lib/schemas";
   import AvailabilitySetter from "$lib/components/AvailabilitySetter.svelte";
-  import { calendars, spaces } from "$lib/api";
+  import { spaces } from "$lib/api";
   import { goto } from "$app/navigation";
   import { toast } from "$lib/toast.svelte";
   import { spaceSchema } from "$lib/schemas";
