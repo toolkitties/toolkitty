@@ -336,7 +336,6 @@
         <input
           type="datetime-local"
           name="startDate"
-          required
           aria-invalid={$errors.startDate ? "true" : undefined}
           bind:value={$form.publicStartDate}
         />
@@ -348,7 +347,6 @@
         <input
           type="datetime-local"
           name="publicEndDate"
-          required
           aria-invalid={$errors.publicEndDate ? "true" : undefined}
           bind:value={$form.publicEndDate}
         />
