@@ -7,8 +7,8 @@ import {
   LOG_PATH,
   OWNER_PUBLIC_KEY,
   STREAM,
-  seedTestMessages,
-} from "./data";
+} from "$lib/utils/faker";
+import { seedTestMessages } from "./data";
 import { bookings } from "$lib/api";
 import { beforeEach, expect, test } from "vitest";
 import { mockIPC } from "@tauri-apps/api/mocks";

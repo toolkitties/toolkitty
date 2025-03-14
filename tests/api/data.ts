@@ -3,23 +3,10 @@ import {
   createEventMessage,
   createResourceMessage,
   createSpaceMessage,
-} from "./faker";
-
-export const STREAM_ROOT_HASH =
-  "8e7a6675a5fd2f89d7893200d39698b466fe98e3fbee30b7911c97c30bf65315";
-export const CALENDAR_ID =
-  "40aa69dd28f17d1adb55d560b6295c399e2fc03daa49ae015b4f5ccb151b8ac5";
-export const OWNER_PUBLIC_KEY =
-  "94dae7402bdf9049e96e1a02bbae97baa714c498324538f81c7b4ba0a94bf4d7";
-export const NON_OWNER_PUBLIC_KEY =
-  "24dae7402bdf9049e96e1a02bbae97baa714c498324538f81c7b4ba0a94bf4d7";
-export const LOG_PATH = "calendar";
-
-export const STREAM = {
-  id: CALENDAR_ID,
-  rootHash: STREAM_ROOT_HASH,
-  owner: OWNER_PUBLIC_KEY,
-};
+  LOG_PATH,
+  OWNER_PUBLIC_KEY,
+  STREAM,
+} from "$lib/utils/faker";
 
 export const seedTestMessages = (): ApplicationMessage[] => {
   const calendarStart = new Date("2025-03-01T09:00:00Z");
