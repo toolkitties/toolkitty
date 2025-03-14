@@ -208,9 +208,9 @@
       type="text"
       name="address-virtual"
       aria-invalid={$errors.location ? "true" : undefined}
-      bind:value={$form.location}
+      bind:value={$form.location.link}
     />
-    {#if $errors.location}<span class="form-error">{$errors.location}</span
+    {#if $errors.location}<span class="form-error">{$errors.location.link}</span
       >{/if}
   {/if}
 
