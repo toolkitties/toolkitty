@@ -315,10 +315,10 @@ export function createCalendarFields(
   fieldsOverwrites: Partial<CalendarFields> = {},
 ): CalendarFields {
   const start = faker.date.soon().toISOString();
-  const end = faker.date.soon({ refDate: start }).toISOString();
+  const end = faker.date.soon({ days: 8, refDate: start }).toISOString();
 
   const fields = {
-    name: faker.music.songName(),
+    name: faker.music.album(),
     dates: [{ start, end }],
     calendarInstructions: null,
     spacePageText: null,
@@ -334,8 +334,11 @@ export function createEventFields(
   const start = faker.date.soon();
   const end = faker.date.soon({ refDate: start });
 
+  const nameFirst = faker.animal.petName();
+  const nameSecond = faker.food.adjective();
+  const nameThird = faker.food.fruit();
   const fields = {
-    name: faker.music.songName(),
+    name: `${nameFirst} ${nameSecond} ${nameThird}`,
     description: faker.commerce.productDescription(),
     spaceRequest: faker.string.hexadecimal({ length: 32 }),
     startDate: start.toISOString(),
@@ -367,9 +370,13 @@ export function createSpaceFields(
       country: faker.location.country(),
     };
   } else if (fieldsOverwrites.location?.type == "gps") {
-    location = { type: "gps", lat: 0, lon: 0 };
+    location = {
+      type: "gps",
+      lat: faker.location.latitude(),
+      lon: faker.location.longitude(),
+    };
   } else {
-    location = { type: "virtual", link: "" };
+    location = { type: "virtual", link: faker.internet.url() };
   }
   const fields = {
     name: faker.location.street(),
@@ -386,8 +393,8 @@ export function createSpaceFields(
     },
     images: ["/toolkitty-mascot.png"],
     availability: faker.helpers.multiple(() => {
-      const start = faker.date.future().toISOString();
-      const end = faker.date.future({ refDate: start }).toISOString();
+      const start = faker.date.soon({ days: 7 }).toISOString();
+      const end = faker.date.soon({ refDate: start }).toISOString();
       return {
         start,
         end,
@@ -412,8 +419,8 @@ export function createResourceFields(
     },
     images: ["/toolkitty-mascot.png"],
     availability: faker.helpers.multiple(() => {
-      const start = faker.date.future().toISOString();
-      const end = faker.date.future({ refDate: start }).toISOString();
+      const start = faker.date.soon().toISOString();
+      const end = faker.date.soon({ refDate: start }).toISOString();
       return {
         start,
         end,

@@ -6,6 +6,7 @@ import {
   createSpaceFields,
 } from "./faker";
 import { setActiveCalendar } from "$lib/api/calendars";
+import { faker } from "@faker-js/faker";
 
 export async function seedData() {
   // Create one calendar.
@@ -66,49 +67,28 @@ export async function seedData() {
   );
 
   // Create some events (associated with our first calendar)
+  let eventStartDate = faker.date.soon({ days: 6, refDate: startDate });
+  let eventEndDate = faker.date.soon({ refDate: eventStartDate });
   const eventFields = createEventFields({
-    startDate: startDate,
-    endDate: endDate,
+    startDate: eventStartDate.toISOString(),
+    endDate: eventEndDate.toISOString(),
   });
   const eventId = await events.create(calendarId, eventFields);
-  await events.create(
-    calendarId,
-    createEventFields({
-      startDate: startDate,
-      endDate: endDate,
-    }),
-  );
-  await events.create(
-    calendarId,
-    createEventFields({
-      startDate: startDate,
-      endDate: endDate,
-    }),
-  );
-  await events.create(
-    calendarId,
-    createEventFields({
-      startDate: startDate,
-      endDate: endDate,
-    }),
-  );
-
   // Make resource request for first event.
   const resourceRequestId = await bookings.request(
     eventId,
     resourceId,
     "resource",
     "please can i haz?",
-    { start: startDate, end: endDate },
+    { start: eventStartDate.toISOString(), end: eventEndDate.toISOString() },
   );
-
   // Make space request for first event.
   const spaceRequestId = await bookings.request(
     eventId,
     spaceId,
     "space",
     "please can i haz?",
-    { start: startDate, end: endDate },
+    { start: eventStartDate.toISOString(), end: eventEndDate.toISOString() },
   );
 
   // Update first event with resource and space requests.
@@ -118,6 +98,36 @@ export async function seedData() {
       ...eventFields,
       resourcesRequests: [resourceRequestId],
       spaceRequest: spaceRequestId,
+    }),
+  );
+
+  eventStartDate = faker.date.soon({ days: 6, refDate: startDate });
+  eventEndDate = faker.date.soon({ refDate: eventStartDate });
+  await events.create(
+    calendarId,
+    createEventFields({
+      startDate: eventStartDate.toISOString(),
+      endDate: eventEndDate.toISOString(),
+    }),
+  );
+  
+  eventStartDate = faker.date.soon({ days: 6, refDate: startDate });
+  eventEndDate = faker.date.soon({ refDate: eventStartDate });
+  await events.create(
+    calendarId,
+    createEventFields({
+      startDate: eventStartDate.toISOString(),
+      endDate: eventEndDate.toISOString(),
+    }),
+  );
+
+  eventStartDate = faker.date.soon({ days: 6, refDate: startDate });
+  eventEndDate = faker.date.soon({ refDate: eventStartDate });
+  await events.create(
+    calendarId,
+    createEventFields({
+      startDate: eventStartDate.toISOString(),
+      endDate: eventEndDate.toISOString(),
     }),
   );
 }
