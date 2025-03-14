@@ -1,12 +1,12 @@
 import type { PageLoad } from "./$types";
-import { events, spaces, resources } from "$lib/api";
+import { events, spaces, resources, users } from "$lib/api";
 import { eventSchema } from "$lib/schemas";
 import { error } from "@sveltejs/kit";
 import { superValidate } from "sveltekit-superforms";
 import { zod } from "sveltekit-superforms/adapters";
 import { db } from "$lib/db";
 
-export const load: PageLoad = async ({ params }) => {
+export const load: PageLoad = async ({ params, parent }) => {
   const eventId = params.id;
   const event = await events.findById(eventId);
 
@@ -29,11 +29,17 @@ export const load: PageLoad = async ({ params }) => {
   const spacesList = await spaces.findByTimespan(calendarId!, timeSpan);
   const resourcesList = await resources.findByTimespan(calendarId!, timeSpan);
 
+  const parentData = await parent();
+  const { activeCalendarId, publicKey } = parentData;
+  const user = await users.get(activeCalendarId!, publicKey);
+  const userRole = user!.role;
+
   return {
     title: "edit space",
     form,
     calendarId,
     spacesList,
     resourcesList,
+    userRole,
   };
 };

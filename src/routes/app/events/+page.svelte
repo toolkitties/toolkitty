@@ -4,13 +4,15 @@
   import CalendarSelector from "$lib/components/CalendarSelector.svelte";
 
   let { data }: PageProps = $props();
-
   let contributeButtonOpen = $state(false);
 </script>
 
 <CalendarSelector />
 <h1 class="font-pixel">{data.title}</h1>
-<a href="/app/calendars/{data.activeCalendarId}/edit">Edit Calendar</a>
+<a href="/app/calendars/create">Create Calendar</a>
+{#if data.userRole === "admin"}
+  <a href="/app/calendars/{data.activeCalendarId}/edit">Edit Calendar</a>
+{/if}
 <a href="/app/events/create">Create event</a>
 
 {#each data.eventsList as event (event.id)}

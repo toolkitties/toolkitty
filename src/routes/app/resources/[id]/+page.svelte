@@ -8,4 +8,6 @@
 <br />
 <br />
 <pre>{JSON.stringify(data.resource)}</pre>
-<a href="/app/resources/{data.resource!.id}/edit">Edit</a>
+{#if data.userRole == "admin"}
+  <a href="/app/resources/{data.resource!.id}/edit">Edit</a>
+{/if}

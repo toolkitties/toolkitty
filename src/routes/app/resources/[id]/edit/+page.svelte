@@ -7,4 +7,6 @@
 </script>
 
 <ResourceForm data={data.form} activeCalendarId={data.activeCalendarId!} />
-<Delete id={data.form.data.id!} name={data.form.data.name} type="resource" />
+{#if data.userRole === "admin"}
+  <Delete id={data.form.data.id!} name={data.form.data.name} type="resource" />
+{/if}
