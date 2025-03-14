@@ -34,15 +34,17 @@ beforeEach(async () => {
 });
 
 test("booking queries", async () => {
-  // Test seed data contains two booking requests from the calendar owner.
-  let pendingBookings = await bookings.findPending(CALENDAR_ID, {
-    eventId: "event_001",
+  // Test data contains two pending bookings.
+  let bookingRequests = await bookings.findAll(CALENDAR_ID, {
+    status: "pending",
   });
-  expect(pendingBookings).lengthOf(2);
-  pendingBookings = await bookings.findPending(CALENDAR_ID, {
-    requester: OWNER_PUBLIC_KEY,
+  expect(bookingRequests).lengthOf(2);
+
+  // And there are no accepted bookings.
+  bookingRequests = await bookings.findAll(CALENDAR_ID, {
+    status: "accepted",
   });
-  expect(pendingBookings).lengthOf(2);
+  expect(bookingRequests).lengthOf(0);
 
   // Accept these booking requests.
   let requestResponse: ApplicationMessage = {
@@ -63,16 +65,16 @@ test("booking queries", async () => {
   await processMessage(requestResponse);
 
   // One pending booking request now for event001.
-  pendingBookings = await bookings.findPending(CALENDAR_ID, {
-    eventId: "event_001",
+  bookingRequests = await bookings.findAll(CALENDAR_ID, {
+    status: "pending",
   });
-  expect(pendingBookings).lengthOf(1);
+  expect(bookingRequests).lengthOf(1);
 
-  // One pending booking request for OWNER_PUBLIC_KEY
-  pendingBookings = await bookings.findPending(CALENDAR_ID, {
-    requester: OWNER_PUBLIC_KEY,
+  // One accepted booking for event001.
+  bookingRequests = await bookings.findAll(CALENDAR_ID, {
+    status: "accepted",
   });
-  expect(pendingBookings).lengthOf(1);
+  expect(bookingRequests).lengthOf(1);
 
   // Accept the second booking request.
   requestResponse = {
@@ -93,35 +95,32 @@ test("booking queries", async () => {
 
   await processMessage(requestResponse);
 
-  // No pending requests for event001
-  pendingBookings = await bookings.findPending(CALENDAR_ID, {
-    eventId: "event_001",
+  // No pending requests.
+  bookingRequests = await bookings.findAll(CALENDAR_ID, {
+    status: "pending",
   });
-  expect(pendingBookings).lengthOf(0);
+  expect(bookingRequests).lengthOf(0);
 
-  // No pending requests for OWNER_PUBLIC_KEY
-  pendingBookings = await bookings.findPending(CALENDAR_ID, {
-    requester: OWNER_PUBLIC_KEY,
-  });
-  expect(pendingBookings).lengthOf(0);
-
-  let bookingRequests = await bookings.findAll(CALENDAR_ID, {
-    eventId: "event_001",
+  // Two accepted booking requests.
+  bookingRequests = await bookings.findAll(CALENDAR_ID, {
+    status: "accepted",
   });
   expect(bookingRequests).lengthOf(2);
+
+  // One space booking.
   bookingRequests = await bookings.findAll(CALENDAR_ID, {
-    eventId: "event_001",
     resourceType: "space",
   });
   expect(bookingRequests).lengthOf(1);
+
+  // One resource booking.
   bookingRequests = await bookings.findAll(CALENDAR_ID, {
     eventId: "event_001",
     resourceType: "resource",
   });
   expect(bookingRequests).lengthOf(1);
 
-  // Publish two more requests from a non calendar owner.
-
+  // Publish another request from a non calendar owner to a new event.
   const event002Start = event001Start;
   const event002End = event001End;
   const event002 = createEventMessage(

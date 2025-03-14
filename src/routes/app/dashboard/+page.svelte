@@ -8,7 +8,7 @@
   let { data }: PageProps = $props();
 
   let pendingRequests = liveQuery(() =>
-    bookings.findPending(data.activeCalendarId!, {}),
+    bookings.findPending(data.activeCalendarId!),
   );
 
   let mySpaces = liveQuery(() =>

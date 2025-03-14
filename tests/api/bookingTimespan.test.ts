@@ -27,7 +27,7 @@ beforeAll(async () => {
 
 describe("maintain booking request timespan validity", () => {
   test("space with update and delete", async () => {
-    let pendingBookings = await bookings.findPending(CALENDAR_ID, {
+    let pendingBookings = await bookings.findAll(CALENDAR_ID, {
       eventId: "event_001",
       resourceType: "space",
     });
@@ -59,7 +59,7 @@ describe("maintain booking request timespan validity", () => {
 
     await processMessage(invalidRequest);
 
-    pendingBookings = await bookings.findPending(CALENDAR_ID, {
+    pendingBookings = await bookings.findAll(CALENDAR_ID, {
       eventId: "event_001",
       resourceType: "space",
       isValid: "true",
@@ -96,7 +96,7 @@ describe("maintain booking request timespan validity", () => {
 
     await processMessage(updateSpace);
 
-    pendingBookings = await bookings.findPending(CALENDAR_ID, {
+    pendingBookings = await bookings.findAll(CALENDAR_ID, {
       eventId: "event_001",
       resourceType: "space",
       isValid: "true",
@@ -125,7 +125,7 @@ describe("maintain booking request timespan validity", () => {
 
     await processMessage(updateSpace);
 
-    pendingBookings = await bookings.findPending(CALENDAR_ID, {
+    pendingBookings = await bookings.findAll(CALENDAR_ID, {
       eventId: "event_001",
       resourceType: "space",
       isValid: "true",
@@ -150,7 +150,7 @@ describe("maintain booking request timespan validity", () => {
 
     await processMessage(deleteSpace);
 
-    pendingBookings = await bookings.findPending(CALENDAR_ID, {
+    pendingBookings = await bookings.findAll(CALENDAR_ID, {
       eventId: "event_001",
       resourceType: "space",
       isValid: "true",
@@ -159,7 +159,7 @@ describe("maintain booking request timespan validity", () => {
   });
 
   test("resource with update and delete", async () => {
-    let pendingBookings = await bookings.findPending(CALENDAR_ID, {
+    let pendingBookings = await bookings.findAll(CALENDAR_ID, {
       eventId: "event_001",
       resourceType: "resource",
     });
@@ -191,7 +191,7 @@ describe("maintain booking request timespan validity", () => {
 
     await processMessage(invalidRequest);
 
-    pendingBookings = await bookings.findPending(CALENDAR_ID, {
+    pendingBookings = await bookings.findAll(CALENDAR_ID, {
       eventId: "event_001",
       resourceType: "resource",
       isValid: "true",
@@ -228,7 +228,7 @@ describe("maintain booking request timespan validity", () => {
 
     await processMessage(updateResource);
 
-    pendingBookings = await bookings.findPending(CALENDAR_ID, {
+    pendingBookings = await bookings.findAll(CALENDAR_ID, {
       eventId: "event_001",
       resourceType: "resource",
       isValid: "true",
@@ -257,7 +257,7 @@ describe("maintain booking request timespan validity", () => {
 
     await processMessage(updateResource);
 
-    pendingBookings = await bookings.findPending(CALENDAR_ID, {
+    pendingBookings = await bookings.findAll(CALENDAR_ID, {
       eventId: "event_001",
       resourceType: "resource",
       isValid: "true",
@@ -282,7 +282,7 @@ describe("maintain booking request timespan validity", () => {
 
     await processMessage(deleteSpace);
 
-    pendingBookings = await bookings.findPending(CALENDAR_ID, {
+    pendingBookings = await bookings.findAll(CALENDAR_ID, {
       eventId: "event_001",
       resourceType: "resource",
       isValid: "true",

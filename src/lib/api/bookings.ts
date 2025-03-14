@@ -98,40 +98,8 @@ export function findAll(
  */
 export function findPending(
   calendarId: Hash,
-  filter: BookingQueryFilter,
 ): Promise<BookingRequestEnriched[]> {
-  return db.transaction(
-    "r",
-    db.bookingRequests,
-    db.resources,
-    db.spaces,
-    db.events,
-    async () => {
-      const bookingRequests: BookingRequestEnriched[] = await db.bookingRequests
-        .where({
-          calendarId,
-          status: "pending",
-          ...filter,
-        })
-        .toArray();
-
-      for (const bookingRequest of bookingRequests) {
-        // Add resource or space to booking.
-        if (bookingRequest.resourceType == "space") {
-          bookingRequest.space = await db.spaces.get(bookingRequest.resourceId);
-        } else {
-          bookingRequest.resource = await db.resources.get(
-            bookingRequest.resourceId,
-          );
-        }
-
-        // Add event to booking.
-        bookingRequest.event = await db.events.get(bookingRequest.eventId);
-      }
-
-      return bookingRequests;
-    },
-  );
+  return bookings.findAll(calendarId, { status: "pending" });
 }
 
 /**
