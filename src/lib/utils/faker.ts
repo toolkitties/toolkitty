@@ -282,6 +282,35 @@ export function createSpaceMessage(
   };
 }
 
+export function createBookingRequestMessage(
+  id: Hash,
+  author: PublicKey,
+  type: "space" | "resource",
+  resourceId: Hash,
+  eventId: Hash,
+  timeSpan: TimeSpan,
+): ApplicationMessage {
+  return {
+    meta: {
+      operationId: id,
+      author,
+      stream: STREAM,
+      logPath: LOG_PATH,
+    },
+    event: "application",
+    data: {
+      type: "booking_requested",
+      data: {
+        type,
+        resourceId,
+        eventId,
+        message: faker.word.words({ count: 8 }),
+        timeSpan,
+      },
+    },
+  };
+}
+
 export function createCalendarFields(
   fieldsOverwrites: Partial<CalendarFields> = {},
 ): CalendarFields {

@@ -1,5 +1,5 @@
 import { db } from "$lib/db";
-import { auth, publish, spaces } from ".";
+import { auth, bookings, publish, spaces } from ".";
 import { promiseResult } from "$lib/promiseMap";
 import { isSubTimespan } from "$lib/utils/utils";
 
@@ -17,22 +17,21 @@ export function findMany(calendarId: Hash): Promise<Space[]> {
 /**
  * Get all calendar spaces that are owned by the passed public key.
  */
-export function findByOwner(
+export async function findByOwner(
   calendarId: Hash,
   ownerId: PublicKey,
 ): Promise<OwnerSpaceEnriched[]> {
-  return db.transaction("r", db.spaces, db.bookingRequests, async () => {
-    const mySpaces: OwnerSpaceEnriched[] = await db.spaces
-      .where({ calendarId, ownerId })
-      .toArray();
-    // For each space check if there are any pending bookings
-    for (const space of mySpaces) {
-      space.pendingBookingRequests = await db.bookingRequests
-        .where({ resourceId: space.id })
-        .toArray();
-    }
-    return mySpaces;
-  });
+  const mySpaces: OwnerSpaceEnriched[] = await db.spaces
+    .where({ calendarId, ownerId })
+    .toArray();
+  // For each space check if there are any pending bookings
+  for (const space of mySpaces) {
+    space.pendingBookingRequests = await bookings.findAll({
+      resourceId: space.id,
+      status: "pending",
+    });
+  }
+  return mySpaces;
 }
 
 /**
@@ -73,15 +72,12 @@ export function findBookings(
   spaceId: Hash,
   timeSpan: TimeSpan,
 ): Promise<BookingRequest[]> {
-  return db.bookingRequests
-    .where({
-      resourceId: spaceId,
-      status: "accepted",
-    })
-    .filter((booking) => {
-      return isSubTimespan(timeSpan.start, timeSpan.end, booking.timeSpan);
-    })
-    .toArray();
+  return bookings.findAll({
+    resourceId: spaceId,
+    from: timeSpan.start,
+    to: timeSpan.end,
+    status: "accepted",
+  });
 }
 
 export async function isOwner(
