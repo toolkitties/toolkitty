@@ -745,8 +745,8 @@ type BookingQueryFilter = {
   resourceOwner?: PublicKey;
   isValid?: "true" | "false";
   status?: BookingRequestStatus;
-  from?: Date,
-  to?: Date,
+  from?: Date;
+  to?: Date;
 };
 
 type CalendarEventEnriched = {
