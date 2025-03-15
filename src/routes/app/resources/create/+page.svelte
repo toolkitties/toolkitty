@@ -1,5 +1,8 @@
 <script lang="ts">
-  import ResourceForm from "$lib/components/ResourceForm.svelte";
+  import type { PageProps } from "./$types";
+  import ResourceForm from "../ResourceForm.svelte";
+
+  let { data }: PageProps = $props();
 </script>
 
 <br />
@@ -11,4 +14,8 @@
   offer. Once published, event organisers will be able to book your resources
   for their events. Manage your requests in your dashboard.
 </p>
-<ResourceForm formType="create" />
+<ResourceForm
+  data={data.form}
+  activeCalendarId={data.activeCalendarId!}
+  calendarDates={data.calendarDates}
+/>

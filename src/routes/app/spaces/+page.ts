@@ -1,8 +1,9 @@
 import type { PageLoad } from "./$types";
-import { calendars, spaces } from "$lib/api";
+import { spaces } from "$lib/api";
 
-export const load: PageLoad = async () => {
-  const activeCalendarId = await calendars.getActiveCalendarId();
+export const load: PageLoad = async ({ parent }) => {
+  const parentData = await parent();
+  const { activeCalendarId } = parentData;
   const spacesList = await spaces.findMany(activeCalendarId!);
 
   return { title: "spaces", activeCalendarId, spacesList };

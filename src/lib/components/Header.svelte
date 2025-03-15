@@ -1,5 +1,4 @@
 <script>
-  import { onMount } from "svelte";
   import Back from "./Back.svelte";
   import { calendars } from "$lib/api";
 

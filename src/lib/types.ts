@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * ദ്ദി(˵ •̀ ᴗ - ˵ ) ✧
  * Core Types
@@ -149,31 +150,78 @@ type StreamMessageMeta = {
  * backend state change.
  */
 
-type SystemMessage = CalendarSelected | SubscribedToCalendar | NetworkEvent;
-
-/**
- * We have selected a new calendar and are ready to receive it's events.
- */
-type CalendarSelected = {
-  event: "calendar_selected";
-  calendarId: string;
-};
+type SystemMessage = SubscribedToTopic | NetworkEvent;
 
 /**
  * We have successfully subscribed to (but not necessarily selected) a new calendar.
  */
-type SubscribedToCalendar = {
-  event: "subscribed_to_calendar";
-  calendarId: string;
-};
+type SubscribedToTopic =
+  | {
+      event: "subscribed_to_persisted_topic";
+      topic: string;
+    }
+  | { event: "subscribed_to_ephemeral_topic"; topic: string };
 
 /**
  * We received a network system event from the backend node.
  */
 type NetworkEvent = {
   event: "network_event";
-  // @TODO: define all possible system events we will receive on the frontend
-  data: any;
+  data:
+    | GossipJoined
+    | GossipLeft
+    | GossipNeighborUp
+    | GossipNeighborDown
+    | PeerDiscovered
+    | SyncStarted
+    | SyncDone
+    | SyncFailed;
+};
+
+type GossipJoined = {
+  type: "gossip_joined";
+  topic_id: string;
+  peers: string[];
+};
+
+type GossipLeft = {
+  type: "gossip_left";
+  topic_id: string;
+};
+
+type GossipNeighborUp = {
+  type: "gossip_neighbor_up";
+  topic_id: string;
+  peer: string;
+};
+
+type GossipNeighborDown = {
+  type: "gossip_neighbor_down";
+  topic_id: string;
+  peer: string;
+};
+
+type PeerDiscovered = {
+  type: "peer_discovered";
+  peer: string;
+};
+
+type SyncStarted = {
+  type: "sync_start";
+  topic: string;
+  peer: string;
+};
+
+type SyncDone = {
+  type: "sync_done";
+  topic: string;
+  peer: string;
+};
+
+type SyncFailed = {
+  type: "sync_failed";
+  topic: string;
+  peer: string;
 };
 
 /**
@@ -268,8 +316,8 @@ type Link = {
 };
 
 type TimeSpan = {
-  start: Date;
-  end: Date;
+  start: string;
+  end: string | undefined;
 };
 
 type BookedTimeSpan = TimeSpan & {
@@ -278,6 +326,7 @@ type BookedTimeSpan = TimeSpan & {
 
 // TODO: TBC from open street maps
 type PhysicalLocation = {
+  type: "physical";
   street: string;
   city: string;
   state: string;
@@ -286,27 +335,30 @@ type PhysicalLocation = {
 };
 
 type GPSLocation = {
-  lat: string;
-  lon: string;
+  type: "gps";
+  lat: number;
+  lon: number;
 };
 
-type VirtualLocation = string;
+type VirtualLocation = {
+  type: "virtual";
+  link: string;
+};
 
 type Answer = "accept" | "reject";
 
 type CalendarFields = {
   name: string;
   dates: TimeSpan[];
-  festivalInstructions: string | null;
+  calendarInstructions: string | null;
   spacePageText: string | null;
   resourcePageText: string | null;
 };
 
 type SpaceFields = {
-  type: "physical" | "gps" | "virtual";
   name: string;
   location: PhysicalLocation | GPSLocation | VirtualLocation;
-  capacity: number;
+  capacity: number | null;
   accessibility: string;
   description: string;
   contact: string;
@@ -330,12 +382,12 @@ type ResourceFields = {
 type EventFields = {
   name: string;
   description: string;
-  location?: SpaceRequestId; // ref to a space
-  startDate: Date; // allocated time of a space
-  endDate: Date; // allocated time of a space
-  publicStartDate?: Date; // public facing
-  publicEndDate?: Date; // public facing
-  resources: ReservationRequestId[];
+  spaceRequest?: SpaceRequestId;
+  startDate: string;
+  endDate: string;
+  publicStartDate?: string;
+  publicEndDate?: string;
+  resourcesRequests?: ReservationRequestId[];
   links: Link[];
   images: Image[];
 };
@@ -585,19 +637,23 @@ type User = {
   calendarId: CalendarId;
   // @TODO: currently this value is undefined for calendar creators: https://github.com/toolkitties/toolkitty/issues/177
   name?: string;
-  role?: Role
+  role?: Role;
 };
 
 type Calendar = {
   id: Hash;
   ownerId: PublicKey;
-  name: string;
+  stream: Stream;
+  // This field is optional as when a calendar is first created when the user subscribes to a
+  // calendar stream, but at this point we haven't received the "calendar_created" message yet.
+  // The `name` field becomes set when this message is received.
+  name?: string;
   // TODO: Should we support non-consecutive dates? It could be arrays of TimeSpan? The
   // `CalendarCreated` fields contains a TimeSpan[] so it's possible to encode non-consecutive
   // dates there, but we don't need to support that in the app right now. Here I've left it as a
   // single time range.
-  startDate: Date;
-  endDate?: Date;
+  startDate?: string;
+  endDate?: string;
 };
 
 type AccessRequest = {
@@ -636,6 +692,8 @@ type Resource = {
   booked: BookedTimeSpan[];
 } & ResourceFields;
 
+type BookingRequestStatus = "accepted" | "rejected" | "pending";
+
 type BookingRequest = {
   id: Hash;
   calendarId: Hash;
@@ -646,6 +704,8 @@ type BookingRequest = {
   resourceOwner: PublicKey;
   message: string;
   timeSpan: TimeSpan;
+  isValid: "true" | "false";
+  status: BookingRequestStatus;
 };
 
 type ResourceType = "space" | "resource";
@@ -667,6 +727,8 @@ type Settings = {
 /**
  * (´ヮ´)八(*ﾟ▽ﾟ*)
  * Application Data
+ *
+ * Enriched data used for the UI
  */
 
 type CalendarId = Hash;
@@ -677,8 +739,45 @@ type RequestEvent = {
 };
 
 type BookingQueryFilter = {
+  calendarId?: CalendarId;
   eventId?: Hash;
+  resourceId?: Hash;
   requester?: PublicKey;
   resourceType?: ResourceType;
   resourceOwner?: PublicKey;
+  isValid?: "true" | "false";
+  status?: BookingRequestStatus;
+  from?: Date;
+  to?: Date;
 };
+
+type CalendarEventEnriched = {
+  space?: {
+    bookingRequest?: BookingRequest;
+  } & Space;
+  resources?: CalendarEventResourceEnriched[];
+} & CalendarEvent;
+
+type CalendarEventResourceEnriched = {
+  bookingRequest?: BookingRequest;
+} & Resource;
+
+type BookingRequestEnriched = {
+  event?: CalendarEvent;
+  resource?: Resource;
+  space?: Space;
+} & BookingRequest;
+
+type AccessRequestStatus =
+  | "not requested yet"
+  | "pending"
+  | "accepted"
+  | "rejected";
+
+type OwnerResourceEnriched = {
+  pendingBookingRequests?: BookingRequest[];
+} & Resource;
+
+type OwnerSpaceEnriched = {
+  pendingBookingRequests?: BookingRequest[];
+} & Space;

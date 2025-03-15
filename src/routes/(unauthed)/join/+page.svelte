@@ -1,11 +1,8 @@
 <script lang="ts">
   import { PinInput, Toggle } from "bits-ui";
   import { goto } from "$app/navigation";
-  import { topics } from "$lib/api";
   import { toast } from "$lib/toast.svelte";
   import { resolveInviteCode } from "$lib/api/access";
-  import { TopicFactory } from "$lib/api/topics";
-  import { calendars } from "$lib/api";
 
   let value = $state("");
   let show = $state(true);
@@ -22,13 +19,9 @@
 
     if (!value) return;
 
-    let calendar;
     try {
       searching = true;
-      calendar = await resolveInviteCode(value);
-      const topic = new TopicFactory(calendar.stream.id);
-      await topics.subscribe(topic.calendarInbox());
-      await calendars.setActiveCalendar(calendar.stream.id);
+      await resolveInviteCode(value);
     } catch (err) {
       searching = false;
       console.error(err);
@@ -36,7 +29,7 @@
       return;
     }
 
-    goto(`/request`);
+    goto(`#/request`);
   }
 </script>
 
@@ -53,7 +46,7 @@
       onComplete={join}
     >
       {#snippet children({ cells })}
-        {#each cells as cell}
+        {#each cells as cell, i (i)}
           <PinInput.Cell
             class="flex items-center justify-center h-16 w-10 border rounded data-active:outline-primary data-active:outline-1"
             {cell}

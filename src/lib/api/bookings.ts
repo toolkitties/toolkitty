@@ -1,69 +1,103 @@
 import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
-import { invoke } from "@tauri-apps/api/core";
-import { TopicFactory } from "./topics";
 import { toast } from "$lib/toast.svelte";
-import { publish, identity, spaces, resources } from ".";
-import { liveQuery } from "dexie";
+import { publish, identity, spaces, resources, bookings } from ".";
+import { TimeSpanClass } from "$lib/timeSpan";
 /**
  * Queries
  */
 
-export function findRequest(
+export function findById(
   requestId: Hash,
-): Promise<BookingRequest | undefined> {
-  return db.bookingRequests.get(requestId);
+): Promise<BookingRequestEnriched | undefined> {
+  return db.transaction(
+    "r",
+    db.bookingRequests,
+    db.resources,
+    db.spaces,
+    db.events,
+    async () => {
+      const bookingRequest: BookingRequestEnriched | undefined =
+        await db.bookingRequests.get(requestId);
+      if (!bookingRequest) {
+        return;
+      }
+
+      // Add resource or space to booking.
+      if (bookingRequest.resourceType == "space") {
+        bookingRequest.space = await db.spaces.get(bookingRequest.resourceId);
+      } else {
+        bookingRequest.resource = await db.resources.get(
+          bookingRequest.resourceId,
+        );
+      }
+
+      // Add event to booking.
+      bookingRequest.event = await db.events.get(bookingRequest.eventId);
+
+      return bookingRequest;
+    },
+  );
 }
 
 /**
  * Search the database for any booking requests matching the passed filter object.
  */
 export function findAll(
-  calendarId: Hash,
-  filter: BookingQueryFilter,
-): Promise<BookingRequest[]> {
-  return db.bookingRequests
-    .where({
-      calendarId,
-      ...filter,
-    })
-    .toArray();
+  bookingQueryFilter: BookingQueryFilter = {},
+): Promise<BookingRequestEnriched[]> {
+  const { from, to, ...filter } = bookingQueryFilter;
+  return db.transaction(
+    "r",
+    db.bookingRequests,
+    db.resources,
+    db.spaces,
+    db.events,
+    async () => {
+      const query = db.bookingRequests.where(filter);
+
+      if (from) {
+        query.filter((request) => {
+          const timeSpan = new TimeSpanClass(request.timeSpan);
+          return timeSpan.startDate() >= from;
+        });
+      }
+
+      if (to) {
+        query.filter((request) => {
+          const timeSpan = new TimeSpanClass(request.timeSpan);
+          return timeSpan.startDate() <= to;
+        });
+      }
+
+      const bookingRequests: BookingRequestEnriched[] = await query.toArray();
+
+      for (const bookingRequest of bookingRequests) {
+        // Add resource or space to booking.
+        if (bookingRequest.resourceType == "space") {
+          bookingRequest.space = await db.spaces.get(bookingRequest.resourceId);
+        } else {
+          bookingRequest.resource = await db.resources.get(
+            bookingRequest.resourceId,
+          );
+        }
+
+        // Add event to booking.
+        bookingRequest.event = await db.events.get(bookingRequest.eventId);
+      }
+
+      return bookingRequests;
+    },
+  );
 }
 
 /**
  * Search the database for any pending booking requests matching the passed filter object.
  */
-// @TODO: It's tricky to test live queries, and maybe anyway it's nice to differentiate between
-// methods which are "live" and those which are not. Could we post-fix their name with 'Live'? and
-// have them as wrappers around a "non-live" variant?
-export async function findPending(
+export function findPending(
   calendarId: Hash,
-  filter: BookingQueryFilter,
-) {
-  let responsesFilter = {
-    calendarId,
-  };
-
-  const approvals = await db.bookingResponses.where(responsesFilter).toArray();
-
-  return db.bookingRequests
-    .where({
-      calendarId,
-      ...filter,
-    })
-    .filter((request) => isPending(request, approvals))
-    .toArray();
-}
-
-function isPending(
-  request: BookingRequest,
-  approvals: BookingResponse[],
-): boolean {
-  return (
-    approvals.find((response) => {
-      return response.requestId == request.id;
-    }) == undefined
-  );
+): Promise<BookingRequestEnriched[]> {
+  return bookings.findAll({ calendarId, status: "pending" });
 }
 
 /**
@@ -76,7 +110,7 @@ export async function request(
   message: string,
   timeSpan: TimeSpan,
 ) {
-  let event = await db.events.get(eventId);
+  const event = await db.events.get(eventId);
   const resourceRequested: BookingRequested = {
     type: "booking_requested",
     data: {
@@ -88,7 +122,7 @@ export async function request(
     },
   };
 
-  const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
+  const [operationId]: [Hash, Hash] = await publish.toCalendar(
     event!.calendarId,
     resourceRequested,
   );
@@ -102,7 +136,7 @@ export async function request(
  * Accept a booking request.
  */
 export async function accept(requestId: Hash) {
-  let bookingRequest = await db.bookingRequests.get(requestId);
+  const bookingRequest = await db.bookingRequests.get(requestId);
   const amOwner = await spaces.amOwner(bookingRequest!.resourceId);
   if (bookingRequest!.resourceType == "space") {
     if (!amOwner) {
@@ -126,7 +160,7 @@ export async function accept(requestId: Hash) {
     },
   };
 
-  const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
+  const [operationId]: [Hash, Hash] = await publish.toCalendar(
     bookingRequest!.calendarId,
     bookingRequested,
   );
@@ -140,7 +174,7 @@ export async function accept(requestId: Hash) {
  * Reject a booking request.
  */
 export async function reject(requestId: Hash) {
-  let bookingRequest = await db.bookingRequests.get(requestId);
+  const bookingRequest = await db.bookingRequests.get(requestId);
 
   const amOwner = await resources.amOwner(bookingRequest!.resourceId);
   if (!amOwner) {
@@ -156,7 +190,7 @@ export async function reject(requestId: Hash) {
     },
   };
 
-  const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
+  const [operationId]: [Hash, Hash] = await publish.toCalendar(
     bookingRequest!.calendarId,
     bookingRequested,
   );
@@ -187,30 +221,74 @@ export async function process(message: ApplicationMessage) {
 async function onBookingRequested(
   meta: StreamMessageMeta,
   data: BookingRequested["data"],
-) {
-  let resource;
-  if (data.type == "resource") {
-    resource = await resources.findById(data.resourceId);
-  } else {
-    resource = await spaces.findById(data.resourceId);
+): Promise<void> {
+  const request = await db.bookingRequests.get(meta.operationId);
+  if (request) {
+    return;
   }
 
-  const resourceRequest: BookingRequest = {
-    id: meta.operationId,
-    calendarId: meta.stream.id,
-    requester: meta.author,
-    resourceType: data.type,
-    resourceOwner: resource!.ownerId,
-    ...data,
-  };
+  await db.transaction(
+    "rw",
+    db.bookingRequests,
+    db.bookingResponses,
+    db.resources,
+    db.spaces,
+    async () => {
+      let resource;
+      if (data.type == "resource") {
+        resource = await db.resources.get(data.resourceId);
+      } else {
+        resource = await db.spaces.get(data.resourceId);
+      }
 
-  await db.bookingRequests.add(resourceRequest);
+      const resourceAvailability = resource!.availability;
 
-  // @TODO: move this into new "crdt" API.
-  // Replay un-ack'd messages which we may have received out-of-order.
-  const topic = new TopicFactory(meta.stream.id);
-  await invoke("replay", { topic: topic.calendar() });
+      const resourceRequest: BookingRequest = {
+        id: meta.operationId,
+        calendarId: meta.stream.id,
+        requester: meta.author,
+        resourceType: data.type,
+        resourceOwner: resource!.ownerId,
+        isValid: "false",
+        status: "pending",
+        ...data,
+      };
+
+      if (resourceAvailability == "always") {
+        resourceRequest.isValid = "true";
+      } else {
+        for (const span of resourceAvailability) {
+          const availabilityTimeSpan = new TimeSpanClass(span);
+          const requestTimeSpan = new TimeSpanClass(resourceRequest.timeSpan);
+          const isSub = availabilityTimeSpan.contains(requestTimeSpan);
+          if (isSub) {
+            resourceRequest.isValid = "true";
+          }
+        }
+      }
+
+      const acceptResponses = await db.bookingResponses
+        .where({ requestId: meta.operationId, answer: "accept" })
+        .toArray();
+      const rejectResponses = await db.bookingResponses
+        .where({ requestId: meta.operationId, answer: "reject" })
+        .toArray();
+
+      if (acceptResponses.length > 0 && rejectResponses.length == 0) {
+        resourceRequest.status = "accepted";
+      }
+
+      await db.bookingRequests.add(resourceRequest);
+    },
+  );
+
   const publicKey = await identity.publicKey();
+  let resource;
+  if (data.type == "resource") {
+    resource = await db.resources.get(data.resourceId);
+  } else {
+    resource = await db.spaces.get(data.resourceId);
+  }
 
   // Check if we own the resource, otherwise do nothing
   if (resource?.ownerId == publicKey) {
@@ -219,7 +297,8 @@ async function onBookingRequested(
       await accept(meta.operationId);
     } else {
       // Show toast if we are the owner of the resource and we didn't make the request.
-      toast.bookingRequest(resourceRequest);
+      const resourceRequest = await bookings.findById(meta.operationId);
+      toast.bookingRequest(resourceRequest!);
     }
   }
 }
@@ -227,31 +306,63 @@ async function onBookingRequested(
 async function onBookingRequestAccepted(
   meta: StreamMessageMeta,
   data: BookingRequestAccepted["data"],
-) {
-  const resourceRequest = await db.bookingRequests.get(data.requestId);
-  const resourceResponse: BookingResponse = {
-    id: meta.operationId,
-    calendarId: meta.stream.id,
-    eventId: resourceRequest!.eventId,
-    responder: meta.author,
-    requestId: data.requestId,
-    answer: "accept",
-  };
-  await db.bookingResponses.add(resourceResponse);
+): Promise<void> {
+  const response = await db.bookingResponses.get(meta.operationId);
+  if (response) {
+    return;
+  }
+
+  return db.transaction(
+    "rw",
+    db.bookingRequests,
+    db.bookingResponses,
+    async () => {
+      const resourceRequest = await db.bookingRequests.get(data.requestId);
+      const resourceResponse: BookingResponse = {
+        id: meta.operationId,
+        calendarId: meta.stream.id,
+        eventId: resourceRequest!.eventId,
+        responder: meta.author,
+        requestId: data.requestId,
+        answer: "accept",
+      };
+
+      // Only update the resource request to `accepted` if the previous value was `pending`.
+      // Already rejected requests cannot be later accepted.
+      if (resourceRequest!.status == "pending") {
+        await db.bookingRequests.update(data.requestId, { status: "accepted" });
+      }
+      await db.bookingResponses.add(resourceResponse);
+    },
+  );
 }
 
 async function onBookingRequestRejected(
   meta: StreamMessageMeta,
   data: BookingRequestRejected["data"],
-) {
-  const resourceRequest = await db.bookingRequests.get(data.requestId);
-  const resourceResponse: BookingResponse = {
-    id: meta.operationId,
-    calendarId: meta.stream.id,
-    eventId: resourceRequest!.eventId,
-    responder: meta.author,
-    requestId: data.requestId,
-    answer: "reject",
-  };
-  await db.bookingResponses.add(resourceResponse);
+): Promise<void> {
+  const response = await db.bookingResponses.get(meta.operationId);
+  if (response) {
+    return;
+  }
+
+  return db.transaction(
+    "rw",
+    db.bookingRequests,
+    db.bookingResponses,
+    async () => {
+      const resourceRequest = await db.bookingRequests.get(data.requestId);
+      const resourceResponse: BookingResponse = {
+        id: meta.operationId,
+        calendarId: meta.stream.id,
+        eventId: resourceRequest!.eventId,
+        responder: meta.author,
+        requestId: data.requestId,
+        answer: "reject",
+      };
+
+      await db.bookingRequests.update(data.requestId, { status: "rejected" });
+      await db.bookingResponses.add(resourceResponse);
+    },
+  );
 }

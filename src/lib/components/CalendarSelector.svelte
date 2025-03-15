@@ -1,7 +1,7 @@
 <script lang="ts">
   import { calendars } from "$lib/api";
   import { onMount } from "svelte";
-  import { goto, invalidateAll } from "$app/navigation";
+  import { invalidateAll } from "$app/navigation";
   import { Select } from "bits-ui";
   import ChevronIcon from "$lib/components/icons/ChevronIcon.svelte";
 
@@ -42,13 +42,13 @@
     <Select.Portal>
       <Select.Content>
         <Select.Viewport class="bg-bg border p-2 flex flex-col w-full">
-          {#each calendarList as calendar}
+          {#each calendarList as calendar (calendar.id)}
             <Select.Item value={calendar.id} label={calendar.name}
               >{calendar.name}</Select.Item
             >
           {/each}
-          <a href="/join">Join Calendar</a>
-          <a href="/create">+ Create new calendar</a>
+          <a href="#/join">Join Calendar</a>
+          <a href="#/create">+ Create new calendar</a>
         </Select.Viewport>
       </Select.Content>
     </Select.Portal>

@@ -2,23 +2,16 @@
  * Queries
  */
 
-import { db } from "$lib/db";
-import { promiseResult } from "$lib/promiseMap";
-import { invoke } from "@tauri-apps/api/core";
 import {
   auth,
   bookings,
   calendars,
   events,
   identity,
-  publish,
   resources,
-  roles,
   spaces,
-  streams,
   users,
 } from ".";
-import { TopicFactory } from "./topics";
 
 type OwnedType = "calendar" | "space" | "resource" | "event";
 
@@ -52,18 +45,22 @@ export async function isOwner(
   type: OwnedType,
 ): Promise<boolean> {
   switch (type) {
-    case "calendar":
+    case "calendar": {
       const calendar = await calendars.findOne(hash);
       return calendar?.ownerId == publicKey;
-    case "space":
+    }
+    case "space": {
       const space = await spaces.findById(hash);
       return space?.ownerId == publicKey;
-    case "resource":
+    }
+    case "resource": {
       const resource = await resources.findById(hash);
       return resource?.ownerId == publicKey;
-    case "event":
+    }
+    case "event": {
       const event = await events.findById(hash);
       return event?.ownerId == publicKey;
+    }
   }
 }
 
@@ -120,11 +117,11 @@ export async function process(message: ApplicationMessage) {
     data.type == "calendar_access_accepted" ||
     data.type == "calendar_access_rejected"
   ) {
-    return await onCalendarAccessResponse(meta, data.data);
+    return await onCalendarAccessResponse(meta);
   } else if (data.type == "user_profile_updated") {
-    return await onUserProfileUpdated(meta, data.data);
+    return await onUserProfileUpdated();
   } else if (data.type == "user_role_assigned") {
-    return await onUserRoleAssigned(meta, data.data);
+    return await onUserRoleAssigned(meta);
   } else if (
     data.type == "calendar_updated" ||
     data.type == "calendar_deleted" ||
@@ -144,14 +141,14 @@ export async function process(message: ApplicationMessage) {
 
   // If the message is of an unexpected type the fallback behaviour is to reject it as
   // unauthorized.
-  return await fallback(meta, data);
+  return await fallback();
 }
 
 async function onBookingResponse(
   meta: StreamMessageMeta,
   data: BookingRequestAccepted["data"] | BookingRequestRejected["data"],
 ) {
-  const request = await bookings.findRequest(data.requestId);
+  const request = await bookings.findById(data.requestId);
   if (request!.resourceType === "resource") {
     const isOwner = await resources.isOwner(request!.resourceId, meta.author);
     if (!isOwner) {
@@ -225,18 +222,12 @@ async function onEventEdit(
   }
 }
 
-async function onUserProfileUpdated(
-  meta: StreamMessageMeta,
-  data: UserProfileUpdated["data"],
-) {
+async function onUserProfileUpdated() {
   // @TODO: implement user profile updates.
   throw new Error("user profile updates not supported yet!");
 }
 
-async function onUserRoleAssigned(
-  meta: StreamMessageMeta,
-  data: UserRoleAssigned["data"],
-) {
+async function onUserRoleAssigned(meta: StreamMessageMeta) {
   // Check if the author has permission to assign roles in this calendar.
   const isAdmin = await auth.isAdmin(meta.stream.id, meta.author);
   const isOwner = await calendars.isOwner(meta.stream.id, meta.author);
@@ -247,10 +238,7 @@ async function onUserRoleAssigned(
   }
 }
 
-async function onCalendarAccessResponse(
-  meta: StreamMessageMeta,
-  data: CalendarAccessAccepted["data"] | CalendarAccessRejected["data"],
-) {
+async function onCalendarAccessResponse(meta: StreamMessageMeta) {
   // @TODO: we should check here if the calendar _stream_ already exists in the database. We may
   // not have received the actual "calendar_created" event yet, but we _must_ know the stream
   // already if want to handle access requests and responses.
@@ -267,6 +255,6 @@ async function onCalendarAccessResponse(
   }
 }
 
-async function fallback(meta: StreamMessageMeta, data: ApplicationEvent) {
+async function fallback() {
   throw new Error("unknown message types not allowed");
 }

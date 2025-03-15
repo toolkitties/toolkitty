@@ -1,31 +1,20 @@
 <script lang="ts">
-  import EventForm from "$lib/components/EventForm.svelte";
+  import EventForm from "../../EventForm.svelte";
   import type { PageProps } from "./$types";
-  import { events } from "$lib/api";
-  import { toast } from "$lib/toast.svelte";
-  import { goto } from "$app/navigation";
+  import Delete from "$lib/components/dialog/Delete.svelte";
 
   let { data }: PageProps = $props();
-
-  const handleDelete = async () => {
-    try {
-      await events.delete(data.event!.id);
-      toast.success("Event deleted!");
-      goto("/app/events");
-    } catch (error) {
-      console.error("Error deleting event: ", error);
-      toast.error("Error deleting event!");
-    }
-  };
 </script>
 
 <br />
 <br />
 <br />
 <EventForm
-  formType="edit"
+  data={data.form}
+  activeCalendarId={data.calendarId!}
   spaces={data.spacesList}
-  resources={data.resourcesList}
-  event={data.event}
+  resourcesList={data.resourcesList}
 />
-<button onclick={() => handleDelete()}>Delete</button>
+{#if data.userRole === "admin"}
+  <Delete id={data.form.data.id!} name={data.form.data.name} type="event" />
+{/if}

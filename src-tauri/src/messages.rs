@@ -31,12 +31,20 @@ impl Serialize for ChannelEvent {
     {
         match self {
             ChannelEvent::Stream(stream_event) => stream_event.serialize(serializer),
-            ChannelEvent::SubscribedToTopic(topic) => {
-                let mut state = serializer.serialize_struct("StreamEvent", 2)?;
-                state.serialize_field("event", "subscribed_to_calendar")?;
-                state.serialize_field("topic", &topic)?;
-                state.end()
-            }
+            ChannelEvent::SubscribedToTopic(topic) => match topic {
+                Topic::Ephemeral(topic) => {
+                    let mut state = serializer.serialize_struct("StreamEvent", 2)?;
+                    state.serialize_field("event", "subscribed_to_ephemeral_topic")?;
+                    state.serialize_field("topic", &topic)?;
+                    state.end()
+                }
+                Topic::Persisted(topic) => {
+                    let mut state = serializer.serialize_struct("StreamEvent", 2)?;
+                    state.serialize_field("event", "subscribed_to_persisted_topic")?;
+                    state.serialize_field("topic", &topic)?;
+                    state.end()
+                }
+            },
             ChannelEvent::NetworkEvent(ref event) => {
                 let mut state = serializer.serialize_struct("StreamEvent", 2)?;
                 state.serialize_field("event", "network_event")?;
@@ -55,54 +63,54 @@ impl Serialize for NetworkEvent {
         match &self.0 {
             p2panda_net::SystemEvent::GossipJoined { topic_id, peers } => {
                 let mut state = serializer.serialize_struct("NetworkEvent", 3)?;
-                state.serialize_field("type", "GossipJoined")?;
+                state.serialize_field("type", "gossip_joined")?;
                 state.serialize_field("topic_id", &topic_id)?;
                 state.serialize_field("peers", &peers)?;
                 state.end()
             }
             p2panda_net::SystemEvent::GossipLeft { topic_id } => {
                 let mut state = serializer.serialize_struct("NetworkEvent", 2)?;
-                state.serialize_field("type", "GossipLeft")?;
+                state.serialize_field("type", "gossip_left")?;
                 state.serialize_field("topic_id", &topic_id)?;
                 state.end()
             }
             p2panda_net::SystemEvent::GossipNeighborUp { topic_id, peer } => {
                 let mut state = serializer.serialize_struct("NetworkEvent", 3)?;
-                state.serialize_field("type", "GossipNeighborUp")?;
+                state.serialize_field("type", "gossip_neighbor_up")?;
                 state.serialize_field("topic_id", &topic_id)?;
                 state.serialize_field("peer", &peer)?;
                 state.end()
             }
             p2panda_net::SystemEvent::GossipNeighborDown { topic_id, peer } => {
                 let mut state = serializer.serialize_struct("NetworkEvent", 3)?;
-                state.serialize_field("type", "GossipNeighborDown")?;
+                state.serialize_field("type", "gossip_neighbor_up")?;
                 state.serialize_field("topic_id", &topic_id)?;
                 state.serialize_field("peer", &peer)?;
                 state.end()
             }
             p2panda_net::SystemEvent::PeerDiscovered { peer } => {
                 let mut state = serializer.serialize_struct("NetworkEvent", 2)?;
-                state.serialize_field("type", "PeerDiscovered")?;
+                state.serialize_field("type", "peer_discovered")?;
                 state.serialize_field("peer", &peer)?;
                 state.end()
             }
             p2panda_net::SystemEvent::SyncStarted { topic, peer } => {
                 let mut state = serializer.serialize_struct("NetworkEvent", 3)?;
-                state.serialize_field("type", "SyncStarted")?;
+                state.serialize_field("type", "sync_start")?;
                 state.serialize_field("topic", &topic)?;
                 state.serialize_field("peer", &peer)?;
                 state.end()
             }
             p2panda_net::SystemEvent::SyncDone { topic, peer } => {
                 let mut state = serializer.serialize_struct("NetworkEvent", 3)?;
-                state.serialize_field("type", "SyncDone")?;
+                state.serialize_field("type", "sync_done")?;
                 state.serialize_field("topic", topic)?;
                 state.serialize_field("peer", &peer)?;
                 state.end()
             }
             p2panda_net::SystemEvent::SyncFailed { topic, peer } => {
                 let mut state = serializer.serialize_struct("NetworkEvent", 3)?;
-                state.serialize_field("type", "SyncFailed")?;
+                state.serialize_field("type", "sync_failed")?;
                 state.serialize_field("topic", &topic)?;
                 state.serialize_field("peer", &peer)?;
                 state.end()

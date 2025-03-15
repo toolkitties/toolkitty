@@ -2,8 +2,18 @@
   import { toast } from "$lib/toast.svelte";
   import type { PageProps } from "./$types";
   import RequestDialog from "./RequestDialog.svelte";
+  import { users, access } from "$lib/api";
+  import { liveQuery } from "dexie";
 
   let { data }: PageProps = $props();
+
+  let calendarUsers = liveQuery(() => {
+    return users.findAll(data.activeCalendarId!);
+  });
+
+  let pendingAccessRequests = liveQuery(() => {
+    return access.getPending(data.activeCalendarId!);
+  });
 
   async function copyToClipboard(text: string): Promise<void> {
     if (text)
@@ -27,6 +37,7 @@
 </section>
 
 <section class="section">
+  <!-- TODO: Only show if we are user -->
   <h2>Users</h2>
   <!-- <p>
     There are three roles at ToolKitties. Public members can view the program,
@@ -34,14 +45,16 @@
     arrivals will be listed at the top in red, change their permissions to let
     them in!
   </p> -->
-  {#if data.pendingRequests.length > 0}
-    {#each data.pendingRequests as request}
-      <RequestDialog {request} />
+
+  {#if $pendingAccessRequests}
+    {#each $pendingAccessRequests as request (request.id)}
+      <!-- TODO: go through users instead of pending requests -->
+      <RequestDialog data={request} />
     {/each}
-  {:else}
-    <p>
-      No one has requested access yet, copy the calendar code above to invite
-      others
-    </p>
+  {/if}
+  {#if $calendarUsers}
+    {#each $calendarUsers as user (user.publicKey)}
+      <RequestDialog data={user} />
+    {/each}
   {/if}
 </section>

@@ -95,6 +95,7 @@ impl Display for StreamOwner {
 /// naming collision can occur _between_ logs in different streams, and the log path allows the
 /// application layer itself to design how logs are layed out within a stream.
 #[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct LogId {
     pub(crate) stream: Stream,
     pub(crate) log_path: Option<LogPath>,

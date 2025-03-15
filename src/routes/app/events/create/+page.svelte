@@ -1,5 +1,5 @@
 <script lang="ts">
-  import EventForm from "$lib/components/EventForm.svelte";
+  import EventForm from "../EventForm.svelte";
   import type { PageProps } from "./$types";
 
   let { data }: PageProps = $props();
@@ -12,7 +12,8 @@
 <!-- just temp until layout properly set  -->
 <p>Hello organisers! Fill this form to upload your event to the program.</p>
 <EventForm
-  formType="create"
+  data={data.form}
+  activeCalendarId={data.activeCalendarId!}
   spaces={data.spacesList}
-  resources={data.resourcesList}
+  resourcesList={data.resourcesList}
 />

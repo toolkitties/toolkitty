@@ -5,6 +5,11 @@
 import { db } from "$lib/db";
 import { identity, users } from ".";
 
+export function findAll(calendarId: CalendarId) {
+  return db.users.where({ calendarId }).toArray();
+}
+
+// TODO: rename findById and pass in array.
 export function get(
   calendarId: CalendarId,
   publicKey: PublicKey,
@@ -35,7 +40,7 @@ export async function update(
 
   const myPublicKey = await identity.publicKey();
   if (publicKey != myPublicKey) {
-    throw new Error("user does not have permission to update this calendar");
+    throw new Error("you cannot update another user, only yourself");
   }
 
   return db.users.update([calendarId, publicKey], { name: userName, role });

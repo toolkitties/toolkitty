@@ -1,5 +1,8 @@
 <script lang="ts">
-  import SpaceForm from "$lib/components/SpaceForm.svelte";
+  import type { PageProps } from "./$types";
+  import SpaceForm from "../SpaceForm.svelte";
+
+  let { data }: PageProps = $props();
 </script>
 
 <br />
@@ -10,4 +13,8 @@
   event organisers will be able to book your space for their events. Manage
   requests in your dashboard.
 </p>
-<SpaceForm formType="create" />
+<SpaceForm
+  data={data.form}
+  activeCalendarId={data.activeCalendarId!}
+  calendarDates={data.calendarDates}
+/>

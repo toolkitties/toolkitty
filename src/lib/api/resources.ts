@@ -1,9 +1,7 @@
 import { db } from "$lib/db";
-import { auth, publish, resources, roles } from ".";
-import { getActiveCalendarId } from "./calendars";
+import { auth, bookings, publish, resources } from ".";
 import { promiseResult } from "$lib/promiseMap";
-import { invoke } from "@tauri-apps/api/core";
-import { TopicFactory } from "./topics";
+import { TimeSpanClass } from "$lib/timeSpan";
 
 /**
  * Queries
@@ -19,11 +17,21 @@ export function findMany(calendarId: Hash): Promise<Resource[]> {
 /**
  * Get all calendar resources that are owned by the passed public key.
  */
-export function findByOwner(
+export async function findByOwner(
   calendarId: Hash,
   ownerId: PublicKey,
-): Promise<Resource[]> {
-  return db.resources.where({ calendarId, ownerId }).toArray();
+): Promise<OwnerResourceEnriched[]> {
+  const myResources: OwnerResourceEnriched[] = await db.resources
+    .where({ calendarId, ownerId })
+    .toArray();
+  // For each space check if there are any pending bookings
+  for (const resource of myResources) {
+    resource.pendingBookingRequests = await bookings.findAll({
+      resourceId: resource.id,
+      status: "pending",
+    });
+  }
+  return myResources;
 }
 
 /**
@@ -31,6 +39,46 @@ export function findByOwner(
  */
 export function findById(id: Hash): Promise<Resource | undefined> {
   return db.resources.get({ id: id });
+}
+
+/**
+ * Returns a collection of resources which have _some_ availability in the timespan provided.
+ */
+export function findByTimeSpan(
+  calendarId: Hash,
+  timeSpan: TimeSpanClass,
+): Promise<Resource[]> {
+  return db.resources
+    .where({ calendarId })
+    .filter((resource) => {
+      if (resource.availability == "always") {
+        return true;
+      }
+      for (const span of resource.availability) {
+        const availabilityTimeSpan = new TimeSpanClass(span);
+        const isSub = timeSpan.contains(availabilityTimeSpan);
+        if (isSub) {
+          return true;
+        }
+      }
+      return false;
+    })
+    .toArray();
+}
+
+/**
+ * Find all accepted bookings for a resource and time span.
+ */
+export function findBookings(
+  resourceId: Hash,
+  timeSpan: TimeSpanClass,
+): Promise<BookingRequest[]> {
+  return bookings.findAll({
+    resourceId,
+    from: timeSpan.startDate(),
+    to: timeSpan.endDate(),
+    status: "accepted",
+  });
 }
 
 export async function isOwner(
@@ -55,13 +103,13 @@ export async function create(
   calendarId: Hash,
   fields: ResourceFields,
 ): Promise<Hash> {
-  let resourceCreated: ResourceCreated = {
+  const resourceCreated: ResourceCreated = {
     type: "resource_created",
     data: {
       fields,
     },
   };
-  const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
+  const [operationId]: [Hash, Hash] = await publish.toCalendar(
     calendarId!,
     resourceCreated,
   );
@@ -80,7 +128,7 @@ export async function update(
 ): Promise<Hash> {
   const resource = await resources.findById(resourceId);
 
-  const amAdmin = await roles.amAdmin(resource!.calendarId);
+  const amAdmin = await auth.amAdmin(resource!.calendarId);
   const amOwner = await resources.amOwner(resourceId);
   if (!amAdmin && !amOwner) {
     throw new Error("user does not have permission to update this resource");
@@ -93,7 +141,7 @@ export async function update(
       fields,
     },
   };
-  const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
+  const [operationId]: [Hash, Hash] = await publish.toCalendar(
     resource!.calendarId,
     resourceUpdated,
   );
@@ -109,7 +157,7 @@ export async function update(
 export async function deleteResource(resourceId: Hash): Promise<Hash> {
   const resource = await resources.findById(resourceId);
 
-  const amAdmin = await roles.amAdmin(resource!.calendarId);
+  const amAdmin = await auth.amAdmin(resource!.calendarId);
   const amOwner = await resources.amOwner(resourceId);
   if (!amAdmin && !amOwner) {
     throw new Error("user does not have permission to delete this resource");
@@ -122,7 +170,7 @@ export async function deleteResource(resourceId: Hash): Promise<Hash> {
     },
   };
 
-  const [operationId, streamId]: [Hash, Hash] = await publish.toCalendar(
+  const [operationId]: [Hash, Hash] = await publish.toCalendar(
     resource!.calendarId,
     resourceDeleted,
   );
@@ -156,28 +204,62 @@ export async function process(message: ApplicationMessage) {
 async function onResourceCreated(
   meta: StreamMessageMeta,
   data: ResourceCreated["data"],
-) {
-  await db.resources.add({
-    id: meta.operationId,
-    calendarId: meta.stream.id,
-    ownerId: meta.author,
-    booked: [],
-    ...data.fields,
+): Promise<void> {
+  try {
+    await db.resources.add({
+      id: meta.operationId,
+      calendarId: meta.stream.id,
+      ownerId: meta.author,
+      booked: [],
+      ...data.fields,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function onResourceUpdated(data: ResourceUpdated["data"]): Promise<void> {
+  const resourceId = data.id;
+  const resourceAvailability = data.fields.availability;
+
+  return db.transaction("rw", db.resources, db.bookingRequests, async () => {
+    // Update `isavalid` field of all booking requests associated with this space.
+    await db.bookingRequests.where({ resourceId }).modify((request) => {
+      const requestTimeSpan = new TimeSpanClass(request.timeSpan);
+      if (resourceAvailability == "always") {
+        request.isValid = "true";
+        return;
+      }
+      request.isValid = "false";
+      for (const span of resourceAvailability) {
+        const availabilityTimeSpan = new TimeSpanClass(span);
+        const isValid = availabilityTimeSpan.contains(requestTimeSpan);
+        if (isValid) {
+          request.isValid = "true";
+          break;
+        }
+      }
+      request.isValid = "false";
+    });
+
+    // @TODO: we could show a toast to the user if a previously valid request timespan now became
+    // invalid.
+
+    // @TODO: add related location to spaces object.
+    await db.resources.update(data.id, data.fields);
   });
-
-  // Replay un-ack'd messages which we may have received out-of-order.
-  const topic = new TopicFactory(meta.stream.id);
-  await invoke("replay", { topic: topic.calendar() });
 }
 
-async function onResourceUpdated(
-  data: ResourceUpdated["data"],
-) {
-  await db.resources.update(data.id, data.fields);
-}
+function onResourceDeleted(data: ResourceDeleted["data"]): Promise<void> {
+  const resourceId = data.id;
 
-async function onResourceDeleted(
-  data: ResourceDeleted["data"],
-) {
-  await db.resources.delete(data.id);
+  return db.transaction("rw", db.resources, db.bookingRequests, async () => {
+    // Update `isavalid` field of all booking requests associated with this resource.
+    await db.bookingRequests.where({ resourceId }).modify({ isValid: "false" });
+
+    // @TODO: we could show a toast to the user if a previously valid event timespan now became
+    // invalid.
+
+    await db.resources.delete(resourceId);
+  });
 }
