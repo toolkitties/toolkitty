@@ -37,7 +37,7 @@
       toast.success(`Successfully deleted ${name}`);
       // close the dialog
       open = false;
-      goto(`/app/${type}s`);
+      goto(`#/app/${type}s`);
     } catch (error) {
       open = false;
       toast.error(`Failed to delete ${name}`);
