@@ -315,7 +315,7 @@ export function createCalendarFields(
   fieldsOverwrites: Partial<CalendarFields> = {},
 ): CalendarFields {
   const start = faker.date.soon().toISOString();
-  const end = faker.date.soon({ days: 8, refDate: start }).toISOString();
+  const end = faker.date.future({ refDate: start }).toISOString();
 
   const fields = {
     name: faker.music.album(),
@@ -429,4 +429,18 @@ export function createResourceFields(
     multiBookable: false,
   };
   return { ...fields, ...fieldsOverwrites };
+}
+
+export function someAvailability(from: Date, to: Date) {
+  return faker.helpers.multiple(
+    () => {
+      const start = faker.date.between({ from, to }).toISOString();
+      const end = faker.date.soon({ refDate: start }).toISOString();
+      return {
+        start,
+        end,
+      };
+    },
+    { count: { min: 5, max: 15 } },
+  );
 }
