@@ -2,7 +2,7 @@
   //   import FestivalCalendar from "./FestivalCalendar.svelte";
   import type { SuperValidated, Infer } from "sveltekit-superforms";
   import type { CalendarSchema } from "$lib/schemas";
-  import { calendars } from "$lib/api";
+  import { calendars, identity, users } from "$lib/api";
   import { toast } from "$lib/toast.svelte";
   import { goto } from "$app/navigation";
   import { calendarSchema } from "$lib/schemas";
@@ -20,18 +20,26 @@
     resetForm: false,
     dataType: "json",
     async onUpdate({ form }) {
-      const { id, ...payload } = form.data;
-      if (form.data.id) {
-        handleUpdateCalendar(id!, payload);
-      } else {
-        handleCreateCalendar(payload);
+      if (form.valid) {
+        const { id, userName, ...payload } = form.data;
+        if (form.data.id) {
+          handleUpdateCalendar(id!, payload);
+        } else {
+          handleCreateCalendar(payload, userName!);
+        }
       }
     },
   });
 
-  async function handleCreateCalendar(payload: CalendarFields) {
+  async function handleCreateCalendar(
+    payload: CalendarFields,
+    userName: string,
+  ) {
     try {
-      await calendars.create({ fields: payload });
+      const newCalendar = await calendars.create({ fields: payload });
+      // Update users name in the newly created calendar.
+      const publicKey = await identity.publicKey();
+      await users.update(newCalendar[1], publicKey, userName);
       toast.success("Calendar created!");
       goto(`/app/events`);
     } catch (error) {
@@ -58,7 +66,26 @@
 <SuperDebug data={{ $form, $errors }} />
 <form method="POST" use:enhance>
   <label for="name">Calendar name*</label>
-  <input type="text" name="name" required bind:value={$form.name} />
+  <input
+    type="text"
+    name="name"
+    aria-invalid={$errors.name ? "true" : undefined}
+    bind:value={$form.name}
+  />
+  {#if $errors.name}<span class="form-error">{$errors.name}</span>{/if}
+
+  {#if !$form.id}
+    <label for="name">Your name*</label>
+    <input
+      type="text"
+      name="username"
+      aria-invalid={$errors.userName ? "true" : undefined}
+      bind:value={$form.userName}
+    />
+    {#if $errors.userName}<span class="form-error">{$errors.userName}</span
+      >{/if}
+  {/if}
+
   <!--
   Not including this yet because non-continuous calendar dates aren't aren't reflected
   in the calendar fields yet - but you could set them with the FestivalCalendar.
@@ -71,7 +98,6 @@
       <input
         name="calendar-start-date"
         type="date"
-        required
         bind:value={$form.dates[0].start}
       />
     </div>
@@ -89,15 +115,36 @@
     </div>
   </div>
   {#if $form.id}
-    <label for="description">Festival instructions</label>
-    <textarea name="description" bind:value={$form.calendarInstructions}
+    <label for="calendarInstructions">Calendar instructions</label>
+    <textarea
+      name="calendarInstructions"
+      aria-invalid={$errors.calendarInstructions ? "true" : undefined}
+      bind:value={$form.calendarInstructions}
     ></textarea>
-    <label for="description">Spaces page text</label>
-    <textarea name="description" bind:value={$form.calendarInstructions}
+    {#if $errors.calendarInstructions}<span class="form-error"
+        >{$errors.calendarInstructions}</span
+      >{/if}
+
+    <label for="spacePageText">Spaces page text</label>
+    <textarea
+      name="spacePageText"
+      aria-invalid={$errors.spacePageText ? "true" : undefined}
+      bind:value={$form.spacePageText}
     ></textarea>
-    <label for="description">Resources page text</label>
-    <textarea name="description" bind:value={$form.calendarInstructions}
+    {#if $errors.spacePageText}<span class="form-error"
+        >{$errors.spacePageText}</span
+      >{/if}
+
+    <label for="resourcePageText">Resources page text</label>
+    <textarea
+      name="resourcePageText"
+      aria-invalid={$errors.resourcePageText ? "true" : undefined}
+      bind:value={$form.resourcePageText}
     ></textarea>
+    {#if $errors.resourcePageText}<span class="form-error"
+        >{$errors.resourcePageText}</span
+      >{/if}
+
     <button type="submit">Update Calendar</button>
   {/if}
 

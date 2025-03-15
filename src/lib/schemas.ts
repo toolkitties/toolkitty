@@ -109,6 +109,7 @@ export const eventSchema = z.object({
 export const calendarSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, "Calendar name is required"),
+  userName: z.string().optional(),
   dates: z
     .array(timeSpanSchema)
     .min(1, "A start date is required")
@@ -116,6 +117,9 @@ export const calendarSchema = z.object({
   calendarInstructions: z.string().nullable(),
   spacePageText: z.string().nullable(),
   resourcePageText: z.string().nullable(),
+}).refine(data => data.id || data.userName, {
+  message: "Name is required",
+  path: ["userName"],
 });
 
 // Schema types for zod
