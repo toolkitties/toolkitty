@@ -40,7 +40,7 @@ export async function update(
 
   const myPublicKey = await identity.publicKey();
   if (publicKey != myPublicKey) {
-    throw new Error("user does not have permission to update this calendar");
+    throw new Error("you cannot update another user, only yourself");
   }
 
   return db.users.update([calendarId, publicKey], { name: userName, role });
