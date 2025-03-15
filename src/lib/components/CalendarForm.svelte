@@ -4,7 +4,7 @@
   import type { CalendarSchema } from "$lib/schemas";
   import { calendars, identity, users } from "$lib/api";
   import { toast } from "$lib/toast.svelte";
-  import { goto } from "$app/navigation";
+  import { goto, invalidateAll } from "$app/navigation";
   import { calendarSchema } from "$lib/schemas";
   import { zod } from "sveltekit-superforms/adapters";
   import { superForm } from "sveltekit-superforms";
@@ -40,7 +40,12 @@
       // Update users name in the newly created calendar.
       const publicKey = await identity.publicKey();
       await users.update(newCalendar[1], publicKey, userName);
+      // Set active calendar to new calendar
+      await calendars.setActiveCalendar(newCalendar[1]);
       toast.success("Calendar created!");
+      // Reload data all data in the app as we changed to a new calendar.
+      await invalidateAll();
+      // TODO: Automatically reload app data when active calendar changes.
       goto(`/app/events`);
     } catch (error) {
       console.error("Error creating calendar: ", error);
