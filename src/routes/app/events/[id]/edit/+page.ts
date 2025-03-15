@@ -5,6 +5,7 @@ import { error } from "@sveltejs/kit";
 import { superValidate } from "sveltekit-superforms";
 import { zod } from "sveltekit-superforms/adapters";
 import { db } from "$lib/db";
+import { TimeSpanClass } from "$lib/timeSpan";
 
 export const load: PageLoad = async ({ params, parent }) => {
   const eventId = params.id;
@@ -22,12 +23,12 @@ export const load: PageLoad = async ({ params, parent }) => {
 
   // return spaces and resources with availability within the calendar dates
   const activeCalendar = await db.calendars.get(calendarId!);
-  const timeSpan = {
+  const timeSpan = new TimeSpanClass({
     start: activeCalendar!.startDate!,
     end: activeCalendar!.endDate,
-  };
-  const spacesList = await spaces.findByTimespan(calendarId!, timeSpan);
-  const resourcesList = await resources.findByTimespan(calendarId!, timeSpan);
+  });
+  const spacesList = await spaces.findByTimeSpan(calendarId!, timeSpan);
+  const resourcesList = await resources.findByTimeSpan(calendarId!, timeSpan);
 
   const parentData = await parent();
   const { activeCalendarId, publicKey } = parentData;
