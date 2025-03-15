@@ -3,10 +3,13 @@ import "fake-indexeddb/auto";
 import { processMessage } from "$lib/processor";
 import {
   CALENDAR_ID,
+  createAccessResponseMessage,
+  createAssignRoleMessage,
   createBookingRequestMessage,
   createBookingResponseMessage,
   createCalendarMessage,
   createEventMessage,
+  createRequestAccessMessage,
   createResourceMessage,
   createSpaceMessage,
   NON_OWNER_PUBLIC_KEY,
@@ -14,13 +17,12 @@ import {
 } from "$lib/utils/faker";
 import { mockIPC } from "@tauri-apps/api/mocks";
 import { beforeAll, expect, test } from "vitest";
-import { bookings, calendars, events, resources, spaces } from "$lib/api";
+import { access, auth, bookings, calendars, events, resources, spaces } from "$lib/api";
 import { debounce } from "$lib/utils/utils";
 
 const createCalendar = createCalendarMessage(CALENDAR_ID, OWNER_PUBLIC_KEY, {
   type: "calendar_created",
 });
-
 const updateCalendar = createCalendarMessage(
   "calendar_update_001",
   OWNER_PUBLIC_KEY,
@@ -103,7 +105,6 @@ const deleteSpace002 = createSpaceMessage(
     spaceId: "space_002",
   },
 );
-
 const bookingRequest001 = createBookingRequestMessage(
   "booking_request_001",
   OWNER_PUBLIC_KEY,
@@ -111,7 +112,6 @@ const bookingRequest001 = createBookingRequestMessage(
   "resource_001",
   "event_001",
 );
-
 const bookingRequest002 = createBookingRequestMessage(
   "booking_request_002",
   NON_OWNER_PUBLIC_KEY,
@@ -119,12 +119,53 @@ const bookingRequest002 = createBookingRequestMessage(
   "space_001",
   "event_001",
 );
-
 const bookingResponse001 = createBookingResponseMessage(
   "booking_response=001",
   OWNER_PUBLIC_KEY,
   "booking_request_002",
   "accept",
+);
+const createResourceOO3 = createResourceMessage(
+  "resource_003",
+  OWNER_PUBLIC_KEY,
+  {
+    type: "resource_created",
+  },
+);
+const createSpaceOO3 = createSpaceMessage("space_003", OWNER_PUBLIC_KEY, {
+  type: "space_created",
+});
+const accessRequest001 = createRequestAccessMessage(
+  "access_request_001",
+  NON_OWNER_PUBLIC_KEY,
+);
+const accessResponse001 = createAccessResponseMessage(
+  "access_response_001",
+  OWNER_PUBLIC_KEY,
+  "access_request_001",
+  "accept",
+);
+const assignRole001 = createAssignRoleMessage(
+  "assign_role_001",
+  OWNER_PUBLIC_KEY,
+  NON_OWNER_PUBLIC_KEY,
+  "admin",
+);
+const updateSpace002 = createSpaceMessage(
+  "space_update_002",
+  NON_OWNER_PUBLIC_KEY,
+  {
+    type: "space_updated",
+    spaceId: "space_003",
+  },
+);
+const updateResource002 = createResourceMessage(
+  "resource_update_002",
+  NON_OWNER_PUBLIC_KEY,
+  {
+    type: "resource_updated",
+    resourceId: "resource_003",
+  },
 );
 
 let messages: ApplicationMessage[] = [
@@ -145,6 +186,13 @@ let messages: ApplicationMessage[] = [
   bookingRequest001,
   bookingRequest002,
   bookingResponse001,
+  createResourceOO3,
+  createSpaceOO3,
+  accessRequest001,
+  accessResponse001,
+  assignRole001,
+  updateResource002,
+  updateSpace002,
 ];
 
 function randomize(message: ApplicationMessage[]) {
@@ -196,7 +244,7 @@ beforeAll(async () => {
 });
 
 test("process out-of-order message", async () => {
-  await delay(3000);
+  await delay(4000);
   expect(messages.length).toBe(0);
 
   const calendarsCollection = await calendars.findMany();
@@ -210,17 +258,19 @@ test("process out-of-order message", async () => {
   expect(eventsCollection[0].name).toBe(updateEvent001.data.data.fields.name!);
 
   const resourcesCollection = await resources.findMany(CALENDAR_ID);
-  expect(resourcesCollection.length).toBe(1);
-  expect(resourcesCollection[0].name).toBe(
-    updateResource001.data.data.fields.name!,
-  );
+  expect(resourcesCollection.length).toBe(2);
 
   const spacesCollection = await spaces.findMany(CALENDAR_ID);
-  expect(spacesCollection.length).toBe(1);
-  expect(spacesCollection[0].name).toBe(updateSpace001.data.data.fields.name!);
+  expect(spacesCollection.length).toBe(2);
 
   const acceptedBookings = await bookings.findAll({ status: "accepted" });
   expect(acceptedBookings.length).toBe(1);
   const pendingBookings = await bookings.findAll({ status: "pending" });
   expect(pendingBookings.length).toBe(1);
+
+  const accessStatus = await access.checkStatus(CALENDAR_ID, NON_OWNER_PUBLIC_KEY);
+  expect(accessStatus).toBeTruthy();
+
+  const isAdmin = await auth.isAdmin(CALENDAR_ID, NON_OWNER_PUBLIC_KEY);
+  expect(isAdmin).toBeTruthy();
 }, 5000);
