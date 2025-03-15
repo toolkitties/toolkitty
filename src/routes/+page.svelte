@@ -26,15 +26,15 @@
 
       if (accessStatus == "accepted") {
         // access is accepted, go to events
-        goto("/app/events");
+        goto("#/app/events");
         return;
       } else if (accessStatus == "pending") {
         // access status is pending, go to pending page
-        goto("/request");
+        goto("#/request");
         return;
       }
     }
-    goto("/join");
+    goto("#/join");
   }
 
   onMount(() => {

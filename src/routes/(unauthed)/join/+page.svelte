@@ -29,7 +29,7 @@
       return;
     }
 
-    goto(`/request`);
+    goto(`#/request`);
   }
 </script>
 

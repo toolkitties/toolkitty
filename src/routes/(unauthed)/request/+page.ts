@@ -9,7 +9,7 @@ export const load: PageLoad = async () => {
 
   // if we already have access then go to the calendar
   if (accessStatus == "accepted") {
-    goto("/app/events");
+    goto("#/app/events");
   }
 
   return {
