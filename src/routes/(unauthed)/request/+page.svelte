@@ -19,7 +19,7 @@
 
     if (accessStatus == "accepted") {
       toast.success("access accepted!");
-      goto("/app/events");
+      goto("#/app/events");
     } else if (accessStatus == "rejected") {
       toast.error("access rejected!");
       goto("/");
@@ -61,7 +61,7 @@
 {#if requestStatus == "pending"}
   <p>
     Your request is now pending. You will be notified when this changes. Read
-    more about Toolkitties <a href="/help">here</a>.
+    more about Toolkitties <a href="#/help">here</a>.
   </p>
   <span>⏳</span>
 {:else if requestStatus == "rejected"}
