@@ -316,8 +316,8 @@ type Link = {
 };
 
 type TimeSpan = {
-  start: Date;
-  end: Date | undefined;
+  start: string;
+  end: string | undefined;
 };
 
 type BookedTimeSpan = TimeSpan & {
@@ -336,8 +336,8 @@ type PhysicalLocation = {
 
 type GPSLocation = {
   type: "gps";
-  lat: string;
-  lon: string;
+  lat: number;
+  lon: number;
 };
 
 type VirtualLocation = {
@@ -652,8 +652,8 @@ type Calendar = {
   // `CalendarCreated` fields contains a TimeSpan[] so it's possible to encode non-consecutive
   // dates there, but we don't need to support that in the app right now. Here I've left it as a
   // single time range.
-  startDate?: Date;
-  endDate?: Date;
+  startDate?: string;
+  endDate?: string;
 };
 
 type AccessRequest = {

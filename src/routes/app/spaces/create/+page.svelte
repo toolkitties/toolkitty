@@ -13,4 +13,8 @@
   event organisers will be able to book your space for their events. Manage
   requests in your dashboard.
 </p>
-<SpaceForm data={data.form} activeCalendarId={data.activeCalendarId!} />
+<SpaceForm
+  data={data.form}
+  activeCalendarId={data.activeCalendarId!}
+  calendarDates={data.calendarDates}
+/>

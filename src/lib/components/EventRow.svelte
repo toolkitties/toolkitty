@@ -17,9 +17,9 @@
   />
   <div class="flex flex-col gap-1 p-2">
     <h3>{event.name}</h3>
-    <span>🗓️ {event.startDate}</span>
-    <span>🕣 {event.startDate}</span>
-    <span>📍 {event.space ? event.space : "no space yet"}</span>
+    <span>🗓️ {new Date(event.startDate).toLocaleString()}</span>
+    <span>🕣 {new Date(event.endDate).toLocaleString()}</span>
+    <span>📍 {event.space ? event.space.name : "no space yet"}</span>
   </div>
 </a>
 

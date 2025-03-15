@@ -12,8 +12,12 @@
   let {
     data,
     activeCalendarId,
-  }: { data: SuperValidated<Infer<ResourceSchema>>; activeCalendarId: Hash } =
-    $props();
+    calendarDates,
+  }: {
+    data: SuperValidated<Infer<ResourceSchema>>;
+    activeCalendarId: Hash;
+    calendarDates: TimeSpan;
+  } = $props();
   let alwaysAvailable = $state(false);
 
   const { form, errors, enhance } = superForm(data, {
@@ -121,7 +125,10 @@
     <p>This resource is always available</p>
   {/if}
   {#if !alwaysAvailable}
-    <AvailabilitySetter bind:availability={$form.availability as TimeSpan[]} />
+    <AvailabilitySetter
+      bind:availability={$form.availability as TimeSpan[]}
+      {calendarDates}
+    />
   {/if}
 
   <label>

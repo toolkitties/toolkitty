@@ -21,7 +21,16 @@
     />
     <div class="flex flex-col gap-1 p-2">
       <h3>{space.name}</h3>
-      <span>📍 {space.location}</span>
+      {#if space.location.type === "gps"}
+        <span>📍 {space.location.lat} / {space.location.lon}</span>
+      {:else if space.location.type === "physical"}
+        <span
+          >📍 {space.location.street}, {space.location.city}, {space.location
+            .country}</span
+        >
+      {:else}
+        <span>📍 {space.location.link}</span>
+      {/if}
       <p>{space.description}</p>
     </div>
   </a>

@@ -4,9 +4,14 @@ import { defaults } from "sveltekit-superforms";
 import { zod } from "sveltekit-superforms/adapters";
 import { calendars } from "$lib/api";
 
-export const load: PageLoad = async () => {
-  const form = defaults(zod(resourceSchema));
-  const activeCalendarId = await calendars.getActiveCalendarId();
+export const load: PageLoad = async ({ parent }) => {
+  const parentData = await parent();
+  const { activeCalendarId } = parentData;
 
-  return { form, activeCalendarId };
+  const form = defaults(zod(resourceSchema));
+
+  const calendar = await calendars.findOne(activeCalendarId!);
+  const calendarDates = { start: calendar!.startDate!, end: calendar!.endDate };
+
+  return { form, activeCalendarId, calendarDates };
 };
