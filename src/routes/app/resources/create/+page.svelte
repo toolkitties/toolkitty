@@ -14,4 +14,8 @@
   offer. Once published, event organisers will be able to book your resources
   for their events. Manage your requests in your dashboard.
 </p>
-<ResourceForm data={data.form} activeCalendarId={data.activeCalendarId!} />
+<ResourceForm
+  data={data.form}
+  activeCalendarId={data.activeCalendarId!}
+  calendarDates={data.calendarDates}
+/>

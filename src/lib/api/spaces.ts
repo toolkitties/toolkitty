@@ -1,7 +1,7 @@
 import { db } from "$lib/db";
 import { auth, bookings, publish, spaces } from ".";
 import { promiseResult } from "$lib/promiseMap";
-import { isSubTimespan } from "$lib/utils/utils";
+import { TimeSpanClass } from "$lib/timeSpan";
 
 /**
  * Queries
@@ -44,9 +44,9 @@ export function findById(id: Hash): Promise<Space | undefined> {
 /**
  * Returns a collection of spaces which have _some_ availability in the timespan provided.
  */
-export function findByTimespan(
+export function findByTimeSpan(
   calendarId: Hash,
-  timeSpan: TimeSpan,
+  timeSpan: TimeSpanClass,
 ): Promise<Space[]> {
   return db.spaces
     .where({ calendarId })
@@ -55,7 +55,8 @@ export function findByTimespan(
         return true;
       }
       for (const span of space.availability) {
-        const isSub = isSubTimespan(timeSpan.start, timeSpan.end, span);
+        const availabilityTimeSpan = new TimeSpanClass(span);
+        const isSub = timeSpan.contains(availabilityTimeSpan);
         if (isSub) {
           return true;
         }
@@ -70,12 +71,12 @@ export function findByTimespan(
  */
 export function findBookings(
   spaceId: Hash,
-  timeSpan: TimeSpan,
+  timeSpan: TimeSpanClass,
 ): Promise<BookingRequest[]> {
   return bookings.findAll({
     resourceId: spaceId,
-    from: timeSpan.start,
-    to: timeSpan.end,
+    from: timeSpan.startDate(),
+    to: timeSpan.endDate(),
     status: "accepted",
   });
 }
@@ -227,6 +228,7 @@ function onSpaceUpdated(data: SpaceUpdated["data"]): Promise<void> {
     await db.bookingRequests
       .where({ resourceId: spaceId })
       .modify((request) => {
+        const requestTimeSpan = new TimeSpanClass(request.timeSpan);
         console.log("modify booking request: ", request.id);
         if (spaceAvailability == "always") {
           request.isValid = "true";
@@ -234,8 +236,8 @@ function onSpaceUpdated(data: SpaceUpdated["data"]): Promise<void> {
         }
         request.isValid = "false";
         for (const span of spaceAvailability) {
-          const isValid = isSubTimespan(span.start, span.end, request.timeSpan);
-
+          const availabilityTimeSpan = new TimeSpanClass(span);
+          const isValid = availabilityTimeSpan.contains(requestTimeSpan);
           if (isValid) {
             request.isValid = "true";
             break;

@@ -7,11 +7,13 @@
 </script>
 
 <AlertDialog.Root bind:open>
-  <AlertDialog.Trigger class="button">
-    <p>
+  <AlertDialog.Trigger class="button flex justify-between w-full text-left">
+    <span>
       {data.name ? data.name : "Anon"}
+    </span>
+    <span>
       {isAccessRequest ? "pending" : (data as User).role}
-    </p>
+    </span>
     <AccessRoleDialog {data} bind:open />
   </AlertDialog.Trigger>
 </AlertDialog.Root>

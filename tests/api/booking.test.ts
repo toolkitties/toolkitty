@@ -138,8 +138,8 @@ test("booking queries", async () => {
       type: "event_created",
     },
     {
-      startDate: event002Start.toISOString(),
-      endDate: event002End.toISOString(),
+      startDate: event002Start,
+      endDate: event002End,
     },
   );
   await processMessage(event002);
@@ -151,8 +151,8 @@ test("booking queries", async () => {
     "resource_001",
     "event_002",
     {
-      start: new Date(event002Start),
-      end: new Date(event002End),
+      start: event002Start,
+      end: event002End,
     },
   );
   await processMessage(bookingRequest003);
@@ -196,18 +196,18 @@ test("booking queries", async () => {
   // Find all by timespan.
   bookingRequests = await bookings.findAll({
     calendarId: CALENDAR_ID,
-    from: event001Start,
+    from: new Date(event001Start),
   });
   expect(bookingRequests).lengthOf(3);
   bookingRequests = await bookings.findAll({
     calendarId: CALENDAR_ID,
-    from: event001End,
+    from: new Date(event001End),
   });
   expect(bookingRequests).lengthOf(0);
   bookingRequests = await bookings.findAll({
     calendarId: CALENDAR_ID,
-    from: event001Start,
-    to: bookingRequest001End,
+    from: new Date(event001Start),
+    to: new Date(bookingRequest001End),
   });
   expect(bookingRequests).lengthOf(2);
 

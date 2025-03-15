@@ -1,17 +1,19 @@
-export function isSubTimespan(
+import type { TimeSpanClass } from "$lib/timeSpan";
+
+export function isSubTimeSpan(
   startDate: Date,
   endDate: Date | undefined,
-  timeSpan: TimeSpan,
+  timeSpan: TimeSpanClass,
 ): boolean {
   if (!endDate) {
-    return startDate <= timeSpan.start;
+    return startDate <= timeSpan.startDate();
   }
 
-  if (!timeSpan.end) {
+  if (!timeSpan.endDate()) {
     return false;
   }
 
-  return timeSpan.end <= endDate && timeSpan.start >= startDate;
+  return timeSpan.endDate()! <= endDate && timeSpan.startDate() >= startDate;
 }
 
 export function debounce(

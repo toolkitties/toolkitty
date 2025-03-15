@@ -1,6 +1,6 @@
 import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
-import { isSubTimespan } from "$lib/utils/utils";
+import { TimeSpanClass } from "$lib/timeSpan";
 import { auth, events, publish } from ".";
 
 /**
@@ -246,16 +246,14 @@ async function onEventCreated(
 function onEventUpdated(data: EventUpdated["data"]): Promise<void> {
   const eventId = data.id;
   const { endDate, startDate } = data.fields;
+  const eventTimeSpan = new TimeSpanClass({ start: startDate, end: endDate });
 
   return db.transaction("rw", db.events, db.bookingRequests, async () => {
     // Update `validTime` field of all booking requests associated with this event.
     await db.bookingRequests.where({ eventId }).modify((request) => {
-      const isValid = isSubTimespan(
-        new Date(startDate),
-        new Date(endDate),
-        request.timeSpan,
-      );
-      request.isValid = isValid ? "true" : "false";
+      const requestTimeSpan = new TimeSpanClass(request.timeSpan);
+      const isSub = eventTimeSpan.contains(requestTimeSpan);
+      request.isValid = isSub ? "true" : "false";
     });
 
     // @TODO: we could show a toast to the user if a previously valid event timespan now became
