@@ -32,7 +32,7 @@
 <p>{data.space.description}</p>
 <p>Accessibility Information: {data.space.accessibility}</p>
 <p>Capacity: {data.space.capacity}</p>
-<AvailabilityViewer space={data.space} />
+<AvailabilityViewer data={data.space} />
 <pre>{JSON.stringify(data.space)}</pre>
 {#if data.userRole == "admin"}
   <a class="button" href="/app/spaces/{data.space!.id}/edit">Edit</a>

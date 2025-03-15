@@ -4,6 +4,7 @@
   import type { Observable } from "dexie";
   import { bookings } from "$lib/api";
   import UpcomingBookings from "$lib/components/UpcomingBookings.svelte";
+  import AvailabilityViewer from "$lib/components/AvailabilityViewer.svelte";
 
   let { data }: PageProps = $props();
 
@@ -29,6 +30,7 @@
   <UpcomingBookings {upcomingBookings} />
 {/if}
 <p>{data.resource.description}</p>
+<AvailabilityViewer data={data.resource} />
 
 {#if data.userRole == "admin"}
   <a class="button" href="/app/resources/{data.resource!.id}/edit">Edit</a>

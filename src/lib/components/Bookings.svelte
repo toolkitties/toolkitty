@@ -1,5 +1,5 @@
 <script lang="ts">
-  let { availability, space, booked } = $props();
+  let { availability, data, booked } = $props();
 
   /**
    * Calculate the difference in hours between two dates
@@ -83,7 +83,7 @@
 </script>
 
 <p>
-  {space.name} is available between {availability.start} and {availability.end}
+  {data.name} is available between {availability.start} and {availability.end}
 </p>
 {#if bookedBlocks.length === 0}
   <p>No bookings yet.</p>
