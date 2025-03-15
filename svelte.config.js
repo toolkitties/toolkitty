@@ -9,6 +9,9 @@ const config = {
   preprocess: vitePreprocess(),
   kit: {
     adapter: adapter(),
+    router: {
+      type: 'hash'
+    }
   },
 };
 
