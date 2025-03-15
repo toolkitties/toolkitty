@@ -58,13 +58,13 @@ export function findAll(
 
       if (from) {
         query.filter((request) => {
-          return request.timeSpan.start >= from;
+          return new Date(request.timeSpan.start) >= from;
         });
       }
 
       if (to) {
         query.filter((request) => {
-          return request.timeSpan.start <= to;
+          return new Date(request.timeSpan.start) <= to;
         });
       }
 
