@@ -7,8 +7,12 @@
 
   let { data }: PageProps = $props();
 
-  let pendingRequests = liveQuery(() =>
-    bookings.findPending(data.activeCalendarId!),
+  let myPendingRequests = liveQuery(() =>
+    bookings.findAll({
+      calendarId: data.activeCalendarId,
+      status: "pending",
+      resourceOwner: data.publicKey,
+    }),
   );
 
   let mySpaces = liveQuery(() =>
@@ -28,8 +32,8 @@
 
 <section class="mb-8">
   <h3>pending requests</h3>
-  {#if $pendingRequests?.length > 0}
-    {#each $pendingRequests as request (request.id)}
+  {#if $myPendingRequests?.length > 0}
+    {#each $myPendingRequests as request (request.id)}
       <RequestDialog {request} />
     {/each}
   {:else}
