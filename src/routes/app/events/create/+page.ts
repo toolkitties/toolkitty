@@ -4,6 +4,7 @@ import { eventSchema } from "$lib/schemas";
 import { defaults } from "sveltekit-superforms";
 import { zod } from "sveltekit-superforms/adapters";
 import { db } from "$lib/db";
+import { TimeSpanClass } from "$lib/timeSpan";
 
 export const load: PageLoad = async () => {
   const activeCalendarId = await calendars.getActiveCalendarId();
@@ -14,10 +15,13 @@ export const load: PageLoad = async () => {
     start: activeCalendar!.startDate!,
     end: activeCalendar!.endDate,
   };
-  const spacesList = await spaces.findByTimespan(activeCalendarId!, timeSpan);
-  const resourcesList = await resources.findByTimespan(
+  const spacesList = await spaces.findByTimeSpan(
     activeCalendarId!,
-    timeSpan,
+    new TimeSpanClass(timeSpan),
+  );
+  const resourcesList = await resources.findByTimeSpan(
+    activeCalendarId!,
+    new TimeSpanClass(timeSpan),
   );
 
   const form = defaults(zod(eventSchema));

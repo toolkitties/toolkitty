@@ -7,14 +7,14 @@ import {
   OWNER_PUBLIC_KEY,
 } from "$lib/utils/faker";
 
-export const calendar001Start = new Date("2025-03-01T09:00:00Z");
-export const calendar001End = new Date("2025-07-01T17:00:00Z");
-export const event001Start = new Date("2025-03-01T10:00:00Z");
-export const event001End = new Date("2025-03-01T17:00:00Z");
-export const bookingRequest001Start = new Date("2025-03-01T10:00:00Z");
-export const bookingRequest001End = new Date("2025-03-01T11:00:00Z");
-export const bookingRequest002Start = new Date("2025-03-01T12:00:00Z");
-export const bookingRequest002End = new Date("2025-03-01T13:00:00Z");
+export const calendar001Start = "2025-03-01T09:00:00Z";
+export const calendar001End = "2025-07-01T17:00:00Z";
+export const event001Start = "2025-03-01T10:00:00Z";
+export const event001End = "2025-03-01T17:00:00Z";
+export const bookingRequest001Start = "2025-03-01T10:00:00Z";
+export const bookingRequest001End = "2025-03-01T11:00:00Z";
+export const bookingRequest002Start = "2025-03-01T12:00:00Z";
+export const bookingRequest002End = "2025-03-01T13:00:00Z";
 
 export const seedTestMessages = (): ApplicationMessage[] => {
   const calendar001 = createCalendarMessage(
@@ -33,8 +33,8 @@ export const seedTestMessages = (): ApplicationMessage[] => {
       type: "event_created",
     },
     {
-      startDate: event001Start.toISOString(),
-      endDate: event001End.toISOString(),
+      startDate: event001Start,
+      endDate: event001End,
     },
   );
 

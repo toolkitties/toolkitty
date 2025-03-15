@@ -9,6 +9,7 @@
   import { eventSchema } from "$lib/schemas";
   import { zod } from "sveltekit-superforms/adapters";
   import { events, resources, bookings } from "$lib/api";
+  import { TimeSpanClass } from "$lib/timeSpan";
 
   let {
     data,
@@ -25,16 +26,36 @@
   let selectedSpace: Space | null = $state<Space | null>(null);
   let availableResources: Resource[] = $state([]);
   let selectedResources: Resource[] = $state([]);
+  let availableResourceBookings: { resourceId: string; timeSpan: TimeSpan }[] =
+    $state([]);
+
   async function handleSpaceSelection(space: Space) {
     selectedSpace = space;
     if (selectedSpace.availability == "always") {
       availableResources = resourcesList;
     } else {
       let spaceTimeSpan = calculateSpaceTimespan(selectedSpace.availability);
-      availableResources = await resources.findByTimespan(
+      availableResources = await resources.findByTimeSpan(
         activeCalendarId,
-        spaceTimeSpan,
+        new TimeSpanClass(spaceTimeSpan),
       );
+      for (const resource of availableResources) {
+        const bookings = await resources.findBookings(
+          resource.id,
+          new TimeSpanClass(spaceTimeSpan),
+        );
+        if (bookings.length > 0) {
+          for (const booking of bookings) {
+            availableResourceBookings.push({
+              resourceId: resource.id,
+              timeSpan: {
+                start: booking.timeSpan.start,
+                end: booking.timeSpan.end,
+              },
+            });
+          }
+        }
+      }
     }
   }
 
@@ -47,6 +68,29 @@
         acc.end! > curr.end! ? acc : curr,
       ).end,
     };
+  }
+
+  function recalculateResourceAvailbaility() {
+    if (availableResourceBookings.length === 0) return;
+    const eventTimeSpan = {
+      start: $form.startDate,
+      end: $form.endDate,
+    };
+    /*
+    Go through each selectedResourceBooking
+    if the timeSpan overlaps with the selectedResourceBooking
+    then remove the resource from availableResources
+    */
+    for (const booking of availableResourceBookings) {
+      if (
+        eventTimeSpan.start < booking.timeSpan.end! &&
+        eventTimeSpan.end > booking.timeSpan.start
+      ) {
+        availableResources = availableResources.filter(
+          (resource) => resource.id !== booking.resourceId,
+        );
+      }
+    }
   }
 
   const { form, errors, enhance } = superForm(data, {
@@ -152,8 +196,8 @@
           "space",
           "Requesting access to space",
           {
-            start: new Date(payload.startDate),
-            end: new Date(payload.endDate),
+            start: payload.startDate,
+            end: payload.endDate,
           },
         );
         spaceBookingId = spaceBooking; // store to update event with booking id
@@ -168,8 +212,8 @@
             "resource",
             "Requesting resource",
             {
-              start: new Date(payload.startDate),
-              end: new Date(payload.endDate),
+              start: payload.startDate,
+              end: payload.endDate,
             },
           );
           resourceBookingIds.push(resourceBooking);
@@ -313,6 +357,7 @@
           required
           aria-invalid={$errors.startDate ? "true" : undefined}
           bind:value={$form.startDate}
+          onchange={recalculateResourceAvailbaility}
         />
         {#if $errors.startDate}<span class="form-error"
             >{$errors.startDate}</span
@@ -325,6 +370,7 @@
           required
           aria-invalid={$errors.endDate ? "true" : undefined}
           bind:value={$form.endDate}
+          onchange={recalculateResourceAvailbaility}
         />
         {#if $errors.endDate}<span class="form-error">{$errors.endDate}</span
           >{/if}
@@ -336,7 +382,6 @@
         <input
           type="datetime-local"
           name="startDate"
-          required
           aria-invalid={$errors.startDate ? "true" : undefined}
           bind:value={$form.publicStartDate}
         />
@@ -348,7 +393,6 @@
         <input
           type="datetime-local"
           name="publicEndDate"
-          required
           aria-invalid={$errors.publicEndDate ? "true" : undefined}
           bind:value={$form.publicEndDate}
         />
