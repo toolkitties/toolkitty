@@ -291,8 +291,7 @@ async function onCalendarAccessRequested(
   };
 
   await db.accessRequests.add(accessRequest);
-  const publicKey = await identity.publicKey();
-  const accessStatus = await checkStatus(publicKey, calendarId);
+  const accessStatus = await checkStatus(meta.author, calendarId);
 
   // Show toast to user with request if owner or admin.
   const amOwner = await calendars.amOwner(calendarId);
