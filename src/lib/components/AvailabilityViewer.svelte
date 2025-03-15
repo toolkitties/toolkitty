@@ -4,6 +4,7 @@
   import { fromDate } from "@internationalized/date";
   import { spaces } from "$lib/api";
   import Bookings from "./Bookings.svelte";
+  import { TimeSpanClass } from "$lib/timeSpan";
 
   let { space }: { space: Space } = $props();
   let availability: TimeSpan[] = $derived(space.availability) as TimeSpan[];
@@ -31,7 +32,10 @@
       if (isSameDate(timeSpanStartDateValue, value)) {
         availabilityByDay = { start: timeSpan.start, end: timeSpan.end };
 
-        booked = await spaces.findBookings(space.id, availabilityByDay);
+        booked = await spaces.findBookings(
+          space.id,
+          new TimeSpanClass(availabilityByDay),
+        );
         break;
       }
     }

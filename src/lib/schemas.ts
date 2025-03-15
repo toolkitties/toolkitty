@@ -10,8 +10,8 @@ const linkSchema = z.object({
 const imageSchema = z.string();
 
 const timeSpanSchema = z.object({
-  start: z.date(),
-  end: z.date(),
+  start: z.string(),
+  end: z.string(),
 });
 
 const availabilitySchema = z
@@ -47,8 +47,8 @@ const physicalLocationSchema = z.object({
 
 const gpsLocationSchema = z.object({
   type: z.literal("gps"),
-  lat: z.string(),
-  lon: z.string(),
+  lat: z.number(),
+  lon: z.number(),
 });
 
 const virtualLocationSchema = z.object({
@@ -91,7 +91,7 @@ export const eventSchema = z.object({
   description: z.string().min(1, "Event description is required"),
   startDate: z.string().min(1, "Access start time is required"),
   endDate: z.string().min(1, "Access end time is required"),
-  publicStartDate: z.string().min(1, "Event start time is required"),
+  publicStartDate: z.string(),
   publicEndDate: z.string(),
   resourceRequests: z.array(z.string()).optional(),
   links: z
@@ -112,7 +112,9 @@ export const calendarSchema = z.object({
   dates: z
     .array(timeSpanSchema)
     .min(1, "A start date is required")
-    .default([{ start: new Date(), end: new Date() }]),
+    .default(() => [
+      { start: new Date().toISOString(), end: new Date().toISOString() },
+    ]),
   calendarInstructions: z.string().nullable(),
   spacePageText: z.string().nullable(),
   resourcePageText: z.string().nullable(),

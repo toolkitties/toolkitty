@@ -1,6 +1,6 @@
 import type { PageLoad } from "./$types";
 import { error } from "@sveltejs/kit";
-import { resources, users } from "$lib/api";
+import { resources, users, calendars } from "$lib/api";
 import { superValidate } from "sveltekit-superforms";
 import { zod } from "sveltekit-superforms/adapters";
 import { resourceSchema } from "$lib/schemas";
@@ -25,5 +25,14 @@ export const load: PageLoad = async ({ params, parent }) => {
 
   const form = await superValidate(resourceFields, zod(resourceSchema));
 
-  return { title: "edit resource", form, activeCalendarId, userRole };
+  const calendar = await calendars.findOne(activeCalendarId!);
+  const calendarDates = { start: calendar!.startDate!, end: calendar!.endDate };
+
+  return {
+    title: "edit resource",
+    form,
+    activeCalendarId,
+    userRole,
+    calendarDates,
+  };
 };

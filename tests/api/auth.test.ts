@@ -136,8 +136,8 @@ describe("non-owners cannot perform updates", () => {
             name: "New calendar name",
             dates: [
               {
-                start: new Date("2025-03-01T09:00:00Z"),
-                end: new Date("2025-03-01T17:00:00Z"),
+                start: "2025-03-01T09:00:00Z",
+                end: "2025-03-01T17:00:00Z",
               },
             ],
             calendarInstructions: null,
