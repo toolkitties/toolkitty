@@ -8,7 +8,11 @@
   let { data }: PageProps = $props();
 
   let pendingRequests = liveQuery(() =>
-    bookings.findPending(data.activeCalendarId!),
+    bookings.findAll({
+      calendarId: data.activeCalendarId,
+      status: "pending",
+      resourceOwner: data.publicKey,
+    }),
   );
 
   let mySpaces = liveQuery(() =>
