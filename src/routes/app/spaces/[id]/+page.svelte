@@ -26,14 +26,33 @@
 </script>
 
 <h1>{data.space.name}</h1>
+
 {#if amOwner}
   <UpcomingBookings {upcomingBookings} />
 {/if}
+
+{#if data.space.location.type === "physical"}
+  <p>
+    {#if data.space.location.street}{data.space.location.street}{/if}
+    {#if data.space.location.city}, {data.space.location.city}{/if}
+    {#if data.space.location.state}, {data.space.location.state}{/if}
+    {#if data.space.location.zip}, {data.space.location.zip}{/if}
+    {#if data.space.location.country}, {data.space.location.country}{/if}
+  </p>
+{:else if data.space.location.type === "gps"}
+  <p>{data.space.location.lat}, {data.space.location.lon}</p>
+{:else}
+  <p>{data.space.location.link}</p>
+{/if}
+
 <p>{data.space.description}</p>
 <p>Accessibility Information: {data.space.accessibility}</p>
 <p>Capacity: {data.space.capacity}</p>
+
 <AvailabilityViewer data={data.space} />
-<pre>{JSON.stringify(data.space)}</pre>
+
 {#if data.userRole == "admin"}
   <a class="button" href="/app/spaces/{data.space!.id}/edit">Edit</a>
 {/if}
+
+<pre>{JSON.stringify(data.space)}</pre>
