@@ -17,7 +17,15 @@ import {
 } from "$lib/utils/faker";
 import { mockIPC } from "@tauri-apps/api/mocks";
 import { beforeAll, expect, test } from "vitest";
-import { access, auth, bookings, calendars, events, resources, spaces } from "$lib/api";
+import {
+  access,
+  auth,
+  bookings,
+  calendars,
+  events,
+  resources,
+  spaces,
+} from "$lib/api";
 import { debounce } from "$lib/utils/utils";
 
 const createCalendar = createCalendarMessage(CALENDAR_ID, OWNER_PUBLIC_KEY, {
@@ -268,7 +276,10 @@ test("process out-of-order message", async () => {
   const pendingBookings = await bookings.findAll({ status: "pending" });
   expect(pendingBookings.length).toBe(1);
 
-  const accessStatus = await access.checkStatus(CALENDAR_ID, NON_OWNER_PUBLIC_KEY);
+  const accessStatus = await access.checkStatus(
+    CALENDAR_ID,
+    NON_OWNER_PUBLIC_KEY,
+  );
   expect(accessStatus).toBeTruthy();
 
   const isAdmin = await auth.isAdmin(CALENDAR_ID, NON_OWNER_PUBLIC_KEY);
