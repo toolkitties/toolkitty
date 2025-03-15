@@ -115,8 +115,8 @@ export const calendarSchema = z
       .array(timeSpanSchema)
       .min(1, "A start date is required")
       .default(() => [
-      { start: new Date().toISOString(), end: new Date().toISOString() },
-    ]),
+        { start: new Date().toISOString(), end: new Date().toISOString() },
+      ]),
     calendarInstructions: z.string().nullable(),
     spacePageText: z.string().nullable(),
     resourcePageText: z.string().nullable(),
