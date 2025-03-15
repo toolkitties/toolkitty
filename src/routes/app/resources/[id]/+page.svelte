@@ -8,6 +8,7 @@
   let { data }: PageProps = $props();
 
   let now = new Date();
+  // TODO: look into if this should be declared with `$state(...)` as errors says.
   let upcomingBookings: Observable<BookingRequestEnriched[]>;
   let amOwner = data.resource.ownerId === data.publicKey;
 
@@ -27,7 +28,10 @@
 {#if amOwner}
   <UpcomingBookings {upcomingBookings} />
 {/if}
-<pre>{JSON.stringify(data.resource)}</pre>
+<p>{data.resource.description}</p>
+
 {#if data.userRole == "admin"}
-  <a href="/app/resources/{data.resource!.id}/edit">Edit</a>
+  <a class="button" href="/app/resources/{data.resource!.id}/edit">Edit</a>
 {/if}
+
+<pre>{JSON.stringify(data.resource)}</pre>

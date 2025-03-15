@@ -20,6 +20,11 @@
 </script>
 
 <h1>{data.event.name}</h1>
+<p>{data.event.startDate}</p>
+<p>{data.event.startDate}-{data.event.endDate}</p>
+{#if data.event.space}
+  <a href={`#/spaces/${data.event.space.id}`}>{data.event.space.name}</a>
+{/if}
 {#if data.userRole === "admin" && $upcomingBookings?.length > 0}
   <section>
     <h3>Requests</h3>
@@ -37,7 +42,14 @@
     {/each}
   </section>
 {/if}
-<pre>{JSON.stringify(data.event)}</pre>
+<section>
+  <p>{data.event.description}</p>
+  <a href={data.event.links[0].url}>{data.event.links[0].title}</a>
+  <a href={data.event.links[0].url}>{data.event.links[0].title}</a>
+</section>
+
 {#if data.userRole == "admin"}
-  <a href="/app/events/{data.event!.id}/edit">Edit</a>
+  <a class="button" href="/app/events/{data.event!.id}/edit">Edit</a>
 {/if}
+
+<pre>{JSON.stringify(data.event)}</pre>
