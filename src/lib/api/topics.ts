@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { identity, publish, topics } from ".";
+import { debounce } from "$lib/utils/utils";
 
 export class TopicFactory {
   private id: Hash;
@@ -86,21 +87,4 @@ async function onCalendarCreated(meta: StreamMessageMeta) {
     await topics.subscribeToInbox(meta.stream.id);
     await topics.subscribeToCalendar(meta.stream.id);
   }
-}
-
-function debounce(
-  func: (topic: Topic) => Promise<void>,
-  wait: number,
-): (topic: Topic) => void {
-  let timeout: ReturnType<typeof setTimeout> | undefined;
-
-  return function (topic: Topic) {
-    if (timeout !== undefined) {
-      clearTimeout(timeout);
-    }
-
-    timeout = setTimeout(async () => {
-      await func(topic);
-    }, wait);
-  };
 }
