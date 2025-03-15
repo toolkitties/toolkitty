@@ -15,10 +15,13 @@
   <section>
     <h3>Upcoming bookings</h3>
     {#each $upcomingBookings as booking (booking.id)}
-      <a href={`/app/events/${booking.eventId}`}>
-        {booking.event?.name}
-        {booking.event?.startDate}
-        {booking.status}
+      <a
+        href={`/app/events/${booking.eventId}`}
+        class="block border border-black p-2 w-full text-left"
+      >
+        <p>{booking.event?.name}</p>
+        <p>{booking.event?.startDate}</p>
+        <p>{booking.status}</p>
       </a>
     {/each}
   </section>

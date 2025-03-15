@@ -6,7 +6,7 @@ export const load: PageLoad = async ({ params, parent }) => {
   const spaceId = params.id;
   const space = await spaces.findById(spaceId);
 
-  if (!space || !space.id) {
+  if (!space) {
     error(404, {
       message: "Resource not found",
     });
