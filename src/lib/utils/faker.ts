@@ -288,8 +288,14 @@ export function createBookingRequestMessage(
   type: "space" | "resource",
   resourceId: Hash,
   eventId: Hash,
-  timeSpan: TimeSpan,
+  timeSpan?: TimeSpan,
 ): ApplicationMessage {
+  const start = faker.date.future();
+  const end = faker.date.future({ refDate: start });
+  const fakeTimeSpan = {
+    start,
+    end,
+  };
   return {
     meta: {
       operationId: id,
@@ -305,7 +311,109 @@ export function createBookingRequestMessage(
         resourceId,
         eventId,
         message: faker.word.words({ count: 8 }),
-        timeSpan,
+        timeSpan: timeSpan ? timeSpan : fakeTimeSpan,
+      },
+    },
+  };
+}
+
+export function createBookingResponseMessage(
+  id: Hash,
+  author: PublicKey,
+  requestId: Hash,
+  response: "reject" | "accept",
+): ApplicationMessage {
+  return {
+    meta: {
+      operationId: id,
+      author,
+      stream: STREAM,
+      logPath: LOG_PATH,
+    },
+    event: "application",
+    data: {
+      type:
+        response == "accept"
+          ? "booking_request_accepted"
+          : "booking_request_rejected",
+      data: {
+        requestId,
+      },
+    },
+  };
+}
+
+export function createAssignRoleMessage(
+  id: Hash,
+  author: PublicKey,
+  publicKey: Hash,
+  role: "organiser" | "admin",
+): ApplicationMessage {
+  return {
+    meta: {
+      operationId: id,
+      author,
+      stream: STREAM,
+      logPath: LOG_PATH,
+    },
+    event: "application",
+    data: {
+      type: "user_role_assigned",
+      data: {
+        publicKey,
+        role,
+      },
+    },
+  };
+}
+
+export function createRequestAccessMessage(
+  id: Hash,
+  author: PublicKey,
+): ApplicationMessage {
+  return {
+    meta: {
+      operationId: id,
+      author,
+      stream: STREAM,
+      logPath: LOG_PATH,
+    },
+    event: "application",
+    data: {
+      type: "calendar_access_requested",
+      data: {
+        calendarId: CALENDAR_ID,
+        name: faker.animal.petName(),
+        message: faker.word.words(10),
+      },
+    },
+  };
+}
+
+export function createAccessResponseMessage(
+  id: Hash,
+  author: PublicKey,
+  requestId: Hash,
+  answer: "accept" | "reject",
+): ApplicationMessage {
+  let type: "calendar_access_accepted" | "calendar_access_rejected";
+  if (answer === "accept") {
+    type = "calendar_access_accepted";
+  } else {
+    type = "calendar_access_rejected";
+  }
+  return {
+    meta: {
+      operationId: id,
+      author,
+      stream: STREAM,
+      logPath: LOG_PATH,
+    },
+    event: "application",
+    data: {
+      type,
+      data: {
+        requestId,
       },
     },
   };
