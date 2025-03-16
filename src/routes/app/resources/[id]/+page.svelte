@@ -5,6 +5,7 @@
   import { bookings } from "$lib/api";
   import UpcomingBookings from "$lib/components/UpcomingBookings.svelte";
   import AvailabilityViewer from "$lib/components/AvailabilityViewer.svelte";
+  import Links from "$lib/components/Links.svelte";
 
   let { data }: PageProps = $props();
 
@@ -25,15 +26,20 @@
   }
 </script>
 
-<h1>{data.resource.name}</h1>
-{#if amOwner}
-  <UpcomingBookings {upcomingBookings} />
-{/if}
-<p>{data.resource.description}</p>
-<AvailabilityViewer data={data.resource} />
+<div class="space-y-4">
+  <h1>{data.resource.name}</h1>
+  {#if amOwner}
+    <UpcomingBookings {upcomingBookings} />
+  {/if}
+  <p>{data.resource.description}</p>
 
-{#if data.userRole == "admin"}
-  <a class="button" href="/app/resources/{data.resource!.id}/edit">Edit</a>
-{/if}
+  <Links links={[data.resource.link]} />
 
-<pre>{JSON.stringify(data.resource)}</pre>
+  <AvailabilityViewer data={data.resource} />
+
+  {#if data.userRole == "admin"}
+    <a class="button" href="/app/resources/{data.resource!.id}/edit">Edit</a>
+  {/if}
+
+  <pre>{JSON.stringify(data.resource)}</pre>
+</div>

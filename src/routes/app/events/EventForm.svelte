@@ -345,7 +345,7 @@
     {#if selectedSpace}
       <div class="space-availability">
         <p>View availability for {selectedSpace.name}</p>
-        <AvailabilityViewer space={selectedSpace} />
+        <AvailabilityViewer data={selectedSpace} />
       </div>
 
       <p>Request access to selected space</p>
