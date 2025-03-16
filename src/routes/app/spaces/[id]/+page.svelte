@@ -63,7 +63,7 @@
   <AvailabilityViewer data={data.space} />
 
   {#if data.userRole == "admin"}
-    <a class="button" href="/app/spaces/{data.space!.id}/edit">Edit</a>
+    <a class="button" href="#/app/spaces/{data.space!.id}/edit">Edit</a>
   {/if}
 
   <pre>{JSON.stringify(data.space, null, 2)}</pre>

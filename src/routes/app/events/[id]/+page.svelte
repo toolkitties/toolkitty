@@ -54,7 +54,7 @@
   <Links links={data.event.links} />
 
   {#if data.userRole == "admin"}
-    <a class="button" href="/app/events/{data.event!.id}/edit">Edit</a>
+    <a class="button" href="#/app/events/{data.event!.id}/edit">Edit</a>
   {/if}
 
   <pre>{JSON.stringify(data.event, null, 2)}</pre>

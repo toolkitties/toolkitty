@@ -38,7 +38,7 @@
   <AvailabilityViewer data={data.resource} />
 
   {#if data.userRole == "admin"}
-    <a class="button" href="/app/resources/{data.resource!.id}/edit">Edit</a>
+    <a class="button" href="#/app/resources/{data.resource!.id}/edit">Edit</a>
   {/if}
 
   <pre>{JSON.stringify(data.resource, null, 2)}</pre>

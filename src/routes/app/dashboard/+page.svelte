@@ -64,7 +64,7 @@
       </a>
     {/each}
     <a
-      href="/app/events/create"
+      href="#/app/events/create"
       class="rounded-full border-black border p-2 inline-block"
     >
       <PlusIcon size={10} />
@@ -92,7 +92,7 @@
     <p>you don't have any spaces yet</p>
   {/if}
   <a
-    href="/app/spaces/create"
+    href="#/app/spaces/create"
     class="rounded-full border-black border p-2 inline-block"
   >
     <PlusIcon size={10} />
@@ -117,7 +117,7 @@
     <p>you don't have any resources yet</p>
   {/if}
   <a
-    href="/app/spaces/create"
+    href="#/app/spaces/create"
     class="rounded-full border-black border p-2 inline-block"
   >
     <PlusIcon size={10} />

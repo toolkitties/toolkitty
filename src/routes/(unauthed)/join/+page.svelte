@@ -80,7 +80,7 @@
 </div>
 
 <a
-  href="/create"
+  href="#/create"
   class="border border-black rounded p-4 text-center"
   type="submit">Create</a
 >
