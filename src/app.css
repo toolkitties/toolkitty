@@ -118,6 +118,11 @@ html {
   .theme-dark nav .active .icon rect[fill="black"] {
     @apply fill-pink-hot;
   }
+
+  /* style json nicely */
+  pre {
+    @apply border border-black p-2 rounded overflow-auto bg-green-50;
+  }
 }
 
 @layer theme {

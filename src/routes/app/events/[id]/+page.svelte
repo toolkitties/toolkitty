@@ -54,5 +54,5 @@
     <a class="button" href="/app/events/{data.event!.id}/edit">Edit</a>
   {/if}
 
-  <pre>{JSON.stringify(data.event)}</pre>
+  <pre>{JSON.stringify(data.event, null, 2)}</pre>
 </div>

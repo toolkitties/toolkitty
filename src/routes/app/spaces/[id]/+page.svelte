@@ -66,5 +66,5 @@
     <a class="button" href="/app/spaces/{data.space!.id}/edit">Edit</a>
   {/if}
 
-  <pre>{JSON.stringify(data.space)}</pre>
+  <pre>{JSON.stringify(data.space, null, 2)}</pre>
 </div>

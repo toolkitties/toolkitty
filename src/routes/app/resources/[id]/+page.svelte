@@ -41,5 +41,5 @@
     <a class="button" href="/app/resources/{data.resource!.id}/edit">Edit</a>
   {/if}
 
-  <pre>{JSON.stringify(data.resource)}</pre>
+  <pre>{JSON.stringify(data.resource, null, 2)}</pre>
 </div>
