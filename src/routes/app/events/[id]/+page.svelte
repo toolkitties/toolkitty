@@ -4,6 +4,7 @@
   import type { Observable } from "dexie";
   import { bookings } from "$lib/api";
   import Links from "$lib/components/Links.svelte";
+  import Date from "$lib/components/Date.svelte";
 
   let { data }: PageProps = $props();
 
@@ -24,7 +25,9 @@
   <h1>{data.event.name}</h1>
 
   <div>
-    <p>{data.event.startDate} - {data.event.endDate}</p>
+    <p>
+      <Date date={data.event.startDate} /> - <Date date={data.event.endDate} />
+    </p>
     {#if data.event.space}
       <a href={`#/spaces/${data.event.space.id}`}>{data.event.space.name}</a>
     {/if}

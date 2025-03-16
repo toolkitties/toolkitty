@@ -20,7 +20,7 @@
         class="block border border-black p-2 w-full text-left"
       >
         <p>{booking.event?.name}</p>
-        <p>{booking.event?.startDate}</p>
+        <p>{booking.event?.startDate.toLocaleString()}</p>
         <p>{booking.status}</p>
       </a>
     {/each}
