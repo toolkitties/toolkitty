@@ -26,6 +26,7 @@
   }
 </script>
 
+
 <div class="space-y-4">
   <h1>{data.space.name}</h1>
 

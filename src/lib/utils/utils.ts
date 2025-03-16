@@ -15,3 +15,20 @@ export function isSubTimeSpan(
 
   return timeSpan.endDate()! <= endDate && timeSpan.startDate() >= startDate;
 }
+
+export function debounce(
+  func: (topic: Topic) => Promise<void>,
+  wait: number,
+): (topic: Topic) => void {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+
+  return function (topic: Topic) {
+    if (timeout !== undefined) {
+      clearTimeout(timeout);
+    }
+
+    timeout = setTimeout(async () => {
+      await func(topic);
+    }, wait);
+  };
+}

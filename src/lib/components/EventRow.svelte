@@ -10,7 +10,7 @@
   // let tagColours = ["bg-yellow-light", "bg-fluro-green-light", "bg-red-light"];
 </script>
 
-<a href={`/app/events/${event.id}`} class="flex border-black border event-row">
+<a href={`#/app/events/${event.id}`} class="flex border-black border event-row">
   <img
     src={event.images[0]}
     alt=""

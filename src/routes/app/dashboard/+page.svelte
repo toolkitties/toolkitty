@@ -44,7 +44,10 @@
   <h3>my events & requests</h3>
   {#if $myEvents?.length > 0}
     {#each $myEvents as event (event.id)}
-      <a href={`/app/events/${event.id}`} class="p-2 border-black border block">
+      <a
+        href={`#/app/events/${event.id}`}
+        class="p-2 border-black border block"
+      >
         <h4>{event.name}</h4>
         <p>{event.startDate}</p>
         <p>{event.space ? event.space.name : "no space yet"}</p>

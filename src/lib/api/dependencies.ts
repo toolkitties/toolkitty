@@ -96,7 +96,7 @@ async function onCalendarEdit(
   data: CalendarUpdated["data"] | CalendarDeleted["data"] | PageUpdated["data"],
 ) {
   const calendar = await calendars.findOne(data.id);
-  if (!calendar) {
+  if (!calendar?.name) {
     throw new Error("calendar not yet received");
   }
 }
