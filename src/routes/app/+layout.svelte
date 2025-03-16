@@ -60,28 +60,26 @@
 
 {#if $activeCalendar?.name}
   <Header title={page.data.title} />
-  <main class="h-dvh">
-    <div class="p-8">
-      {@render children()}
-    </div>
-    <nav
-      class="fixed bottom-0 right-0 w-full py-2.5 px-6 border-t border-black"
-    >
-      <ul class="flex gap-6 justify-between items-center h-full">
-        {#each menu as { name, url, icon: Icon } (name)}
-          <li>
-            <a
-              href={url}
-              class={page.url.hash.includes(url) ? "active" : "not-active"}
-            >
-              <Icon />
-              <span class="sr-only">{name}</span>
-            </a>
-          </li>
-        {/each}
-      </ul>
-    </nav>
+  <main class="min-h-dvh p-8">
+    {@render children()}
   </main>
+  <nav
+    class="sticky bottom-0 right-0 w-full py-2.5 px-6 border-t border-black bg-bg"
+  >
+    <ul class="flex gap-6 justify-between items-center h-full">
+      {#each menu as { name, url, icon: Icon } (name)}
+        <li>
+          <a
+            href={url}
+            class={page.url.pathname.includes(url) ? "active" : "not-active"}
+          >
+            <Icon />
+            <span class="sr-only">{name}</span>
+          </a>
+        </li>
+      {/each}
+    </ul>
+  </nav>
 {:else}
   <!-- Show pending state if active calendar is undefined -->
   <p>Waiting for calendar data from peers...</p>

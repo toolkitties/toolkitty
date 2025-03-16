@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Date from "./Date.svelte";
   // TODO: Define the type of the event prop
 
   let { event }: { event: CalendarEventEnriched } = $props();
@@ -17,8 +18,8 @@
   />
   <div class="flex flex-col gap-1 p-2">
     <h3>{event.name}</h3>
-    <span>🗓️ {new Date(event.startDate).toLocaleString()}</span>
-    <span>🕣 {new Date(event.endDate).toLocaleString()}</span>
+    <span>🗓️ <Date date={event.startDate} /></span>
+    <span>🕣 <Date date={event.startDate} /></span>
     <span>📍 {event.space ? event.space.name : "no space yet"}</span>
   </div>
 </a>

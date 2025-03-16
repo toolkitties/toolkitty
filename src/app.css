@@ -73,7 +73,8 @@ html {
     @apply w-full p-2.5 border border-black rounded;
   }
 
-  button {
+  button,
+  .button {
     @apply border border-black bg-black/20 rounded px-2 py-1.5;
   }
 
@@ -116,6 +117,11 @@ html {
   /* style menu icons when active in dark mode */
   .theme-dark nav .active .icon rect[fill="black"] {
     @apply fill-pink-hot;
+  }
+
+  /* style json nicely */
+  pre {
+    @apply border border-black p-2 rounded overflow-auto bg-green-50;
   }
 }
 

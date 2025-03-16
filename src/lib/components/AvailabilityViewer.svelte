@@ -6,8 +6,8 @@
   import Bookings from "./Bookings.svelte";
   import { TimeSpanClass } from "$lib/timeSpan";
 
-  let { space }: { space: Space } = $props();
-  let availability: TimeSpan[] = $derived(space.availability) as TimeSpan[];
+  let { data }: { data: Space | Resource } = $props();
+  let availability: TimeSpan[] = $derived(data.availability) as TimeSpan[];
   let availabilityByDay: TimeSpan | null = $state(null);
   let currentlySelectedDate: DateValue | undefined = $state(undefined);
   let booked: BookingRequest[] = $state([]); // Store bookings
@@ -33,7 +33,7 @@
         availabilityByDay = { start: timeSpan.start, end: timeSpan.end };
 
         booked = await spaces.findBookings(
-          space.id,
+          data.id,
           new TimeSpanClass(availabilityByDay),
         );
         break;
@@ -102,8 +102,8 @@
   {/snippet}
 </Calendar.Root>
 {#if currentlySelectedDate}
-  <Bookings availability={availabilityByDay} {space} {booked} />
+  <Bookings availability={availabilityByDay} {data} {booked} />
 {/if}
-{#if space.multiBookable}
+{#if data.multiBookable}
   <p>This space can have multiple bookings at the same time.</p>
 {/if}
