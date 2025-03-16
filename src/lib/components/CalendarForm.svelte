@@ -21,11 +21,12 @@
     dataType: "json",
     async onUpdate({ form }) {
       if (form.valid) {
-        const { id, userName, ...payload } = form.data;
+        const { id, userName, startDate, endDate, ...payload } = form.data;
+        const dates = [{ start: startDate, end: endDate }];
         if (form.data.id) {
-          handleUpdateCalendar(id!, payload);
+          handleUpdateCalendar(id!, { dates, ...payload });
         } else {
-          handleCreateCalendar(payload, userName!);
+          handleCreateCalendar({ dates, ...payload }, userName!);
         }
       }
     },
@@ -103,16 +104,12 @@
       <input
         name="calendar-start-date"
         type="date"
-        bind:value={$form.dates[0].start}
+        bind:value={$form.startDate}
       />
     </div>
     <div class="end-date">
       <label for="calendar-end-date">End Date *</label>
-      <input
-        name="calendar-end-date"
-        type="date"
-        bind:value={$form.dates[0].end}
-      />
+      <input name="calendar-end-date" type="date" bind:value={$form.endDate} />
       <label>
         <input type="checkbox" bind:checked={noEndDate} />
         no end date

@@ -111,12 +111,8 @@ export const calendarSchema = z
     id: z.string().optional(),
     name: z.string().min(1, "Calendar name is required"),
     userName: z.string().optional(),
-    dates: z
-      .array(timeSpanSchema)
-      .min(1, "A start date is required")
-      .default(() => [
-        { start: new Date().toISOString(), end: new Date().toISOString() },
-      ]),
+    startDate: z.string().min(1, "A start date is required"),
+    endDate: z.string().optional(),
     calendarInstructions: z.string().nullable(),
     spacePageText: z.string().nullable(),
     resourcePageText: z.string().nullable(),
