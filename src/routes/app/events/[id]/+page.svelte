@@ -2,7 +2,8 @@
   import type { PageProps } from "./$types";
   import { liveQuery } from "dexie";
   import type { Observable } from "dexie";
-  import { bookings } from "$lib/api";
+  import { bookings, events } from "$lib/api";
+  import { error } from "@sveltejs/kit";
   import Links from "$lib/components/Links.svelte";
   import Date from "$lib/components/Date.svelte";
   import BookingRequest from "$lib/components/BookingRequest.svelte";
@@ -11,43 +12,55 @@
 
   let upcomingBookings: Observable<BookingRequestEnriched[]>;
 
+  let event = liveQuery(() => {
+    const e = events.findById(data.eventId);
+    if (!e) {
+      error(404, {
+        message: "Resource not found",
+      });
+    }
+    return e;
+  });
+
   if (data.userRole === "admin") {
     // TODO: Perhaps adjust to account for bookings taking place right now.
     upcomingBookings = liveQuery(() =>
       bookings.findAll({
         calendarId: data.activeCalendarId,
-        eventId: data.event.id,
+        eventId: data.eventId,
       }),
     );
   }
 </script>
 
-<div class="space-y-4">
-  <h1>{data.event.name}</h1>
+{#if $event}
+  <div class="space-y-4">
+    <h1>{$event.name}</h1>
 
-  <div>
-    <p>
-      <Date date={data.event.startDate} /> - <Date date={data.event.endDate} />
-    </p>
-    {#if data.event.space}
-      <a href={`#/spaces/${data.event.space.id}`}>{data.event.space.name}</a>
+    <div>
+      <p>
+        <Date date={$event.startDate} /> - <Date date={$event.endDate} />
+      </p>
+      {#if $event.space}
+        <a href={`#/spaces/${$event.space.id}`}>{$event.space.name}</a>
+      {/if}
+    </div>
+
+    {#if (data.userRole === "admin" || data.publicKey == $event.ownerId) && $upcomingBookings?.length > 0}
+      <section>
+        <h3>Requests</h3>
+        {#each $upcomingBookings as booking (booking.id)}
+          <BookingRequest request={booking} />
+        {/each}
+      </section>
     {/if}
+
+    <Links links={$event.links} />
+
+    {#if data.userRole == "admin"}
+      <a class="button" href="#/app/events/{$event!.id}/edit">Edit</a>
+    {/if}
+
+    <pre>{JSON.stringify($event, null, 2)}</pre>
   </div>
-
-  {#if (data.userRole === "admin" || data.publicKey == data.event.ownerId) && $upcomingBookings?.length > 0}
-    <section>
-      <h3>Requests</h3>
-      {#each $upcomingBookings as booking (booking.id)}
-        <BookingRequest request={booking} />
-      {/each}
-    </section>
-  {/if}
-
-  <Links links={data.event.links} />
-
-  {#if data.userRole == "admin"}
-    <a class="button" href="#/app/events/{data.event!.id}/edit">Edit</a>
-  {/if}
-
-  <pre>{JSON.stringify(data.event, null, 2)}</pre>
-</div>
+{/if}
