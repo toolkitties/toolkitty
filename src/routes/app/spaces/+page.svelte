@@ -4,9 +4,6 @@
   let { data }: PageProps = $props();
 </script>
 
-<br />
-<br />
-<br />
 <h1 class="font-pixel">Spaces</h1>
 <a href="#/app/spaces/create">Create space</a>
 {#each data.spacesList as space (space.id)}
