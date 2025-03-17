@@ -25,7 +25,7 @@
     resourcesList: Resource[];
   } = $props();
 
-  let selectedSpace = $state<Space | null>(null);
+  let selectedSpace = $state<Space | undefined>(currentSpace);
   if (currentSpace) {
     handleSpaceSelection(currentSpace);
   }
