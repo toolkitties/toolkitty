@@ -4,7 +4,7 @@
   import { toast } from "$lib/toast.svelte";
   import type { SuperValidated, Infer } from "sveltekit-superforms";
   import type { EventSchema } from "$lib/schemas";
-  import { superForm, setError } from "sveltekit-superforms";
+  import { superForm, setError, dateProxy } from "sveltekit-superforms";
   import SuperDebug from "sveltekit-superforms";
   import { eventSchema } from "$lib/schemas";
   import { zod } from "sveltekit-superforms/adapters";
@@ -26,9 +26,8 @@
   } = $props();
 
   let selectedSpace = $state<Space | undefined>(currentSpace);
-  if (currentSpace) {
-    handleSpaceSelection(currentSpace);
-  }
+  let selectedSpaceId = $state<string | undefined>(currentSpace?.id);
+
   let availableResources: Resource[] = $state([]);
   let selectedResources: Resource[] = $state([]);
   let availableResourceBookings: { resourceId: string; timeSpan: TimeSpan }[] =
@@ -186,6 +185,18 @@
     },
   });
 
+  let startDateProxy = $state(
+    dateProxy(form, "startDate", { format: "datetime-local" }),
+  );
+  let endDateProxy = $state(
+    dateProxy(form, "endDate", { format: "datetime-local" }),
+  );
+  let publicStartDateProxy = $state(
+    dateProxy(form, "publicStartDate", { format: "datetime-local" }),
+  );
+  let publicEndDateProxy = $state(
+    dateProxy(form, "publicEndDate", { format: "datetime-local" }),
+  );
   async function handleCreateEvent(payload: EventFields) {
     try {
       const eventId = await events.create(activeCalendarId, payload);
@@ -344,8 +355,9 @@
             type="radio"
             id={space.id}
             name="selected-space"
-            bind:group={selectedSpace}
             onchange={() => handleSpaceSelection(space)}
+            value={space.id}
+            bind:group={selectedSpaceId}
           />
           <label for={space.id}>{space.name}</label>
         </li>
@@ -365,7 +377,7 @@
           name="startDate"
           required
           aria-invalid={$errors.startDate ? "true" : undefined}
-          bind:value={$form.startDate}
+          bind:value={$startDateProxy}
           onchange={recalculateResourceAvailbaility}
         />
         {#if $errors.startDate}<span class="form-error"
@@ -378,7 +390,7 @@
           name="endDate"
           required
           aria-invalid={$errors.endDate ? "true" : undefined}
-          bind:value={$form.endDate}
+          bind:value={$endDateProxy}
           onchange={recalculateResourceAvailbaility}
         />
         {#if $errors.endDate}<span class="form-error">{$errors.endDate}</span
@@ -395,7 +407,7 @@
           bind:value={$form.publicStartDate}
         />
         {#if $errors.publicStartDate}<span class="form-error"
-            >{$errors.publicStartDate}</span
+            >{publicStartDateProxy}</span
           >{/if}
 
         <label for="publicEndDate">End *</label>
@@ -403,7 +415,7 @@
           type="datetime-local"
           name="publicEndDate"
           aria-invalid={$errors.publicEndDate ? "true" : undefined}
-          bind:value={$form.publicEndDate}
+          bind:value={publicEndDateProxy}
         />
         {#if $errors.publicEndDate}<span class="form-error"
             >{$errors.publicEndDate}</span
