@@ -5,8 +5,7 @@
   import { bookings } from "$lib/api";
   import Links from "$lib/components/Links.svelte";
   import Date from "$lib/components/Date.svelte";
-  import FootstepsIcon from "$lib/components/icons/FootstepsIcon.svelte";
-  import ChestIcon from "$lib/components/icons/ChestIcon.svelte";
+  import BookingRequest from "$lib/components/BookingRequest.svelte";
 
   let { data }: PageProps = $props();
 
@@ -39,30 +38,7 @@
     <section>
       <h3>Requests</h3>
       {#each $upcomingBookings as booking (booking.id)}
-        <div
-          class="border border-black p-2 flex justify-between w-full text-left"
-        >
-          {#if booking.resourceType === "resource"}
-            <div class="flex gap-2 items-center">
-              <ChestIcon size={22} />
-              <span
-                >{booking.resource?.name
-                  ? booking.resource?.name
-                  : "No name yet"}
-              </span>
-            </div>
-          {:else}
-            <div class="flex gap-2 items-center">
-              <FootstepsIcon size={22} />
-              <span
-                >{booking.space?.name
-                  ? booking.space?.name
-                  : "No name yet"}</span
-              >
-            </div>
-          {/if}
-          <span>{booking.status}</span>
-        </div>
+        <BookingRequest request={booking} />
       {/each}
     </section>
   {/if}
