@@ -30,10 +30,14 @@ export default {
         },
         black: '#020202',
         pink: {
-          hot: '#FF00E5'
+          hot: '#FF00E5',
+          light: '#FFDFFA',
         },
         blue: {
           light: '#baceff'
+        },
+        green: {
+          'light-fluro': '#B4FFB2',
         }
       },
       fontFamily: {

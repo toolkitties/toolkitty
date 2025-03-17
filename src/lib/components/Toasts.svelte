@@ -47,4 +47,12 @@
   .toast.error {
     @apply bg-red-light;
   }
+
+  .toast.success {
+    @apply bg-green-light-fluro;
+  }
+
+  .toast.info {
+    @apply bg-pink-light;
+  }
 </style>
