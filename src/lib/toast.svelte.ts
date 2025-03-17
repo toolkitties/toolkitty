@@ -79,8 +79,8 @@ class Toasts {
   /**
    * Show booking request toast to the user
    */
-  bookingRequest(data: BookingRequest) {
-    const message = "new booking request: " + data.id;
+  bookingRequest(data: BookingRequestEnriched) {
+    const message = "new booking request for " + data.resource?.name;
     const request: RequestEvent = {
       type: "booking_request",
       data,
