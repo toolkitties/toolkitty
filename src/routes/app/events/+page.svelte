@@ -2,9 +2,13 @@
   import type { PageProps } from "./$types";
   import EventRow from "$lib/components/EventRow.svelte";
   import CalendarSelector from "$lib/components/CalendarSelector.svelte";
+  import { liveQuery } from "dexie";
+  import { events } from "$lib/api";
 
   let { data }: PageProps = $props();
   let contributeButtonOpen = $state(false);
+
+  const eventsList = liveQuery(() => events.findMany(data.activeCalendarId));
 </script>
 
 <CalendarSelector />
@@ -15,7 +19,7 @@
 {/if}
 <a href="#/app/events/create">Create event</a>
 
-{#each data.eventsList as event (event.id)}
+{#each $eventsList as event (event.id)}
   <EventRow {event} />
 {/each}
 

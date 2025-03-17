@@ -1,12 +1,15 @@
 <script lang="ts">
   import type { PageProps } from "./$types";
-
+  import { spaces } from "$lib/api";
+  import { liveQuery } from "dexie";
   let { data }: PageProps = $props();
+
+  const spacesList = liveQuery(() => spaces.findMany(data.activeCalendarId));
 </script>
 
 <h1 class="font-pixel">Spaces</h1>
 <a href="#/app/spaces/create">Create space</a>
-{#each data.spacesList as space (space.id)}
+{#each $spacesList as space (space.id)}
   <a
     href={`#/app/spaces/${space.id}`}
     class="flex border-black border event-row"
