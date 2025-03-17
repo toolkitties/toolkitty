@@ -18,7 +18,11 @@ export const load: PageLoad = async ({ params, parent }) => {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { calendarId, ownerId, ...eventFields } = event;
+  const { calendarId, ownerId, ...fields } = event;
+  const eventFields = {
+    selectedSpace: event.space?.id,
+    ...fields,
+  };
   const form = await superValidate(eventFields, zod(eventSchema));
 
   // return spaces and resources with availability within the calendar dates
@@ -38,6 +42,7 @@ export const load: PageLoad = async ({ params, parent }) => {
   return {
     title: "edit space",
     form,
+    currentSpace: event.space,
     calendarId,
     spacesList,
     resourcesList,

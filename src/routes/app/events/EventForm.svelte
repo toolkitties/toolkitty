@@ -14,16 +14,21 @@
   let {
     data,
     activeCalendarId,
+    currentSpace,
     spaces,
     resourcesList,
   }: {
     data: SuperValidated<Infer<EventSchema>>;
     activeCalendarId: Hash;
+    currentSpace?: Space;
     spaces: Space[];
     resourcesList: Resource[];
   } = $props();
 
-  let selectedSpace: Space | null = $state<Space | null>(null);
+  let selectedSpace = $state<Space | null>(null);
+  if (currentSpace) {
+    handleSpaceSelection(currentSpace);
+  }
   let availableResources: Resource[] = $state([]);
   let selectedResources: Resource[] = $state([]);
   let availableResourceBookings: { resourceId: string; timeSpan: TimeSpan }[] =
