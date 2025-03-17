@@ -3,12 +3,16 @@
   import EventRow from "$lib/components/EventRow.svelte";
   import CalendarSelector from "$lib/components/CalendarSelector.svelte";
   import { liveQuery } from "dexie";
-  import { events } from "$lib/api";
+  import { calendars, events } from "$lib/api";
 
   let { data }: PageProps = $props();
   let contributeButtonOpen = $state(false);
 
-  const eventsList = liveQuery(() => events.findMany(data.activeCalendarId));
+  let eventsList = liveQuery(async () => {
+    const activeCalendarId = await calendars.getActiveCalendarId();
+    if (!activeCalendarId) return [];
+    return events.findMany(activeCalendarId);
+  });
 </script>
 
 <CalendarSelector />

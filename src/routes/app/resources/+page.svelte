@@ -5,7 +5,7 @@
 
   let { data }: PageProps = $props();
 
-  const resourcesList = liveQuery(() =>
+  let resourcesList = liveQuery(() =>
     resources.findMany(data.activeCalendarId),
   );
 </script>

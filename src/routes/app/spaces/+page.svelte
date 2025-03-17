@@ -4,7 +4,7 @@
   import { liveQuery } from "dexie";
   let { data }: PageProps = $props();
 
-  const spacesList = liveQuery(() => spaces.findMany(data.activeCalendarId));
+  let spacesList = liveQuery(() => spaces.findMany(data.activeCalendarId));
 </script>
 
 <h1 class="font-pixel">Spaces</h1>
