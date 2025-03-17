@@ -5,9 +5,6 @@
   let { data }: PageProps = $props();
 </script>
 
-<br />
-<br />
-<br />
 <p>
   Hello organisers! Fill this form to upload your own resources. Resources can
   range from material goods, technical support, anything you would like to

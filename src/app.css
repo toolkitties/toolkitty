@@ -61,6 +61,11 @@
   --text-color: #ffffff;
 }
 
+/* Fix scroll “bounce” on safari */
+:root {
+  overscroll-behavior: none;
+}
+
 /* Base styles φ(￣ー￣ )ノ */
 html {
   font-size: 0.9375rem;

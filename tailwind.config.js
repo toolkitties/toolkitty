@@ -21,6 +21,7 @@ export default {
           'very-light': '#E6DBF5'
         },
         grey: {
+          'very-light': '#F0F0F0',
           light: '#E1E1E1',
           dark: '#8C8C8C',
           darker: '#474747'
@@ -30,10 +31,14 @@ export default {
         },
         black: '#020202',
         pink: {
-          hot: '#FF00E5'
+          hot: '#FF00E5',
+          light: '#FFDFFA',
         },
         blue: {
           light: '#baceff'
+        },
+        green: {
+          'light-fluro': '#B4FFB2',
         }
       },
       fontFamily: {

@@ -54,7 +54,7 @@
   {/if}
   {#if $calendarUsers}
     {#each $calendarUsers as user (user.publicKey)}
-      <RequestDialog data={user} />
+      <RequestDialog data={user} publicKey={data.publicKey} />
     {/each}
   {/if}
 </section>

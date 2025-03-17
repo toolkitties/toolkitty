@@ -22,10 +22,8 @@ import { promiseResult } from "$lib/promiseMap";
  */
 export async function getPending(activeCalendarId: Hash) {
   const accessRequests = await db.accessRequests
-    .where({ calendarId: activeCalendarId })
+    .where({ calendarId: activeCalendarId, status: "pending" })
     .toArray();
-  // TODO: this function should return a list of users and their respective role/access status
-
   return accessRequests;
 }
 

@@ -4,9 +4,6 @@
   let { data }: PageProps = $props();
 </script>
 
-<br />
-<br />
-<br />
 <h1 class="font-pixel">Resources</h1>
 <a href="#/app/resources/create">Create resource</a>
 

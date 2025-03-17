@@ -1,11 +1,12 @@
 <script lang="ts">
   import * as AlertDialog from "./index";
   import { bookings } from "$lib/api";
+  import Date from "$lib/components/Date.svelte";
 
   let {
     request,
     open = $bindable(false),
-  }: { request: BookingRequest; open: boolean } = $props();
+  }: { request: BookingRequestEnriched; open: boolean } = $props();
 
   /**
    * Accept request for a booking
@@ -40,10 +41,17 @@
 
 <AlertDialog.Portal>
   <AlertDialog.Content>
-    <AlertDialog.Title>{request.resourceId} requested for:</AlertDialog.Title>
+    <AlertDialog.Title
+      >{request.resource?.name} requested for:</AlertDialog.Title
+    >
     <AlertDialog.Description>
-      <p>eventId: {request.eventId}</p>
-      <p>requester: {request.requester}</p>
+      <p>{request.event?.name}</p>
+      <p>
+        <Date date={request.timeSpan.start} />-<Date
+          date={request.timeSpan.end!}
+        />
+      </p>
+      <p>{request.space?.name}</p>
     </AlertDialog.Description>
     <AlertDialog.Action onclick={() => acceptRequest(request.id)}
       >accept</AlertDialog.Action

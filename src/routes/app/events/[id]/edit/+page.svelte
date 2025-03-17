@@ -6,9 +6,6 @@
   let { data }: PageProps = $props();
 </script>
 
-<br />
-<br />
-<br />
 <EventForm
   data={data.form}
   activeCalendarId={data.calendarId!}

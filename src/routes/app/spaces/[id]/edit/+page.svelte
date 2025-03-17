@@ -6,9 +6,6 @@
   let { data }: PageProps = $props();
 </script>
 
-<br />
-<br />
-<br />
 <SpaceForm
   data={data.form}
   activeCalendarId={data.activeCalendarId}
