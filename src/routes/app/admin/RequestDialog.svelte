@@ -1,7 +1,8 @@
 <script lang="ts">
   import AccessRoleDialog from "$lib/components/dialog/AccessRoleDialog.svelte";
   import * as AlertDialog from "$lib/components/dialog/index";
-  let { data }: { data: User | AccessRequest } = $props();
+  let { data }: { data: User | AccessRequest; publicKey?: PublicKey } =
+    $props();
   let open = $state(false);
   let isAccessRequest = (data as AccessRequest).from !== undefined;
 </script>

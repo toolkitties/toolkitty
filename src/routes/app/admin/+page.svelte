@@ -4,6 +4,7 @@
   import RequestDialog from "./RequestDialog.svelte";
   import { users, access } from "$lib/api";
   import { liveQuery } from "dexie";
+  import { publicKey } from "$lib/api/identity";
 
   let { data }: PageProps = $props();
 
@@ -54,7 +55,18 @@
   {/if}
   {#if $calendarUsers}
     {#each $calendarUsers as user (user.publicKey)}
-      <RequestDialog data={user} />
+      {#if user.publicKey === data.publicKey}
+        <div class="button flex justify-between w-full text-left">
+          <span>
+            {data.name ? data.name : "Anon"} (you)
+          </span>
+          <span>
+            {user.role}
+          </span>
+        </div>
+      {:else}
+        <RequestDialog data={user} publicKey={data.publicKey} />
+      {/if}
     {/each}
   {/if}
 </section>
