@@ -19,8 +19,5 @@
   };
 </script>
 
-<br />
-<br />
-<br />
 <CalendarForm data={data.form} />
 <button onclick={() => handleDelete()}>Delete</button>
