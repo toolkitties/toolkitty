@@ -22,7 +22,7 @@ import { promiseResult } from "$lib/promiseMap";
  */
 export async function getPending(activeCalendarId: Hash) {
   const accessRequests = await db.accessRequests
-    .where({ calendarId: activeCalendarId, status: 'pending' })
+    .where({ calendarId: activeCalendarId, status: "pending" })
     .toArray();
   return accessRequests;
 }
