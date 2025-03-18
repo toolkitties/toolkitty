@@ -293,8 +293,8 @@ export function createBookingRequestMessage(
   const start = faker.date.future();
   const end = faker.date.future({ refDate: start });
   const fakeTimeSpan = {
-    start,
-    end,
+    start: start.toISOString(),
+    end: end.toISOString(),
   };
   return {
     meta: {
@@ -542,13 +542,15 @@ export function createResourceFields(
 export function someAvailability(from: Date, to: Date) {
   return faker.helpers.multiple(
     () => {
-      const start = faker.date.between({ from, to }).toISOString();
-      const end = faker.date.soon({ refDate: start }).toISOString();
+      const start = faker.date.between({ from, to });
+      start.setMinutes(0, 0, 0);
+      const end = faker.date.soon({ refDate: start });
+      end.setMinutes(0, 0, 0);
       return {
-        start,
-        end,
+        start: start.toISOString(),
+        end: end.toISOString(),
       };
     },
-    { count: { min: 5, max: 15 } },
+    { count: { min: 3, max: 15 } },
   );
 }

@@ -8,6 +8,7 @@ import {
 } from "./faker";
 import { setActiveCalendar } from "$lib/api/calendars";
 import { faker } from "@faker-js/faker";
+import { TimeSpanClass } from "$lib/timeSpan";
 
 export async function seedData() {
   // Create one calendar.
@@ -30,10 +31,11 @@ export async function seedData() {
   await calendars.create({ fields: createCalendarFields() });
 
   // Create some spaces (associated with our first calendar)
+  const spaceAvailability = someAvailability(startDate, endDate);
   const spaceId = await spaces.create(
     calendarId,
     createSpaceFields({
-      availability: someAvailability(startDate, endDate),
+      availability: spaceAvailability,
     }),
   );
   await spaces.create(
@@ -46,10 +48,11 @@ export async function seedData() {
   );
 
   // Create some spaces (associated with our first calendar)
+  const resourceAvailability = someAvailability(startDate, endDate);
   const resourceId = await resources.create(
     calendarId,
     createResourceFields({
-      availability: someAvailability(startDate, endDate),
+      availability: resourceAvailability,
     }),
   );
   await resources.create(
@@ -72,67 +75,81 @@ export async function seedData() {
   );
 
   // Create some events (associated with our first calendar)
-  let eventStartDate = faker.date.between({ from: startDate, to: endDate });
-  let eventEndDate = faker.date.soon({ refDate: eventStartDate });
+  const eventStartDate = spaceAvailability[0].start;
+  const eventEndDate = spaceAvailability[0].end;
   const eventFields = createEventFields({
-    startDate: eventStartDate.toISOString(),
-    endDate: eventEndDate.toISOString(),
+    startDate: eventStartDate,
+    endDate: eventEndDate,
   });
   const eventId = await events.create(calendarId, eventFields);
-  // Make resource request for first event.
-  const resourceRequestId = await bookings.request(
-    eventId,
-    resourceId,
-    "resource",
-    "please can i haz?",
-    { start: eventStartDate.toISOString(), end: eventEndDate.toISOString() },
-  );
+
   // Make space request for first event.
   const spaceRequestId = await bookings.request(
     eventId,
     spaceId,
     "space",
     "please can i haz?",
-    { start: eventStartDate.toISOString(), end: eventEndDate.toISOString() },
+    { start: eventStartDate, end: eventEndDate },
   );
+
+  const resourceRequests = [];
+  for (const availability of resourceAvailability) {
+    const eventTimeSpan = new TimeSpanClass({
+      start: startDate.toISOString(),
+      end: endDate.toISOString(),
+    });
+    const availabilityTimeSpan = new TimeSpanClass(availability);
+    if (eventTimeSpan.contains(availabilityTimeSpan)) {
+      const resourceRequestId = await bookings.request(
+        eventId,
+        resourceId,
+        "resource",
+        "please can i haz?",
+        availability,
+      );
+      resourceRequests.push(resourceRequestId);
+      break;
+    }
+  }
 
   // Update first event with resource and space requests.
   await events.update(
     eventId,
     createEventFields({
       ...eventFields,
-      resourcesRequests: [resourceRequestId],
+      resourcesRequests: resourceRequests,
       spaceRequest: spaceRequestId,
     }),
   );
 
-  eventStartDate = faker.date.between({ from: startDate, to: endDate });
-  eventEndDate = faker.date.soon({ refDate: eventStartDate });
-  await events.create(
-    calendarId,
-    createEventFields({
-      startDate: eventStartDate.toISOString(),
-      endDate: eventEndDate.toISOString(),
-    }),
-  );
-
-  eventStartDate = faker.date.between({ from: startDate, to: endDate });
-  eventEndDate = faker.date.soon({ refDate: eventStartDate });
-  await events.create(
-    calendarId,
-    createEventFields({
-      startDate: eventStartDate.toISOString(),
-      endDate: eventEndDate.toISOString(),
-    }),
-  );
-
-  eventStartDate = faker.date.between({ from: startDate, to: endDate });
-  eventEndDate = faker.date.soon({ refDate: eventStartDate });
-  await events.create(
-    calendarId,
-    createEventFields({
-      startDate: eventStartDate.toISOString(),
-      endDate: eventEndDate.toISOString(),
-    }),
-  );
+  //
+  //   eventStartDate = faker.date.between({ from: startDate, to: endDate });
+  //   eventEndDate = faker.date.soon({ refDate: eventStartDate });
+  //   await events.create(
+  //     calendarId,
+  //     createEventFields({
+  //       startDate: eventStartDate.toISOString(),
+  //       endDate: eventEndDate.toISOString(),
+  //     }),
+  //   );
+  //
+  //   eventStartDate = faker.date.between({ from: startDate, to: endDate });
+  //   eventEndDate = faker.date.soon({ refDate: eventStartDate });
+  //   await events.create(
+  //     calendarId,
+  //     createEventFields({
+  //       startDate: eventStartDate.toISOString(),
+  //       endDate: eventEndDate.toISOString(),
+  //     }),
+  //   );
+  //
+  //   eventStartDate = faker.date.between({ from: startDate, to: endDate });
+  //   eventEndDate = faker.date.soon({ refDate: eventStartDate });
+  //   await events.create(
+  //     calendarId,
+  //     createEventFields({
+  //       startDate: eventStartDate.toISOString(),
+  //       endDate: eventEndDate.toISOString(),
+  //     }),
+  //   );
 }
