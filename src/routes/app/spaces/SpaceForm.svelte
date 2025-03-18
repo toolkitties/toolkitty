@@ -41,7 +41,7 @@
 
   async function handleCreateSpace(payload: SpaceFields) {
     try {
-      const spaceId = await spaces.create(activeCalendarId, payload);
+      const spaceId: Hash = await spaces.create(activeCalendarId, payload);
       toast.success("Space created!");
       goto(`#/app/spaces/${spaceId}`);
     } catch (error) {
@@ -50,11 +50,11 @@
     }
   }
 
-  async function handleUpdateSpace(resourceId: Hash, payload: SpaceFields) {
+  async function handleUpdateSpace(spaceId: Hash, payload: SpaceFields) {
     try {
-      await spaces.update(resourceId, payload);
+      await spaces.update(spaceId, payload);
       toast.success("Space updated!");
-      goto(`#/app/spaces/${data.id}`);
+      goto(`#/app/spaces/${spaceId}`);
     } catch (error) {
       console.error("Error updating space: ", error);
       toast.error("Error updating space!");
