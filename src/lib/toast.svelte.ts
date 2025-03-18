@@ -124,7 +124,6 @@ class Toasts {
    */
   private dismissToastTimeout(id: number) {
     const timeout = setTimeout(() => {
-      console.log("dismissing toast: " + this.autoDismiss);
       if (this.autoDismiss) {
         clearTimeout(timeout);
         this.dismissToast(id);
