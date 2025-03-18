@@ -6,11 +6,17 @@
   import Bookings from "./Bookings.svelte";
   import { TimeSpanClass } from "$lib/timeSpan";
 
-  let { data }: { data: Space | Resource } = $props();
-  let availability: TimeSpan[] = $derived(data.availability) as TimeSpan[];
+  let {
+    resource,
+    selected,
+  }: { resource: Space | Resource; selected?: string; onChange?: () => void } =
+    $props();
+  let availability: TimeSpan[] = $derived(resource.availability) as TimeSpan[];
   let availabilityByDay: TimeSpan | null = $state(null);
-  let currentlySelectedDate: DateValue | undefined = $state(undefined);
-  let booked: BookingRequest[] = $state([]); // Store bookings
+  let selectedDate = fromDate(new Date(selected!), "UTC");
+  let currentlySelectedDate: DateValue | undefined = $state(selectedDate);
+  let booked: BookingRequest[] = $state([]);
+  let loading: boolean = $state(true);
 
   const handleDateSelect = async (
     value: DateValue | DateValue[] | undefined,
@@ -25,17 +31,21 @@
       return;
     }
 
+    loading = true;
     availabilityByDay = null;
 
     for (let timeSpan of availability) {
       let timeSpanStartDateValue = fromDate(new Date(timeSpan.start), "UTC");
       if (isSameDate(timeSpanStartDateValue, value)) {
+
         availabilityByDay = { start: timeSpan.start, end: timeSpan.end };
 
         booked = await spaces.findBookings(
-          data.id,
+          resource.id,
           new TimeSpanClass(availabilityByDay),
         );
+
+        loading = false;
         break;
       }
     }
@@ -55,6 +65,9 @@
       return date.compare(availableDate) === 0;
     });
   }
+
+  // Trigger a "dateSelect" event so that the initial UI shows availability.
+  handleDateSelect(selectedDate);
 </script>
 
 <!-- TODO: Refactor Calendar into one component as we are using in a few places now -->
@@ -101,9 +114,9 @@
     {/each}
   {/snippet}
 </Calendar.Root>
-{#if currentlySelectedDate}
-  <Bookings availability={availabilityByDay} {data} {booked} />
+{#if currentlySelectedDate && !loading}
+  <Bookings availability={availabilityByDay} {resource} {booked} />
 {/if}
-{#if data.multiBookable}
+{#if resource.multiBookable}
   <p>This space can have multiple bookings at the same time.</p>
 {/if}
