@@ -8,6 +8,7 @@
   import { resourceSchema } from "$lib/schemas";
   import { zod } from "sveltekit-superforms/adapters";
   import { toast } from "$lib/toast.svelte";
+  import { goto } from "$app/navigation";
 
   let {
     data,
@@ -41,9 +42,12 @@
 
   async function handleCreateResource(payload: ResourceFields) {
     try {
-      const response = await resources.create(activeCalendarId!, payload);
+      const resourceId: Hash = await resources.create(
+        activeCalendarId,
+        payload,
+      );
       toast.success("Resource created!");
-      console.log("Resource created with ID:", response);
+      goto(`#/app/resources/${resourceId}`);
     } catch (error) {
       toast.error("Error creating resource!");
       console.error("Error creating resource:", error);
@@ -55,9 +59,9 @@
     payload: ResourceFields,
   ) {
     try {
-      const response = await resources.update(resourceId, payload);
+      await resources.update(resourceId, payload);
       toast.success("Resource updated!");
-      console.log("Resource updated", response);
+      goto(`#/app/resources/${resourceId}`);
     } catch (error) {
       toast.error("Error updating resource!");
       console.error("Error updating resource:", error);
