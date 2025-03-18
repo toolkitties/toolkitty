@@ -29,11 +29,11 @@ export async function getPending(activeCalendarId: Hash) {
     accessRequests.map(async (request) => {
       const status = await checkStatus(request.from, activeCalendarId);
       return { request, status };
-    })
+    }),
   );
 
   return pendingRequests
-    .filter(({ status }) => status === 'pending')
+    .filter(({ status }) => status === "pending")
     .map(({ request }) => request);
 }
 
