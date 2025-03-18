@@ -22,9 +22,19 @@ import { promiseResult } from "$lib/promiseMap";
  */
 export async function getPending(activeCalendarId: Hash) {
   const accessRequests = await db.accessRequests
-    .where({ calendarId: activeCalendarId, status: "pending" })
+    .where({ calendarId: activeCalendarId })
     .toArray();
-  return accessRequests;
+
+  const pendingRequests = await Promise.all(
+    accessRequests.map(async (request) => {
+      const status = await checkStatus(request.from, activeCalendarId);
+      return { request, status };
+    }),
+  );
+
+  return pendingRequests
+    .filter(({ status }) => status === "pending")
+    .map(({ request }) => request);
 }
 
 export async function findRequestByid(id: Hash) {
