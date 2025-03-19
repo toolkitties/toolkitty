@@ -10,7 +10,7 @@
 
   let { data }: PageProps = $props();
 
-  let space = liveQuery( () => {
+  let space = liveQuery(() => {
     const space = spaces.findById(data.spaceId);
     if (!space) {
       error(404, {
@@ -80,7 +80,7 @@
       <p>Capacity: {$space.capacity}</p>
     </div>
 
-    <AvailabilityViewer data={$space} type="space"/>
+    <AvailabilityViewer data={$space} type="space" />
 
     {#if data.userRole == "admin"}
       <a class="button" href="#/app/spaces/{$space!.id}/edit">Edit</a>

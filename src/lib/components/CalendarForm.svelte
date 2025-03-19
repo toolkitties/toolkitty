@@ -28,7 +28,6 @@
         } else {
           handleCreateCalendar({ dates, ...payload }, userName!);
         }
-        
       }
     },
   });
@@ -147,7 +146,6 @@
     {#if $errors.resourcePageText}<span class="form-error"
         >{$errors.resourcePageText}</span
       >{/if}
-
   {/if}
 
   <button type="submit">{$form.id ? "Update" : "Create"}</button>

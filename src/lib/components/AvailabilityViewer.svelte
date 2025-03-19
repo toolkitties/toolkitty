@@ -18,8 +18,8 @@
   } = $props();
   let availability: TimeSpan[] = $derived(data.availability) as TimeSpan[];
   let availabilityByDay: TimeSpan | null = $state(null);
-  let selectedDate = selected? fromDate(new Date(selected), 'UTC'): undefined;
-  let currentlySelectedDate: DateValue | undefined  = $state(selectedDate);
+  let selectedDate = selected ? fromDate(new Date(selected), "UTC") : undefined;
+  let currentlySelectedDate: DateValue | undefined = $state(selectedDate);
   let booked: BookingRequest[] = $state([]);
   let loading: boolean = $state(true);
 
