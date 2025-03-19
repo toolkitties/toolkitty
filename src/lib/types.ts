@@ -654,7 +654,7 @@ type Calendar = {
   // single time range.
   startDate?: Date;
   endDate?: Date;
-  festivalInstructions?: string;
+  calendarInstructions?: string;
   spacePageText?: string;
   resourcePageText?: string;
 };

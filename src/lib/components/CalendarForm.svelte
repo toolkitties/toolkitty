@@ -117,7 +117,7 @@
     </div>
   </div>
   {#if $form.id}
-    <label for="calendarInstructions">Calendar instructions</label>
+    <label for="calendarInstructions">About your calendar</label>
     <textarea
       name="calendarInstructions"
       aria-invalid={$errors.calendarInstructions ? "true" : undefined}

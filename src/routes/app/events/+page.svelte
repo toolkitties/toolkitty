@@ -15,6 +15,10 @@
 {/if}
 <a href="#/app/events/create">Create event</a>
 
+{#if data.calendar?.calendarInstructions}
+  {data.calendar.calendarInstructions}
+{/if}
+
 {#each data.eventsList as event (event.id)}
   <EventRow {event} />
 {/each}
