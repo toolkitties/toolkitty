@@ -174,6 +174,7 @@
         }
       }
 
+      // TODO: potentially move above validation to schema
       if (form.valid) {
         const { id, ...payload } = form.data;
 
