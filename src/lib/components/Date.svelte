@@ -1,5 +1,5 @@
 <script lang="ts">
-  type Props = { date: string, format: "date" | "time" | "datetime" };
+  type Props = { date: string; format: "date" | "time" | "datetime" };
 
   const { date, format = "datetime" }: Props = $props();
 
@@ -23,18 +23,29 @@
 
   // For date and times we use German locale to get consistent DD.MM.YY
   // formatting.
-  const locale = 'de-DE';
+  const locale = "de-DE";
 
   let formatted;
   if (format === "date") {
-    const weekdayStr = new Intl.DateTimeFormat(weekdayLocale, weekdayConfig).format(new Date(date));
-    const dateStr = new Intl.DateTimeFormat(locale, dateConfig).format(new Date(date));
+    const weekdayStr = new Intl.DateTimeFormat(
+      weekdayLocale,
+      weekdayConfig,
+    ).format(new Date(date));
+    const dateStr = new Intl.DateTimeFormat(locale, dateConfig).format(
+      new Date(date),
+    );
     formatted = `${weekdayStr} ${dateStr}`;
   } else if (format === "time") {
-    formatted = new Intl.DateTimeFormat(locale, dateConfig).format(new Date(date));
+    formatted = new Intl.DateTimeFormat(locale, timeConfig).format(
+      new Date(date),
+    );
   } else if (format === "datetime") {
-    const dateStr = new Intl.DateTimeFormat(locale, dateConfig).format(new Date(date));
-    const timeStr = new Intl.DateTimeFormat(locale, timeConfig).format(new Date(date));
+    const dateStr = new Intl.DateTimeFormat(locale, dateConfig).format(
+      new Date(date),
+    );
+    const timeStr = new Intl.DateTimeFormat(locale, timeConfig).format(
+      new Date(date),
+    );
     formatted = `${dateStr} ${timeStr}`;
   } else {
     throw Exception("unknown date format");

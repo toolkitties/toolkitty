@@ -5,7 +5,7 @@
   import { bookings, events } from "$lib/api";
   import { error } from "@sveltejs/kit";
   import Links from "$lib/components/Links.svelte";
-  import Date from "$lib/components/Date.svelte";
+  import DateRange from "$lib/components/DateRange.svelte";
   import BookingRequest from "$lib/components/BookingRequest.svelte";
 
   let { data }: PageProps = $props();
@@ -39,7 +39,7 @@
 
     <div>
       <p>
-        <Date date={$event.startDate} /> - <Date date={$event.endDate} />
+        <DateRange startDate={$event.startDate} endDate={$event.endDate} />
       </p>
       {#if $event.space}
         <a href={`#/spaces/${$event.space.id}`}>{$event.space.name}</a>
