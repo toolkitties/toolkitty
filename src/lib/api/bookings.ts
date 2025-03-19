@@ -58,15 +58,13 @@ export function findAll(
 
       if (from) {
         query.filter((request) => {
-          const timeSpan = new TimeSpanClass(request.timeSpan);
-          return timeSpan.startDate() >= from;
+          return request.timeSpan.start >= from;
         });
       }
 
       if (to) {
         query.filter((request) => {
-          const timeSpan = new TimeSpanClass(request.timeSpan);
-          return timeSpan.startDate() <= to;
+          return request.timeSpan.start <= to;
         });
       }
 
