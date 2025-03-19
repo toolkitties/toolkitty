@@ -4,7 +4,10 @@
   let { data }: PageProps = $props();
 </script>
 
-<h1 class="font-pixel">Resources</h1>
+<h1 class="font-pixel">{data.title}</h1>
+{#if data.calendar?.resourcePageText}
+  {data.calendar.resourcePageText}
+{/if}
 <a href="#/app/resources/create">Create resource</a>
 
 {#each data.resourcesList as resource (resource.id)}

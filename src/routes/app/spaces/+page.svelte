@@ -4,7 +4,10 @@
   let { data }: PageProps = $props();
 </script>
 
-<h1 class="font-pixel">Spaces</h1>
+<h1 class="font-pixel">{data.title}</h1>
+{#if data.calendar?.spacePageText}
+  {data.calendar.spacePageText}
+{/if}
 <a href="#/app/spaces/create">Create space</a>
 {#each data.spacesList as space (space.id)}
   <a
