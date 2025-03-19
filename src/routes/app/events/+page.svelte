@@ -79,9 +79,9 @@
   <PageText text={$calendarInstructions} title="about calendar" />
 {/if}
 
-{#each $eventsByDate as date (date.date)}
-  <Date date={date.date} />
-  {#each date.eventsList as event (event.id)}
+{#each $eventsByDate as group (group.date)}
+  <Date date={group.date} />
+  {#each group.eventsList as event (event.id)}
     <EventRow {event} />
   {/each}
 {/each}
