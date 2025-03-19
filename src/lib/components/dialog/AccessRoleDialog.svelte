@@ -31,9 +31,13 @@
       // close the dialog
       open = false;
 
-      toast.success(`Successfully assigned ${data.name} to ${role}`);
+      toast.success(
+        `Successfully assigned ${data.name ? data.name : "no name yet"} to ${role}`,
+      );
     } catch (error) {
-      toast.error(`Failed to assign ${data.name} to ${role}`);
+      toast.error(
+        `Failed to assign ${data.name ? data.name : "no name yet"} to ${role}`,
+      );
       console.error("Failed to accept access request:", error);
     }
   }
@@ -72,9 +76,11 @@
       disabled={role === "admin"}
       >admin {role === "admin" ? "(current)" : ""}</AlertDialog.Action
     >
-    <!-- <AlertDialog.Action onclick={() => assignRole("organiser")}
-      >organiser {role === "organiser" ? "(current)" : ""}
-    </AlertDialog.Action> -->
+    {#if role !== "admin"}
+      <AlertDialog.Action onclick={() => assignRole("organiser")}
+        >organiser {role === "organiser" ? "(current)" : ""}
+      </AlertDialog.Action>
+    {/if}
     {#if isAccessRequest}
       <AlertDialog.Action onclick={rejectRequest}>reject</AlertDialog.Action>
     {:else}
