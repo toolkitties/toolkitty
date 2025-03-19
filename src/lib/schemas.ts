@@ -110,7 +110,7 @@ export const calendarSchema = z
   .object({
     id: z.string().optional(),
     name: z.string().min(1, "Calendar name is required"),
-    userName: z.string().optional(),
+    userName: z.string(),
     startDate: z.string().min(1, "A start date is required"),
     endDate: z.string().optional(),
     calendarInstructions: z.string().nullable(),

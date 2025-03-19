@@ -426,6 +426,7 @@ export function createCalendarFields(
   const end = faker.date.future({ refDate: start }).toISOString();
 
   const fields = {
+    userName: faker.animal.cat(),
     name: faker.music.album(),
     dates: [{ start, end }],
     calendarInstructions: faker.lorem.paragraphs(10),

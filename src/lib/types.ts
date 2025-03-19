@@ -348,6 +348,7 @@ type VirtualLocation = {
 type Answer = "accept" | "reject";
 
 type CalendarFields = {
+  userName: string;
   name: string;
   dates: TimeSpan[];
   calendarInstructions: string | null;

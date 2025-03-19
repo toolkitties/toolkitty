@@ -2,7 +2,7 @@
   //   import FestivalCalendar from "./FestivalCalendar.svelte";
   import type { SuperValidated, Infer } from "sveltekit-superforms";
   import type { CalendarSchema } from "$lib/schemas";
-  import { calendars, identity, users } from "$lib/api";
+  import { calendars } from "$lib/api";
   import { toast } from "$lib/toast.svelte";
   import { goto, invalidateAll } from "$app/navigation";
   import { calendarSchema } from "$lib/schemas";
@@ -21,12 +21,12 @@
     dataType: "json",
     async onUpdate({ form }) {
       if (form.valid) {
-        const { id, userName, startDate, endDate, ...payload } = form.data;
+        const { id, startDate, endDate, ...payload } = form.data;
         const dates = [{ start: startDate, end: endDate }];
         if (form.data.id) {
           handleUpdateCalendar(id!, { dates, ...payload });
         } else {
-          handleCreateCalendar({ dates, ...payload }, userName!);
+          handleCreateCalendar({ dates, ...payload });
         }
       }
     },
@@ -34,13 +34,9 @@
 
   async function handleCreateCalendar(
     payload: CalendarFields,
-    userName: string,
   ) {
     try {
       const newCalendar = await calendars.create({ fields: payload });
-      // Update users name in the newly created calendar.
-      const publicKey = await identity.publicKey();
-      await users.update(newCalendar[1], publicKey, userName);
       // Set active calendar to new calendar
       await calendars.setActiveCalendar(newCalendar[1]);
       toast.success("Calendar created!");
