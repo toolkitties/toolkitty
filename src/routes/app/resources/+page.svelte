@@ -22,7 +22,9 @@
   <PageText text={$resourcePageText} title="about resources" />
 {/if}
 
-<a href="#/app/resources/create">Create resource</a>
+<a href="#/app/resources/create" class="button mt-4 inline-block"
+  >Create resource</a
+>
 
 {#each $resourcesList as resource (resource.id)}
   <a

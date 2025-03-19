@@ -19,7 +19,7 @@
   <PageText text={$spacePageText} title="about spaces" />
 {/if}
 
-<a href="#/app/spaces/create">Create space</a>
+<a href="#/app/spaces/create" class="button mt-4 inline-block">Create space</a>
 {#each $spacesList as space (space.id)}
   <a
     href={`#/app/spaces/${space.id}`}
