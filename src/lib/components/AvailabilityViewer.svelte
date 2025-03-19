@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Calendar } from "bits-ui";
   import type { DateValue } from "@internationalized/date";
-  import { DateFormatter, fromDate } from "@internationalized/date";
+  import { fromDate } from "@internationalized/date";
   import { spaces } from "$lib/api";
   import Bookings from "./Bookings.svelte";
   import { TimeSpanClass } from "$lib/timeSpan";
