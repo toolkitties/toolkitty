@@ -1,11 +1,11 @@
 <script lang="ts">
   let {
     availability,
-    resource,
+    data,
     booked,
   }: {
     availability: TimeSpan | null;
-    resource: Space | Resource;
+    data: Space | Resource;
     booked: BookingRequestEnriched[];
   } = $props();
 
@@ -68,7 +68,7 @@
 </script>
 
 <p>
-  {resource.name} is available between {availability?.start} and {availability?.end}
+  {data.name} is available between {availability?.start} and {availability?.end}
 </p>
 {#if bookedBlocks.length === 0}
   <p>No bookings yet.</p>
