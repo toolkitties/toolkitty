@@ -10,8 +10,8 @@
 
   let { data }: PageProps = $props();
 
-  let space = liveQuery(async () => {
-    const space = await spaces.findById(data.spaceId);
+  let space = liveQuery( () => {
+    const space = spaces.findById(data.spaceId);
     if (!space) {
       error(404, {
         message: "Resource not found",
@@ -19,6 +19,8 @@
     }
     return space;
   });
+
+  console.log("space: ", $space);
 
   let now = new Date();
   // TODO: look into if this should be declared with `$state(...)` as errors says.

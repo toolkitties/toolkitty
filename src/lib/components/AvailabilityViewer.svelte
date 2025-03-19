@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Calendar } from "bits-ui";
   import type { DateValue } from "@internationalized/date";
-  import { fromDate } from "@internationalized/date";
+  import { DateFormatter, fromDate } from "@internationalized/date";
   import { spaces } from "$lib/api";
   import Bookings from "./Bookings.svelte";
   import { TimeSpanClass } from "$lib/timeSpan";
@@ -18,14 +18,19 @@
   } = $props();
   let availability: TimeSpan[] = $derived(data.availability) as TimeSpan[];
   let availabilityByDay: TimeSpan | null = $state(null);
-  let selectedDate = fromDate(new Date(selected!), "UTC");
-  let currentlySelectedDate: DateValue | undefined = $state(selectedDate);
+  let selectedDate = selected? fromDate(new Date(selected), 'UTC'): undefined;
+  let currentlySelectedDate: DateValue | undefined  = $state(selectedDate);
   let booked: BookingRequest[] = $state([]);
   let loading: boolean = $state(true);
 
   const handleDateSelect = async (
     value: DateValue | DateValue[] | undefined,
   ) => {
+    if (!value) {
+      availabilityByDay = null;
+      booked = [];
+      return;
+    }
     if (Array.isArray(value)) {
       value = value[0];
     }
