@@ -5,6 +5,7 @@
   import { liveQuery } from "dexie";
   import { calendars, events } from "$lib/api";
   import PageText from "$lib/components/PageText.svelte";
+  import Date from "$lib/components/Date.svelte";
 
   let { data }: PageProps = $props();
   let contributeButtonOpen = $state(false);
@@ -79,7 +80,7 @@
 {/if}
 
 {#each $eventsByDate as date (date.date)}
-  <h2>{date.date}</h2>
+  <Date date={date.date} />
   {#each date.eventsList as event (event.id)}
     <EventRow {event} />
   {/each}
