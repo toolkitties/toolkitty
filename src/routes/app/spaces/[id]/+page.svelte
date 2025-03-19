@@ -80,7 +80,11 @@
       <p>Capacity: {$space.capacity}</p>
     </div>
 
+    {#if $space.availability == "always"}
+      <p>This space is always available.</p>
+    {:else}
     <AvailabilityViewer data={$space} type="space" />
+    {/if}
 
     {#if data.userRole == "admin"}
       <a class="button" href="#/app/spaces/{$space!.id}/edit">Edit</a>

@@ -54,7 +54,11 @@
 
     <Links links={[$resource.link]} />
 
-    <AvailabilityViewer data={$resource} type="resource" />
+    {#if $resource.availability == "always"}
+      <p>This resource is always available.</p>
+    {:else}
+      <AvailabilityViewer data={$resource} type="resource" />
+    {/if}
 
     {#if data.userRole == "admin"}
       <a class="button" href="#/app/resources/{$resource.id}/edit">Edit</a>
