@@ -2,6 +2,7 @@
   import type { PageProps } from "./$types";
   import { resources, calendars } from "$lib/api";
   import { liveQuery } from "dexie";
+  import PageText from "$lib/components/PageText.svelte";
 
   let { data }: PageProps = $props();
 
@@ -18,7 +19,7 @@
 <h1 class="font-pixel">{data.title}</h1>
 
 {#if $resourcePageText}
-  <p>{$resourcePageText}</p>
+  <PageText text={$resourcePageText} title="about resources" />
 {/if}
 
 <a href="#/app/resources/create">Create resource</a>

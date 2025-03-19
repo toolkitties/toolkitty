@@ -3,6 +3,7 @@
   import { spaces, calendars } from "$lib/api";
   import { liveQuery } from "dexie";
   let { data }: PageProps = $props();
+  import PageText from "$lib/components/PageText.svelte";
 
   let spacesList = liveQuery(() => spaces.findMany(data.activeCalendarId));
 
@@ -15,7 +16,7 @@
 <h1 class="font-pixel">{data.title}</h1>
 
 {#if $spacePageText}
-  <p>{$spacePageText}</p>
+  <PageText text={$spacePageText} title="about spaces" />
 {/if}
 
 <a href="#/app/spaces/create">Create space</a>

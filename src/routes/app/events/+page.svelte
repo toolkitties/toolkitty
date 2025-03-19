@@ -4,6 +4,7 @@
   import CalendarSelector from "$lib/components/CalendarSelector.svelte";
   import { liveQuery } from "dexie";
   import { calendars, events } from "$lib/api";
+  import PageText from "$lib/components/PageText.svelte";
 
   let { data }: PageProps = $props();
   let contributeButtonOpen = $state(false);
@@ -27,7 +28,7 @@
 <a href="#/app/events/create">Create event</a>
 
 {#if $calendarInstructions}
-  <p>{$calendarInstructions}</p>
+  <PageText text={$calendarInstructions} title="about calendar" />
 {/if}
 
 {#each $eventsList as event (event.id)}
