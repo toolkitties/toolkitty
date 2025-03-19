@@ -5,12 +5,60 @@
   import { liveQuery } from "dexie";
   import { calendars, events } from "$lib/api";
   import PageText from "$lib/components/PageText.svelte";
+  import Date from "$lib/components/Date.svelte";
 
   let { data }: PageProps = $props();
   let contributeButtonOpen = $state(false);
 
-  let eventsList = liveQuery(async () => {
-    return events.findMany(data.activeCalendarId);
+  function getDay(event: CalendarEventEnriched): string {
+    return event.startDate.split("T")[0];
+  }
+
+  /**
+   * Group events by date like that:
+   *
+   * ```
+   * [
+   *    {
+   *       date: "YYYY-MM-DD",
+   *       eventsList: [...],
+   *    }, ...
+   * ]
+   * ```
+   */
+  let eventsByDate = liveQuery(async () => {
+    const allEvents = await events.findMany(data.activeCalendarId);
+    if (allEvents.length === 0) {
+      return [];
+    }
+
+    const result = [];
+
+    let currentDate = getDay(allEvents[0]);
+    let currentEventsList = [];
+
+    for (const event of allEvents) {
+      const startDay = getDay(event);
+
+      if (startDay !== currentDate) {
+        result.push({
+          date: currentDate,
+          eventsList: currentEventsList,
+        });
+
+        currentDate = startDay;
+        currentEventsList = [];
+      }
+
+      currentEventsList.push(event);
+    }
+
+    result.push({
+      date: currentDate,
+      eventsList: currentEventsList,
+    });
+
+    return result;
   });
 
   let calendarInstructions = liveQuery(async () => {
@@ -25,8 +73,11 @@
   <PageText text={$calendarInstructions} title="about calendar" />
 {/if}
 
-{#each $eventsList as event (event.id)}
-  <EventRow {event} />
+{#each $eventsByDate as group (group.date)}
+  <Date date={group.date} format="date" />
+  {#each group.eventsList as event (event.id)}
+    <EventRow {event} />
+  {/each}
 {/each}
 
 <div class="relative">
