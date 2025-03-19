@@ -42,7 +42,7 @@
   {/each}
 {:else}
   <p>no resources yet, please create one.</p>
-  <a href="#/app/events/create" class="button">create resource</a>
+  <a href="#/app/events/create" class="button inline-block">create resource</a>
 {/if}
 
 <Contribute />
