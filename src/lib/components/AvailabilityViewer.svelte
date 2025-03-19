@@ -9,7 +9,8 @@
   let {
     data,
     selected,
-  }: { data: Space | Resource; selected?: string; onChange?: () => void } =
+    type
+  }: { data: Space | Resource; selected?: string; onChange?: () => void; type: string } =
     $props();
   let availability: TimeSpan[] = $derived(data.availability) as TimeSpan[];
   let availabilityByDay: TimeSpan | null = $state(null);
@@ -115,8 +116,8 @@
   {/snippet}
 </Calendar.Root>
 {#if currentlySelectedDate && !loading}
-  <Bookings availability={availabilityByDay} resource={data} {booked} />
+  <Bookings availability={availabilityByDay} data={data} {booked} />
 {/if}
 {#if data.multiBookable}
-  <p>This space can have multiple bookings at the same time.</p>
+  <p>This {#if type == "space"}space{/if} {#if type == "resource"}resource{/if} can have multiple bookings at the same time.</p>
 {/if}
