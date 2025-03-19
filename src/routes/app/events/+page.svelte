@@ -77,38 +77,19 @@
   <PageText text={$calendarInstructions} title="about calendar" />
 {/if}
 
-{#if $eventsList && $eventsList.length > 0}
+{#if $eventsByDate && $eventsByDate.length > 0}
   {#each $eventsByDate as group (group.date)}
-  <Date date={group.date} format="date" />
-  {#each group.eventsList as event (event.id)}
-    <EventRow {event} />
+    <Date date={group.date} format="date" />
+    {#each group.eventsList as event (event.id)}
+      <EventRow {event} />
+    {/each}
   {/each}
-{/each}
 {:else}
   <p>no events yet, please create one.</p>
   <a href="#/app/events/create" class="button inline-block">create event</a>
 {/if}
 
 <Contribute />
-
-<div class="relative">
-  <div class="fixed bottom-20 right-4 z-20 flex flex-col items-end space-y-2">
-    {#if contributeButtonOpen}
-      <div class="flex flex-col items-end space-y-2">
-        <a href="#/app/spaces/create" class="bg-white">Space</a>
-        <a href="#/app/resources/create" class="bg-white">Resource</a>
-        <a href="#/app/events/create" class="bg-white">Event</a>
-      </div>
-    {/if}
-
-    <button
-      onclick={() => (contributeButtonOpen = !contributeButtonOpen)}
-      class="bg-black text-white"
-    >
-      Contribute
-    </button>
-  </div>
-</div>
 
 {#if data.userRole === "admin"}
   <a class="button mt-4 inline-block" href="#/app/calendars/edit"
