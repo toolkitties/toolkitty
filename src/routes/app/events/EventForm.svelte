@@ -274,7 +274,6 @@
     type="text"
     name="name"
     aria-invalid={$errors.name ? "true" : undefined}
-    required
     bind:value={$form.name}
   />
   {#if $errors.name}<span class="form-error">{$errors.name}</span>{/if}
@@ -282,7 +281,6 @@
   <label for="description">Event description*</label>
   <textarea
     name="description"
-    required
     aria-invalid={$errors.description ? "true" : undefined}
     bind:value={$form.description}
   ></textarea>
