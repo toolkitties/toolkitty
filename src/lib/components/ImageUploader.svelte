@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { uploadFile } from "$lib/api/blobs";
+  import { uploadFile } from "$lib/api/blobs";
 
   let {
     images = $bindable(),
