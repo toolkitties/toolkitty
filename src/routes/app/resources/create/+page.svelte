@@ -5,6 +5,8 @@
   let { data }: PageProps = $props();
 </script>
 
+<h1 class="font-pixel">{data.title}</h1>
+
 <p>
   Hello organisers! Fill this form to upload your own resources. Resources can
   range from material goods, technical support, anything you would like to

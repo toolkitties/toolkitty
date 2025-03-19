@@ -5,6 +5,7 @@
   let { data }: PageProps = $props();
 </script>
 
+<h1 class="font-pixel">{data.title}</h1>
 <p>
   Hello Organisers! Fill in this form to upload your own space. Once published,
   event organisers will be able to book your space for their events. Manage

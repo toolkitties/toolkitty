@@ -29,7 +29,7 @@ export const resourceSchema = z.object({
   name: z.string().min(1, "Resource name is required"),
   description: z.string().min(1, "Description is required"),
   contact: z.string().min(1, "Contact details are required"),
-  link: linkSchema, //TODO: make this optional, issues with binding to input
+  link: linkSchema.optional().default({ title: null, type: "custom", url: "" }),
   images: z.array(imageSchema),
   availability: availabilitySchema,
   multiBookable: z.boolean(),

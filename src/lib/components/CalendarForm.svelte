@@ -108,6 +108,7 @@
         type="date"
         bind:value={$form.endDate}
         min={$form.startDate}
+        disabled={noEndDate}
       />
       <label>
         <input type="checkbox" bind:checked={noEndDate} />
