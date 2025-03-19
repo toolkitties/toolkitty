@@ -60,6 +60,14 @@
       <a class="button" href="#/app/resources/{$resource.id}/edit">Edit</a>
     {/if}
 
+    <div class="grid grid-cols-3 gap-4">
+      {#each $resource.images as image, index (`${image}${index}`)}
+        <div class="border-2 rounded-lg border-gray-200">
+          <img src={`blobstore://${image}`} alt={image} />
+        </div>
+      {/each}
+    </div>
+
     <pre>{JSON.stringify($resource, null, 2)}</pre>
   </div>
 {/if}

@@ -82,6 +82,14 @@
 
     <AvailabilityViewer data={$space} type="space" />
 
+    <div class="grid grid-cols-3 gap-4">
+      {#each $space.images as image, index (`${image}${index}`)}
+        <div class="border-2 rounded-lg border-gray-200">
+          <img src={`blobstore://${image}`} alt={image} />
+        </div>
+      {/each}
+    </div>
+
     {#if data.userRole == "admin"}
       <a class="button" href="#/app/spaces/{$space!.id}/edit">Edit</a>
     {/if}

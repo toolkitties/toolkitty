@@ -25,11 +25,13 @@
     href={`#/app/spaces/${space.id}`}
     class="flex border-black border event-row"
   >
-    <img
-      src={space.images[0]}
-      alt=""
-      class="aspect-square object-cover w-[30%] min-w-32 max-w-72 grow"
-    />
+    {#if space.images.length > 0}
+      <img
+        src={`blobstore://${space.images[0]}`}
+        class="aspect-square object-cover w-[30%] min-w-32 max-w-72 grow"
+        alt=""
+      />
+    {/if}
     <div class="flex flex-col gap-1 p-2">
       <h3>{space.name}</h3>
       {#if space.location.type === "gps"}
