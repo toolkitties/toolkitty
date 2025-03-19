@@ -47,8 +47,8 @@
               >{calendar.name}</Select.Item
             >
           {/each}
-          <a href="/join">Join Calendar</a>
-          <a href="/create">+ Create new calendar</a>
+          <a href="#/join">Join Calendar</a>
+          <a href="#/create">+ Create new calendar</a>
         </Select.Viewport>
       </Select.Content>
     </Select.Portal>

@@ -6,8 +6,11 @@
   let { data }: PageProps = $props();
 </script>
 
-<br />
-<br />
-<br />
-<SpaceForm data={data.form} activeCalendarId={data.activeCalendarId} />
-<Delete id={data.form.data.id!} name={data.form.data.name} type="space" />
+<SpaceForm
+  data={data.form}
+  activeCalendarId={data.activeCalendarId}
+  calendarDates={data.calendarDates}
+/>
+{#if data.userRole == "admin"}
+  <Delete id={data.form.data.id!} name={data.form.data.name} type="space" />
+{/if}

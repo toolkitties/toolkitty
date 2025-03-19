@@ -1,12 +1,13 @@
 import type { PageLoad } from "./$types";
-import { events, spaces, resources, calendars } from "$lib/api";
+import { events, spaces, resources, users } from "$lib/api";
 import { eventSchema } from "$lib/schemas";
 import { error } from "@sveltejs/kit";
 import { superValidate } from "sveltekit-superforms";
 import { zod } from "sveltekit-superforms/adapters";
+import { db } from "$lib/db";
+import { TimeSpanClass } from "$lib/timeSpan";
 
-export const load: PageLoad = async ({ params }) => {
-  const activeCalendarId = await calendars.getActiveCalendarId();
+export const load: PageLoad = async ({ params, parent }) => {
   const eventId = params.id;
   const event = await events.findById(eventId);
 
@@ -20,14 +21,26 @@ export const load: PageLoad = async ({ params }) => {
   const { calendarId, ownerId, ...eventFields } = event;
   const form = await superValidate(eventFields, zod(eventSchema));
 
-  const spacesList = await spaces.findMany(activeCalendarId!);
-  const resourcesList = await resources.findMany(activeCalendarId!);
+  // return spaces and resources with availability within the calendar dates
+  const activeCalendar = await db.calendars.get(calendarId!);
+  const timeSpan = new TimeSpanClass({
+    start: activeCalendar!.startDate!,
+    end: activeCalendar!.endDate,
+  });
+  const spacesList = await spaces.findByTimeSpan(calendarId!, timeSpan);
+  const resourcesList = await resources.findByTimeSpan(calendarId!, timeSpan);
+
+  const parentData = await parent();
+  const { activeCalendarId, publicKey } = parentData;
+  const user = await users.get(activeCalendarId!, publicKey);
+  const userRole = user!.role;
 
   return {
     title: "edit space",
     form,
-    activeCalendarId,
+    calendarId,
     spacesList,
     resourcesList,
+    userRole,
   };
 };

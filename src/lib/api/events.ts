@@ -1,8 +1,6 @@
-// import { events } from '$lib/api/data'
-
 import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
-import { isSubTimespan } from "$lib/utils";
+import { TimeSpanClass } from "$lib/timeSpan";
 import { auth, events, publish } from ".";
 
 /**
@@ -62,6 +60,9 @@ export function findByOwner(
             continue;
           }
           event.space = await db.spaces.get({ id: request.resourceId });
+          if (event.space) {
+            event.space.bookingRequest = request;
+          }
         }
 
         if (!event.resources) {
@@ -69,14 +70,16 @@ export function findByOwner(
         }
 
         // Add resources to each event.
-        const resources: Resource[] = [];
+        const resources: CalendarEventResourceEnriched[] = [];
         for (const requestId of event.resources) {
           const request = await db.bookingRequests.get(requestId);
           if (!request) {
             continue;
           }
-          const resource = await db.resources.get(request.resourceId);
+          const resource: CalendarEventResourceEnriched | undefined =
+            await db.resources.get(request.resourceId);
           if (resource) {
+            resource.bookingRequest = request;
             resources.push(resource);
           }
         }
@@ -232,7 +235,7 @@ async function onEventCreated(
     await db.events.add({
       id: meta.operationId,
       calendarId: meta.stream.id,
-      ownerId: meta.stream.owner,
+      ownerId: meta.author,
       ...data.fields,
     });
   } catch (e) {
@@ -243,16 +246,14 @@ async function onEventCreated(
 function onEventUpdated(data: EventUpdated["data"]): Promise<void> {
   const eventId = data.id;
   const { endDate, startDate } = data.fields;
+  const eventTimeSpan = new TimeSpanClass({ start: startDate, end: endDate });
 
   return db.transaction("rw", db.events, db.bookingRequests, async () => {
     // Update `validTime` field of all booking requests associated with this event.
     await db.bookingRequests.where({ eventId }).modify((request) => {
-      const isValid = isSubTimespan(
-        new Date(startDate),
-        new Date(endDate),
-        request.timeSpan,
-      );
-      request.isValid = isValid ? "true" : "false";
+      const requestTimeSpan = new TimeSpanClass(request.timeSpan);
+      const isSub = eventTimeSpan.contains(requestTimeSpan);
+      request.isValid = isSub ? "true" : "false";
     });
 
     // @TODO: we could show a toast to the user if a previously valid event timespan now became

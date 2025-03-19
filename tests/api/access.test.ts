@@ -7,11 +7,11 @@ import {
   LOG_PATH,
   OWNER_PUBLIC_KEY,
   STREAM,
-  seedTestMessages,
-} from "./data";
+} from "$lib/utils/faker";
 import { access } from "$lib/api";
 import { beforeAll, describe, expect, test } from "vitest";
 import { mockIPC } from "@tauri-apps/api/mocks";
+import { seedTestMessages } from "./data";
 
 beforeAll(async () => {
   mockIPC((cmd) => {

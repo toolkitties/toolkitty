@@ -13,11 +13,13 @@
   let {
     data,
     activeCalendarId,
-  }: { data: SuperValidated<Infer<SpaceSchema>>; activeCalendarId: Hash } =
-    $props();
+    calendarDates,
+  }: {
+    data: SuperValidated<Infer<SpaceSchema>>;
+    activeCalendarId: Hash;
+    calendarDates: TimeSpan;
+  } = $props();
 
-  let availability: { date: string; startTime: string; endTime: string }[] =
-    $state([]);
   let alwaysAvailable = $state(false);
 
   const { form, errors, enhance } = superForm(data, {
@@ -25,13 +27,11 @@
     validators: zod(spaceSchema),
     resetForm: false,
     dataType: "json",
-    // onUpdate is called when we press submit
     async onUpdate({ form }) {
-      // TODO: add additional validation here
       const { id, ...payload } = form.data;
       if (form.data.id) {
         console.log("update space");
-        handleUpdateSpace(id, payload);
+        handleUpdateSpace(id!, payload);
       } else {
         console.log("create space");
         handleCreateSpace(payload);
@@ -41,20 +41,20 @@
 
   async function handleCreateSpace(payload: SpaceFields) {
     try {
-      const spaceId = await spaces.create(activeCalendarId, payload);
+      const spaceId: Hash = await spaces.create(activeCalendarId, payload);
       toast.success("Space created!");
-      goto(`/app/spaces/${spaceId}`);
+      goto(`#/app/spaces/${spaceId}`);
     } catch (error) {
       console.error("Error creating space: ", error);
       toast.error("Error creating space!");
     }
   }
 
-  async function handleUpdateSpace(resourceId: Hash, payload: SpaceFields) {
+  async function handleUpdateSpace(spaceId: Hash, payload: SpaceFields) {
     try {
-      await spaces.update(resourceId, payload);
+      await spaces.update(spaceId, payload);
       toast.success("Space updated!");
-      goto(`/app/spaces/${data.id}`);
+      goto(`#/app/spaces/${spaceId}`);
     } catch (error) {
       console.error("Error updating space: ", error);
       toast.error("Error updating space!");
@@ -75,8 +75,8 @@
     } else if ($form.location.type === "gps") {
       $form.location = {
         type: "gps",
-        lat: "",
-        lon: "",
+        lat: 0,
+        lon: 0,
       };
     } else if ($form.location.type === "virtual") {
       $form.location = {
@@ -88,40 +88,40 @@
 </script>
 
 <SuperDebug data={{ $form, $errors }} />
-<form method="POST" use:enhance>
-  <fieldset>
-    <label for="physical">Physical Location</label>
-    <input
-      type="radio"
-      name="space-type"
-      value="physical"
-      bind:group={$form.location.type}
-      onchange={updateLocation}
-      checked
-    />
-    <label for="gps">GPS coordinates</label>
-    <input
-      type="radio"
-      name="space-type"
-      value="gps"
-      bind:group={$form.location.type}
-      onchange={updateLocation}
-    />
-    <label for="virtual">Virtual Space</label>
-    <input
-      type="radio"
-      name="space-type"
-      value="virtual"
-      bind:group={$form.location.type}
-      onchange={updateLocation}
-    />
-    {#if $errors.location?.type}<span class="form-error"
-        >{$errors.location?.type}</span
-      >{/if}
-  </fieldset>
+<fieldset>
+  <label for="physical">Physical Location</label>
+  <input
+    type="radio"
+    name="space-type"
+    value="physical"
+    bind:group={$form.location.type}
+    onchange={updateLocation}
+    checked
+  />
+  <label for="gps">GPS coordinates</label>
+  <input
+    type="radio"
+    name="space-type"
+    value="gps"
+    bind:group={$form.location.type}
+    onchange={updateLocation}
+  />
+  <label for="virtual">Virtual Space</label>
+  <input
+    type="radio"
+    name="space-type"
+    value="virtual"
+    bind:group={$form.location.type}
+    onchange={updateLocation}
+  />
+  {#if $errors.location?.type}<span class="form-error"
+      >{$errors.location?.type}</span
+    >{/if}
+</fieldset>
 
+<form method="POST" use:enhance>
   <label for="space-name">Space Name*</label>
-  <input type="text" name="space-name" />
+  <input type="text" name="space-name" bind:value={$form.name} />
   {#if $form.location.type === "physical"}
     <fieldset>
       <legend>Address</legend>
@@ -210,9 +210,9 @@
       type="text"
       name="address-virtual"
       aria-invalid={$errors.location ? "true" : undefined}
-      bind:value={$form.location}
+      bind:value={$form.location.link}
     />
-    {#if $errors.location}<span class="form-error">{$errors.location}</span
+    {#if $errors.location}<span class="form-error">{$errors.location.link}</span
       >{/if}
   {/if}
 
@@ -297,31 +297,37 @@
     >{/if}
 
   <p>Space availability</p>
-
+  {#if alwaysAvailable}
+    <p>This space is always available</p>
+  {/if}
   {#if !alwaysAvailable}
-    <AvailabilitySetter {availability} />
+    <AvailabilitySetter
+      bind:availability={$form.availability as TimeSpan[]}
+      {calendarDates}
+    />
   {/if}
 
   <label>
-    <input type="checkbox" bind:checked={alwaysAvailable} />
+    <input
+      type="checkbox"
+      bind:checked={alwaysAvailable}
+      onchange={() => {
+        if (alwaysAvailable) {
+          $form.availability = "always";
+        }
+      }}
+    />
     Always Available
   </label>
-
-  <p>Can this space have multiple bookings at the same time?</p>
   <fieldset>
-    <label for="multi-bookable">Yes</label>
+    <label for="multiBookable"
+      >Can this space have multiple bookings at the same time?
+    </label>
     <input
-      type="radio"
-      name="multi-bookable"
-      value="true"
-      bind:group={$form.multiBookable}
-    />
-    <label for="multi-bookable">No</label>
-    <input
-      type="radio"
-      name="multi-bookable"
-      value="false"
-      bind:group={$form.multiBookable}
+      id="multiBookable"
+      type="checkbox"
+      name="multiBookable"
+      bind:checked={$form.multiBookable}
     />
   </fieldset>
   {#if $errors.multiBookable}<span class="form-error"

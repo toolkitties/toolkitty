@@ -207,7 +207,10 @@ async function onCalendarCreated(
     // And then create our user for the calendar.
     //
     // @TODO: currently there is no UI for the calendar owner to create a username.
-    await users.create(meta.stream.id, meta.stream.owner);
+    const user = await users.get(meta.stream.id, myPublicKey);
+    if (!user) {
+      await users.create(meta.stream.id, myPublicKey);
+    }
   } else {
     // In the case where we are _not_ the calendar creator, then we actually should have already
     // added the calendar and our user to the database when we first resolved our invite code.

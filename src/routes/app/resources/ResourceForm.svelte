@@ -8,34 +8,18 @@
   import { resourceSchema } from "$lib/schemas";
   import { zod } from "sveltekit-superforms/adapters";
   import { toast } from "$lib/toast.svelte";
+  import { goto } from "$app/navigation";
 
   let {
     data,
     activeCalendarId,
-  }: { data: SuperValidated<Infer<ResourceSchema>>; activeCalendarId: Hash } =
-    $props();
+    calendarDates,
+  }: {
+    data: SuperValidated<Infer<ResourceSchema>>;
+    activeCalendarId: Hash;
+    calendarDates: TimeSpan;
+  } = $props();
   let alwaysAvailable = $state(false);
-
-  $effect(() => {
-    if (alwaysAvailable) {
-      $form.availability = "always";
-    }
-  });
-
-  let availability: { date: string; startTime: string; endTime: string }[] =
-    $state([]);
-
-  function updateAvailability(
-    newAvailability: { date: string; startTime: string; endTime: string }[],
-  ) {
-    const parsedAvailability = newAvailability.map(
-      ({ date, startTime, endTime }) => ({
-        start: new Date(`${date}T${startTime}`),
-        end: new Date(`${date}T${endTime}`),
-      }),
-    );
-    $form.availability = parsedAvailability;
-  }
 
   const { form, errors, enhance } = superForm(data, {
     SPA: true,
@@ -58,9 +42,12 @@
 
   async function handleCreateResource(payload: ResourceFields) {
     try {
-      const response = await resources.create(activeCalendarId!, payload);
+      const resourceId: Hash = await resources.create(
+        activeCalendarId,
+        payload,
+      );
       toast.success("Resource created!");
-      console.log("Resource created with ID:", response);
+      goto(`#/app/resources/${resourceId}`);
     } catch (error) {
       toast.error("Error creating resource!");
       console.error("Error creating resource:", error);
@@ -72,9 +59,9 @@
     payload: ResourceFields,
   ) {
     try {
-      const response = await resources.update(resourceId, payload);
+      await resources.update(resourceId, payload);
       toast.success("Resource updated!");
-      console.log("Resource updated", response);
+      goto(`#/app/resources/${resourceId}`);
     } catch (error) {
       toast.error("Error updating resource!");
       console.error("Error updating resource:", error);
@@ -138,18 +125,25 @@
   </fieldset>
 
   <p>Resource availability</p>
+  {#if alwaysAvailable}
+    <p>This resource is always available</p>
+  {/if}
   {#if !alwaysAvailable}
     <AvailabilitySetter
-      {availability}
-      onUpdateAvailability={updateAvailability}
+      bind:availability={$form.availability as TimeSpan[]}
+      {calendarDates}
     />
   {/if}
 
   <label>
     <input
       type="checkbox"
-      name="alwaysAvailable"
       bind:checked={alwaysAvailable}
+      onchange={() => {
+        if (alwaysAvailable) {
+          $form.availability = "always";
+        }
+      }}
     />
     Always Available
   </label>

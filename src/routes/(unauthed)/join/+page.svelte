@@ -3,6 +3,7 @@
   import { goto } from "$app/navigation";
   import { toast } from "$lib/toast.svelte";
   import { resolveInviteCode } from "$lib/api/access";
+  import { invalidateAll } from "$app/navigation";
 
   let value = $state("");
   let show = $state(true);
@@ -29,7 +30,10 @@
       return;
     }
 
-    goto(`/request`);
+    // reload data so we get the latest active calendar
+    // TODO: move active calendar to reactive state so we don't need to do this.
+    await invalidateAll();
+    goto(`#/request`);
   }
 </script>
 
@@ -80,7 +84,7 @@
 </div>
 
 <a
-  href="/create"
+  href="#/create"
   class="border border-black rounded p-4 text-center"
   type="submit">Create</a
 >

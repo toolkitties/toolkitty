@@ -24,9 +24,17 @@ export async function getPending(activeCalendarId: Hash) {
   const accessRequests = await db.accessRequests
     .where({ calendarId: activeCalendarId })
     .toArray();
-  // TODO: this function should return a list of users and their respective role/access status
 
-  return accessRequests;
+  const pendingRequests = await Promise.all(
+    accessRequests.map(async (request) => {
+      const status = await checkStatus(request.from, activeCalendarId);
+      return { request, status };
+    }),
+  );
+
+  return pendingRequests
+    .filter(({ status }) => status === "pending")
+    .map(({ request }) => request);
 }
 
 export async function findRequestByid(id: Hash) {
@@ -72,12 +80,12 @@ export async function wasRejected(requestId: Hash): Promise<boolean> {
  * in two possible ways.
  *
  * 1) the peer is owner of the calendar
- * 2) the peer has been given access by the calendar owner
+ * 2) the peer has been given access by the calendar owner or an admin
  */
 export async function checkStatus(
   publicKey: PublicKey,
   calendarId: Hash,
-): Promise<"not requested yet" | "pending" | "accepted" | "rejected"> {
+): Promise<AccessRequestStatus> {
   const calendar = await calendars.findOne(calendarId);
 
   // The owner of the calendar automatically has access.
@@ -85,33 +93,61 @@ export async function checkStatus(
     return "accepted";
   }
 
-  // Check if peer has requested access.
-  // TODO: use where query instead of find.
-  const request = (await db.accessRequests.toArray()).find(
-    (request) => request.from == publicKey && request.calendarId == calendarId,
-  );
+  // Get all requests made by this author for this calendar.
+  const requests = await db.accessRequests
+    .where({
+      calendarId,
+      from: publicKey,
+    })
+    .toArray();
 
-  // Peer has not requested access yet
-  if (request == undefined) {
-    return "not requested yet";
+  let status: AccessRequestStatus = "not requested yet";
+  for (const request of requests) {
+    // Get all rejections for this request.
+    const rejections = await db.accessResponses
+      .where({ requestId: request.id, answer: "reject" })
+      .toArray();
+
+    // Try to find any single valid rejections, if so mark "status" as "rejected" and move onto
+    // the next request.
+    for (const rejected of rejections) {
+      const isAdmin = await auth.isAdmin(calendarId, rejected.from);
+      const isOwner = await calendars.isOwner(calendarId, rejected.from);
+      // Only process responses from calendar admins or owners.
+      if (isAdmin || isOwner) {
+        status = "rejected";
+        break;
+      }
+    }
+
+    // We found a rejection move onto next request.
+    if (status == "rejected") {
+      continue;
+    }
+
+    // No rejections, now get all "accept" responses.
+    const acceptances = await db.accessResponses
+      .where({
+        requestId: request.id,
+        answer: "accept",
+      })
+      .toArray();
+
+    // Try to find any one valid response, if so we're done, return "accepted".
+    for (const accepted of acceptances) {
+      const isAdmin = await auth.isAdmin(calendarId, accepted.from);
+      const isOwner = await calendars.isOwner(calendarId, accepted.from);
+      if (isAdmin || isOwner) {
+        // Only process responses from calendar admins or owners.
+        return "accepted";
+      }
+    }
+
+    // No accept responses found, we're in "pending" state.
+    status = "pending";
   }
 
-  // @TODO: We need to be able to check if the response came from the calendar owner but at
-  // this point we haven't received the "calendar_created" event yet. It will help when the
-  // actual calendar id contains the owner information.
-  const rejected = await db.accessResponses.get([request.id, "reject"]);
-
-  if (rejected) {
-    return "rejected";
-  }
-
-  const accepted = await db.accessResponses.get([request.id, "accept"]);
-
-  if (accepted) {
-    return "accepted";
-  }
-
-  return "pending";
+  return status;
 }
 
 /**
@@ -263,8 +299,7 @@ async function onCalendarAccessRequested(
   };
 
   await db.accessRequests.add(accessRequest);
-  const publicKey = await identity.publicKey();
-  const accessStatus = await checkStatus(publicKey, calendarId);
+  const accessStatus = await checkStatus(meta.author, calendarId);
 
   // Show toast to user with request if owner or admin.
   const amOwner = await calendars.amOwner(calendarId);
@@ -278,10 +313,6 @@ async function onCalendarAccessRequested(
     if (!(await users.get(calendarId, meta.author))) {
       await users.create(calendarId, meta.author, data.name);
     }
-    // Process new calendar author if access was accepted.
-    //
-    // @TODO: add author to topic map.
-    // await processNewCalendarAuthor(calendarId, meta.author);
   }
 }
 

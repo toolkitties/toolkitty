@@ -316,8 +316,8 @@ type Link = {
 };
 
 type TimeSpan = {
-  start: Date;
-  end: Date;
+  start: string;
+  end: string | undefined;
 };
 
 type BookedTimeSpan = TimeSpan & {
@@ -336,8 +336,8 @@ type PhysicalLocation = {
 
 type GPSLocation = {
   type: "gps";
-  lat: string;
-  lon: string;
+  lat: number;
+  lon: number;
 };
 
 type VirtualLocation = {
@@ -695,6 +695,8 @@ type Resource = {
   booked: BookedTimeSpan[];
 } & ResourceFields;
 
+type BookingRequestStatus = "accepted" | "rejected" | "pending";
+
 type BookingRequest = {
   id: Hash;
   calendarId: Hash;
@@ -706,7 +708,7 @@ type BookingRequest = {
   message: string;
   timeSpan: TimeSpan;
   isValid: "true" | "false";
-  status: "accepted" | "rejected" | "pending";
+  status: BookingRequestStatus;
 };
 
 type ResourceType = "space" | "resource";
@@ -728,6 +730,8 @@ type Settings = {
 /**
  * (´ヮ´)八(*ﾟ▽ﾟ*)
  * Application Data
+ *
+ * Enriched data used for the UI
  */
 
 type CalendarId = Hash;
@@ -738,20 +742,45 @@ type RequestEvent = {
 };
 
 type BookingQueryFilter = {
+  calendarId?: CalendarId;
   eventId?: Hash;
+  resourceId?: Hash;
   requester?: PublicKey;
   resourceType?: ResourceType;
   resourceOwner?: PublicKey;
   isValid?: "true" | "false";
+  status?: BookingRequestStatus;
+  from?: Date;
+  to?: Date;
 };
 
 type CalendarEventEnriched = {
-  space?: Space;
-  resources?: Resource[];
+  space?: {
+    bookingRequest?: BookingRequest;
+  } & Space;
+  resources?: CalendarEventResourceEnriched[];
 } & CalendarEvent;
+
+type CalendarEventResourceEnriched = {
+  bookingRequest?: BookingRequest;
+} & Resource;
 
 type BookingRequestEnriched = {
   event?: CalendarEvent;
   resource?: Resource;
   space?: Space;
 } & BookingRequest;
+
+type AccessRequestStatus =
+  | "not requested yet"
+  | "pending"
+  | "accepted"
+  | "rejected";
+
+type OwnerResourceEnriched = {
+  pendingBookingRequests?: BookingRequest[];
+} & Resource;
+
+type OwnerSpaceEnriched = {
+  pendingBookingRequests?: BookingRequest[];
+} & Space;
