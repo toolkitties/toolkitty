@@ -9,6 +9,10 @@
   import { error } from "@sveltejs/kit";
 
   let { data }: PageProps = $props();
+  let now = new Date();
+  // TODO: look into if this should be declared with `$state(...)` as errors says.
+  let upcomingBookings: Observable<BookingRequestEnriched[]>;
+  let amOwner = $state(false);
 
   let space = liveQuery(() => {
     const space = spaces.findById(data.spaceId);
@@ -20,16 +24,9 @@
     return space;
   });
 
-  console.log("space: ", $space);
-
-  let now = new Date();
-  // TODO: look into if this should be declared with `$state(...)` as errors says.
-  let upcomingBookings: Observable<BookingRequestEnriched[]>;
-  let amOwner = $state(false);
-
   $effect(() => {
     if ($space) {
-      let amOwner = $space.ownerId === data.publicKey;
+      amOwner = $space.ownerId == data.publicKey;
 
       if (amOwner) {
         // TODO: Perhaps adjust to account for bookings taking place right now.

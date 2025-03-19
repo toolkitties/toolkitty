@@ -9,19 +9,18 @@
   import BookingRequest from "$lib/components/BookingRequest.svelte";
 
   let { data }: PageProps = $props();
+  let upcomingBookings: Observable<BookingRequestEnriched[]>;
+  let amOwner = $state(false);
 
   let event = liveQuery(() => {
-    const e = events.findById(data.eventId);
-    if (!e) {
+    const event = events.findById(data.eventId);
+    if (!event) {
       error(404, {
         message: "Resource not found",
       });
     }
-    return e;
+    return event;
   });
-
-  let upcomingBookings: Observable<BookingRequestEnriched[]>;
-  let amOwner = $state(false);
 
   // TODO: use $derived.by instead of $effect here.
   $effect(() => {
