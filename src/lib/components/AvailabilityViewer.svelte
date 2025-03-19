@@ -18,7 +18,7 @@
   } = $props();
   let availability: TimeSpan[] = $derived(data.availability) as TimeSpan[];
   let availabilityByDay: TimeSpan | null = $state(null);
-  let selectedDate = fromDate(new Date(selected!), "UTC");
+  let selectedDate = selected ? fromDate(new Date(selected), "UTC") : undefined;
   let currentlySelectedDate: DateValue | undefined = $state(selectedDate);
   let booked: BookingRequest[] = $state([]);
   let loading: boolean = $state(true);
@@ -26,6 +26,11 @@
   const handleDateSelect = async (
     value: DateValue | DateValue[] | undefined,
   ) => {
+    if (!value) {
+      availabilityByDay = null;
+      booked = [];
+      return;
+    }
     if (Array.isArray(value)) {
       value = value[0];
     }

@@ -140,8 +140,6 @@
     {#if $errors.resourcePageText}<span class="form-error"
         >{$errors.resourcePageText}</span
       >{/if}
-
-    <button type="submit">Update Calendar</button>
   {/if}
 
   <button type="submit">{$form.id ? "Update" : "Create"}</button>
