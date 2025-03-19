@@ -80,7 +80,7 @@
 {/if}
 
 {#each $eventsByDate as group (group.date)}
-  <Date date={group.date} />
+  <Date date={group.date} format="date" />
   {#each group.eventsList as event (event.id)}
     <EventRow {event} />
   {/each}
