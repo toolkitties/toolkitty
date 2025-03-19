@@ -1,7 +1,13 @@
 <script lang="ts">
   import type { PageProps } from "./$types";
+  import { resources } from "$lib/api";
+  import { liveQuery } from "dexie";
 
   let { data }: PageProps = $props();
+
+  let resourcesList = liveQuery(() =>
+    resources.findMany(data.activeCalendarId),
+  );
 </script>
 
 <h1 class="font-pixel">{data.title}</h1>
@@ -10,7 +16,7 @@
 {/if}
 <a href="#/app/resources/create">Create resource</a>
 
-{#each data.resourcesList as resource (resource.id)}
+{#each $resourcesList as resource (resource.id)}
   <a
     href={`#/app/resources/${resource.id}`}
     class="flex border-black border event-row"
