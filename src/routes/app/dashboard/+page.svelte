@@ -4,6 +4,7 @@
   import { bookings, events, resources, spaces } from "$lib/api";
   import { liveQuery } from "dexie";
   import PlusIcon from "$lib/components/icons/plusIcon.svelte";
+  import Date from "$lib/components/Date.svelte";
 
   let { data }: PageProps = $props();
 
@@ -49,7 +50,7 @@
         class="p-2 border-black border block"
       >
         <h4>{event.name}</h4>
-        <p>{event.startDate}</p>
+        <Date date={event.startDate} />
         <p>{event.space ? event.space.name : "no space yet"}</p>
         {#if event.space}
           <div>{event.space.name} {event.space.bookingRequest?.status}</div>
