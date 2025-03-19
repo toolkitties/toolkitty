@@ -7,11 +7,11 @@
   import { TimeSpanClass } from "$lib/timeSpan";
 
   let {
-    resource,
+    data,
     selected,
-  }: { resource: Space | Resource; selected?: string; onChange?: () => void } =
+  }: { data: Space | Resource; selected?: string; onChange?: () => void } =
     $props();
-  let availability: TimeSpan[] = $derived(resource.availability) as TimeSpan[];
+  let availability: TimeSpan[] = $derived(data.availability) as TimeSpan[];
   let availabilityByDay: TimeSpan | null = $state(null);
   let selectedDate = fromDate(new Date(selected!), "UTC");
   let currentlySelectedDate: DateValue | undefined = $state(selectedDate);
@@ -41,7 +41,7 @@
         availabilityByDay = { start: timeSpan.start, end: timeSpan.end };
 
         booked = await spaces.findBookings(
-          resource.id,
+          data.id,
           new TimeSpanClass(availabilityByDay),
         );
 
@@ -115,8 +115,8 @@
   {/snippet}
 </Calendar.Root>
 {#if currentlySelectedDate && !loading}
-  <Bookings availability={availabilityByDay} {resource} {booked} />
+  <Bookings availability={availabilityByDay} resource={data} {booked} />
 {/if}
-{#if resource.multiBookable}
+{#if data.multiBookable}
   <p>This space can have multiple bookings at the same time.</p>
 {/if}
