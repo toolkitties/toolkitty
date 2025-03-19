@@ -10,7 +10,7 @@ export const load: PageLoad = async ({ parent }) => {
 
   const form = defaults(zod(resourceSchema));
 
-  const calendar = await calendars.findOne(activeCalendarId!);
+  const calendar = await calendars.findById(activeCalendarId!);
   const calendarDates = { start: calendar!.startDate!, end: calendar!.endDate };
 
   return { form, activeCalendarId, calendarDates };

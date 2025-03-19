@@ -1,13 +1,24 @@
 <script lang="ts">
   import type { PageProps } from "./$types";
-  import { spaces } from "$lib/api";
+  import { spaces, calendars } from "$lib/api";
   import { liveQuery } from "dexie";
   let { data }: PageProps = $props();
+  import PageText from "$lib/components/PageText.svelte";
 
   let spacesList = liveQuery(() => spaces.findMany(data.activeCalendarId));
+
+  let spacePageText = liveQuery(async () => {
+    const calendar = await calendars.findById(data.activeCalendarId);
+    return calendar?.spacePageText;
+  });
 </script>
 
-<h1 class="font-pixel">Spaces</h1>
+<h1 class="font-pixel">{data.title}</h1>
+
+{#if $spacePageText}
+  <PageText text={$spacePageText} title="about spaces" />
+{/if}
+
 <a href="#/app/spaces/create">Create space</a>
 {#each $spacesList as space (space.id)}
   <a

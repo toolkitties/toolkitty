@@ -1,16 +1,27 @@
 <script lang="ts">
   import type { PageProps } from "./$types";
-  import { resources } from "$lib/api";
+  import { resources, calendars } from "$lib/api";
   import { liveQuery } from "dexie";
+  import PageText from "$lib/components/PageText.svelte";
 
   let { data }: PageProps = $props();
 
   let resourcesList = liveQuery(() =>
     resources.findMany(data.activeCalendarId),
   );
+
+  let resourcePageText = liveQuery(async () => {
+    const calendar = await calendars.findById(data.activeCalendarId);
+    return calendar?.resourcePageText;
+  });
 </script>
 
-<h1 class="font-pixel">Resources</h1>
+<h1 class="font-pixel">{data.title}</h1>
+
+{#if $resourcePageText}
+  <PageText text={$resourcePageText} title="about resources" />
+{/if}
+
 <a href="#/app/resources/create">Create resource</a>
 
 {#each $resourcesList as resource (resource.id)}

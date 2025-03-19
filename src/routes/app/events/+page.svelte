@@ -4,24 +4,32 @@
   import CalendarSelector from "$lib/components/CalendarSelector.svelte";
   import { liveQuery } from "dexie";
   import { calendars, events } from "$lib/api";
+  import PageText from "$lib/components/PageText.svelte";
 
   let { data }: PageProps = $props();
   let contributeButtonOpen = $state(false);
 
   let eventsList = liveQuery(async () => {
-    const activeCalendarId = await calendars.getActiveCalendarId();
-    if (!activeCalendarId) return [];
-    return events.findMany(activeCalendarId);
+    return events.findMany(data.activeCalendarId);
+  });
+
+  let calendarInstructions = liveQuery(async () => {
+    const calendar = await calendars.findById(data.activeCalendarId);
+    return calendar?.calendarInstructions;
   });
 </script>
 
 <CalendarSelector />
 <h1 class="font-pixel">{data.title}</h1>
-<a href="#/app/calendars/create">Create Calendar</a>
+<a href="#/create">Create Calendar</a>
 {#if data.userRole === "admin"}
   <a href="#/app/calendars/edit">Edit Calendar</a>
 {/if}
 <a href="#/app/events/create">Create event</a>
+
+{#if $calendarInstructions}
+  <PageText text={$calendarInstructions} title="about calendar" />
+{/if}
 
 {#each $eventsList as event (event.id)}
   <EventRow {event} />

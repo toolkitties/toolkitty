@@ -25,7 +25,7 @@ export const load: PageLoad = async ({ params, parent }) => {
 
   const form = await superValidate(resourceFields, zod(resourceSchema));
 
-  const calendar = await calendars.findOne(activeCalendarId!);
+  const calendar = await calendars.findById(activeCalendarId!);
   const calendarDates = { start: calendar!.startDate!, end: calendar!.endDate };
 
   return {
