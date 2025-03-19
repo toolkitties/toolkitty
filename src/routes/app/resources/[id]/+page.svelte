@@ -60,7 +60,7 @@
       <AvailabilityViewer data={$resource} type="resource" />
     {/if}
 
-    {#if data.userRole == "admin"}
+    {#if data.userRole == "admin" || amOwner}
       <a class="button" href="#/app/resources/{$resource.id}/edit">Edit</a>
     {/if}
 

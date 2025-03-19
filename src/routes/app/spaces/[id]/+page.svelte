@@ -86,7 +86,7 @@
       <AvailabilityViewer data={$space} type="space" />
     {/if}
 
-    {#if data.userRole == "admin"}
+    {#if data.userRole == "admin" || amOwner}
       <a class="button" href="#/app/spaces/{$space!.id}/edit">Edit</a>
     {/if}
 

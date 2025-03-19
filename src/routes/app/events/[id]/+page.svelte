@@ -10,8 +10,6 @@
 
   let { data }: PageProps = $props();
 
-  let upcomingBookings: Observable<BookingRequestEnriched[]>;
-
   let event = liveQuery(() => {
     const e = events.findById(data.eventId);
     if (!e) {
@@ -22,15 +20,24 @@
     return e;
   });
 
-  if (data.userRole === "admin") {
-    // TODO: Perhaps adjust to account for bookings taking place right now.
-    upcomingBookings = liveQuery(() =>
-      bookings.findAll({
-        calendarId: data.activeCalendarId,
-        eventId: data.eventId,
-      }),
-    );
-  }
+  let upcomingBookings: Observable<BookingRequestEnriched[]>;
+  let amOwner = $state(false);
+
+  // TODO: use $derived.by instead of $effect here.
+  $effect(() => {
+    if ($event) {
+      amOwner = $event.ownerId === data.publicKey;
+      if (amOwner) {
+        // TODO: Perhaps adjust to account for bookings taking place right now.
+        upcomingBookings = liveQuery(() =>
+          bookings.findAll({
+            calendarId: data.activeCalendarId,
+            eventId: data.eventId,
+          }),
+        );
+      }
+    }
+  });
 </script>
 
 {#if $event}
@@ -59,7 +66,7 @@
 
     <Links links={$event.links} />
 
-    {#if data.userRole == "admin"}
+    {#if data.userRole == "admin" || amOwner}
       <a class="button" href="#/app/events/{$event!.id}/edit">Edit</a>
     {/if}
 
