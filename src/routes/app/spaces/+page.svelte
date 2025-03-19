@@ -49,6 +49,7 @@
   {/each}
 {:else}
   <p>no spaces yet, please create one.</p>
+  <a href="#/app/events/create" class="button">create space</a>
 {/if}
 
 <Contribute />

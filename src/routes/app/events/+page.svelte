@@ -35,6 +35,7 @@
   {/each}
 {:else}
   <p>no events yet, please create one.</p>
+  <a href="#/app/events/create" class="button">create event</a>
 {/if}
 
 <Contribute />
