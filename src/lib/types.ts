@@ -25,6 +25,12 @@ type OperationId = Hash;
 type Topic = string;
 
 /**
+ * Date in ISO 8601 format
+ * YYYY-MM-DDTHH:MM:SSZ
+ */
+type ISO8601 = string;
+
+/**
  * A long-lived "owned" data stream.
  */
 type Stream = {
@@ -157,9 +163,9 @@ type SystemMessage = SubscribedToTopic | NetworkEvent;
  */
 type SubscribedToTopic =
   | {
-      event: "subscribed_to_persisted_topic";
-      topic: string;
-    }
+    event: "subscribed_to_persisted_topic";
+    topic: string;
+  }
   | { event: "subscribed_to_ephemeral_topic"; topic: string };
 
 /**
@@ -168,14 +174,14 @@ type SubscribedToTopic =
 type NetworkEvent = {
   event: "network_event";
   data:
-    | GossipJoined
-    | GossipLeft
-    | GossipNeighborUp
-    | GossipNeighborDown
-    | PeerDiscovered
-    | SyncStarted
-    | SyncDone
-    | SyncFailed;
+  | GossipJoined
+  | GossipLeft
+  | GossipNeighborUp
+  | GossipNeighborDown
+  | PeerDiscovered
+  | SyncStarted
+  | SyncDone
+  | SyncFailed;
 };
 
 type GossipJoined = {
@@ -316,8 +322,8 @@ type Link = {
 };
 
 type TimeSpan = {
-  start: string;
-  end: string | undefined;
+  start: ISO8601;
+  end: ISO8601 | undefined;
 };
 
 type BookedTimeSpan = TimeSpan & {
@@ -383,10 +389,10 @@ type EventFields = {
   name: string;
   description: string;
   spaceRequest?: SpaceRequestId;
-  startDate: string;
-  endDate: string;
-  publicStartDate?: string;
-  publicEndDate?: string;
+  startDate: ISO8601;
+  endDate: ISO8601;
+  publicStartDate?: ISO8601;
+  publicEndDate?: ISO8601;
   resourcesRequests?: ReservationRequestId[];
   links: Link[];
   images: Image[];
@@ -652,8 +658,8 @@ type Calendar = {
   // `CalendarCreated` fields contains a TimeSpan[] so it's possible to encode non-consecutive
   // dates there, but we don't need to support that in the app right now. Here I've left it as a
   // single time range.
-  startDate?: string;
-  endDate?: string;
+  startDate?: ISO8601;
+  endDate?: ISO8601;
 };
 
 type AccessRequest = {
@@ -747,8 +753,8 @@ type BookingQueryFilter = {
   resourceOwner?: PublicKey;
   isValid?: "true" | "false";
   status?: BookingRequestStatus;
-  from?: Date;
-  to?: Date;
+  from?: ISO8601;
+  to?: ISO8601;
 };
 
 type CalendarEventEnriched = {
