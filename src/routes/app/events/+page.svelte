@@ -9,7 +9,7 @@
 
 <CalendarSelector />
 <h1 class="font-pixel">{data.title}</h1>
-<a href="#/app/calendars/create">Create Calendar</a>
+<a href="#/create">Create Calendar</a>
 {#if data.userRole === "admin"}
   <a href="#/app/calendars/edit">Edit Calendar</a>
 {/if}
