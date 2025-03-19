@@ -139,6 +139,9 @@
       bind:availability={$form.availability as TimeSpan[]}
       {calendarDates}
     />
+    {#if $errors.availability}
+      <span class="form-error">{$errors.availability._errors}</span>
+    {/if}
   {/if}
 
   <label>
