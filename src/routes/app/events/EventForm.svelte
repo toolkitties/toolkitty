@@ -174,13 +174,16 @@
         }
       }
 
-      const { id, ...payload } = form.data;
-      if (form.data.id) {
-        console.log("update event");
-        handleUpdateEvent(id!, payload);
-      } else {
-        console.log("create space");
-        handleCreateEvent(payload);
+      if (form.valid) {
+        const { id, ...payload } = form.data;
+
+        if (form.data.id) {
+          console.log("update event");
+          handleUpdateEvent(id!, payload);
+        } else {
+          console.log("create space");
+          handleCreateEvent(payload);
+        }
       }
     },
   });

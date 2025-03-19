@@ -28,14 +28,16 @@
     resetForm: false,
     dataType: "json",
     async onUpdate({ form }) {
-      const { id, ...payload } = form.data;      
+      if (form.valid) {
+        const { id, ...payload } = form.data;
 
-      if (form.data.id) {
-        console.log("update space");
-        handleUpdateSpace(id!, payload);
-      } else {
-        console.log("create space");
-        handleCreateSpace(payload);
+        if (form.data.id) {
+          console.log("update space");
+          handleUpdateSpace(id!, payload);
+        } else {
+          console.log("create space");
+          handleCreateSpace(payload);
+        }
       }
     },
   });

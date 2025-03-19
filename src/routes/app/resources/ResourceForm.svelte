@@ -28,14 +28,16 @@
     dataType: "json",
     // onUpdate is called when we press submit
     async onUpdate({ form }) {
-      // TODO: add additional validation here
-      const { id, ...payload } = form.data;
-      if (id) {
-        console.log("update resource");
-        handleUpdateResource(id, payload);
-      } else {
-        console.log("create resource");
-        handleCreateResource(payload);
+      if (form.valid) {
+        // TODO: add additional validation here
+        const { id, ...payload } = form.data;
+        if (id) {
+          console.log("update resource");
+          handleUpdateResource(id, payload);
+        } else {
+          console.log("create resource");
+          handleCreateResource(payload);
+        }
       }
     },
   });
