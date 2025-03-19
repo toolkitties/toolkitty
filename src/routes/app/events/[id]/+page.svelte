@@ -55,6 +55,8 @@
       </section>
     {/if}
 
+    <p>{$event.description}</p>
+
     <Links links={$event.links} />
 
     {#if data.userRole == "admin"}
