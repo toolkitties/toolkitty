@@ -68,7 +68,9 @@
 </script>
 
 {#if bookedBlocks.length === 0}
-  <p>No bookings yet, {data.name} is available between {availability?.start} and {availability?.end}</p>
+  <p>
+    No bookings yet, {data.name} is available between {availability?.start} and {availability?.end}
+  </p>
 {:else}
   <div class="max-h-[400px] overflow-auto">
     <div class="flex">

@@ -10,11 +10,11 @@ const config = {
   kit: {
     adapter: adapter(),
     router: {
-      // Set router to type hash so we can build dynamic urls 
+      // Set router to type hash so we can build dynamic urls
       // where we don't know the ID of an entity at build time.
       // This means all urls in the app to start with a #
-      type: 'hash'
-    }
+      type: "hash",
+    },
   },
 };
 
