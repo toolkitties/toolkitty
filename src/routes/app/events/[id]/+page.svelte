@@ -7,6 +7,7 @@
   import Links from "$lib/components/Links.svelte";
   import Date from "$lib/components/Date.svelte";
   import BookingRequest from "$lib/components/BookingRequest.svelte";
+  import ImageGallery from "$lib/components/ImageGallery.svelte";
 
   let { data }: PageProps = $props();
   let upcomingBookings: Observable<BookingRequestEnriched[]>;
@@ -65,13 +66,7 @@
 
     <Links links={$event.links} />
 
-    <div class="grid grid-cols-3 gap-4">
-      {#each $event.images as image, index (`${image}${index}`)}
-        <div class="border-2 rounded-lg border-gray-200">
-          <img src={`blobstore://${image}`} alt={image} />
-        </div>
-      {/each}
-    </div>
+    <ImageGallery images={$event.images} />
 
     {#if data.userRole == "admin" || amOwner}
       <a class="button" href="#/app/events/{$event!.id}/edit">Edit</a>

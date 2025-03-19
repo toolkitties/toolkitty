@@ -7,6 +7,7 @@
   import AvailabilityViewer from "$lib/components/AvailabilityViewer.svelte";
   import Links from "$lib/components/Links.svelte";
   import { error } from "@sveltejs/kit";
+  import ImageGallery from "$lib/components/ImageGallery.svelte";
 
   let { data }: PageProps = $props();
   let now = new Date();
@@ -83,13 +84,7 @@
       <AvailabilityViewer data={$space} type="space" />
     {/if}
 
-    <div class="grid grid-cols-3 gap-4">
-      {#each $space.images as image, index (`${image}${index}`)}
-        <div class="border-2 rounded-lg border-gray-200">
-          <img src={`blobstore://${image}`} alt={image} />
-        </div>
-      {/each}
-    </div>
+    <ImageGallery images={$space.images} />
 
     {#if data.userRole == "admin" || amOwner}
       <a class="button" href="#/app/spaces/{$space!.id}/edit">Edit</a>
