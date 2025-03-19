@@ -6,7 +6,7 @@ export const load: PageLoad = async ({ parent }) => {
   const { activeCalendarId, publicKey } = parentData;
   const eventsList = await events.findMany(activeCalendarId!);
   const user = await users.get(activeCalendarId!, publicKey);
-  const userRole = user!.role;
+  const userRole = user?.role;
 
   return {
     title: "home",
