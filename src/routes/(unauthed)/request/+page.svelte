@@ -59,11 +59,10 @@
 <h1>Kitty Fest 25</h1>
 
 {#if requestStatus == "pending"}
-  <p>
-    Your request is now pending. You will be notified when this changes. Read
-    more about Toolkitties <a href="#/help">here</a>.
-  </p>
-  <span>⏳</span>
+  <div class="mx-auto">
+    <img class="w-12 mx-auto" alt="" src="/images/pending.gif" />
+    <span>request pending...</span>
+  </div>
 {:else if requestStatus == "rejected"}
   <p>Your request was rejected!!</p>
 {:else}

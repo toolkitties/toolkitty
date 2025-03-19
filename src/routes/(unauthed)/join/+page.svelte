@@ -79,7 +79,10 @@
       >Join</button
     >
   {:else}
-    <p>Searching for calendar</p>
+    <div>
+      <img class="w-12 mx-auto" alt="" src="/images/searching.gif" />
+      <span>searching for calendar...</span>
+    </div>
   {/if}
 </div>
 
