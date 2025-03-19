@@ -32,9 +32,7 @@
     },
   });
 
-  async function handleCreateCalendar(
-    payload: CalendarFields,
-  ) {
+  async function handleCreateCalendar(payload: CalendarFields) {
     try {
       const newCalendar = await calendars.create({ fields: payload });
       // Set active calendar to new calendar
