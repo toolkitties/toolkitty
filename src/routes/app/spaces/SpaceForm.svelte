@@ -29,13 +29,15 @@
     resetForm: false,
     dataType: "json",
     async onUpdate({ form }) {
-      const { id, ...payload } = form.data;
-      if (form.data.id) {
-        console.log("update space");
-        handleUpdateSpace(id!, payload);
-      } else {
-        console.log("create space");
-        handleCreateSpace(payload);
+      if (form.valid) {
+        const { id, ...payload } = form.data;
+        if (form.data.id) {
+          console.log("update space");
+          handleUpdateSpace(id!, payload);
+        } else {
+          console.log("create space");
+          handleCreateSpace(payload);
+        }
       }
     },
   });
@@ -306,6 +308,9 @@
       bind:availability={$form.availability as TimeSpan[]}
       {calendarDates}
     />
+    {#if $errors.availability}
+      <span class="form-error">{$errors.availability._errors}</span>
+    {/if}
   {/if}
 
   <label>

@@ -9,6 +9,11 @@
   import { error } from "@sveltejs/kit";
 
   let { data }: PageProps = $props();
+  let now = new Date();
+  // TODO: look into if this should be declared with `$state(...)` as errors says.
+  // Should be fixed with $derived.by todo below.
+  let upcomingBookings: Observable<BookingRequestEnriched[]>;
+  let amOwner = $state(false);
 
   let resource = liveQuery(async () => {
     const resource = await resources.findById(data.resourceId);
@@ -19,12 +24,6 @@
     }
     return resource;
   });
-
-  let now = new Date();
-  // TODO: look into if this should be declared with `$state(...)` as errors says.
-  // Should be fixed with $derived.by todo below.
-  let upcomingBookings: Observable<BookingRequestEnriched[]>;
-  let amOwner = $state(false);
 
   // TODO: use $derived.by instead of $effect here.
   $effect(() => {
@@ -54,9 +53,13 @@
 
     <Links links={[$resource.link]} />
 
-    <AvailabilityViewer data={$resource} type="resource" />
+    {#if $resource.availability == "always"}
+      <p>This resource is always available.</p>
+    {:else}
+      <AvailabilityViewer data={$resource} type="resource" />
+    {/if}
 
-    {#if data.userRole == "admin"}
+    {#if data.userRole == "admin" || amOwner}
       <a class="button" href="#/app/resources/{$resource.id}/edit">Edit</a>
     {/if}
 

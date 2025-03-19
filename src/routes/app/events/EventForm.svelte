@@ -175,13 +175,17 @@
         }
       }
 
-      const { id, ...payload } = form.data;
-      if (form.data.id) {
-        console.log("update event");
-        handleUpdateEvent(id!, payload);
-      } else {
-        console.log("create space");
-        handleCreateEvent(payload);
+      // TODO: potentially move above validation to schema
+      if (form.valid) {
+        const { id, ...payload } = form.data;
+
+        if (form.data.id) {
+          console.log("update event");
+          handleUpdateEvent(id!, payload);
+        } else {
+          console.log("create space");
+          handleCreateEvent(payload);
+        }
       }
     },
   });
@@ -265,89 +269,95 @@
   }
 </script>
 
-<SuperDebug data={{ $form, $errors }} />
-<form method="POST" use:enhance>
-  <label for="name">Event name*</label>
-  <input
-    type="text"
-    name="name"
-    aria-invalid={$errors.name ? "true" : undefined}
-    required
-    bind:value={$form.name}
-  />
-  {#if $errors.name}<span class="form-error">{$errors.name}</span>{/if}
+{#if spaces.length == 0}
+  <p>
+    No available spaces have been contributed. Create at least one space before
+    creating an event.
+  </p>
+  <a href="#/app/spaces/create" class="button mt-4 inline-block">Create space</a
+  >
+{:else}
+  <SuperDebug data={{ $form, $errors }} />
+  <form method="POST" use:enhance>
+    <label for="name">Event name*</label>
+    <input
+      type="text"
+      name="name"
+      aria-invalid={$errors.name ? "true" : undefined}
+      bind:value={$form.name}
+    />
+    {#if $errors.name}<span class="form-error">{$errors.name}</span>{/if}
 
-  <label for="description">Event description*</label>
-  <textarea
-    name="description"
-    required
-    aria-invalid={$errors.description ? "true" : undefined}
-    bind:value={$form.description}
-  ></textarea>
-  {#if $errors.description}<span class="form-error">{$errors.description}</span
-    >{/if}
+    <label for="description">Event description*</label>
+    <textarea
+      name="description"
+      aria-invalid={$errors.description ? "true" : undefined}
+      bind:value={$form.description}
+    ></textarea>
+    {#if $errors.description}<span class="form-error"
+        >{$errors.description}</span
+      >{/if}
 
-  {#if $form.links[0]}
-    <p>🎫 Ticket Link</p>
-    <div class="flex flex-row">
-      <div>
-        <label for="ticket-link-text">Link text</label>
-        <input
-          type="text"
-          name="ticket-link-text"
-          aria-invalid={$errors.links?.[0].title ? "true" : undefined}
-          bind:value={$form.links[0].title}
-        />
-        {#if $errors.links?.[0].title}<span class="form-error"
-            >{$errors.links?.[0].title}</span
-          >{/if}
+    {#if $form.links[0]}
+      <p>🎫 Ticket Link</p>
+      <div class="flex flex-row">
+        <div>
+          <label for="ticket-link-text">Link text</label>
+          <input
+            type="text"
+            name="ticket-link-text"
+            aria-invalid={$errors.links?.[0].title ? "true" : undefined}
+            bind:value={$form.links[0].title}
+          />
+          {#if $errors.links?.[0].title}<span class="form-error"
+              >{$errors.links?.[0].title}</span
+            >{/if}
+        </div>
+        <div>
+          <label for="ticket-link-url">URL</label>
+          <input
+            type="url"
+            name="ticket-link-url"
+            aria-invalid={$errors.links?.[0].url ? "true" : undefined}
+            bind:value={$form.links[0].url}
+          />
+          {#if $errors.links?.[0].url}<span class="form-error"
+              >{$errors.links?.[0].url}</span
+            >{/if}
+        </div>
       </div>
-      <div>
-        <label for="ticket-link-url">URL</label>
-        <input
-          type="url"
-          name="ticket-link-url"
-          aria-invalid={$errors.links?.[0].url ? "true" : undefined}
-          bind:value={$form.links[0].url}
-        />
-        {#if $errors.links?.[0].url}<span class="form-error"
-            >{$errors.links?.[0].url}</span
-          >{/if}
-      </div>
-    </div>
-  {/if}
+    {/if}
 
-  {#if $form.links[1]}
-    <p>🔗 Additional Link</p>
-    <div class="flex flex-row">
-      <div>
-        <label for="additional-link-text">Link text</label>
-        <input
-          type="text"
-          name="additional-link-text"
-          aria-invalid={$errors.links?.[1].title ? "true" : undefined}
-          bind:value={$form.links[1].title}
-        />
-        {#if $errors.links?.[1].title}<span class="form-error"
-            >{$errors.links?.[1].title}</span
-          >{/if}
+    {#if $form.links[1]}
+      <p>🔗 Additional Link</p>
+      <div class="flex flex-row">
+        <div>
+          <label for="additional-link-text">Link text</label>
+          <input
+            type="text"
+            name="additional-link-text"
+            aria-invalid={$errors.links?.[1].title ? "true" : undefined}
+            bind:value={$form.links[1].title}
+          />
+          {#if $errors.links?.[1].title}<span class="form-error"
+              >{$errors.links?.[1].title}</span
+            >{/if}
+        </div>
+        <div>
+          <label for="additional-link-url">URL</label>
+          <input
+            type="url"
+            name="additional-link-url"
+            aria-invalid={$errors.links?.[1].url ? "true" : undefined}
+            bind:value={$form.links[1].url}
+          />
+          {#if $errors.links?.[1].url}<span class="form-error"
+              >{$errors.links?.[1].url}</span
+            >{/if}
+        </div>
       </div>
-      <div>
-        <label for="additional-link-url">URL</label>
-        <input
-          type="url"
-          name="additional-link-url"
-          aria-invalid={$errors.links?.[1].url ? "true" : undefined}
-          bind:value={$form.links[1].url}
-        />
-        {#if $errors.links?.[1].url}<span class="form-error"
-            >{$errors.links?.[1].url}</span
-          >{/if}
-      </div>
-    </div>
-  {/if}
+    {/if}
 
-  {#if spaces.length > 0}
     <p>Select a space:</p>
     <ul>
       {#each spaces as space (space.id)}
@@ -443,20 +453,19 @@
           {/each}
         </ul>
       {:else}
-        <p>No available resources available.</p>
+        <p>No available resources.</p>
       {/if}
     {/if}
-  {:else}
-    <p>No available spaces found.</p>
-  {/if}
-  {#if $errors.selectedSpace}<span class="form-error"
-      >{$errors.selectedSpace}</span
-    >{/if}
 
-  <p>Images</p>
-  <ImageUploader bind:images={$form.images as string[]} />
+    <p>Images</p>
+    <ImageUploader bind:images={$form.images as string[]} />
 
-  <br />
+    <br />
 
-  <button type="submit">{$form.id ? "Update" : "Create"}</button>
-</form>
+    {#if $errors.selectedSpace}<span class="form-error"
+        >{$errors.selectedSpace}</span
+      >{/if}
+
+    <button type="submit">{$form.id ? "Update" : "Create"}</button>
+  </form>
+{/if}

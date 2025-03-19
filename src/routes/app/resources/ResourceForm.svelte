@@ -29,14 +29,16 @@
     dataType: "json",
     // onUpdate is called when we press submit
     async onUpdate({ form }) {
-      // TODO: add additional validation here
-      const { id, ...payload } = form.data;
-      if (id) {
-        console.log("update resource");
-        handleUpdateResource(id, payload);
-      } else {
-        console.log("create resource");
-        handleCreateResource(payload);
+      if (form.valid) {
+        // TODO: add additional validation here
+        const { id, ...payload } = form.data;
+        if (id) {
+          console.log("update resource");
+          handleUpdateResource(id, payload);
+        } else {
+          console.log("create resource");
+          handleCreateResource(payload);
+        }
       }
     },
   });
@@ -112,6 +114,9 @@
           bind:value={$form.link.title}
         />
       </div>
+      {#if $errors.link?.title}<span class="form-error"
+          >{$errors.link.title}</span
+        >{/if}
       <div>
         <label for="link-url">URL</label>
         <input
@@ -122,7 +127,8 @@
         />
       </div>
     </div>
-    {#if $errors.link}<span class="form-error">{$errors.link}</span>{/if}
+    {#if $errors.link?.url}<span class="form-error">{$errors.link.url}</span
+      >{/if}
   </fieldset>
 
   <p>Resource availability</p>
@@ -134,6 +140,9 @@
       bind:availability={$form.availability as TimeSpan[]}
       {calendarDates}
     />
+    {#if $errors.availability}
+      <span class="form-error">{$errors.availability._errors}</span>
+    {/if}
   {/if}
 
   <label>

@@ -235,7 +235,7 @@ function onSystemMessage(message: SystemMessage) {
       // neighbor down events or gossip left events.
       if (!peers.has(message.data.peer)) {
         peers.add(message.data.peer);
-        console.error(message.data);
+        console.log(message.data);
       }
     }
   }

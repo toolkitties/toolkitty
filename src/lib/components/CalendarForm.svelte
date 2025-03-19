@@ -103,7 +103,12 @@
     </div>
     <div class="end-date">
       <label for="calendar-end-date">End Date *</label>
-      <input name="calendar-end-date" type="date" bind:value={$form.endDate} />
+      <input
+        name="calendar-end-date"
+        type="date"
+        bind:value={$form.endDate}
+        min={$form.startDate}
+      />
       <label>
         <input type="checkbox" bind:checked={noEndDate} />
         no end date

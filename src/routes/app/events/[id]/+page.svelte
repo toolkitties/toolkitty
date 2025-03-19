@@ -9,28 +9,34 @@
   import BookingRequest from "$lib/components/BookingRequest.svelte";
 
   let { data }: PageProps = $props();
-
   let upcomingBookings: Observable<BookingRequestEnriched[]>;
+  let amOwner = $state(false);
 
   let event = liveQuery(() => {
-    const e = events.findById(data.eventId);
-    if (!e) {
+    const event = events.findById(data.eventId);
+    if (!event) {
       error(404, {
         message: "Resource not found",
       });
     }
-    return e;
+    return event;
   });
 
-  if (data.userRole === "admin") {
-    // TODO: Perhaps adjust to account for bookings taking place right now.
-    upcomingBookings = liveQuery(() =>
-      bookings.findAll({
-        calendarId: data.activeCalendarId,
-        eventId: data.eventId,
-      }),
-    );
-  }
+  // TODO: use $derived.by instead of $effect here.
+  $effect(() => {
+    if ($event) {
+      amOwner = $event.ownerId === data.publicKey;
+      if (amOwner) {
+        // TODO: Perhaps adjust to account for bookings taking place right now.
+        upcomingBookings = liveQuery(() =>
+          bookings.findAll({
+            calendarId: data.activeCalendarId,
+            eventId: data.eventId,
+          }),
+        );
+      }
+    }
+  });
 </script>
 
 {#if $event}
@@ -67,7 +73,7 @@
       {/each}
     </div>
 
-    {#if data.userRole == "admin"}
+    {#if data.userRole == "admin" || amOwner}
       <a class="button" href="#/app/events/{$event!.id}/edit">Edit</a>
     {/if}
 
