@@ -9,6 +9,9 @@
     booked: BookingRequestEnriched[];
   } = $props();
 
+  const bookedBlocks = $derived.by(getBookedBlocks);
+  const hours = $derived.by(getHours);
+
   /**
    * Calculate the difference in hours between two dates
    * */
@@ -62,16 +65,10 @@
 
     return hours;
   }
-
-  const bookedBlocks = getBookedBlocks();
-  const hours = getHours();
 </script>
 
-<p>
-  {data.name} is available between {availability?.start} and {availability?.end}
-</p>
 {#if bookedBlocks.length === 0}
-  <p>No bookings yet.</p>
+  <p>No bookings yet, {data.name} is available between {availability?.start} and {availability?.end}</p>
 {:else}
   <div class="max-h-[400px] overflow-auto">
     <div class="flex">
