@@ -102,14 +102,22 @@
       />
     </div>
     <div class="end-date">
-      <label for="calendar-end-date">End Date *</label>
-      <input name="calendar-end-date" type="date" bind:value={$form.endDate} />
-      <label>
-        <input type="checkbox" bind:checked={noEndDate} />
-        no end date
-      </label>
+      {#if !noEndDate}
+        <label for="calendar-end-date"
+          >End Date *
+          <input
+            name="calendar-end-date"
+            type="date"
+            bind:value={$form.endDate}
+          />
+        </label>
+      {/if}
     </div>
   </div>
+  <label>
+    <input type="checkbox" bind:checked={noEndDate} />
+    no end date
+  </label>
   {#if $form.id}
     <label for="calendarInstructions">About your calendar</label>
     <textarea
