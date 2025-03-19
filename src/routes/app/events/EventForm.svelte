@@ -366,7 +366,7 @@
     {#if selectedSpace}
       <div class="space-availability">
         <p>View availability for {selectedSpace.name}</p>
-        <AvailabilityViewer resource={selectedSpace} selected={$startDateProxy} />
+        <AvailabilityViewer data={selectedSpace} selected={$startDateProxy} />
       </div>
 
       <p>Request access to selected space</p>
