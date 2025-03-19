@@ -1,5 +1,6 @@
 <script lang="ts">
   import AvailabilityViewer from "$lib/components/AvailabilityViewer.svelte";
+  import ImageUploader from "$lib/components/ImageUploader.svelte";
   import { goto } from "$app/navigation";
   import { toast } from "$lib/toast.svelte";
   import type { SuperValidated, Infer } from "sveltekit-superforms";
@@ -451,6 +452,11 @@
   {#if $errors.selectedSpace}<span class="form-error"
       >{$errors.selectedSpace}</span
     >{/if}
+
+  <p>Images</p>
+  <ImageUploader bind:images={$form.images as string[]} />
+
+  <br />
 
   <button type="submit">{$form.id ? "Update" : "Create"}</button>
 </form>

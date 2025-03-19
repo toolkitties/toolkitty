@@ -161,7 +161,10 @@
     />
   </fieldset>
 
+  <p>Images</p>
   <ImageUploader bind:images={$form.images as string[]} />
+
+  <br />
 
   <button type="submit">{$form.id ? "Update" : "Create"}</button>
 </form>

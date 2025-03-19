@@ -2,6 +2,7 @@
   import type { SuperValidated, Infer } from "sveltekit-superforms";
   import type { SpaceSchema } from "$lib/schemas";
   import AvailabilitySetter from "$lib/components/AvailabilitySetter.svelte";
+  import ImageUploader from "$lib/components/ImageUploader.svelte";
   import { spaces } from "$lib/api";
   import { goto } from "$app/navigation";
   import { toast } from "$lib/toast.svelte";
@@ -333,6 +334,11 @@
   {#if $errors.multiBookable}<span class="form-error"
       >{$errors.multiBookable}</span
     >{/if}
+
+  <p>Images</p>
+  <ImageUploader bind:images={$form.images as string[]} />
+
+  <br />
 
   <button type="submit">{$form.id ? "Update" : "Create"}</button>
 </form>
