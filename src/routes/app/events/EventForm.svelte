@@ -4,7 +4,7 @@
   import { toast } from "$lib/toast.svelte";
   import type { SuperValidated, Infer } from "sveltekit-superforms";
   import type { EventSchema } from "$lib/schemas";
-  import { superForm, setError } from "sveltekit-superforms";
+  import { superForm, setError, dateProxy } from "sveltekit-superforms";
   import SuperDebug from "sveltekit-superforms";
   import { eventSchema } from "$lib/schemas";
   import { zod } from "sveltekit-superforms/adapters";
@@ -14,16 +14,20 @@
   let {
     data,
     activeCalendarId,
+    currentSpace,
     spaces,
     resourcesList,
   }: {
     data: SuperValidated<Infer<EventSchema>>;
     activeCalendarId: Hash;
+    currentSpace?: Space;
     spaces: Space[];
     resourcesList: Resource[];
   } = $props();
 
-  let selectedSpace: Space | null = $state<Space | null>(null);
+  let selectedSpace = $state<Space | undefined>(currentSpace);
+  let selectedSpaceId = $state<string | undefined>(currentSpace?.id);
+
   let availableResources: Resource[] = $state([]);
   let selectedResources: Resource[] = $state([]);
   let availableResourceBookings: { resourceId: string; timeSpan: TimeSpan }[] =
@@ -181,6 +185,18 @@
     },
   });
 
+  let startDateProxy = $state(
+    dateProxy(form, "startDate", { format: "datetime-local" }),
+  );
+  let endDateProxy = $state(
+    dateProxy(form, "endDate", { format: "datetime-local" }),
+  );
+  let publicStartDateProxy = $state(
+    dateProxy(form, "publicStartDate", { format: "datetime-local" }),
+  );
+  let publicEndDateProxy = $state(
+    dateProxy(form, "publicEndDate", { format: "datetime-local" }),
+  );
   async function handleCreateEvent(payload: EventFields) {
     try {
       const eventId = await events.create(activeCalendarId, payload);
@@ -270,61 +286,65 @@
   {#if $errors.description}<span class="form-error">{$errors.description}</span
     >{/if}
 
-  <p>🎫 Ticket Link</p>
-  <div class="flex flex-row">
-    <div>
-      <label for="ticket-link-text">Link text</label>
-      <input
-        type="text"
-        name="ticket-link-text"
-        aria-invalid={$errors.links?.[0].title ? "true" : undefined}
-        bind:value={$form.links[0].title}
-      />
-      {#if $errors.links?.[0].title}<span class="form-error"
-          >{$errors.links?.[0].title}</span
-        >{/if}
+  {#if $form.links[0]}
+    <p>🎫 Ticket Link</p>
+    <div class="flex flex-row">
+      <div>
+        <label for="ticket-link-text">Link text</label>
+        <input
+          type="text"
+          name="ticket-link-text"
+          aria-invalid={$errors.links?.[0].title ? "true" : undefined}
+          bind:value={$form.links[0].title}
+        />
+        {#if $errors.links?.[0].title}<span class="form-error"
+            >{$errors.links?.[0].title}</span
+          >{/if}
+      </div>
+      <div>
+        <label for="ticket-link-url">URL</label>
+        <input
+          type="url"
+          name="ticket-link-url"
+          aria-invalid={$errors.links?.[0].url ? "true" : undefined}
+          bind:value={$form.links[0].url}
+        />
+        {#if $errors.links?.[0].url}<span class="form-error"
+            >{$errors.links?.[0].url}</span
+          >{/if}
+      </div>
     </div>
-    <div>
-      <label for="ticket-link-url">URL</label>
-      <input
-        type="url"
-        name="ticket-link-url"
-        aria-invalid={$errors.links?.[0].url ? "true" : undefined}
-        bind:value={$form.links[0].url}
-      />
-      {#if $errors.links?.[0].url}<span class="form-error"
-          >{$errors.links?.[0].url}</span
-        >{/if}
-    </div>
-  </div>
+  {/if}
 
-  <p>🔗 Additional Link</p>
-  <div class="flex flex-row">
-    <div>
-      <label for="additional-link-text">Link text</label>
-      <input
-        type="text"
-        name="additional-link-text"
-        aria-invalid={$errors.links?.[1].title ? "true" : undefined}
-        bind:value={$form.links[1].title}
-      />
-      {#if $errors.links?.[1].title}<span class="form-error"
-          >{$errors.links?.[1].title}</span
-        >{/if}
+  {#if $form.links[1]}
+    <p>🔗 Additional Link</p>
+    <div class="flex flex-row">
+      <div>
+        <label for="additional-link-text">Link text</label>
+        <input
+          type="text"
+          name="additional-link-text"
+          aria-invalid={$errors.links?.[1].title ? "true" : undefined}
+          bind:value={$form.links[1].title}
+        />
+        {#if $errors.links?.[1].title}<span class="form-error"
+            >{$errors.links?.[1].title}</span
+          >{/if}
+      </div>
+      <div>
+        <label for="additional-link-url">URL</label>
+        <input
+          type="url"
+          name="additional-link-url"
+          aria-invalid={$errors.links?.[1].url ? "true" : undefined}
+          bind:value={$form.links[1].url}
+        />
+        {#if $errors.links?.[1].url}<span class="form-error"
+            >{$errors.links?.[1].url}</span
+          >{/if}
+      </div>
     </div>
-    <div>
-      <label for="additional-link-url">URL</label>
-      <input
-        type="url"
-        name="additional-link-url"
-        aria-invalid={$errors.links?.[1].url ? "true" : undefined}
-        bind:value={$form.links[1].url}
-      />
-      {#if $errors.links?.[1].url}<span class="form-error"
-          >{$errors.links?.[1].url}</span
-        >{/if}
-    </div>
-  </div>
+  {/if}
 
   {#if spaces.length > 0}
     <p>Select a space:</p>
@@ -335,8 +355,9 @@
             type="radio"
             id={space.id}
             name="selected-space"
-            bind:group={selectedSpace}
             onchange={() => handleSpaceSelection(space)}
+            value={space.id}
+            bind:group={selectedSpaceId}
           />
           <label for={space.id}>{space.name}</label>
         </li>
@@ -345,7 +366,11 @@
     {#if selectedSpace}
       <div class="space-availability">
         <p>View availability for {selectedSpace.name}</p>
-        <AvailabilityViewer data={selectedSpace} />
+        <AvailabilityViewer
+          data={selectedSpace}
+          selected={$startDateProxy}
+          type="space"
+        />
       </div>
 
       <p>Request access to selected space</p>
@@ -356,7 +381,7 @@
           name="startDate"
           required
           aria-invalid={$errors.startDate ? "true" : undefined}
-          bind:value={$form.startDate}
+          bind:value={$startDateProxy}
           onchange={recalculateResourceAvailbaility}
         />
         {#if $errors.startDate}<span class="form-error"
@@ -369,7 +394,7 @@
           name="endDate"
           required
           aria-invalid={$errors.endDate ? "true" : undefined}
-          bind:value={$form.endDate}
+          bind:value={$endDateProxy}
           onchange={recalculateResourceAvailbaility}
         />
         {#if $errors.endDate}<span class="form-error">{$errors.endDate}</span
@@ -386,7 +411,7 @@
           bind:value={$form.publicStartDate}
         />
         {#if $errors.publicStartDate}<span class="form-error"
-            >{$errors.publicStartDate}</span
+            >{publicStartDateProxy}</span
           >{/if}
 
         <label for="publicEndDate">End *</label>
@@ -394,7 +419,7 @@
           type="datetime-local"
           name="publicEndDate"
           aria-invalid={$errors.publicEndDate ? "true" : undefined}
-          bind:value={$form.publicEndDate}
+          bind:value={publicEndDateProxy}
         />
         {#if $errors.publicEndDate}<span class="form-error"
             >{$errors.publicEndDate}</span

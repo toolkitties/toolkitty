@@ -5,7 +5,7 @@ export const load: PageLoad = async ({ parent }) => {
   const parentData = await parent();
   const { activeCalendarId, publicKey } = parentData;
   const user = await users.get(activeCalendarId!, publicKey);
-  const userRole = user!.role;
+  const userRole = user?.role;
 
   return {
     title: "home",

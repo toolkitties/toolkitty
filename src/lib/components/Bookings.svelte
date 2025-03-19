@@ -1,5 +1,16 @@
 <script lang="ts">
-  let { availability, data, booked } = $props();
+  let {
+    availability,
+    data,
+    booked,
+  }: {
+    availability: TimeSpan | null;
+    data: Space | Resource;
+    booked: BookingRequestEnriched[];
+  } = $props();
+
+  const bookedBlocks = $derived.by(getBookedBlocks);
+  const hours = $derived.by(getHours);
 
   /**
    * Calculate the difference in hours between two dates
@@ -16,34 +27,24 @@
    * start being % from top and length being % height.
    */
   function getBookedBlocks() {
-    const availabilityStart = new Date(
-      availability.start.year,
-      availability.start.month - 1, // JS months are 0-based
-      availability.start.day,
-      availability.start.hour,
-      availability.start.minute,
-    );
-
-    const availabilityEnd = new Date(
-      availability.end.year,
-      availability.end.month - 1,
-      availability.end.day,
-      availability.end.hour,
-      availability.end.minute,
-    );
+    const availabilityStart = new Date(availability!.start);
+    const availabilityEnd = new Date(availability!.end!);
 
     const availabilityLength = getHoursDifference(
       availabilityStart,
       availabilityEnd,
     );
 
-    return booked.map((booking: { start: Date; end: Date }) => {
+    return booked.map((booking) => {
+      const bookingStartDate = new Date(booking.timeSpan.start);
+      const bookingEndDate = new Date(booking.timeSpan.end!);
       const start =
-        (getHoursDifference(availabilityStart, booking.start) /
+        (getHoursDifference(availabilityStart, bookingStartDate) /
           availabilityLength) *
         100;
       const length =
-        (getHoursDifference(booking.start, booking.end) / availabilityLength) *
+        (getHoursDifference(bookingStartDate, bookingEndDate) /
+          availabilityLength) *
         100;
 
       return { start, length };
@@ -54,21 +55,8 @@
    */
   function getHours(): string[] {
     const hours: string[] = [];
-    let current = new Date(
-      availability.start.year,
-      availability.start.month - 1,
-      availability.start.day,
-      availability.start.hour,
-      availability.start.minute,
-    );
-
-    const availabilityEnd = new Date(
-      availability.end.year,
-      availability.end.month - 1,
-      availability.end.day,
-      availability.end.hour,
-      availability.end.minute,
-    );
+    const current = new Date(availability!.start);
+    const availabilityEnd = new Date(availability!.end!);
 
     while (current < availabilityEnd) {
       hours.push(current.getUTCHours().toString() + ":00");
@@ -77,16 +65,12 @@
 
     return hours;
   }
-
-  const bookedBlocks = getBookedBlocks();
-  const hours = getHours();
 </script>
 
-<p>
-  {data.name} is available between {availability.start} and {availability.end}
-</p>
 {#if bookedBlocks.length === 0}
-  <p>No bookings yet.</p>
+  <p>
+    No bookings yet, {data.name} is available between {availability?.start} and {availability?.end}
+  </p>
 {:else}
   <div class="max-h-[400px] overflow-auto">
     <div class="flex">

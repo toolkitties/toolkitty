@@ -210,7 +210,6 @@ async function onResourceCreated(
       id: meta.operationId,
       calendarId: meta.stream.id,
       ownerId: meta.author,
-      booked: [],
       ...data.fields,
     });
   } catch (e) {

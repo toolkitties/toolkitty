@@ -211,7 +211,6 @@ async function onSpaceCreated(
       id: meta.operationId,
       calendarId: meta.stream.id,
       ownerId: meta.author,
-      booked: [],
       ...data.fields,
     });
   } catch (e) {

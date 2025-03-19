@@ -1,4 +1,4 @@
 {
   "svelte.enable-ts-plugin": true,
-  "eslint.validate": ["typescript", "svelte"],
+  "eslint.validate": ["typescript", "svelte"]
 }

@@ -6,11 +6,22 @@
   import Bookings from "./Bookings.svelte";
   import { TimeSpanClass } from "$lib/timeSpan";
 
-  let { data }: { data: Space | Resource } = $props();
+  let {
+    data,
+    selected,
+    type,
+  }: {
+    data: Space | Resource;
+    selected?: string;
+    onChange?: () => void;
+    type: string;
+  } = $props();
   let availability: TimeSpan[] = $derived(data.availability) as TimeSpan[];
   let availabilityByDay: TimeSpan | null = $state(null);
-  let currentlySelectedDate: DateValue | undefined = $state(undefined);
-  let booked: BookingRequest[] = $state([]); // Store bookings
+  let selectedDate = fromDate(new Date(selected!), "UTC");
+  let currentlySelectedDate: DateValue | undefined = $state(selectedDate);
+  let booked: BookingRequest[] = $state([]);
+  let loading: boolean = $state(true);
 
   const handleDateSelect = async (
     value: DateValue | DateValue[] | undefined,
@@ -25,6 +36,7 @@
       return;
     }
 
+    loading = true;
     availabilityByDay = null;
 
     for (let timeSpan of availability) {
@@ -36,6 +48,8 @@
           data.id,
           new TimeSpanClass(availabilityByDay),
         );
+
+        loading = false;
         break;
       }
     }
@@ -55,6 +69,9 @@
       return date.compare(availableDate) === 0;
     });
   }
+
+  // Trigger a "dateSelect" event so that the initial UI shows availability.
+  handleDateSelect(selectedDate);
 </script>
 
 <!-- TODO: Refactor Calendar into one component as we are using in a few places now -->
@@ -101,9 +118,13 @@
     {/each}
   {/snippet}
 </Calendar.Root>
-{#if currentlySelectedDate}
+{#if currentlySelectedDate && !loading}
   <Bookings availability={availabilityByDay} {data} {booked} />
 {/if}
 {#if data.multiBookable}
-  <p>This space can have multiple bookings at the same time.</p>
+  <p>
+    This {#if type == "space"}space{/if}
+    {#if type == "resource"}resource{/if} can have multiple bookings at the same
+    time.
+  </p>
 {/if}

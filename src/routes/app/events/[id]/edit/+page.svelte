@@ -11,6 +11,7 @@
   activeCalendarId={data.calendarId!}
   spaces={data.spacesList}
   resourcesList={data.resourcesList}
+  currentSpace={data.currentSpace}
 />
 {#if data.userRole === "admin"}
   <Delete id={data.form.data.id!} name={data.form.data.name} type="event" />

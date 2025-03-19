@@ -682,14 +682,12 @@ type Space = {
   id: Hash;
   calendarId: Hash;
   ownerId: PublicKey;
-  booked: BookedTimeSpan[];
 } & SpaceFields;
 
 type Resource = {
   id: Hash;
   calendarId: Hash;
   ownerId: PublicKey;
-  booked: BookedTimeSpan[];
 } & ResourceFields;
 
 type BookingRequestStatus = "accepted" | "rejected" | "pending";
