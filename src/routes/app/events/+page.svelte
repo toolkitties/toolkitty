@@ -11,7 +11,7 @@
   let contributeButtonOpen = $state(false);
 
   function getDay(event: CalendarEventEnriched): string {
-    return event.startDate.split('T')[0];
+    return event.startDate.split("T")[0];
   }
 
   /**
