@@ -45,13 +45,13 @@ export function createCalendarMessage(
   headerData:
     | { type: "calendar_created" }
     | {
-      type: "calendar_updated";
-      calendarId: string;
-    }
+        type: "calendar_updated";
+        calendarId: string;
+      }
     | {
-      type: "calendar_deleted";
-      calendarId: string;
-    },
+        type: "calendar_deleted";
+        calendarId: string;
+      },
   fieldsOverwrites?: Partial<CalendarFields>,
 ): ApplicationMessage {
   const calendarFields = createCalendarFields(fieldsOverwrites);

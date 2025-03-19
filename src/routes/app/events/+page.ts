@@ -10,6 +10,6 @@ export const load: PageLoad = async ({ parent }) => {
   return {
     title: "home",
     activeCalendarId,
-    userRole
+    userRole,
   };
 };
