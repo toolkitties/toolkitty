@@ -276,12 +276,15 @@ test("process out-of-order message", async () => {
   const pendingBookings = await bookings.findAll({ status: "pending" });
   expect(pendingBookings.length).toBe(1);
 
+  console.log("CHECK STATUS");
   const accessStatus = await access.checkStatus(
-    CALENDAR_ID,
     NON_OWNER_PUBLIC_KEY,
+    CALENDAR_ID,
   );
-  expect(accessStatus).toBeTruthy();
+  expect(accessStatus).toBe("accepted");
 
-  const isAdmin = await auth.isAdmin(CALENDAR_ID, NON_OWNER_PUBLIC_KEY);
+  let isAdmin = await auth.isAdmin(CALENDAR_ID, OWNER_PUBLIC_KEY);
+  expect(isAdmin).toBeTruthy();
+  isAdmin = await auth.isAdmin(CALENDAR_ID, NON_OWNER_PUBLIC_KEY);
   expect(isAdmin).toBeTruthy();
 }, 5000);

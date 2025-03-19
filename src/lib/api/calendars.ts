@@ -170,11 +170,23 @@ async function onCalendarCreated(
 
   // @TODO(sam): validate that header hash and owner match those contained in stream.
 
-  const { name, dates, calendarInstructions, spacePageText, resourcePageText } =
-    data.fields;
+  const {
+    name,
+    userName,
+    dates,
+    calendarInstructions,
+    spacePageText,
+    resourcePageText,
+  } = data.fields;
   const timeSpan = dates[0];
 
   const myPublicKey = await identity.publicKey();
+
+  // Add the calendar creator user to our database and make them admin.
+  const user = await users.get(meta.stream.id, myPublicKey);
+  if (!user) {
+    await users.create(meta.stream.id, meta.stream.owner, userName, "admin");
+  }
 
   // We need to distinguish between the case where we (the local user) created the calendar, or
   // where we have requested and gained access as a new member.
@@ -196,14 +208,6 @@ async function onCalendarCreated(
       });
     } catch (e) {
       console.error(e);
-    }
-
-    // And then create our user for the calendar.
-    //
-    // @TODO: currently there is no UI for the calendar owner to create a username.
-    const user = await users.get(meta.stream.id, myPublicKey);
-    if (!user) {
-      await users.create(meta.stream.id, myPublicKey);
     }
   } else {
     // In the case where we are _not_ the calendar creator, then we actually should have already
