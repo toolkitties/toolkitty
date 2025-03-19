@@ -113,6 +113,9 @@
           bind:value={$form.link.title}
         />
       </div>
+      {#if $errors.link?.title}<span class="form-error"
+          >{$errors.link.title}</span
+        >{/if}
       <div>
         <label for="link-url">URL</label>
         <input
@@ -123,7 +126,8 @@
         />
       </div>
     </div>
-    {#if $errors.link}<span class="form-error">{$errors.link}</span>{/if}
+    {#if $errors.link?.url}<span class="form-error">{$errors.link.url}</span
+      >{/if}
   </fieldset>
 
   <p>Resource availability</p>

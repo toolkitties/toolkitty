@@ -30,7 +30,6 @@
     async onUpdate({ form }) {
       if (form.valid) {
         const { id, ...payload } = form.data;
-
         if (form.data.id) {
           console.log("update space");
           handleUpdateSpace(id!, payload);
