@@ -7,7 +7,7 @@ import { calendars } from "$lib/api";
 export const load: PageLoad = async ({ parent }) => {
   const parentData = await parent();
   const { activeCalendarId } = parentData;
-  const calendar = await calendars.findOne(activeCalendarId);
+  const calendar = await calendars.findById(activeCalendarId);
   const form = await superValidate(calendar, zod(calendarSchema));
 
   return {

@@ -45,13 +45,13 @@ export function createCalendarMessage(
   headerData:
     | { type: "calendar_created" }
     | {
-        type: "calendar_updated";
-        calendarId: string;
-      }
+      type: "calendar_updated";
+      calendarId: string;
+    }
     | {
-        type: "calendar_deleted";
-        calendarId: string;
-      },
+      type: "calendar_deleted";
+      calendarId: string;
+    },
   fieldsOverwrites?: Partial<CalendarFields>,
 ): ApplicationMessage {
   const calendarFields = createCalendarFields(fieldsOverwrites);
@@ -428,9 +428,9 @@ export function createCalendarFields(
   const fields = {
     name: faker.music.album(),
     dates: [{ start, end }],
-    calendarInstructions: null,
-    spacePageText: null,
-    resourcePageText: null,
+    calendarInstructions: faker.lorem.paragraphs(10),
+    spacePageText: faker.lorem.paragraphs(10),
+    resourcePageText: faker.lorem.paragraphs(10),
   };
 
   return { ...fields, ...fieldsOverwrites };

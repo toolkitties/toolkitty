@@ -48,7 +48,7 @@
 
   // Get active calendar to make sure we have received the calendar_created event
   let activeCalendar = liveQuery(() =>
-    calendars.findOne(data.activeCalendarId),
+    calendars.findById(data.activeCalendarId),
   );
 </script>
 

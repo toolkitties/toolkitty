@@ -9,9 +9,12 @@
   let contributeButtonOpen = $state(false);
 
   let eventsList = liveQuery(async () => {
-    const activeCalendarId = await calendars.getActiveCalendarId();
-    if (!activeCalendarId) return [];
-    return events.findMany(activeCalendarId);
+    return events.findMany(data.activeCalendarId);
+  });
+
+  let calendarInstructions = liveQuery(async () => {
+    const calendar = await calendars.findById(data.activeCalendarId);
+    return calendar?.calendarInstructions;
   });
 </script>
 
@@ -23,8 +26,8 @@
 {/if}
 <a href="#/app/events/create">Create event</a>
 
-{#if data.calendar?.calendarInstructions}
-  {data.calendar.calendarInstructions}
+{#if $calendarInstructions}
+  <p>{$calendarInstructions}</p>
 {/if}
 
 {#each $eventsList as event (event.id)}

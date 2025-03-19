@@ -46,7 +46,7 @@ export async function isOwner(
 ): Promise<boolean> {
   switch (type) {
     case "calendar": {
-      const calendar = await calendars.findOne(hash);
+      const calendar = await calendars.findById(hash);
       return calendar?.ownerId == publicKey;
     }
     case "space": {

@@ -14,7 +14,7 @@ export function findMany(): Promise<Calendar[]> {
 }
 
 // @TODO: for consistency this query should be named `findById`
-export function findOne(id: Hash): Promise<Calendar | undefined> {
+export function findById(id: Hash): Promise<Calendar | undefined> {
   return db.calendars.get({ id });
 }
 
@@ -26,18 +26,6 @@ export function findByInviteCode(code: string): Promise<undefined | Calendar> {
 
 export function inviteCode(calendar: Calendar): string {
   return calendar.id.slice(0, 4);
-}
-
-export function festivalInstructions(calendar: Calendar): string | undefined {
-  return calendar.festivalInstructions;
-}
-
-export function spacePageText(calendar: Calendar): string | undefined {
-  return calendar.spacePageText;
-}
-
-export function resourcePageText(calendar: Calendar): string | undefined {
-  return calendar.resourcePageText;
 }
 
 /*
@@ -182,7 +170,7 @@ async function onCalendarCreated(
 
   // @TODO(sam): validate that header hash and owner match those contained in stream.
 
-  const { name, dates } = data.fields;
+  const { name, dates, calendarInstructions, spacePageText, resourcePageText } = data.fields;
   const timeSpan = dates[0];
 
   const myPublicKey = await identity.publicKey();
@@ -199,6 +187,9 @@ async function onCalendarCreated(
         name,
         startDate: timeSpan.start,
         endDate: timeSpan.end,
+        calendarInstructions: calendarInstructions ? calendarInstructions : undefined,
+        spacePageText: spacePageText ? spacePageText : undefined,
+        resourcePageText: resourcePageText ? resourcePageText : undefined
       });
     } catch (e) {
       console.error(e);
@@ -218,6 +209,9 @@ async function onCalendarCreated(
       name,
       startDate: timeSpan.start,
       endDate: timeSpan.end,
+      calendarInstructions: calendarInstructions ? calendarInstructions : undefined,
+      spacePageText: spacePageText ? spacePageText : undefined,
+      resourcePageText: resourcePageText ? resourcePageText : undefined
     });
   }
 }
@@ -227,13 +221,16 @@ async function onCalendarUpdated(data: CalendarUpdated["data"]) {
   // actually error here anyway?)
   validateFields(data.fields);
 
-  const { name, dates } = data.fields;
+  const { name, dates, calendarInstructions, spacePageText, resourcePageText } = data.fields;
   const timeSpan = dates[0];
 
   await db.calendars.update(data.id, {
     name,
     startDate: timeSpan.start,
     endDate: timeSpan.end,
+    calendarInstructions: calendarInstructions ? calendarInstructions : undefined,
+    spacePageText: spacePageText ? spacePageText : undefined,
+    resourcePageText: resourcePageText ? resourcePageText : undefined
   });
 }
 

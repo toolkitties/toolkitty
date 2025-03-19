@@ -86,7 +86,7 @@ export async function checkStatus(
   publicKey: PublicKey,
   calendarId: Hash,
 ): Promise<AccessRequestStatus> {
-  const calendar = await calendars.findOne(calendarId);
+  const calendar = await calendars.findById(calendarId);
 
   // The owner of the calendar automatically has access.
   if (calendar?.ownerId == publicKey) {

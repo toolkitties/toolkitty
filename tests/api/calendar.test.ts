@@ -21,7 +21,7 @@ beforeAll(async () => {
 });
 
 test("processes a calendar_created message", async () => {
-  const calendar = await calendars.findOne(CALENDAR_ID);
+  const calendar = await calendars.findById(CALENDAR_ID);
   expect(calendar).toBeTruthy();
   expect(calendar!.id).toBe(CALENDAR_ID);
 });

@@ -95,7 +95,7 @@ async function onBookingResponse(
 async function onCalendarEdit(
   data: CalendarUpdated["data"] | CalendarDeleted["data"] | PageUpdated["data"],
 ) {
-  const calendar = await calendars.findOne(data.id);
+  const calendar = await calendars.findById(data.id);
   if (!calendar?.name) {
     throw new Error("calendar not yet received");
   }
@@ -145,7 +145,7 @@ async function onUserRoleAssigned(
 
 async function onCalendarAccessResponse(meta: StreamMessageMeta) {
   const calendarId = meta.stream.id;
-  const calendar = await calendars.findOne(calendarId);
+  const calendar = await calendars.findById(calendarId);
   if (!calendar) {
     throw new Error("calendar not yet received");
   }
