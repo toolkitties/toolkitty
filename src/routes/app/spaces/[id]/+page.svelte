@@ -83,7 +83,7 @@
     {#if $space.availability == "always"}
       <p>This space is always available.</p>
     {:else}
-    <AvailabilityViewer data={$space} type="space" />
+      <AvailabilityViewer data={$space} type="space" />
     {/if}
 
     {#if data.userRole == "admin"}
