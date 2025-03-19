@@ -79,7 +79,7 @@
   {#if $mySpaces?.length > 0}
     {#each $mySpaces as space (space.id)}
       <a
-        href={`/app/spaces/${space.id}`}
+        href={`#/app/spaces/${space.id}`}
         class="p-2 border-black border justify-between flex"
       >
         <p>{space.name}</p>
@@ -104,7 +104,7 @@
   {#if $myResources?.length > 0}
     {#each $myResources as resource (resource.id)}
       <a
-        href={`/app/resources/${resource.id}`}
+        href={`#/app/resources/${resource.id}`}
         class="p-2 border-black border justify-between flex"
       >
         <p>{resource.name}</p>
@@ -117,7 +117,7 @@
     <p>you don't have any resources yet</p>
   {/if}
   <a
-    href="#/app/spaces/create"
+    href="#/app/resources/create"
     class="rounded-full border-black border p-2 inline-block"
   >
     <PlusIcon size={10} />
