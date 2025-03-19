@@ -20,12 +20,6 @@
 </script>
 
 <CalendarSelector />
-<h1 class="font-pixel">{data.title}</h1>
-<a href="#/create">Create Calendar</a>
-{#if data.userRole === "admin"}
-  <a href="#/app/calendars/edit">Edit Calendar</a>
-{/if}
-<a href="#/app/events/create">Create event</a>
 
 {#if $calendarInstructions}
   <PageText text={$calendarInstructions} title="about calendar" />
@@ -53,3 +47,9 @@
     </button>
   </div>
 </div>
+
+{#if data.userRole === "admin"}
+  <a class="button mt-4 inline-block" href="#/app/calendars/edit"
+    >Edit Calendar</a
+  >
+{/if}
