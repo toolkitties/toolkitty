@@ -54,7 +54,7 @@
 
     <Links links={[$resource.link]} />
 
-    <AvailabilityViewer data={$resource} />
+    <AvailabilityViewer data={$resource} type="resource"/>
 
     {#if data.userRole == "admin"}
       <a class="button" href="#/app/resources/{$resource.id}/edit">Edit</a>

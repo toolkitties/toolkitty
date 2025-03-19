@@ -78,7 +78,7 @@
       <p>Capacity: {$space.capacity}</p>
     </div>
 
-    <AvailabilityViewer data={$space} />
+    <AvailabilityViewer data={$space} type="space"/>
 
     {#if data.userRole == "admin"}
       <a class="button" href="#/app/spaces/{$space!.id}/edit">Edit</a>
