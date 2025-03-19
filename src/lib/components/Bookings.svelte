@@ -69,7 +69,10 @@
 
 {#if bookedBlocks.length === 0}
   <p>
-    No bookings yet, {data.name} is available between {availability?.start.slice(11, 16)} and {availability?.end?.slice(11, 16)}
+    No bookings yet, {data.name} is available between {availability?.start.slice(
+      11,
+      16,
+    )} and {availability?.end?.slice(11, 16)}
   </p>
 {:else}
   <div class="max-h-[400px] overflow-auto">

@@ -16,7 +16,9 @@
     onChange?: () => void;
     type: string;
   } = $props();
-  let availability: TimeSpan[] = Array.isArray(data.availability) ? data.availability : [];
+  let availability: TimeSpan[] = Array.isArray(data.availability)
+    ? data.availability
+    : [];
   let availabilityByDay: TimeSpan | null = $state(null);
   let selectedDate = selected ? fromDate(new Date(selected), "UTC") : undefined;
   let currentlySelectedDate: DateValue | undefined = $state(selectedDate);
