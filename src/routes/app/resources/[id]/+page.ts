@@ -1,21 +1,12 @@
 import type { PageLoad } from "./$types";
-import { resources, users } from "$lib/api";
-import { error } from "@sveltejs/kit";
+import { users } from "$lib/api";
 
 export const load: PageLoad = async ({ params, parent }) => {
   const resourceId = params.id;
-  const resource = await resources.findById(resourceId);
-
-  if (!resource) {
-    error(404, {
-      message: "Resource not found",
-    });
-  }
-
   const parentData = await parent();
   const { activeCalendarId, publicKey } = parentData;
   const user = await users.get(activeCalendarId!, publicKey);
   const userRole = user!.role;
 
-  return { title: "resources", resource, userRole };
+  return { title: "resources", resourceId, userRole };
 };
