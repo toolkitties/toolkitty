@@ -4,7 +4,7 @@ import { error } from "@sveltejs/kit";
 
 export const load: PageLoad = async ({ url, parent }) => {
   const resourceId = url.searchParams.get("id");
-  if (resourceId) {
+  if (!resourceId) {
     error(404, {
       message: "Resource not found",
     });

@@ -277,7 +277,7 @@
       });
 
       toast.success("Event created!");
-      goto(`/app/events/${eventId}`);
+      goto(`/app/events/view?id=${eventId}`);
     } catch (error) {
       console.error("Error creating event: ", error);
       toast.error("Error creating event!");
@@ -289,7 +289,7 @@
       await events.update(eventId, payload);
 
       toast.success("Event updated!");
-      goto(`/app/events/${eventId}`);
+      goto(`/app/events/view?id=${eventId}`);
     } catch (error) {
       console.error("Error updating event: ", error);
       toast.error("Error updating event!");
