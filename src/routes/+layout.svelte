@@ -40,7 +40,7 @@
 
         if (import.meta.env.PROD) {
           // Delete frontend database for now as there is no persistence on the backend yet.
-          // Everytime we launch app in prod we get a new publicKey and all events.
+          // AS without persistence, everytime we launch app in prod we get a new publicKey and all events.
           await db.delete({ disableAutoOpen: false });
         }
 
