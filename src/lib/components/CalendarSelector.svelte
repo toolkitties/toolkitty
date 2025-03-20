@@ -41,10 +41,12 @@
     </Select.Trigger>
     <Select.Portal>
       <Select.Content>
-        <Select.Viewport class="bg-bg border p-2 flex flex-col w-full">
+        <Select.Viewport class="bg-bg border p-2 flex flex-col w-screen">
           {#each calendarList as calendar (calendar.id)}
-            <Select.Item value={calendar.id} label={calendar.name}
-              >{calendar.name}</Select.Item
+            <Select.Item
+              class="cursor-pointer"
+              value={calendar.id}
+              label={calendar.name}>{calendar.name}</Select.Item
             >
           {/each}
           <a href="#/join">Join Calendar</a>
