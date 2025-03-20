@@ -3,32 +3,17 @@
  */
 
 import {
+  access,
   bookings,
   calendars,
   events,
   resources,
   spaces,
   users,
-  topics,
 } from ".";
-import { TopicFactory } from "./topics";
 
 export async function process(message: ApplicationMessage) {
   const { meta, data } = message;
-
-  // First deal with messages which trigger a topic replay of un-ack'd messages.
-  if (
-    data.type == "calendar_created" ||
-    data.type == "event_created" ||
-    data.type == "resource_created" ||
-    data.type == "space_created" ||
-    data.type == "calendar_access_requested" ||
-    data.type == "booking_requested" ||
-    data.type == "user_role_assigned"
-  ) {
-    const topic = new TopicFactory(meta.stream.id);
-    topics.replay(topic.calendar());
-  }
 
   // Next check that dependencies are met for the following message types.
   if (
@@ -42,7 +27,7 @@ export async function process(message: ApplicationMessage) {
     data.type == "calendar_access_accepted" ||
     data.type == "calendar_access_rejected"
   ) {
-    return await onCalendarAccessResponse(meta);
+    return await onCalendarAccessResponse(data.data, meta);
   } else if (data.type == "user_profile_updated") {
     return await onUserProfileUpdated(meta);
   } else if (data.type == "user_role_assigned") {
@@ -143,18 +128,18 @@ async function onUserRoleAssigned(
   }
 }
 
-async function onCalendarAccessResponse(meta: StreamMessageMeta) {
+async function onCalendarAccessResponse(
+  data: CalendarAccessAccepted["data"] | CalendarAccessRejected["data"],
+  meta: StreamMessageMeta,
+) {
   const calendarId = meta.stream.id;
   const calendar = await calendars.findById(calendarId);
   if (!calendar) {
     throw new Error("calendar not yet received");
   }
 
-  // @TODO: access requests and responses are designed in a way that it doesn't matter which order
-  // they arrive in, do we actually want that though? We could just replay un-acked'd messages in
-  // order to handle out-of-order delivery as we do elsewhere.
-  //   const request = await access.findRequestByid(data.requestId);
-  //   if (!request) {
-  //     throw new Error("calendar access request not yet received");
-  //   }
+  const request = await access.findRequestByid(data.requestId);
+  if (!request) {
+    throw new Error("calendar access request not yet received");
+  }
 }
