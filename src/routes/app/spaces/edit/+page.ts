@@ -6,8 +6,7 @@ import { superValidate } from "sveltekit-superforms";
 import { zod } from "sveltekit-superforms/adapters";
 
 export const load: PageLoad = async ({ url, parent }) => {
-
-  const spaceId = url.searchParams.get('id');
+  const spaceId = url.searchParams.get("id");
   if (!spaceId) {
     error(404, {
       message: "Space not found",

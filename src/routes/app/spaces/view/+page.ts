@@ -3,8 +3,7 @@ import { users } from "$lib/api";
 import { error } from "@sveltejs/kit";
 
 export const load: PageLoad = async ({ url, parent }) => {
-
-  const spaceId = url.searchParams.get('id');
+  const spaceId = url.searchParams.get("id");
   if (!spaceId) {
     error(404, {
       message: "Space not found",

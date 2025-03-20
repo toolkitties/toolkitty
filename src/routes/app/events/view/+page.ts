@@ -3,7 +3,7 @@ import { users } from "$lib/api";
 import { error } from "@sveltejs/kit";
 
 export const load: PageLoad = async ({ url, parent }) => {
-  const eventId = url.searchParams.get('id');
+  const eventId = url.searchParams.get("id");
   if (!eventId) {
     error(404, {
       message: "Event not found",

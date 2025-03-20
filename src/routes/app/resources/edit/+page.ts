@@ -6,8 +6,7 @@ import { zod } from "sveltekit-superforms/adapters";
 import { resourceSchema } from "$lib/schemas";
 
 export const load: PageLoad = async ({ url, parent }) => {
-
-  const resourceId = url.searchParams.get('id');
+  const resourceId = url.searchParams.get("id");
   if (!resourceId) {
     error(404, {
       message: "Resource not found",
