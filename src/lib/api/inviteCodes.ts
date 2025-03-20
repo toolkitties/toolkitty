@@ -130,13 +130,13 @@ async function onResponse(response: ResolveInviteCodeResponse) {
     // don't add the name to the database yet, we wait for the "calendar_created" event for this.
   });
 
-  // Subscribe to the calendar inbox topic.
-  await topics.subscribeToInbox(stream.id);
-
   // Add ourselves and the calendar owner to the inbox topic log map.
   const myPublicKey = await identity.publicKey();
   await topics.addAuthorToInbox(myPublicKey, stream);
   await topics.addAuthorToInbox(stream.owner, stream);
+
+  // Subscribe to the calendar inbox topic.
+  await topics.subscribeToInbox(stream.id);
 
   // Set this calendar as the active calendar.
   await calendars.setActiveCalendar(stream.id);
