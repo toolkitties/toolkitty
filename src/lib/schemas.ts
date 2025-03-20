@@ -4,7 +4,7 @@ import { z } from "zod";
 const linkSchema = z.object({
   title: z.string().nullable(),
   type: z.enum(["ticket", "custom"]).default("custom"),
-  url: z.string().url("Invalid URL"),
+  url: z.string().url("Invalid URL").or(z.literal("")),
 });
 
 const imageSchema = z.string();
@@ -29,7 +29,7 @@ export const resourceSchema = z.object({
   name: z.string().min(1, "Resource name is required"),
   description: z.string().min(1, "Description is required"),
   contact: z.string().min(1, "Contact details are required"),
-  link: linkSchema.optional().default({ title: null, type: "custom", url: "" }),
+  link: linkSchema.default({ title: "", type: "custom", url: "" }).optional(),
   images: z.array(imageSchema),
   availability: availabilitySchema,
   multiBookable: z.boolean(),
@@ -77,7 +77,7 @@ export const spaceSchema = z.object({
   accessibility: z.string().min(1, "Accessibility details are required"),
   description: z.string().min(1, "Space description is required"),
   contact: z.string().min(1, "Contact details are required"),
-  link: linkSchema, //TODO: make this optional, issues with binding to input
+  link: linkSchema.default({ title: "", type: "custom", url: "" }).optional(),
   messageForRequesters: z.string().min(1, "Contact details are required"),
   images: z.array(imageSchema),
   availability: availabilitySchema,
@@ -96,11 +96,11 @@ export const eventSchema = z.object({
   resourceRequests: z.array(z.string()).optional(),
   links: z
     .array(linkSchema)
-    .optional()
     .default([
       { title: "", type: "ticket", url: "" },
       { title: "", type: "custom", url: "" },
-    ]),
+    ])
+    .optional(),
   selectedSpace: z.string().min(1, "Please select a space first."),
   images: z.array(imageSchema),
 });

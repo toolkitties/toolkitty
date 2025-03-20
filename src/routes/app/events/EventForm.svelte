@@ -179,6 +179,9 @@
       if (form.valid) {
         const { id, ...payload } = form.data;
 
+        // Filter out links with empty URLs
+        payload.links = payload.links?.filter((link) => link.url !== "");
+
         if (form.data.id) {
           console.log("update event");
           handleUpdateEvent(id!, payload);

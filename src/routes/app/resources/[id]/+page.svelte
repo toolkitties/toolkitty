@@ -52,7 +52,9 @@
     {/if}
     <p>{$resource.description}</p>
 
-    <Links links={[$resource.link]} />
+    {#if $resource.link}
+      <Links links={[$resource.link]} />
+    {/if}
 
     {#if $resource.availability == "always"}
       <p>This resource is always available.</p>

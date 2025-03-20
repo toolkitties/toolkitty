@@ -21,7 +21,7 @@ export const load: PageLoad = async ({ params, parent }) => {
   const userRole = user!.role;
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { calendarId, ownerId, booked, ...resourceFields } = resource;
+  const { calendarId, ownerId, ...resourceFields } = resource;
 
   const form = await superValidate(resourceFields, zod(resourceSchema));
 

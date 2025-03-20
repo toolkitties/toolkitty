@@ -363,7 +363,7 @@ type SpaceFields = {
   accessibility: string;
   description: string;
   contact: string;
-  link: Link | null;
+  link?: Link | null;
   messageForRequesters: string;
   images: Image[];
   availability: TimeSpan[] | "always";
@@ -374,7 +374,7 @@ type ResourceFields = {
   name: string;
   description: string;
   contact: string;
-  link: Link;
+  link?: Link;
   images: Image[];
   availability: TimeSpan[] | "always";
   multiBookable: boolean;
@@ -389,7 +389,7 @@ type EventFields = {
   publicStartDate?: string;
   publicEndDate?: string;
   resourcesRequests?: ReservationRequestId[];
-  links: Link[];
+  links?: Link[];
   images: Image[];
 };
 
