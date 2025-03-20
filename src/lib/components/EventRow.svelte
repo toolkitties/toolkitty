@@ -17,6 +17,12 @@
       class="aspect-square object-cover w-[30%] min-w-32 max-w-72 grow"
       alt=""
     />
+  {:else}
+    <img
+      src="/toolkitty-mascot.png"
+      class="aspect-square object-cover w-[30%] min-w-32 max-w-72 grow"
+      alt=""
+    />
   {/if}
   <div class="flex flex-col gap-1 p-2">
     <h3>{event.name}</h3>
