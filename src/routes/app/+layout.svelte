@@ -71,7 +71,7 @@
         <li>
           <a
             href={url}
-            class={page.url.hash.includes(url) ? "active" : "not-active"}
+            class={page.url.pathname.includes(url) ? "active" : "not-active"}
           >
             <Icon />
             <span class="sr-only">{name}</span>
