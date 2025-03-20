@@ -49,7 +49,7 @@
         <DateRange startDate={$event.startDate} endDate={$event.endDate} />
       </p>
       {#if $event.space}
-        <a href={`#/spaces/${$event.space.id}`}>{$event.space.name}</a>
+        <a href={`/spaces/view?id=${$event.space.id}`}>{$event.space.name}</a>
       {/if}
     </div>
 
@@ -69,7 +69,7 @@
     <ImageGallery images={$event.images} />
 
     {#if data.userRole == "admin" || amOwner}
-      <a class="button" href="#/app/events/{$event!.id}/edit">Edit</a>
+      <a class="button" href="/app/events/edit?id={$event!.id}">Edit</a>
     {/if}
 
     <pre>{JSON.stringify($event, null, 2)}</pre>

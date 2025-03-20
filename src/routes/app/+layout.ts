@@ -14,7 +14,7 @@ export const load: LayoutLoad = async ({ parent }) => {
 
   if (accessStatus == "pending") {
     // access status is pending, go to pending page
-    goto("#/request");
+    goto("/request");
     return;
   }
 

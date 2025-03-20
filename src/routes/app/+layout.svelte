@@ -21,27 +21,27 @@
   const menu: MenuItem[] = [
     {
       name: "Calendar",
-      url: "#/app/events",
+      url: "/app/events",
       icon: CalendarIcon,
     },
     {
       name: "Spaces",
-      url: "#/app/spaces",
+      url: "/app/spaces",
       icon: FootstepsIcon,
     },
     {
       name: "Resources",
-      url: "#/app/resources",
+      url: "/app/resources",
       icon: ChestIcon,
     },
     {
       name: "Dashboard",
-      url: "#/app/dashboard",
+      url: "/app/dashboard",
       icon: DashboardIcon,
     },
     {
       name: "Admin",
-      url: "#/app/admin",
+      url: "/app/admin",
       icon: ShareIcon,
     },
   ];
@@ -71,7 +71,7 @@
         <li>
           <a
             href={url}
-            class={page.url.hash.includes(url) ? "active" : "not-active"}
+            class={page.url.pathname.includes(url) ? "active" : "not-active"}
           >
             <Icon />
             <span class="sr-only">{name}</span>

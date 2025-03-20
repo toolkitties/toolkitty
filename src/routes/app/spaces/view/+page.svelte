@@ -87,7 +87,7 @@
     <ImageGallery images={$space.images} />
 
     {#if data.userRole == "admin" || amOwner}
-      <a class="button" href="#/app/spaces/{$space!.id}/edit">Edit</a>
+      <a class="button" href="/app/spaces/edit?id={$space!.id}">Edit</a>
     {/if}
 
     <pre>{JSON.stringify($space, null, 2)}</pre>

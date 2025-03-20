@@ -23,7 +23,7 @@
 {#if $spacesList && $spacesList.length > 0}
   {#each $spacesList as space (space.id)}
     <a
-      href={`#/app/spaces/${space.id}`}
+      href={`/app/spaces/view?id=${space.id}`}
       class="flex border-black border event-row"
     >
       {#if space.images.length > 0}
@@ -57,7 +57,7 @@
   {/each}
 {:else}
   <p>no spaces yet, please create one.</p>
-  <a href="#/app/events/create" class="button inline-block">create space</a>
+  <a href="/app/events/create" class="button inline-block">create space</a>
 {/if}
 
 <Contribute />

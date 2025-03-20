@@ -277,7 +277,7 @@
       });
 
       toast.success("Event created!");
-      goto(`#/app/events/${eventId}`);
+      goto(`/app/events/${eventId}`);
     } catch (error) {
       console.error("Error creating event: ", error);
       toast.error("Error creating event!");
@@ -289,7 +289,7 @@
       await events.update(eventId, payload);
 
       toast.success("Event updated!");
-      goto(`#/app/events/${eventId}`);
+      goto(`/app/events/${eventId}`);
     } catch (error) {
       console.error("Error updating event: ", error);
       toast.error("Error updating event!");
@@ -302,8 +302,7 @@
     No available spaces have been contributed. Create at least one space before
     creating an event.
   </p>
-  <a href="#/app/spaces/create" class="button mt-4 inline-block">Create space</a
-  >
+  <a href="/app/spaces/create" class="button mt-4 inline-block">Create space</a>
 {:else}
   <SuperDebug data={{ $form, $errors }} />
   <form method="POST" use:enhance>

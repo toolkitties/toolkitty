@@ -38,6 +38,12 @@
           console.info("finished seeding db");
         }
 
+        if (import.meta.env.PROD) {
+          // Delete frontend database for now as there is no persistence on the backend yet.
+          // AS without persistence, everytime we launch app in prod we get a new publicKey and all events.
+          await db.delete({ disableAutoOpen: false });
+        }
+
         await topics.subscribeEphemeral(INVITE_TOPIC);
 
         // @TODO(sam): we have no persistence layer at the moment so we don't need to subscribe to

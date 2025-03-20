@@ -10,7 +10,10 @@
   // let tagColours = ["bg-yellow-light", "bg-fluro-green-light", "bg-red-light"];
 </script>
 
-<a href={`#/app/events/${event.id}`} class="flex border-black border event-row">
+<a
+  href={`/app/events/view?id=${event.id}`}
+  class="flex border-black border event-row"
+>
   {#if event.images.length > 0}
     <img
       src={`blobstore://${event.images[0]}`}

@@ -5,10 +5,15 @@ import { superValidate } from "sveltekit-superforms";
 import { zod } from "sveltekit-superforms/adapters";
 import { resourceSchema } from "$lib/schemas";
 
-export const load: PageLoad = async ({ params, parent }) => {
-  const resourceId = params.id;
-  const resource = await resources.findById(resourceId);
+export const load: PageLoad = async ({ url, parent }) => {
+  const resourceId = url.searchParams.get("id");
+  if (!resourceId) {
+    error(404, {
+      message: "Resource not found",
+    });
+  }
 
+  const resource = await resources.findById(resourceId);
   if (!resource || !resource.id) {
     error(404, {
       message: "Resource not found",

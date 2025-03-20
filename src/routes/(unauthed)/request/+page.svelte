@@ -19,7 +19,7 @@
 
     if (accessStatus == "accepted") {
       toast.success("access accepted!");
-      goto("#/app/events");
+      goto("/app/events");
     } else if (accessStatus == "rejected") {
       toast.error("access rejected!");
       goto("/");

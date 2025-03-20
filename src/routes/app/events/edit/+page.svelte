@@ -1,5 +1,5 @@
 <script lang="ts">
-  import EventForm from "../../EventForm.svelte";
+  import EventForm from "../EventForm.svelte";
   import type { PageProps } from "./$types";
   import Delete from "$lib/components/dialog/Delete.svelte";
 
