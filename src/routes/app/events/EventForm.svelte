@@ -5,7 +5,7 @@
   import { toast } from "$lib/toast.svelte";
   import type { SuperValidated, Infer } from "sveltekit-superforms";
   import type { EventSchema } from "$lib/schemas";
-  import { superForm, setError, dateProxy } from "sveltekit-superforms";
+  import { superForm, setError } from "sveltekit-superforms";
   import SuperDebug from "sveltekit-superforms";
   import { eventSchema } from "$lib/schemas";
   import { zod } from "sveltekit-superforms/adapters";
@@ -193,18 +193,21 @@
     },
   });
 
-  let startDateProxy = $state(
-    dateProxy(form, "startDate", { format: "datetime-local" })
-  );
-  let endDateProxy = $state(
-    dateProxy(form, "endDate", { format: "datetime-local" }),
-  );
-  let publicStartDateProxy = $state(
-    dateProxy(form, "publicStartDate", { format: "datetime-local" }),
-  );
-  let publicEndDateProxy = $state(
-    dateProxy(form, "publicEndDate", { format: "datetime-local" }),
-  );
+  // Remove date proxies as temp fix for date.
+  // TODO(@jack): refactor to use bits ui date picker
+  // let startDateProxy = $state(
+  //   dateProxy(form, "startDate", { format: "datetime-utc" }),
+  // );
+  // let endDateProxy = $state(
+  //   dateProxy(form, "endDate", { format: "datetime-utc" }),
+  // );
+  // let publicStartDateProxy = $state(
+  //   dateProxy(form, "publicStartDate", { format: "datetime-utc" }),
+  // );
+  // let publicEndDateProxy = $state(
+  //   dateProxy(form, "publicEndDate", { format: "datetime-utc" }),
+  // );
+
   async function handleCreateEvent(payload: EventFields) {
     try {
       const eventId = await events.create(activeCalendarId, payload);
@@ -387,7 +390,7 @@
         {:else}
           <AvailabilityViewer
             data={selectedSpace}
-            selected={$startDateProxy}
+            selected={$form.startDate}
             type="space"
           />
         {/if}
@@ -401,7 +404,7 @@
           name="startDate"
           required
           aria-invalid={$errors.startDate ? "true" : undefined}
-          bind:value={$startDateProxy}
+          bind:value={$form.startDate}
           onchange={recalculateResourceAvailbaility}
         />
         {#if $errors.startDate}<span class="form-error"
@@ -414,7 +417,7 @@
           name="endDate"
           required
           aria-invalid={$errors.endDate ? "true" : undefined}
-          bind:value={$endDateProxy}
+          bind:value={$form.endDate}
           onchange={recalculateResourceAvailbaility}
         />
         {#if $errors.endDate}<span class="form-error">{$errors.endDate}</span
@@ -427,11 +430,11 @@
         <input
           type="datetime-local"
           name="startDate"
-          aria-invalid={$errors.startDate ? "true" : undefined}
+          aria-invalid={$errors.publicStartDate ? "true" : undefined}
           bind:value={$form.publicStartDate}
         />
         {#if $errors.publicStartDate}<span class="form-error"
-            >{publicStartDateProxy}</span
+            >{$form.publicStartDate}</span
           >{/if}
 
         <label for="publicEndDate">End *</label>
@@ -439,7 +442,7 @@
           type="datetime-local"
           name="publicEndDate"
           aria-invalid={$errors.publicEndDate ? "true" : undefined}
-          bind:value={publicEndDateProxy}
+          bind:value={$form.publicEndDate}
         />
         {#if $errors.publicEndDate}<span class="form-error"
             >{$errors.publicEndDate}</span
@@ -471,9 +474,9 @@
 
     <br />
 
-    {#if $errors.selectedSpace}<span class="form-error"
+    <!-- {#if $errors.selectedSpace}<span class="form-error"
         >{$errors.selectedSpace}</span
-      >{/if}
+      >{/if} -->
 
     <button type="submit">{$form.id ? "Update" : "Create"}</button>
   </form>
