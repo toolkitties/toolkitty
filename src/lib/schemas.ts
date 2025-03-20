@@ -113,9 +113,9 @@ export const calendarSchema = z
     userName: z.string(),
     startDate: z.string().min(1, "A start date is required"),
     endDate: z.string().optional(),
-    calendarInstructions: z.string().nullable(),
-    spacePageText: z.string().nullable(),
-    resourcePageText: z.string().nullable(),
+    calendarInstructions: z.string().optional(),
+    spacePageText: z.string().optional(),
+    resourcePageText: z.string().optional(),
   })
   .refine((data) => data.id || data.userName, {
     message: "Name is required",
