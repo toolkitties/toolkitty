@@ -33,7 +33,7 @@
     // reload data so we get the latest active calendar
     // TODO: move active calendar to reactive state so we don't need to do this.
     await invalidateAll();
-    goto(`/request`);
+    goto("/request");
   }
 </script>
 

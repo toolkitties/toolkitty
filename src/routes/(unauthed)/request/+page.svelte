@@ -33,7 +33,7 @@
 
     if (calendarId == undefined) {
       console.error("active calendar not set");
-      goto(`/`);
+      goto("/");
       return;
     }
 

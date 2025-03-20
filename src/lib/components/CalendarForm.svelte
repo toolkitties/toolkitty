@@ -41,7 +41,7 @@
       // Reload data all data in the app as we changed to a new calendar.
       await invalidateAll();
       // TODO: Automatically reload app data when active calendar changes.
-      goto(`/app/events`);
+      goto("/app/events");
     } catch (error) {
       console.error("Error creating calendar: ", error);
       toast.error("Error creating calendar!");
@@ -55,7 +55,7 @@
     try {
       await calendars.update(calendarId, payload);
       toast.success("Calendar updated!");
-      goto(`/app/events`);
+      goto("/app/events");
     } catch (error) {
       console.error("Error updating calendar: ", error);
       toast.error("Error updating calendar!");

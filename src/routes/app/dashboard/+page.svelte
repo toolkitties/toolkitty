@@ -46,7 +46,7 @@
   {#if $myEvents?.length > 0}
     {#each $myEvents as event (event.id)}
       <a
-        href={`/app/events/view?=${event.id}`}
+        href={`/app/events/view?id=${event.id}`}
         class="p-2 border-black border block"
       >
         <h4>{event.name}</h4>
@@ -80,7 +80,7 @@
   {#if $mySpaces?.length > 0}
     {#each $mySpaces as space (space.id)}
       <a
-        href={`/app/spaces/view?=${space.id}`}
+        href={`/app/spaces/view?id=${space.id}`}
         class="p-2 border-black border justify-between flex"
       >
         <p>{space.name}</p>
