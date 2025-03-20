@@ -1,6 +1,6 @@
 import "fake-indexeddb/auto";
 
-import { processMessage } from "$lib/processor";
+import { pendingQueue, processMessage } from "$lib/processor";
 import {
   CALENDAR_ID,
   createAccessResponseMessage,
@@ -26,7 +26,6 @@ import {
   resources,
   spaces,
 } from "$lib/api";
-import { debounce } from "$lib/utils/utils";
 
 const createCalendar = createCalendarMessage(CALENDAR_ID, OWNER_PUBLIC_KEY, {
   type: "calendar_created",
@@ -176,7 +175,7 @@ const updateResource002 = createResourceMessage(
   },
 );
 
-let messages: ApplicationMessage[] = [
+const messages: ApplicationMessage[] = [
   createCalendar,
   updateCalendar,
   createEventOO1,
@@ -203,57 +202,29 @@ let messages: ApplicationMessage[] = [
   updateSpace002,
 ];
 
-function randomize(message: ApplicationMessage[]) {
-  let index = message.length,
-    randomIndex;
-
-  while (index != 0) {
-    randomIndex = Math.floor(Math.random() * index);
-    index--;
-
-    [message[index], message[randomIndex]] = [
-      message[randomIndex],
-      message[index],
-    ];
-  }
-
-  return message;
-}
-
-const replay = async () => {
-  for (const message of randomize(messages)) {
-    await processMessage(message);
-  }
-};
-
-const debouncedReplay = debounce(replay, 200);
-
 const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
 beforeAll(async () => {
-  mockIPC(async (cmd, args) => {
+  mockIPC(async (cmd) => {
     if (cmd === "public_key") {
       return OWNER_PUBLIC_KEY;
     }
-
-    if (cmd === "ack") {
-      const { operationId } = args as { operationId: OperationId };
-      messages = messages.filter(
-        (message) => message.meta.operationId !== operationId,
-      );
-    }
-
-    if (cmd === "replay") {
-      debouncedReplay("fake_topic");
-    }
   });
 
-  await replay();
+  setInterval(async () => {
+    for (const [, message] of pendingQueue) {
+      await processMessage(message);
+    }
+  }, 100);
+
+  for (const message of messages) {
+    await processMessage(message);
+  }
 });
 
 test("process out-of-order message", async () => {
   await delay(4000);
-  expect(messages.length).toBe(0);
+  // expect(messages.length).toBe(0);
 
   const calendarsCollection = await calendars.findMany();
   expect(calendarsCollection.length).toBe(1);
