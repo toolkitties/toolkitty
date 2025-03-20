@@ -294,6 +294,49 @@
       console.error("Error updating event: ", error);
       toast.error("Error updating event!");
     }
+
+    //@TODO - refactor this so not repeating code in both handlers
+    let spaceBookingId: string | undefined = undefined;
+    let resourceBookingIds: string[] = [];
+
+    // Request selected space booking
+    if (selectedSpace) {
+      const spaceBooking = await bookings.request(
+        eventId,
+        selectedSpace.id,
+        "space",
+        "Requesting access to space",
+        {
+          start: payload.startDate,
+          end: payload.endDate,
+        },
+      );
+      spaceBookingId = spaceBooking; // store to update event with booking id
+    }
+
+    // Request selected resources booking
+    if (selectedResources.length > 0) {
+      for (const resource of selectedResources) {
+        const resourceBooking = await bookings.request(
+          eventId,
+          resource.id,
+          "resource",
+          "Requesting resource",
+          {
+            start: payload.startDate,
+            end: payload.endDate,
+          },
+        );
+        resourceBookingIds.push(resourceBooking);
+      }
+    }
+
+    // after booking request are sent, update event with booking ids
+    await events.update(eventId, {
+      ...payload,
+      spaceRequest: spaceBookingId,
+      resourcesRequests: resourceBookingIds ? resourceBookingIds : undefined,
+    });
   }
 </script>
 
