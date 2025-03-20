@@ -47,6 +47,7 @@
     currentlySelectedDate = value || undefined;
   };
 
+  let endTimeError: boolean = $state(false);
   const handleAddAvailability = (e: Event) => {
     e.preventDefault();
     if (!currentlySelectedDate) {
@@ -67,13 +68,8 @@
     const startTime = startTimeInput.value;
     const endTime = endTimeInput.value;
 
-    if (!startTime || !endTime) {
-      alert("Please enter both start and end times.");
-      return;
-    }
-
     if (startTime >= endTime) {
-      alert("End time must be later than start time.");
+      endTimeError = true;
       return;
     }
 
@@ -187,6 +183,10 @@
     <input name="availability-start-time" type="time" required />
     <label for="availability-end-time">End *</label>
     <input name="availability-end-time" type="time" required />
+    {#if endTimeError}
+      <!-- temporary way to show availability form errors to user -->
+      <span class="form-error">End time must be later than start time.</span>
+    {/if}
   </div>
   <button onclick={(e: Event) => handleAddAvailability(e)}>Add</button>
 {/if}
