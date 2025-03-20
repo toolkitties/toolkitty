@@ -27,7 +27,6 @@
   } = $props();
 
   let selectedSpace = $state<Space | undefined>(currentSpace);
-  let selectedSpaceId = $state<string | undefined>(currentSpace?.id);
 
   let availableResources: Resource[] = $state([]);
   let selectedResources: Resource[] = $state([]);
@@ -301,64 +300,66 @@
         >{$errors.description}</span
       >{/if}
 
-    {#if $form.links[0]}
-      <p>🎫 Ticket Link</p>
-      <div class="flex flex-row">
-        <div>
-          <label for="ticket-link-text">Link text</label>
-          <input
-            type="text"
-            name="ticket-link-text"
-            aria-invalid={$errors.links?.[0].title ? "true" : undefined}
-            bind:value={$form.links[0].title}
-          />
-          {#if $errors.links?.[0].title}<span class="form-error"
-              >{$errors.links?.[0].title}</span
-            >{/if}
+    {#if $form.links}
+      {#if $form.links[0]}
+        <p>🎫 Ticket Link</p>
+        <div class="flex flex-row">
+          <div>
+            <label for="ticket-link-text">Link text</label>
+            <input
+              type="text"
+              name="ticket-link-text"
+              aria-invalid={$errors.links?.[0].title ? "true" : undefined}
+              bind:value={$form.links[0].title}
+            />
+            {#if $errors.links?.[0].title}<span class="form-error"
+                >{$errors.links?.[0].title}</span
+              >{/if}
+          </div>
+          <div>
+            <label for="ticket-link-url">URL</label>
+            <input
+              type="url"
+              name="ticket-link-url"
+              aria-invalid={$errors.links?.[0].url ? "true" : undefined}
+              bind:value={$form.links[0].url}
+            />
+            {#if $errors.links?.[0].url}<span class="form-error"
+                >{$errors.links?.[0].url}</span
+              >{/if}
+          </div>
         </div>
-        <div>
-          <label for="ticket-link-url">URL</label>
-          <input
-            type="url"
-            name="ticket-link-url"
-            aria-invalid={$errors.links?.[0].url ? "true" : undefined}
-            bind:value={$form.links[0].url}
-          />
-          {#if $errors.links?.[0].url}<span class="form-error"
-              >{$errors.links?.[0].url}</span
-            >{/if}
-        </div>
-      </div>
-    {/if}
+      {/if}
 
-    {#if $form.links[1]}
-      <p>🔗 Additional Link</p>
-      <div class="flex flex-row">
-        <div>
-          <label for="additional-link-text">Link text</label>
-          <input
-            type="text"
-            name="additional-link-text"
-            aria-invalid={$errors.links?.[1].title ? "true" : undefined}
-            bind:value={$form.links[1].title}
-          />
-          {#if $errors.links?.[1].title}<span class="form-error"
-              >{$errors.links?.[1].title}</span
-            >{/if}
+      {#if $form.links[1]}
+        <p>🔗 Additional Link</p>
+        <div class="flex flex-row">
+          <div>
+            <label for="additional-link-text">Link text</label>
+            <input
+              type="text"
+              name="additional-link-text"
+              aria-invalid={$errors.links?.[1].title ? "true" : undefined}
+              bind:value={$form.links[1].title}
+            />
+            {#if $errors.links?.[1].title}<span class="form-error"
+                >{$errors.links?.[1].title}</span
+              >{/if}
+          </div>
+          <div>
+            <label for="additional-link-url">URL</label>
+            <input
+              type="url"
+              name="additional-link-url"
+              aria-invalid={$errors.links?.[1].url ? "true" : undefined}
+              bind:value={$form.links[1].url}
+            />
+            {#if $errors.links?.[1].url}<span class="form-error"
+                >{$errors.links?.[1].url}</span
+              >{/if}
+          </div>
         </div>
-        <div>
-          <label for="additional-link-url">URL</label>
-          <input
-            type="url"
-            name="additional-link-url"
-            aria-invalid={$errors.links?.[1].url ? "true" : undefined}
-            bind:value={$form.links[1].url}
-          />
-          {#if $errors.links?.[1].url}<span class="form-error"
-              >{$errors.links?.[1].url}</span
-            >{/if}
-        </div>
-      </div>
+      {/if}
     {/if}
 
     <p>Select a space:</p>
