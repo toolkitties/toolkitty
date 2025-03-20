@@ -19,7 +19,7 @@
     activeCalendarId: Hash;
     calendarDates: TimeSpan;
   } = $props();
-  let alwaysAvailable = $state(false);
+  let alwaysAvailable: boolean = $state(data.data.availability === "always");
 
   const { form, errors, enhance } = superForm(data, {
     SPA: true,
@@ -131,10 +131,10 @@
   </fieldset>
 
   <p>Resource availability</p>
-  {#if alwaysAvailable}
+  {#if $form.availability === "always"}
     <p>This resource is always available</p>
   {/if}
-  {#if !alwaysAvailable}
+  {#if $form.availability !== "always"}
     <AvailabilitySetter
       bind:availability={$form.availability as TimeSpan[]}
       {calendarDates}
@@ -151,6 +151,8 @@
       onchange={() => {
         if (alwaysAvailable) {
           $form.availability = "always";
+        } else {
+          $form.availability = [];
         }
       }}
     />
