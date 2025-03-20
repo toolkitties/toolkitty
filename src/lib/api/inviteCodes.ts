@@ -127,7 +127,7 @@ async function onResponse(response: ResolveInviteCodeResponse) {
     id: stream.id,
     ownerId: stream.owner,
     stream,
-    name: response.calendarName
+    name: response.calendarName,
   });
 
   // Subscribe to the calendar inbox topic.
