@@ -157,9 +157,9 @@ type SystemMessage = SubscribedToTopic | NetworkEvent;
  */
 type SubscribedToTopic =
   | {
-    event: "subscribed_to_persisted_topic";
-    topic: string;
-  }
+      event: "subscribed_to_persisted_topic";
+      topic: string;
+    }
   | { event: "subscribed_to_ephemeral_topic"; topic: string };
 
 /**
@@ -168,14 +168,14 @@ type SubscribedToTopic =
 type NetworkEvent = {
   event: "network_event";
   data:
-  | GossipJoined
-  | GossipLeft
-  | GossipNeighborUp
-  | GossipNeighborDown
-  | PeerDiscovered
-  | SyncStarted
-  | SyncDone
-  | SyncFailed;
+    | GossipJoined
+    | GossipLeft
+    | GossipNeighborUp
+    | GossipNeighborDown
+    | PeerDiscovered
+    | SyncStarted
+    | SyncDone
+    | SyncFailed;
 };
 
 type GossipJoined = {
