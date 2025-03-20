@@ -55,9 +55,8 @@
   });
 </script>
 
+<div class="h-6"></div>
 <CalendarSelector />
-<h1>Kitty Fest 25</h1>
-
 {#if requestStatus == "pending"}
   <div class="mx-auto">
     <img class="w-12 mx-auto" alt="" src="/images/pending.gif" />

@@ -127,7 +127,7 @@ async function onResponse(response: ResolveInviteCodeResponse) {
     id: stream.id,
     ownerId: stream.owner,
     stream,
-    // don't add the name to the database yet, we wait for the "calendar_created" event for this.
+    name: response.calendarName,
   });
 
   // Subscribe to the calendar inbox topic.
