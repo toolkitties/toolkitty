@@ -46,7 +46,7 @@
   {#if $myEvents?.length > 0}
     {#each $myEvents as event (event.id)}
       <a
-        href={`#/app/events/${event.id}`}
+        href={`/app/events/view?=${event.id}`}
         class="p-2 border-black border block"
       >
         <h4>{event.name}</h4>
@@ -65,7 +65,7 @@
       </a>
     {/each}
     <a
-      href="#/app/events/create"
+      href="/app/events/create"
       class="rounded-full border-black border p-2 inline-block"
     >
       <PlusIcon size={10} />
@@ -80,7 +80,7 @@
   {#if $mySpaces?.length > 0}
     {#each $mySpaces as space (space.id)}
       <a
-        href={`#/app/spaces/${space.id}`}
+        href={`/app/spaces/view?=${space.id}`}
         class="p-2 border-black border justify-between flex"
       >
         <p>{space.name}</p>
@@ -93,7 +93,7 @@
     <p>you don't have any spaces yet</p>
   {/if}
   <a
-    href="#/app/spaces/create"
+    href="/app/spaces/create"
     class="rounded-full border-black border p-2 inline-block"
   >
     <PlusIcon size={10} />
@@ -105,7 +105,7 @@
   {#if $myResources?.length > 0}
     {#each $myResources as resource (resource.id)}
       <a
-        href={`#/app/resources/${resource.id}`}
+        href={`/app/resources/view?id=${resource.id}`}
         class="p-2 border-black border justify-between flex"
       >
         <p>{resource.name}</p>
@@ -118,7 +118,7 @@
     <p>you don't have any resources yet</p>
   {/if}
   <a
-    href="#/app/resources/create"
+    href="/app/resources/create"
     class="rounded-full border-black border p-2 inline-block"
   >
     <PlusIcon size={10} />

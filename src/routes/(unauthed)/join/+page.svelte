@@ -33,7 +33,7 @@
     // reload data so we get the latest active calendar
     // TODO: move active calendar to reactive state so we don't need to do this.
     await invalidateAll();
-    goto(`#/request`);
+    goto(`/request`);
   }
 </script>
 
@@ -87,7 +87,7 @@
 </div>
 
 <a
-  href="#/create"
+  href="/create"
   class="border border-black rounded p-4 text-center"
   type="submit">Create</a
 >

@@ -13,15 +13,15 @@
 
       if (accessStatus == "accepted") {
         // access is accepted, go to events
-        goto("#/app/events");
+        goto("/app/events");
         return;
       } else if (accessStatus == "pending") {
         // access status is pending, go to pending page
-        goto("#/request");
+        goto("/request");
         return;
       }
     }
-    goto("#/join");
+    goto("/join");
   }
 
   // TODO: Run check access once we have successfully subscribed to channels (currently in +layout.svelte)

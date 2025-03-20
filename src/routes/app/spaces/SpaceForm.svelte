@@ -49,7 +49,7 @@
     try {
       const spaceId: Hash = await spaces.create(activeCalendarId, payload);
       toast.success("Space created!");
-      goto(`#/app/spaces/${spaceId}`);
+      goto(`/app/spaces/${spaceId}`);
     } catch (error) {
       console.error("Error creating space: ", error);
       toast.error("Error creating space!");
@@ -60,7 +60,7 @@
     try {
       await spaces.update(spaceId, payload);
       toast.success("Space updated!");
-      goto(`#/app/spaces/${spaceId}`);
+      goto(`/app/spaces/${spaceId}`);
     } catch (error) {
       console.error("Error updating space: ", error);
       toast.error("Error updating space!");

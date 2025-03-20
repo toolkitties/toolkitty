@@ -5,11 +5,16 @@ import { spaces, users, calendars } from "$lib/api";
 import { superValidate } from "sveltekit-superforms";
 import { zod } from "sveltekit-superforms/adapters";
 
-export const load: PageLoad = async ({ params, parent }) => {
-  const spaceId = params.id;
+export const load: PageLoad = async ({ url, parent }) => {
+
+  const spaceId = url.searchParams.get('id');
+  if (!spaceId) {
+    error(404, {
+      message: "Space not found",
+    });
+  }
 
   const space = await spaces.findById(spaceId);
-
   if (!space || !space.id) {
     error(404, {
       message: "Space not found",

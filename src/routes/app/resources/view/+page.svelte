@@ -63,7 +63,7 @@
     {/if}
 
     {#if data.userRole == "admin" || amOwner}
-      <a class="button" href="#/app/resources/{$resource.id}/edit">Edit</a>
+      <a class="button" href="/app/resources/edit?id={$resource.id}">Edit</a>
     {/if}
 
     <ImageGallery images={$resource.images} />

@@ -26,7 +26,7 @@
 {#if $resourcesList && $resourcesList.length > 0}
   {#each $resourcesList as resource (resource.id)}
     <a
-      href={`#/app/resources/${resource.id}`}
+      href={`/app/resources/view?id=${resource.id}`}
       class="flex border-black border event-row"
     >
       {#if resource.images.length > 0}
@@ -50,7 +50,7 @@
   {/each}
 {:else}
   <p>no resources yet, please create one.</p>
-  <a href="#/app/events/create" class="button inline-block">create resource</a>
+  <a href="/app/events/create" class="button inline-block">create resource</a>
 {/if}
 
 <Contribute />

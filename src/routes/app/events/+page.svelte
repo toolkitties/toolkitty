@@ -86,7 +86,7 @@
   {/each}
 {:else}
   <p>no events yet, please create one.</p>
-  <a href="#/app/events/create" class="button inline-block">create event</a>
+  <a href="/app/events/create" class="button inline-block">create event</a>
 {/if}
 
 <Contribute />

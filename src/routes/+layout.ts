@@ -1,3 +1,7 @@
+
+export const prerender = true;
+export const ssr = false;
+
 import type { LayoutLoad } from "./$types";
 import { calendars, identity } from "$lib/api";
 
