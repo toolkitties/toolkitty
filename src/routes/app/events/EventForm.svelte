@@ -28,17 +28,37 @@
 
   let selectedSpace = $state<Space | undefined>(currentSpace);
   let selectedSpaceId = $state<string | undefined>(currentSpace?.id);
-
-  let availableResources: Resource[] = $state([]);
+  let availableResources: Resource[] = $state(resourcesList);
   let selectedResources: Resource[] = $state([]);
   let availableResourceBookings: { resourceId: string; timeSpan: TimeSpan }[] =
     $state([]);
+
+  // resource filtering if update form
+  // if (currentSpace && currentSpace.availability !== "always") {
+  //   async () => {
+  //     // filter resources by the start and end date of the event being updated
+  //     const spaceTimeSpan = {
+  //       start: data.data.startDate,
+  //       end: data.data.endDate,
+  //     };
+  //     availableResources = await resources.findByTimeSpan(
+  //       activeCalendarId,
+  //       new TimeSpanClass(spaceTimeSpan),
+  //     );
+  //   };
+
+  //   if (data.data.resourceRequests) {
+  //     // have these resources be checked
+  //     console.log(data.data.resourceRequests);
+  //   }
+  // }
 
   async function handleSpaceSelection(space: Space) {
     selectedSpace = space;
     if (selectedSpace.availability == "always") {
       availableResources = resourcesList;
     } else {
+      // create a timeSpan from all availability entries on that space and filter resources on that
       let spaceTimeSpan = calculateSpaceTimespan(selectedSpace.availability);
       availableResources = await resources.findByTimeSpan(
         activeCalendarId,
@@ -59,6 +79,8 @@
               },
             });
           }
+          // filter resources again if there are any bookings at the selected time
+          recalculateResourceAvailability();
         }
       }
     }
@@ -75,7 +97,7 @@
     };
   }
 
-  function recalculateResourceAvailbaility() {
+  function recalculateResourceAvailability() {
     if (availableResourceBookings.length === 0) return;
     const eventTimeSpan = {
       start: $form.startDate,
@@ -405,7 +427,7 @@
           required
           aria-invalid={$errors.startDate ? "true" : undefined}
           bind:value={$form.startDate}
-          onchange={recalculateResourceAvailbaility}
+          onchange={recalculateResourceAvailability}
         />
         {#if $errors.startDate}<span class="form-error"
             >{$errors.startDate}</span
@@ -418,7 +440,7 @@
           required
           aria-invalid={$errors.endDate ? "true" : undefined}
           bind:value={$form.endDate}
-          onchange={recalculateResourceAvailbaility}
+          onchange={recalculateResourceAvailability}
         />
         {#if $errors.endDate}<span class="form-error">{$errors.endDate}</span
           >{/if}
