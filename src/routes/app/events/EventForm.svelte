@@ -33,23 +33,25 @@
   let availableResourceBookings: { resourceId: string; timeSpan: TimeSpan }[] =
     $state([]);
 
-// resource filtering if update form
- if (currentSpace && currentSpace.availability !== "always") {
-      (async () => {
-          // filter resources by the start and end date of the event being updated 
-          const spaceTimeSpan = {
-            start: data.data.startDate,
-            end: data.data.endDate
-          }
-          availableResources = await resources.findByTimeSpan(activeCalendarId, new TimeSpanClass(spaceTimeSpan));
+  // resource filtering if update form
+  // if (currentSpace && currentSpace.availability !== "always") {
+  //   async () => {
+  //     // filter resources by the start and end date of the event being updated
+  //     const spaceTimeSpan = {
+  //       start: data.data.startDate,
+  //       end: data.data.endDate,
+  //     };
+  //     availableResources = await resources.findByTimeSpan(
+  //       activeCalendarId,
+  //       new TimeSpanClass(spaceTimeSpan),
+  //     );
+  //   };
 
-      })
-
-      if(data.data.resourceRequests){
-        // have these resources be checked
-        console.log(data.data.resourceRequests);
-      }
-  }
+  //   if (data.data.resourceRequests) {
+  //     // have these resources be checked
+  //     console.log(data.data.resourceRequests);
+  //   }
+  // }
 
   async function handleSpaceSelection(space: Space) {
     selectedSpace = space;
