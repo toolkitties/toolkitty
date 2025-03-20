@@ -4,7 +4,7 @@ import { z } from "zod";
 const linkSchema = z.object({
   title: z.string().nullable(),
   type: z.enum(["ticket", "custom"]).default("custom"),
-  url: z.string().url("Invalid URL").or(z.literal('')),
+  url: z.string().url("Invalid URL").or(z.literal("")),
 });
 
 const imageSchema = z.string();
@@ -99,7 +99,8 @@ export const eventSchema = z.object({
     .default([
       { title: "", type: "ticket", url: "" },
       { title: "", type: "custom", url: "" },
-    ]).optional(),
+    ])
+    .optional(),
   selectedSpace: z.string().min(1, "Please select a space first."),
   images: z.array(imageSchema),
 });
