@@ -3,7 +3,7 @@
   import Back from "$lib/components/Back.svelte";
   import { page } from "$app/state";
 
-  let indexPage = $derived(page.url.pathname == "/");
+  let indexPage = $derived(page.url.hash == "#/");
 
   let { children }: LayoutProps = $props();
 </script>
