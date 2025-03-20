@@ -166,7 +166,8 @@ async function onApplicationMessage(message: ApplicationMessage) {
     // waiting event_updated events.
     try {
       await dependencies.process(message);
-    } catch {
+    } catch (e) {
+      console.error("missing dependency for message: ", e);
       pendingQueue.set(message.meta.operationId, message);
       return;
     }

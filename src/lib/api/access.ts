@@ -334,8 +334,8 @@ async function onCalendarAccessAccepted(
   }
 
   // Add the new author to the calendar topics.
-  await topics.addAuthorToCalendar(meta.author, meta.stream);
-  await topics.addAuthorToInbox(meta.author, meta.stream);
+  await topics.addAuthorToCalendar(request.from, meta.stream);
+  await topics.addAuthorToInbox(request.from, meta.stream);
 
   // If this is our own access request then also add ourselves and the calendar owner to the
   // topic may as we won't have done this before.
