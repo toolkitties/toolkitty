@@ -24,7 +24,7 @@
         <AlertDialog.Content>
           <AlertDialog.Title>{title}</AlertDialog.Title>
           <AlertDialog.Description>
-            <p>{text}</p>
+            <p class="max-h-[50vh] overflow-auto">{text}</p>
           </AlertDialog.Description>
         </AlertDialog.Content>
       </AlertDialog.Portal>
