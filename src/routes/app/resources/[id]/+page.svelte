@@ -7,6 +7,7 @@
   import AvailabilityViewer from "$lib/components/AvailabilityViewer.svelte";
   import Links from "$lib/components/Links.svelte";
   import { error } from "@sveltejs/kit";
+  import ImageGallery from "$lib/components/ImageGallery.svelte";
 
   let { data }: PageProps = $props();
   let now = new Date();
@@ -62,6 +63,8 @@
     {#if data.userRole == "admin" || amOwner}
       <a class="button" href="#/app/resources/{$resource.id}/edit">Edit</a>
     {/if}
+
+    <ImageGallery images={$resource.images} />
 
     <pre>{JSON.stringify($resource, null, 2)}</pre>
   </div>

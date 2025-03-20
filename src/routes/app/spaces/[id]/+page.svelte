@@ -7,6 +7,7 @@
   import AvailabilityViewer from "$lib/components/AvailabilityViewer.svelte";
   import Links from "$lib/components/Links.svelte";
   import { error } from "@sveltejs/kit";
+  import ImageGallery from "$lib/components/ImageGallery.svelte";
 
   let { data }: PageProps = $props();
   let now = new Date();
@@ -82,6 +83,8 @@
     {:else}
       <AvailabilityViewer data={$space} type="space" />
     {/if}
+
+    <ImageGallery images={$space.images} />
 
     {#if data.userRole == "admin" || amOwner}
       <a class="button" href="#/app/spaces/{$space!.id}/edit">Edit</a>

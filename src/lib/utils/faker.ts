@@ -460,7 +460,7 @@ export function createEventFields(
         url: faker.internet.url(),
       },
     ],
-    images: ["/toolkitty-mascot.png"],
+    images: [],
   };
   return { ...fields, ...fieldsOverwrites };
 }
@@ -500,7 +500,7 @@ export function createSpaceFields(
       title: faker.company.name(),
       url: faker.internet.url(),
     },
-    images: ["/toolkitty-mascot.png"],
+    images: [],
     availability: faker.helpers.multiple(() => {
       const start = faker.date.soon({ days: 7 }).toISOString();
       const end = faker.date.soon({ refDate: start }).toISOString();
@@ -526,7 +526,7 @@ export function createResourceFields(
       title: faker.company.name(),
       url: faker.internet.url(),
     },
-    images: ["/toolkitty-mascot.png"],
+    images: [],
     availability: faker.helpers.multiple(() => {
       const start = faker.date.soon().toISOString();
       const end = faker.date.soon({ refDate: start }).toISOString();

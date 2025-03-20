@@ -1,5 +1,6 @@
 <script lang="ts">
   import AvailabilityViewer from "$lib/components/AvailabilityViewer.svelte";
+  import ImageUploader from "$lib/components/ImageUploader.svelte";
   import { goto } from "$app/navigation";
   import { toast } from "$lib/toast.svelte";
   import type { SuperValidated, Infer } from "sveltekit-superforms";
@@ -459,6 +460,12 @@
         <p>No available resources.</p>
       {/if}
     {/if}
+
+    <p>Images</p>
+    <ImageUploader bind:images={$form.images as string[]} />
+
+    <br />
+
     {#if $errors.selectedSpace}<span class="form-error"
         >{$errors.selectedSpace}</span
       >{/if}

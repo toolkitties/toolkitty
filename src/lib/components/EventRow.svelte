@@ -11,11 +11,19 @@
 </script>
 
 <a href={`#/app/events/${event.id}`} class="flex border-black border event-row">
-  <img
-    src={event.images[0]}
-    alt=""
-    class="aspect-square object-cover w-[30%] min-w-32 max-w-72 grow"
-  />
+  {#if event.images.length > 0}
+    <img
+      src={`blobstore://${event.images[0]}`}
+      class="aspect-square object-cover w-[30%] min-w-32 max-w-72 grow"
+      alt=""
+    />
+  {:else}
+    <img
+      src="/toolkitty-mascot.png"
+      class="aspect-square object-cover w-[30%] min-w-32 max-w-72 grow"
+      alt=""
+    />
+  {/if}
   <div class="flex flex-col gap-1 p-2">
     <h3>{event.name}</h3>
     <span>🗓️ <Date date={event.startDate} /></span>

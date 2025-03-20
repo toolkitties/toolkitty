@@ -4,6 +4,7 @@
   import { superForm } from "sveltekit-superforms";
   import SuperDebug from "sveltekit-superforms";
   import AvailabilitySetter from "$lib/components/AvailabilitySetter.svelte";
+  import ImageUploader from "$lib/components/ImageUploader.svelte";
   import { resources } from "$lib/api";
   import { resourceSchema } from "$lib/schemas";
   import { zod } from "sveltekit-superforms/adapters";
@@ -170,6 +171,11 @@
       bind:checked={$form.multiBookable}
     />
   </fieldset>
+
+  <p>Images</p>
+  <ImageUploader bind:images={$form.images as string[]} />
+
+  <br />
 
   <button type="submit">{$form.id ? "Update" : "Create"}</button>
 </form>
