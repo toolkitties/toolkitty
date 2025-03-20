@@ -182,7 +182,23 @@
     <label for="availability-start-time">Start *</label>
     <input name="availability-start-time" type="time" required />
     <label for="availability-end-time">End *</label>
-    <input name="availability-end-time" type="time" required />
+    <input
+      name="availability-end-time"
+      type="time"
+      required
+      onfocus={() => {
+        const startTimeInput = document.querySelector<HTMLInputElement>(
+          'input[name="availability-start-time"]',
+        );
+        const endTimeInput = document.querySelector<HTMLInputElement>(
+          'input[name="availability-end-time"]',
+        );
+
+        if (startTimeInput && endTimeInput && !endTimeInput.value) {
+          endTimeInput.value = startTimeInput.value;
+        }
+      }}
+    />
     {#if endTimeError}
       <!-- temporary way to show availability form errors to user -->
       <span class="form-error">End time must be later than start time.</span>
