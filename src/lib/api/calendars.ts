@@ -183,7 +183,7 @@ async function onCalendarCreated(
   const myPublicKey = await identity.publicKey();
 
   // Add the calendar creator user to our database and make them admin.
-  const user = await users.get(meta.stream.id, myPublicKey);
+  const user = await users.get(meta.stream.id, meta.stream.owner);
   if (!user) {
     await users.create(meta.stream.id, meta.stream.owner, userName, "admin");
   }

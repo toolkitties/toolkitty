@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { db } from "$lib/db";
+import { publish } from ".";
 
 export const CALENDAR_LOG_PATH: LogPath = "calendar";
 export const CALENDAR_INBOX_LOG_PATH: LogPath = "calendar/inbox";
@@ -55,6 +56,7 @@ export async function toInbox(
     streamArgs: {
       rootHash: calendar.stream.rootHash,
       owner: calendar.stream.owner,
+      logPath: publish.CALENDAR_LOG_PATH,
     },
     logPath: CALENDAR_INBOX_LOG_PATH,
     topic: `${CALENDAR_INBOX_TOPIC_PREFIX}/${calendarId}`,

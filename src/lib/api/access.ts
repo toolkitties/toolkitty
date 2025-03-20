@@ -307,19 +307,17 @@ async function onCalendarAccessRequested(
   if (accessStatus == "pending" && (amOwner || amAdmin)) {
     toast.accessRequest(accessRequest);
   }
-
-  if (accessStatus == "accepted") {
-    // Create a new user.
-    if (!(await users.get(calendarId, meta.author))) {
-      await users.create(calendarId, meta.author, data.name);
-    }
-  }
 }
 
 async function onCalendarAccessAccepted(
   meta: StreamMessageMeta,
   data: CalendarAccessAccepted["data"],
 ) {
+  const request = await db.accessRequests.get(data.requestId);
+  if (!request) {
+    throw Error("access request not found");
+  }
+
   const calendarId = meta.stream.id;
   await db.accessResponses.add({
     id: meta.operationId,
@@ -329,34 +327,24 @@ async function onCalendarAccessAccepted(
     answer: "accept",
   });
 
-  const request = await db.accessRequests.get(data.requestId);
-  if (!request) {
-    return;
+  // Create a new user.
+  const user = await users.get(calendarId, request.from);
+  if (!user) {
+    await users.create(calendarId, request.from, request.name);
   }
 
-  const accessStatus = await checkStatus(request.from, calendarId);
+  // Add the new author to the calendar topics.
+  await topics.addAuthorToCalendar(request.from, meta.stream);
+  await topics.addAuthorToInbox(request.from, meta.stream);
 
-  // Process new calendar author if access was accepted.
-  if (accessStatus == "accepted") {
-    // Create a new user.
-    const user = await users.get(calendarId, request.from);
-    if (!user) {
-      await users.create(calendarId, request.from, request.name);
-    }
-
-    // Add the new author to the calendar topics.
-    await topics.addAuthorToCalendar(meta.author, meta.stream);
-    await topics.addAuthorToInbox(meta.author, meta.stream);
-
-    // If this is our own access request then also add ourselves and the calendar owner to the
-    // topic may as we won't have done this before.
-    const myPublicKey = await identity.publicKey();
-    if (myPublicKey == request.from) {
-      await topics.subscribeToCalendar(meta.stream.id);
-      await topics.addAuthorToCalendar(myPublicKey, meta.stream);
-      await topics.addAuthorToCalendar(meta.stream.owner, meta.stream);
-      await topics.addAuthorToInbox(meta.stream.owner, meta.stream);
-    }
+  // If this is our own access request then also add ourselves and the calendar owner to the
+  // topic may as we won't have done this before.
+  const myPublicKey = await identity.publicKey();
+  if (myPublicKey == request.from) {
+    await topics.addAuthorToCalendar(myPublicKey, meta.stream);
+    await topics.addAuthorToCalendar(meta.stream.owner, meta.stream);
+    await topics.addAuthorToInbox(meta.stream.owner, meta.stream);
+    await topics.subscribeToCalendar(meta.stream.id);
   }
 }
 

@@ -15,6 +15,7 @@ import {
 } from "$lib/api";
 import { rejectPromise, resolvePromise } from "$lib/promiseMap";
 
+export const pendingQueue: Map<Hash, ApplicationMessage> = new Map();
 const peers: Set<PublicKey> = new Set();
 
 // @TODO: update docs for application agnostic backend.
@@ -163,8 +164,13 @@ async function onApplicationMessage(message: ApplicationMessage) {
     // then error here. Additionally we want to trigger a replay if messages which may have
     // dependants arrives, eg. an `event_created` message should trigger a replay in case there are
     // waiting event_updated events.
-    await dependencies.process(message);
-
+    try {
+      await dependencies.process(message);
+    } catch (e) {
+      console.error("missing dependency for message: ", e);
+      pendingQueue.set(message.meta.operationId, message);
+      return;
+    }
     // **Auth**
     //
     // Confirm that the author has been given “read” access to the calendar with a
@@ -195,6 +201,7 @@ async function onApplicationMessage(message: ApplicationMessage) {
 
     // Acknowledge that we have received and processed this operation.
     await invoke("ack", { operationId: message.meta.operationId });
+    pendingQueue.delete(message.meta.operationId);
   } catch (err) {
     console.error(`failed processing application event: ${err}`, message);
     const myPublicKey = await identity.publicKey();
