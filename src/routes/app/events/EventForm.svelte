@@ -4,7 +4,7 @@
   import { toast } from "$lib/toast.svelte";
   import type { SuperValidated, Infer } from "sveltekit-superforms";
   import type { EventSchema } from "$lib/schemas";
-  import { superForm, dateProxy } from "sveltekit-superforms";
+  import { superForm, setError, dateProxy } from "sveltekit-superforms";
   import SuperDebug from "sveltekit-superforms";
   import { eventSchema } from "$lib/schemas";
   import { zod } from "sveltekit-superforms/adapters";
@@ -104,91 +104,91 @@
     dataType: "json",
     async onUpdate({ form }) {
       // Additional checks for selectedSpace
-      // if (!selectedSpace) {
-      //   setError(form, "startDate", "Please select a space first.");
-      //   return;
-      // }
+      if (!selectedSpace) {
+        setError(form, "startDate", "Please select a space first.");
+        return;
+      }
 
-      // // Validation of dates against space availability
-      // // If availability is "always", skip validation
-      // if (selectedSpace.availability !== "always") {
-      //   let spaceTimeSpan = calculateSpaceTimespan(
-      //     selectedSpace.availability as TimeSpan[],
-      //   );
+      // Validation of dates against space availability
+      // If availability is "always", skip validation
+      if (selectedSpace.availability !== "always") {
+        let spaceTimeSpan = calculateSpaceTimespan(
+          selectedSpace.availability as TimeSpan[],
+        );
 
-      //   const startDate = new Date(form.data.startDate);
-      //   const endDate = new Date(form.data.endDate);
-      //   const publicStartDate = new Date(form.data.publicStartDate);
-      //   const publicEndDate = new Date(form.data.publicEndDate);
-      //   const earliestStart = new Date(spaceTimeSpan.start);
-      //   const latestEnd = new Date(spaceTimeSpan.end!);
+        const startDate = new Date(form.data.startDate);
+        const endDate = new Date(form.data.endDate);
+        const publicStartDate = new Date(form.data.publicStartDate);
+        const publicEndDate = new Date(form.data.publicEndDate);
+        const earliestStart = new Date(spaceTimeSpan.start);
+        const latestEnd = new Date(spaceTimeSpan.end!);
 
-      //   if (startDate < earliestStart) {
-      //     setError(
-      //       form,
-      //       "startDate",
-      //       "Start date cannot be before the space's earliest availability.",
-      //     );
-      //     return;
-      //   }
-      //   if (startDate > latestEnd) {
-      //     setError(
-      //       form,
-      //       "startDate",
-      //       "Start date cannot be after the space's latest availability.",
-      //     );
-      //     return;
-      //   }
-      //   if (endDate > latestEnd) {
-      //     setError(
-      //       form,
-      //       "endDate",
-      //       "End date cannot be after the space's latest availability.",
-      //     );
-      //     return;
-      //   }
+        if (startDate < earliestStart) {
+          setError(
+            form,
+            "startDate",
+            "Start date cannot be before the space's earliest availability.",
+          );
+          return;
+        }
+        if (startDate > latestEnd) {
+          setError(
+            form,
+            "startDate",
+            "Start date cannot be after the space's latest availability.",
+          );
+          return;
+        }
+        if (endDate > latestEnd) {
+          setError(
+            form,
+            "endDate",
+            "End date cannot be after the space's latest availability.",
+          );
+          return;
+        }
 
-      //   if (publicStartDate < earliestStart) {
-      //     setError(
-      //       form,
-      //       "publicStartDate",
-      //       "Public start date cannot be before the space's earliest availability.",
-      //     );
-      //     return;
-      //   }
-      //   if (publicStartDate > latestEnd) {
-      //     setError(
-      //       form,
-      //       "publicStartDate",
-      //       "Public start date cannot be after the space's latest availability.",
-      //     );
-      //     return;
-      //   }
-      //   if (publicEndDate > latestEnd) {
-      //     setError(
-      //       form,
-      //       "publicEndDate",
-      //       "Public end date cannot be after the space's latest availability.",
-      //     );
-      //     return;
-      //   }
-      // }
+        if (publicStartDate < earliestStart) {
+          setError(
+            form,
+            "publicStartDate",
+            "Public start date cannot be before the space's earliest availability.",
+          );
+          return;
+        }
+        if (publicStartDate > latestEnd) {
+          setError(
+            form,
+            "publicStartDate",
+            "Public start date cannot be after the space's latest availability.",
+          );
+          return;
+        }
+        if (publicEndDate > latestEnd) {
+          setError(
+            form,
+            "publicEndDate",
+            "Public end date cannot be after the space's latest availability.",
+          );
+          return;
+        }
+      }
 
       // TODO: potentially move above validation to schema
-      // if (form.valid) {
-      const { id, ...payload } = form.data;
+      if (form.valid) {
+        const { id, ...payload } = form.data;
 
-      // Filter out links with empty URLs
-      payload.links = payload.links?.filter((link) => link.url !== "");
+        // Filter out links with empty URLs
+        payload.links = payload.links?.filter((link) => link.url !== "");
 
-      if (form.data.id) {
-        console.log("update event");
-        handleUpdateEvent(id!, payload);
-      } else {
-        console.log("create space");
-        handleCreateEvent(payload);
+        if (form.data.id) {
+          console.log("update event");
+          handleUpdateEvent(id!, payload);
+        } else {
+          console.log("create space");
+          handleCreateEvent(payload);
+        }
       }
-      // }
     },
   });
 
