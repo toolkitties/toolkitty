@@ -2,7 +2,7 @@ import { z } from "zod";
 
 // Reusable schemas
 const linkSchema = z.object({
-  title: z.string().optional(),
+  title: z.string().nullable(),
   type: z.enum(["ticket", "custom"]).default("custom"),
   url: z.string().url("Invalid URL").or(z.literal('')),
 });
