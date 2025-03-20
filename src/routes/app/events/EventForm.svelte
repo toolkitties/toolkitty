@@ -376,11 +376,15 @@
     {#if selectedSpace}
       <div class="space-availability">
         <p>View availability for {selectedSpace.name}</p>
-        <AvailabilityViewer
-          data={selectedSpace}
-          selected={$startDateProxy}
-          type="space"
-        />
+        {#if selectedSpace.availability === "always"}
+          <p>This space is always available :D</p>
+        {:else}
+          <AvailabilityViewer
+            data={selectedSpace}
+            selected={$startDateProxy}
+            type="space"
+          />
+        {/if}
       </div>
 
       <p>Request access to selected space</p>
