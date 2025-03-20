@@ -1,6 +1,7 @@
 <script>
   import Back from "./Back.svelte";
   import { calendars } from "$lib/api";
+  import Avatar from "./Avatar.svelte";
 
   // TODO: change or remove default title once we have a name.
   let { title = "(^._.^)ﾉ" } = $props();
@@ -15,7 +16,8 @@
     <span>{$activeCalendarName}</span>
     <span>{title}</span>
   </div>
-  <div>
+  <div class="grid grid-cols-3 items-center h-10">
     <Back />
+    <Avatar />
   </div>
 </div>
