@@ -26,9 +26,11 @@
 
   // TODO: Run check access once we have successfully subscribed to channels (currently in +layout.svelte)
   onMount(() => {
-    setInterval(() => {
+    const interval = setInterval(() => {
       checkAccess();
     }, 2500);
+
+    return () => clearInterval(interval);
   });
 </script>
 
