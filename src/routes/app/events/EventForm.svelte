@@ -27,6 +27,7 @@
   } = $props();
 
   let selectedSpace = $state<Space | undefined>(currentSpace);
+  let selectedSpaceId = $state<string | undefined>(currentSpace?.id);
 
   let availableResources: Resource[] = $state([]);
   let selectedResources: Resource[] = $state([]);
@@ -193,7 +194,7 @@
   });
 
   let startDateProxy = $state(
-    dateProxy(form, "startDate", { format: "datetime-local" }),
+    dateProxy(form, "startDate", { format: "datetime-local" })
   );
   let endDateProxy = $state(
     dateProxy(form, "endDate", { format: "datetime-local" }),
