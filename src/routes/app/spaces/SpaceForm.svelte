@@ -30,6 +30,9 @@
     async onUpdate({ form }) {
       if (form.valid) {
         const { id, ...payload } = form.data;
+        if (payload.link?.url === "") {
+          delete payload.link;
+        }
         if (form.data.id) {
           console.log("update space");
           handleUpdateSpace(id!, payload);

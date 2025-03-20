@@ -31,6 +31,11 @@
       if (form.valid) {
         // TODO: add additional validation here
         const { id, ...payload } = form.data;
+
+        // Strip out link if url is undefined or empty string
+        if (payload.link?.url === "") {
+          delete payload.link;
+        }
         if (id) {
           console.log("update resource");
           handleUpdateResource(id, payload);

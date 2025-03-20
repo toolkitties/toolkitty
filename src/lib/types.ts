@@ -157,9 +157,9 @@ type SystemMessage = SubscribedToTopic | NetworkEvent;
  */
 type SubscribedToTopic =
   | {
-      event: "subscribed_to_persisted_topic";
-      topic: string;
-    }
+    event: "subscribed_to_persisted_topic";
+    topic: string;
+  }
   | { event: "subscribed_to_ephemeral_topic"; topic: string };
 
 /**
@@ -168,14 +168,14 @@ type SubscribedToTopic =
 type NetworkEvent = {
   event: "network_event";
   data:
-    | GossipJoined
-    | GossipLeft
-    | GossipNeighborUp
-    | GossipNeighborDown
-    | PeerDiscovered
-    | SyncStarted
-    | SyncDone
-    | SyncFailed;
+  | GossipJoined
+  | GossipLeft
+  | GossipNeighborUp
+  | GossipNeighborDown
+  | PeerDiscovered
+  | SyncStarted
+  | SyncDone
+  | SyncFailed;
 };
 
 type GossipJoined = {
@@ -363,7 +363,7 @@ type SpaceFields = {
   accessibility: string;
   description: string;
   contact: string;
-  link: Link | null;
+  link?: Link | null;
   messageForRequesters: string;
   images: Image[];
   availability: TimeSpan[] | "always";
@@ -374,7 +374,7 @@ type ResourceFields = {
   name: string;
   description: string;
   contact: string;
-  link: Link;
+  link?: Link;
   images: Image[];
   availability: TimeSpan[] | "always";
   multiBookable: boolean;
@@ -389,7 +389,7 @@ type EventFields = {
   publicStartDate?: string;
   publicEndDate?: string;
   resourcesRequests?: ReservationRequestId[];
-  links: Link[];
+  links?: Link[];
   images: Image[];
 };
 
