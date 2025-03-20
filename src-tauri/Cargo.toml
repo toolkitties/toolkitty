@@ -19,13 +19,17 @@ async-trait = "0.1.85"
 futures-util = "0.3.31"
 iroh-io = "0.6.1"
 mime = "0.3.17"
-p2panda-blobs = "0.3.0"
-p2panda-core = "0.3.0"
-p2panda-discovery = { version = "0.3.0", features = ["mdns"] }
-p2panda-net = "0.3.0"
-p2panda-store = "0.3.0"
-p2panda-stream = "0.3.0"
-p2panda-sync = { version = "0.3.0", features = ["log-sync"] }
+p2panda-blobs = { git = "https://github.com/p2panda/p2panda", rev = "79b7682deb5f253224745b7ad9a7faab90e89e87" }
+p2panda-core = { git = "https://github.com/p2panda/p2panda", rev = "79b7682deb5f253224745b7ad9a7faab90e89e87" }
+p2panda-net = { git = "https://github.com/p2panda/p2panda", rev = "79b7682deb5f253224745b7ad9a7faab90e89e87" }
+p2panda-store = { git = "https://github.com/p2panda/p2panda", rev = "79b7682deb5f253224745b7ad9a7faab90e89e87" }
+p2panda-stream = { git = "https://github.com/p2panda/p2panda", rev = "79b7682deb5f253224745b7ad9a7faab90e89e87" }
+p2panda-discovery = { git = "https://github.com/p2panda/p2panda", rev = "79b7682deb5f253224745b7ad9a7faab90e89e87", features = [
+    "mdns",
+] }
+p2panda-sync = { git = "https://github.com/p2panda/p2panda", rev = "79b7682deb5f253224745b7ad9a7faab90e89e87", features = [
+    "log-sync",
+] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tauri = { version = "2", features = [] }
