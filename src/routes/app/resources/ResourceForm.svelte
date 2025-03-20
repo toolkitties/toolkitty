@@ -55,7 +55,7 @@
         payload,
       );
       toast.success("Resource created!");
-      goto(`/app/resources/${resourceId}`);
+      goto(`/app/resources/view?id=${resourceId}`);
     } catch (error) {
       toast.error("Error creating resource!");
       console.error("Error creating resource:", error);
@@ -69,7 +69,7 @@
     try {
       await resources.update(resourceId, payload);
       toast.success("Resource updated!");
-      goto(`/app/resources/${resourceId}`);
+      goto(`/app/resources/view?id=${resourceId}`);
     } catch (error) {
       toast.error("Error updating resource!");
       console.error("Error updating resource:", error);
