@@ -19,7 +19,7 @@ export function findMany(calendarId: Hash): Promise<CalendarEventEnriched[]> {
     async () => {
       const events: CalendarEventEnriched[] = await db.events
         .where({ calendarId })
-        .sortBy('startDate')
+        .sortBy("startDate");
       // Add space to each event.
       for (const event of events) {
         if (event.spaceRequest) {
@@ -51,7 +51,7 @@ export function findByOwner(
     async () => {
       const events: CalendarEventEnriched[] = await db.events
         .where({ ownerId, calendarId })
-        .sortBy('startDate');
+        .sortBy("startDate");
       for (const event of events) {
         // Add space to each event.
         if (event.spaceRequest) {
