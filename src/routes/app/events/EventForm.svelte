@@ -5,7 +5,7 @@
   import { toast } from "$lib/toast.svelte";
   import type { SuperValidated, Infer } from "sveltekit-superforms";
   import type { EventSchema } from "$lib/schemas";
-  import { superForm, setError, dateProxy } from "sveltekit-superforms";
+  import { superForm, setError } from "sveltekit-superforms";
   import SuperDebug from "sveltekit-superforms";
   import { eventSchema } from "$lib/schemas";
   import { zod } from "sveltekit-superforms/adapters";
@@ -193,18 +193,21 @@
     },
   });
 
-  let startDateProxy = $state(
-    dateProxy(form, "startDate", { format: "datetime-local" }),
-  );
-  let endDateProxy = $state(
-    dateProxy(form, "endDate", { format: "datetime-local" }),
-  );
-  let publicStartDateProxy = $state(
-    dateProxy(form, "publicStartDate", { format: "datetime-local" }),
-  );
-  let publicEndDateProxy = $state(
-    dateProxy(form, "publicEndDate", { format: "datetime-local" }),
-  );
+  // Remove date proxies as temp fix for date.
+  // TODO(@jack): refactor to use bits ui date picker
+  // let startDateProxy = $state(
+  //   dateProxy(form, "startDate", { format: "datetime-utc" }),
+  // );
+  // let endDateProxy = $state(
+  //   dateProxy(form, "endDate", { format: "datetime-utc" }),
+  // );
+  // let publicStartDateProxy = $state(
+  //   dateProxy(form, "publicStartDate", { format: "datetime-utc" }),
+  // );
+  // let publicEndDateProxy = $state(
+  //   dateProxy(form, "publicEndDate", { format: "datetime-utc" }),
+  // );
+
   async function handleCreateEvent(payload: EventFields) {
     try {
       const eventId = await events.create(activeCalendarId, payload);
@@ -301,64 +304,66 @@
         >{$errors.description}</span
       >{/if}
 
-    {#if $form.links[0]}
-      <p>🎫 Ticket Link</p>
-      <div class="flex flex-row">
-        <div>
-          <label for="ticket-link-text">Link text</label>
-          <input
-            type="text"
-            name="ticket-link-text"
-            aria-invalid={$errors.links?.[0].title ? "true" : undefined}
-            bind:value={$form.links[0].title}
-          />
-          {#if $errors.links?.[0].title}<span class="form-error"
-              >{$errors.links?.[0].title}</span
-            >{/if}
+    {#if $form.links}
+      {#if $form.links[0]}
+        <p>🎫 Ticket Link</p>
+        <div class="flex flex-row">
+          <div>
+            <label for="ticket-link-text">Link text</label>
+            <input
+              type="text"
+              name="ticket-link-text"
+              aria-invalid={$errors.links?.[0].title ? "true" : undefined}
+              bind:value={$form.links[0].title}
+            />
+            {#if $errors.links?.[0].title}<span class="form-error"
+                >{$errors.links?.[0].title}</span
+              >{/if}
+          </div>
+          <div>
+            <label for="ticket-link-url">URL</label>
+            <input
+              type="url"
+              name="ticket-link-url"
+              aria-invalid={$errors.links?.[0].url ? "true" : undefined}
+              bind:value={$form.links[0].url}
+            />
+            {#if $errors.links?.[0].url}<span class="form-error"
+                >{$errors.links?.[0].url}</span
+              >{/if}
+          </div>
         </div>
-        <div>
-          <label for="ticket-link-url">URL</label>
-          <input
-            type="url"
-            name="ticket-link-url"
-            aria-invalid={$errors.links?.[0].url ? "true" : undefined}
-            bind:value={$form.links[0].url}
-          />
-          {#if $errors.links?.[0].url}<span class="form-error"
-              >{$errors.links?.[0].url}</span
-            >{/if}
-        </div>
-      </div>
-    {/if}
+      {/if}
 
-    {#if $form.links[1]}
-      <p>🔗 Additional Link</p>
-      <div class="flex flex-row">
-        <div>
-          <label for="additional-link-text">Link text</label>
-          <input
-            type="text"
-            name="additional-link-text"
-            aria-invalid={$errors.links?.[1].title ? "true" : undefined}
-            bind:value={$form.links[1].title}
-          />
-          {#if $errors.links?.[1].title}<span class="form-error"
-              >{$errors.links?.[1].title}</span
-            >{/if}
+      {#if $form.links[1]}
+        <p>🔗 Additional Link</p>
+        <div class="flex flex-row">
+          <div>
+            <label for="additional-link-text">Link text</label>
+            <input
+              type="text"
+              name="additional-link-text"
+              aria-invalid={$errors.links?.[1].title ? "true" : undefined}
+              bind:value={$form.links[1].title}
+            />
+            {#if $errors.links?.[1].title}<span class="form-error"
+                >{$errors.links?.[1].title}</span
+              >{/if}
+          </div>
+          <div>
+            <label for="additional-link-url">URL</label>
+            <input
+              type="url"
+              name="additional-link-url"
+              aria-invalid={$errors.links?.[1].url ? "true" : undefined}
+              bind:value={$form.links[1].url}
+            />
+            {#if $errors.links?.[1].url}<span class="form-error"
+                >{$errors.links?.[1].url}</span
+              >{/if}
+          </div>
         </div>
-        <div>
-          <label for="additional-link-url">URL</label>
-          <input
-            type="url"
-            name="additional-link-url"
-            aria-invalid={$errors.links?.[1].url ? "true" : undefined}
-            bind:value={$form.links[1].url}
-          />
-          {#if $errors.links?.[1].url}<span class="form-error"
-              >{$errors.links?.[1].url}</span
-            >{/if}
-        </div>
-      </div>
+      {/if}
     {/if}
 
     <p>Select a space:</p>
@@ -385,7 +390,7 @@
         {:else}
           <AvailabilityViewer
             data={selectedSpace}
-            selected={$startDateProxy}
+            selected={$form.startDate}
             type="space"
           />
         {/if}
@@ -399,7 +404,7 @@
           name="startDate"
           required
           aria-invalid={$errors.startDate ? "true" : undefined}
-          bind:value={$startDateProxy}
+          bind:value={$form.startDate}
           onchange={recalculateResourceAvailbaility}
         />
         {#if $errors.startDate}<span class="form-error"
@@ -412,7 +417,7 @@
           name="endDate"
           required
           aria-invalid={$errors.endDate ? "true" : undefined}
-          bind:value={$endDateProxy}
+          bind:value={$form.endDate}
           onchange={recalculateResourceAvailbaility}
         />
         {#if $errors.endDate}<span class="form-error">{$errors.endDate}</span
@@ -425,11 +430,11 @@
         <input
           type="datetime-local"
           name="startDate"
-          aria-invalid={$errors.startDate ? "true" : undefined}
+          aria-invalid={$errors.publicStartDate ? "true" : undefined}
           bind:value={$form.publicStartDate}
         />
         {#if $errors.publicStartDate}<span class="form-error"
-            >{publicStartDateProxy}</span
+            >{$form.publicStartDate}</span
           >{/if}
 
         <label for="publicEndDate">End *</label>
@@ -437,7 +442,7 @@
           type="datetime-local"
           name="publicEndDate"
           aria-invalid={$errors.publicEndDate ? "true" : undefined}
-          bind:value={publicEndDateProxy}
+          bind:value={$form.publicEndDate}
         />
         {#if $errors.publicEndDate}<span class="form-error"
             >{$errors.publicEndDate}</span
@@ -469,9 +474,9 @@
 
     <br />
 
-    {#if $errors.selectedSpace}<span class="form-error"
+    <!-- {#if $errors.selectedSpace}<span class="form-error"
         >{$errors.selectedSpace}</span
-      >{/if}
+      >{/if} -->
 
     <button type="submit">{$form.id ? "Update" : "Create"}</button>
   </form>
