@@ -72,6 +72,11 @@ html {
   @apply font-sans;
 }
 
+html,
+body {
+  @apply h-screen flex flex-col;
+}
+
 @layer base {
   input,
   textarea {

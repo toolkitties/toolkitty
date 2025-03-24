@@ -7,6 +7,7 @@
   import PageText from "$lib/components/PageText.svelte";
   import Contribute from "$lib/components/Contribute.svelte";
   import Date from "$lib/components/Date.svelte";
+  import FestivalCalendar from "$lib/components/FestivalCalendar.svelte";
 
   let { data }: PageProps = $props();
 
@@ -63,26 +64,38 @@
     return result;
   });
 
-  let calendarInstructions = liveQuery(async () => {
+  let calendar = liveQuery(async () => {
     const activeCalendarId = await calendars.getActiveCalendarId();
     if (!activeCalendarId) return undefined;
     const calendar = await calendars.findById(activeCalendarId);
-    return calendar?.calendarInstructions;
+    console.log(calendar);
+    return calendar;
   });
 </script>
 
 <CalendarSelector />
 
-{#if $calendarInstructions}
-  <PageText text={$calendarInstructions} title="about calendar" />
+{#if $calendar}
+  {#if $calendar.calendarInstructions}
+    <PageText text={$calendar.calendarInstructions} title="about calendar" />
+  {/if}
+
+  <FestivalCalendar
+    startDate={$calendar.startDate!}
+    endDate={$calendar.endDate!}
+  />
 {/if}
 
 {#if $eventsByDate && $eventsByDate.length > 0}
   {#each $eventsByDate as group (group.date)}
-    <Date date={group.date} format="date" />
-    {#each group.eventsList as event (event.id)}
-      <EventRow {event} />
-    {/each}
+    <div>
+      <div class="sticky top-0 bg-bg-secondary">
+        <Date date={group.date} format="date" />
+      </div>
+      {#each group.eventsList as event (event.id)}
+        <EventRow {event} />
+      {/each}
+    </div>
   {/each}
 {:else}
   <p>no events yet, please create one.</p>

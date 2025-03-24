@@ -74,7 +74,21 @@ export async function seedData() {
     startDate: eventStartDate,
     endDate: eventEndDate,
   });
+
+  const eventStartDate2 = availability[1].start;
+  const eventEndDate2 = "2025-03-21T19:00:00.000Z";
+  const eventFields2 = createEventFields({
+    startDate: eventStartDate2,
+    endDate: eventEndDate2,
+  });
+
   const eventId = await events.create(calendarId, eventFields);
+  await events.create(calendarId, eventFields);
+  await events.create(calendarId, eventFields);
+  await events.create(calendarId, eventFields);
+  await events.create(calendarId, eventFields2);
+  await events.create(calendarId, eventFields2);
+  await events.create(calendarId, eventFields2);
 
   // Make space request for first event.
   const spaceRequestId = await bookings.request(

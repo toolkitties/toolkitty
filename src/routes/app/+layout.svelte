@@ -60,12 +60,10 @@
 
 {#if $activeCalendar?.name}
   <Header title={page.data.title} />
-  <main class="px-3 mt-28 mb-20">
+  <main class="grow overflow-auto">
     {@render children()}
   </main>
-  <nav
-    class="fixed bottom-0 right-0 w-full py-2.5 px-6 border-t border-black bg-grey-very-light"
-  >
+  <nav class="w-full py-2.5 px-6 border-t border-black bg-grey-very-light">
     <ul class="flex gap-6 justify-between items-center h-full">
       {#each menu as { name, url, icon: Icon } (name)}
         <li>
