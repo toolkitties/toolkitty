@@ -8,10 +8,7 @@
   import Contribute from "$lib/components/Contribute.svelte";
   import Date from "$lib/components/Date.svelte";
   import { Calendar } from "bits-ui";
-  import {
-    parseAbsoluteToLocal,
-    getLocalTimeZone,
-  } from "@internationalized/date";
+  import { parseAbsoluteToLocal } from "@internationalized/date";
   import type { CalendarDate } from "@internationalized/date";
 
   let { data }: PageProps = $props();
@@ -91,25 +88,25 @@
   /**
    * Busy-ness indicator on highlighted dates
    */
-  function getBusyness(date: DateValue): number {
-    // Return 0 if there are no events
-    if (!$eventsByDate) {
-      return 0;
-    }
+  // function getBusyness(date: DateValue): number {
+  //   // Return 0 if there are no events
+  //   if (!$eventsByDate) {
+  //     return 0;
+  //   }
 
-    // Find the group for the given date
-    const groupForDate = $eventsByDate.find(
-      (group) => group.date === date.toString(),
-    );
+  //   // Find the group for the given date
+  //   const groupForDate = $eventsByDate.find(
+  //     (group) => group.date === date.toString(),
+  //   );
 
-    //
-    if (groupForDate) {
-      return Math.min(0.2 + groupForDate.eventsList.length * 0.2, 1);
-    }
+  //   //
+  //   if (groupForDate) {
+  //     return Math.min(0.2 + groupForDate.eventsList.length * 0.2, 1);
+  //   }
 
-    //
-    return 0;
-  }
+  //   //
+  //   return 0;
+  // }
 </script>
 
 <CalendarSelector />
