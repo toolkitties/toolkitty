@@ -24,9 +24,9 @@ pub struct ToolkittyLogId {
     pub(crate) log_path: Option<LogPath>,
 }
 
-impl Into<LogId> for ToolkittyLogId {
-    fn into(self) -> LogId {
-        to_log_id(self.stream, self.log_path)
+impl From<ToolkittyLogId> for LogId {
+    fn from(value: ToolkittyLogId) -> Self {
+        to_log_id(value.stream, value.log_path)
     }
 }
 
