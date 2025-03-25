@@ -1,6 +1,9 @@
 name: "build"
 
-on: push
+on:
+  push:
+    branches:
+      - main
 
 jobs:
   publish-tauri:
@@ -54,8 +57,8 @@ jobs:
         with:
           # Comment these back in when we want to start creating releases.
           tagName: app-v__VERSION__-${{ github.sha }} # the action automatically replaces \_\_VERSION\_\_ with the app version.
-          releaseName: 'App v__VERSION__-${{ github.sha }}'
-          releaseBody: 'See the assets to download this version and install.'
+          releaseName: "App v__VERSION__-${{ github.sha }}"
+          releaseBody: "See the assets to download this version and install."
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
