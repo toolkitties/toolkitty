@@ -118,8 +118,12 @@
 {#if $eventsByDate && $eventsByDate.length > 0 && $calendar}
   <Calendar.Root
     type="single"
-    minValue={parseAbsoluteToLocal($calendar.startDate)}
-    maxValue={parseAbsoluteToLocal($calendar.endDate)}
+    minValue={$calendar.startDate
+      ? parseAbsoluteToLocal($calendar.startDate)
+      : undefined}
+    maxValue={$calendar.endDate
+      ? parseAbsoluteToLocal($calendar.endDate)
+      : undefined}
     bind:value
   >
     {#snippet children({ months, weekdays })}
