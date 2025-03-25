@@ -5,12 +5,11 @@ use std::{collections::HashMap, fmt::Display};
 use async_trait::async_trait;
 use p2panda_core::{cbor, Hash, PublicKey};
 use p2panda_net::TopicId;
+use p2panda_node::extensions::LogId;
 use p2panda_sync::log_sync::TopicLogMap;
 use p2panda_sync::TopicQuery;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
-
-use crate::node::extensions::LogId;
 
 /// There are two topic variants, ephemeral and processed. Messages sent on "ephemeral" topics are
 /// gossiped between peers live but no sync of past messages occurs as nothing is persisted on the

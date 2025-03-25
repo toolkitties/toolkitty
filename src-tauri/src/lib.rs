@@ -1,7 +1,7 @@
 mod app;
+mod extensions;
 mod blobs;
 mod messages;
-mod node;
 mod rpc;
 mod topic;
 

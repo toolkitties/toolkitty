@@ -4,6 +4,10 @@ use std::sync::Arc;
 
 use p2panda_core::{Hash, PrivateKey, PublicKey};
 use p2panda_net::{SystemEvent, TopicId};
+use p2panda_node::extensions::LogId;
+use p2panda_node::node::Node;
+use p2panda_node::operation::create_operation;
+use p2panda_node::stream::StreamEvent;
 use p2panda_store::MemoryStore;
 use p2panda_sync::log_sync::TopicLogMap;
 use serde::Serialize;
@@ -13,17 +17,19 @@ use thiserror::Error;
 use tokio::sync::{broadcast, mpsc, RwLock};
 use tracing::debug;
 
+use crate::extensions::{to_log_id, Extensions, LogPath, Stream, StreamOwner, StreamRootHash};
 use crate::messages::{ChannelEvent, NetworkEvent, StreamArgs};
-use crate::node::extensions::{Extensions, LogId, LogPath, Stream};
-use crate::node::operation::create_operation;
-use crate::node::{Node, StreamEvent};
+// use crate::node::operation::create_operation;
+// use crate::node::{Node, StreamEvent};
 use crate::topic::{Topic, TopicMap};
+
+const NETWORK_ID: &str = "toolkitty";
 
 /// Shared application context which can be accessed from within the main application runtime loop
 /// as well as any tauri command.
 pub struct Context {
     /// Local p2panda node.
-    pub node: Node<Topic>,
+    pub node: Node<Topic, LogId, Extensions>,
 
     /// All topics we have subscribed to.
     pub subscriptions: HashMap<[u8; 32], Topic>,
@@ -47,7 +53,7 @@ pub struct Context {
 
 impl Context {
     pub fn new(
-        node: Node<Topic>,
+        node: Node<Topic, LogId, Extensions>,
         to_app_tx: broadcast::Sender<ChannelEvent>,
         topic_map: TopicMap,
         channel_tx: mpsc::Sender<broadcast::Sender<ChannelEvent>>,
@@ -68,7 +74,7 @@ pub struct Service {
     context: Arc<RwLock<Context>>,
 
     /// Stream where we receive all topic events from the p2panda node.
-    stream_rx: mpsc::Receiver<StreamEvent>,
+    stream_rx: mpsc::Receiver<StreamEvent<Extensions>>,
 
     /// Channel where we receive network status events from the p2panda node.
     network_events_rx: broadcast::Receiver<SystemEvent<Topic>>,
@@ -88,16 +94,20 @@ impl Service {
     /// receivers are stored on the Service struct for use during the runtime loop.
     pub async fn build(blobs_base_dir: PathBuf) -> anyhow::Result<Self> {
         let private_key = PrivateKey::new();
-        let store = MemoryStore::new();
+        let store = MemoryStore::<LogId, Extensions>::new();
+        let blobs_root_dir = tempfile::tempdir().unwrap().into_path();
         let topic_map = TopicMap::new();
-
-        let (node, stream_rx, network_events_rx) = Node::new(
+        let (node, mut stream_rx, network_events_rx) = Node::new(
+            NETWORK_ID.to_string(),
             private_key.clone(),
-            store.clone(),
-            blobs_base_dir,
+            None,
+            None,
+            store,
+            blobs_root_dir,
             topic_map.clone(),
         )
-        .await?;
+        .await
+        .unwrap();
 
         let (to_app_tx, to_app_rx) = broadcast::channel(32);
         let (channel_tx, channel_rx) = mpsc::channel(32);
@@ -168,7 +178,7 @@ impl Service {
                     channel.send(ChannelEvent::NetworkEvent(NetworkEvent(event)))?;
                 },
                 Some(event) = self.stream_rx.recv() => {
-                    channel.send(ChannelEvent::Stream(event))?;
+                    channel.send(ChannelEvent::Stream(event.into()))?;
                 },
                 Some(new_channel) = self.channel_rx.recv() => {
                     channel = new_channel;
@@ -288,7 +298,7 @@ impl Rpc {
             Topic::Persisted(_) => {
                 context
                     .node
-                    .subscribe_processed(topic)
+                    .subscribe_persisted(topic)
                     .await
                     .expect("can subscribe to topic");
             }
@@ -306,23 +316,36 @@ impl Rpc {
         &self,
         payload: &[u8],
         stream_args: &StreamArgs,
-        log_path: Option<&LogPath>,
+        log_path: Option<&str>,
         topic: Option<&str>,
     ) -> Result<(Hash, Hash), RpcError> {
         let mut context = self.context.write().await;
         let private_key = context.node.private_key.clone();
 
+        let stream_root_hash: Option<StreamRootHash> = stream_args.root_hash.map(Into::into);
+        let stream_owner: Option<StreamOwner> = stream_args.owner.map(Into::into);
+
+        let log_path = log_path.map(|log_path| LogPath(log_path.to_string()));
+        let log_id = match (stream_root_hash, stream_owner) {
+            (Some(root_hash), Some(owner)) => {
+                let stream = Stream { root_hash, owner };
+                Some(to_log_id(stream, log_path.clone()))
+            }
+            _ => None,
+        };
+
         let extensions = Extensions {
             stream_root_hash: stream_args.root_hash.map(Into::into),
             stream_owner: stream_args.owner.map(Into::into),
-            log_path: log_path.cloned(),
+            log_path,
             ..Default::default()
         };
 
         let (header, body) = create_operation(
             &mut context.node.store,
             &private_key,
-            extensions,
+            log_id.as_ref(),
+            Some(extensions),
             Some(payload),
         )
         .await;
@@ -332,7 +355,7 @@ impl Rpc {
                 let topic = Topic::Persisted(topic.to_string());
                 context
                     .node
-                    .publish_to_stream(&topic, &header, body.as_ref())
+                    .publish_persisted(&topic, &header, body.as_ref())
                     .await?;
             }
             None => {
@@ -366,13 +389,13 @@ impl Rpc {
 #[derive(Debug, Error)]
 pub enum RpcError {
     #[error(transparent)]
-    StreamController(#[from] crate::node::StreamControllerError),
+    StreamController(#[from] p2panda_node::stream::StreamControllerError),
 
     #[error(transparent)]
-    Publish(#[from] crate::node::PublishError),
+    Publish(#[from] p2panda_node::node::PublishError),
 
     #[error(transparent)]
-    Blob(#[from] crate::node::BlobError),
+    Blob(#[from] p2panda_node::node::BlobError),
 
     #[error("payload decoding failed")]
     Serde(#[from] serde_json::Error),
@@ -394,15 +417,14 @@ impl Serialize for RpcError {
 mod tests {
     use std::time::Duration;
 
+    use p2panda_node::extensions::LogId;
     use serde_json::json;
     use tokio::sync::broadcast;
 
     use crate::{
-        messages::{ChannelEvent, StreamArgs},
-        node::{
-            extensions::{LogId, LogPath, Stream, StreamOwner, StreamRootHash},
-            stream::{EventData, EventMeta},
-            StreamEvent,
+        extensions::{LogPath, Stream, StreamOwner, StreamRootHash},
+        messages::{
+            ChannelEvent, StreamArgs, ToolkittyEventData, ToolkittyEventMeta, ToolkittyStreamEvent,
         },
         topic::Topic,
     };
@@ -481,7 +503,7 @@ mod tests {
         let result = rpc.init(channel_tx).await;
         assert!(result.is_ok());
 
-        let log_path = json!("calendar/inbox");
+        let log_path = "calendar/inbox";
 
         let payload = json!({
             "message": "organize!"
@@ -497,7 +519,7 @@ mod tests {
             .publish_persisted(
                 &serde_json::to_vec(&payload).unwrap(),
                 &stream_args,
-                Some(&log_path.clone().into()),
+                Some(&log_path),
                 Some(&topic),
             )
             .await;
@@ -509,7 +531,7 @@ mod tests {
         let event = channel_rx.recv().await.unwrap();
         match event {
             ChannelEvent::Stream(stream_event) => {
-                let EventMeta {
+                let ToolkittyEventMeta {
                     operation_id,
                     author,
                     stream,
@@ -521,9 +543,9 @@ mod tests {
                 assert_eq!(stream.id, stream_id);
                 assert_eq!(stream.root_hash, StreamRootHash::from(operation_hash));
                 assert_eq!(stream.owner, StreamOwner::from(private_key.public_key()));
-                assert_eq!(log_path, Some(LogPath::from(expected_log_path)));
+                assert_eq!(log_path, Some(LogPath::from(expected_log_path.to_string())));
 
-                let EventData::Application(value) = stream_event.data else {
+                let ToolkittyEventData::Application(value) = stream_event.data else {
                     panic!();
                 };
 
@@ -577,8 +599,8 @@ mod tests {
 
         let mut message_received = false;
         while let Ok(event) = peer_b_rx.recv().await {
-            if let ChannelEvent::Stream(StreamEvent {
-                data: EventData::Ephemeral(payload),
+            if let ChannelEvent::Stream(ToolkittyStreamEvent {
+                data: ToolkittyEventData::Ephemeral(payload),
                 ..
             }) = event
             {
@@ -613,7 +635,7 @@ mod tests {
         assert!(result.is_ok());
 
         let topic = "messages";
-        let log_path = json!("messages").into();
+        let log_path = "messages";
         let stream_args = StreamArgs::default();
 
         let peer_a_payload = json!({
@@ -660,10 +682,7 @@ mod tests {
             root_hash: operation_id.into(),
             owner: peer_a_public_key.into(),
         };
-        let log_id = LogId {
-            stream,
-            log_path: Some(log_path),
-        };
+        let log_id = LogId(format!("{}/{}", stream.id(), log_path.to_string()));
 
         peer_a
             .add_topic_log(&peer_a_public_key, &topic, &log_id)
@@ -692,9 +711,9 @@ mod tests {
         // Peer A should receive Peer B's message via sync.
         let mut message_received = false;
         while let Ok(event) = peer_a_rx.recv().await {
-            if let ChannelEvent::Stream(StreamEvent {
-                data: EventData::Application(payload),
-                meta: Some(EventMeta { author, .. }),
+            if let ChannelEvent::Stream(ToolkittyStreamEvent {
+                data: ToolkittyEventData::Application(payload),
+                meta: Some(ToolkittyEventMeta { author, .. }),
             }) = event
             {
                 if author == peer_b_public_key {
@@ -710,9 +729,9 @@ mod tests {
         // Peer B should receive Peer A's message via sync.
         let mut message_received = false;
         while let Ok(event) = peer_b_rx.recv().await {
-            if let ChannelEvent::Stream(StreamEvent {
-                data: EventData::Application(payload),
-                meta: Some(EventMeta { author, .. }),
+            if let ChannelEvent::Stream(ToolkittyStreamEvent {
+                data: ToolkittyEventData::Application(payload),
+                meta: Some(ToolkittyEventMeta { author, .. }),
             }) = event
             {
                 if author == peer_a_public_key {
