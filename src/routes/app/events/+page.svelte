@@ -9,7 +9,7 @@
   import Date from "$lib/components/Date.svelte";
   import { Calendar } from "bits-ui";
   import { parseAbsoluteToLocal } from "@internationalized/date";
-  import type { CalendarDate } from "@internationalized/date";
+  import type { CalendarDate, DateValue } from "@internationalized/date";
 
   let { data }: PageProps = $props();
   let value: CalendarDate | undefined = $state();
@@ -78,40 +78,40 @@
    * Filter events by selected calendar date
    */
   let filteredEvents = $derived.by(() => {
-    if (value) {
-      return $eventsByDate.filter((group) => group.date === value.toString());
+    if (!value) {
+      return $eventsByDate;
     }
 
-    return $eventsByDate;
+    return $eventsByDate.filter((group) => group.date === value.toString());
   });
 
   /**
    * Busy-ness indicator on highlighted dates
+   * Return a opacity value between 0 and 100.
+   * 0 = no events
+   * 100 = 5 or more events.
    */
-  // function getBusyness(date: DateValue): number {
-  //   // Return 0 if there are no events
-  //   if (!$eventsByDate) {
-  //     return 0;
-  //   }
+  function getBusynessOpacity(date: DateValue): number {
+    if (!$eventsByDate) {
+      return 0;
+    }
 
-  //   // Find the group for the given date
-  //   const groupForDate = $eventsByDate.find(
-  //     (group) => group.date === date.toString(),
-  //   );
+    const groupForDate = $eventsByDate.find(
+      (group) => group.date === date.toString(),
+    );
 
-  //   //
-  //   if (groupForDate) {
-  //     return Math.min(0.2 + groupForDate.eventsList.length * 0.2, 1);
-  //   }
+    if (!groupForDate) {
+      return 0;
+    }
 
-  //   //
-  //   return 0;
-  // }
+    const eventCount = Math.min(groupForDate.eventsList.length, 5);
+    return (eventCount / 5) * 100;
+  }
 </script>
 
 <CalendarSelector />
 
-{#if $calendar}
+{#if $calendar && $calendar.calendarInstructions}
   <PageText text={$calendar.calendarInstructions} title="about calendar" />
 {/if}
 
@@ -146,18 +146,17 @@
                 {#each weekDates as date (date)}
                   <Calendar.Cell {date} month={month.value}>
                     <Calendar.Day
-                      class={`data-[outside-month]:pointer-events-none
+                      class={`border-black border
+                      rounded data-[outside-month]:pointer-events-none
                       data-[outside-month]:text-gray-300
                       data-[selected]:bg-black
                       data-[selected]:text-white
                       data-[disabled]:opacity-50
-                      bg-physical
+                      data-[disabled]:border-0
+                      bg-physical/${getBusynessOpacity(date)}
                       `}
                     >
                       {date.day}
-                      <div
-                        class="bg-foreground group-data-selected:bg-background group-data-today:block absolute top-[5px] hidden size-1 rounded-full"
-                      ></div>
                     </Calendar.Day>
                   </Calendar.Cell>
                 {/each}
