@@ -8,6 +8,7 @@ use p2panda_node::extensions::LogId;
 use p2panda_node::node::Node;
 use p2panda_node::operation::create_operation;
 use p2panda_node::stream::StreamEvent;
+use p2panda_node::topic::{Topic, TopicMap};
 use p2panda_store::MemoryStore;
 use p2panda_sync::log_sync::TopicLogMap;
 use serde::Serialize;
@@ -19,9 +20,6 @@ use tracing::debug;
 
 use crate::extensions::{to_log_id, Extensions, LogPath, Stream, StreamOwner, StreamRootHash};
 use crate::messages::{ChannelEvent, NetworkEvent, StreamArgs};
-// use crate::node::operation::create_operation;
-// use crate::node::{Node, StreamEvent};
-use crate::topic::{Topic, TopicMap};
 
 const NETWORK_ID: &str = "toolkitty";
 
@@ -404,7 +402,7 @@ impl Serialize for RpcError {
 mod tests {
     use std::time::Duration;
 
-    use p2panda_node::extensions::LogId;
+    use p2panda_node::{extensions::LogId, topic::Topic};
     use serde_json::json;
     use tokio::sync::broadcast;
 
@@ -413,7 +411,6 @@ mod tests {
         messages::{
             ChannelEvent, StreamArgs, ToolkittyEventData, ToolkittyEventMeta, ToolkittyStreamEvent,
         },
-        topic::Topic,
     };
 
     use super::{Rpc, Service};

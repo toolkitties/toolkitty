@@ -3,11 +3,11 @@ use std::hash::Hash as StdHash;
 use p2panda_core::{Body, Hash, Header, PublicKey};
 use p2panda_node::extensions::LogId;
 use p2panda_node::stream::{StreamError, StreamEvent};
+use p2panda_node::topic::Topic;
 use serde::ser::SerializeStruct;
 use serde::{Deserialize, Serialize};
 
 use crate::extensions::{to_log_id, Extensions, LogPath, Stream, StreamOwner, StreamRootHash};
-use crate::topic::Topic;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

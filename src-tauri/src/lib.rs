@@ -1,9 +1,8 @@
 mod app;
-mod extensions;
 mod blobs;
+mod extensions;
 mod messages;
 mod rpc;
-mod topic;
 
 use tauri::Builder;
 use tracing_subscriber::EnvFilter;
