@@ -7,9 +7,15 @@
   import PageText from "$lib/components/PageText.svelte";
   import Contribute from "$lib/components/Contribute.svelte";
   import Date from "$lib/components/Date.svelte";
-  import FestivalCalendar from "$lib/components/FestivalCalendar.svelte";
+  import { Calendar } from "bits-ui";
+  import {
+    parseAbsoluteToLocal,
+    getLocalTimeZone,
+  } from "@internationalized/date";
+  import type { CalendarDate } from "@internationalized/date";
 
   let { data }: PageProps = $props();
+  let value: CalendarDate | undefined = $state();
 
   function getDay(event: CalendarEventEnriched): string {
     return event.startDate.split("T")[0];
@@ -68,35 +74,120 @@
     const activeCalendarId = await calendars.getActiveCalendarId();
     if (!activeCalendarId) return undefined;
     const calendar = await calendars.findById(activeCalendarId);
-    console.log(calendar);
     return calendar;
   });
+
+  /**
+   * Filter events by selected calendar date
+   */
+  let filteredEvents = $derived.by(() => {
+    if (value) {
+      return $eventsByDate.filter((group) => group.date === value.toString());
+    }
+
+    return $eventsByDate;
+  });
+
+  /**
+   * Busy-ness indicator on highlighted dates
+   */
+  function getBusyness(date: DateValue): number {
+    // Return 0 if there are no events
+    if (!$eventsByDate) {
+      return 0;
+    }
+
+    // Find the group for the given date
+    const groupForDate = $eventsByDate.find(
+      (group) => group.date === date.toString(),
+    );
+
+    //
+    if (groupForDate) {
+      return Math.min(0.2 + groupForDate.eventsList.length * 0.2, 1);
+    }
+
+    //
+    return 0;
+  }
 </script>
 
 <CalendarSelector />
 
 {#if $calendar}
-  {#if $calendar.calendarInstructions}
-    <PageText text={$calendar.calendarInstructions} title="about calendar" />
-  {/if}
-
-  <FestivalCalendar
-    startDate={$calendar.startDate!}
-    endDate={$calendar.endDate!}
-  />
+  <PageText text={$calendar.calendarInstructions} title="about calendar" />
 {/if}
 
-{#if $eventsByDate && $eventsByDate.length > 0}
-  {#each $eventsByDate as group (group.date)}
-    <div>
-      <div class="sticky top-0 bg-bg-secondary">
-        <Date date={group.date} format="date" />
-      </div>
-      {#each group.eventsList as event (event.id)}
-        <EventRow {event} />
+{#if $eventsByDate && $eventsByDate.length > 0 && $calendar}
+  <Calendar.Root
+    type="single"
+    minValue={parseAbsoluteToLocal($calendar.startDate)}
+    maxValue={parseAbsoluteToLocal($calendar.endDate)}
+    bind:value
+  >
+    {#snippet children({ months, weekdays })}
+      <Calendar.Header class="flex flex-row">
+        <Calendar.PrevButton class="w-8 mr-2">←</Calendar.PrevButton>
+        <Calendar.Heading />
+        <Calendar.NextButton class="w-8 ml-2">→</Calendar.NextButton>
+      </Calendar.Header>
+
+      {#each months as month (month.value)}
+        <Calendar.Grid>
+          <Calendar.GridHead>
+            <Calendar.GridRow>
+              {#each weekdays as day, index (index)}
+                <Calendar.HeadCell>
+                  {day}
+                </Calendar.HeadCell>
+              {/each}
+            </Calendar.GridRow>
+          </Calendar.GridHead>
+          <Calendar.GridBody>
+            {#each month.weeks as weekDates, weekIndex (weekIndex)}
+              <Calendar.GridRow>
+                {#each weekDates as date (date)}
+                  <Calendar.Cell {date} month={month.value}>
+                    <Calendar.Day
+                      class={`data-[outside-month]:pointer-events-none
+                      data-[outside-month]:text-gray-300
+                      data-[selected]:bg-black
+                      data-[selected]:text-white
+                      data-[disabled]:opacity-50
+                      bg-physical
+                      `}
+                    >
+                      {date.day}
+                      <div
+                        class="bg-foreground group-data-selected:bg-background group-data-today:block absolute top-[5px] hidden size-1 rounded-full"
+                      ></div>
+                    </Calendar.Day>
+                  </Calendar.Cell>
+                {/each}
+              </Calendar.GridRow>
+            {/each}
+          </Calendar.GridBody>
+        </Calendar.Grid>
       {/each}
-    </div>
-  {/each}
+    {/snippet}
+  </Calendar.Root>
+  {#if filteredEvents.length > 0}
+    {#each filteredEvents as group (group.date)}
+      <div>
+        <div
+          id={`date-${group.date}`}
+          class="sticky top-0 bg-bg-secondary text-center"
+        >
+          <Date date={group.date} format="date" />
+        </div>
+        {#each group.eventsList as event (event.id)}
+          <EventRow {event} />
+        {/each}
+      </div>
+    {/each}
+  {:else}
+    <p>No events on selected date</p>
+  {/if}
 {:else}
   <p>no events yet, please create one.</p>
   <a href="/app/events/create" class="button inline-block">create event</a>

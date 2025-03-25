@@ -62,7 +62,8 @@
 }
 
 /* Fix scroll “bounce” on safari */
-:root {
+:root,
+main {
   overscroll-behavior: none;
 }
 
