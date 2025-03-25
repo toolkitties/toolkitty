@@ -183,18 +183,6 @@ impl Service {
                 Some(new_channel) = self.channel_rx.recv() => {
                     channel = new_channel;
                 },
-                // @TODO(sam): Need a way to handle ephemeral topics in the stream controller as
-                // we now don't have a static topic we can subscribe to on startup.
-                //
-                // Some(event) = self.invite_codes_rx.recv() => {
-                //     let json = match event {
-                //         FromNetwork::GossipMessage { bytes, .. } => {
-                //             serde_json::from_slice(&bytes)?
-                //         },
-                //         FromNetwork::SyncMessage { .. } => unreachable!(),
-                //     };
-                //     channel.send(ChannelEvent::InviteCodes(json))?;
-                // }
             }
         }
     }
