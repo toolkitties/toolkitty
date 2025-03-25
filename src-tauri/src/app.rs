@@ -95,15 +95,14 @@ impl Service {
     pub async fn build(blobs_base_dir: PathBuf) -> anyhow::Result<Self> {
         let private_key = PrivateKey::new();
         let store = MemoryStore::<LogId, Extensions>::new();
-        let blobs_root_dir = tempfile::tempdir().unwrap().into_path();
         let topic_map = TopicMap::new();
-        let (node, mut stream_rx, network_events_rx) = Node::new(
+        let (node, stream_rx, network_events_rx) = Node::new(
             NETWORK_ID.to_string(),
             private_key.clone(),
             None,
             None,
             store,
-            blobs_root_dir,
+            blobs_base_dir,
             topic_map.clone(),
         )
         .await
