@@ -682,18 +682,21 @@ type CalendarEvent = {
   id: Hash;
   calendarId: Hash;
   ownerId: PublicKey;
+  lastWrite: bigint;
 } & EventFields;
 
 type Space = {
   id: Hash;
   calendarId: Hash;
   ownerId: PublicKey;
+  lastWrite: bigint;
 } & SpaceFields;
 
 type Resource = {
   id: Hash;
   calendarId: Hash;
   ownerId: PublicKey;
+  lastWrite: bigint;
 } & ResourceFields;
 
 type BookingRequestStatus = "accepted" | "rejected" | "pending";

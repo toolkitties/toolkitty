@@ -2,6 +2,7 @@ import { db } from "$lib/db";
 import { auth, bookings, publish, spaces } from ".";
 import { promiseResult } from "$lib/promiseMap";
 import { TimeSpanClass } from "$lib/timeSpan";
+import { shouldUpdate } from "$lib/lww";
 
 /**
  * Queries
@@ -196,7 +197,7 @@ export async function process(message: ApplicationMessage) {
     case "space_created":
       return await onSpaceCreated(meta, data);
     case "space_updated":
-      return await onSpaceUpdated(data);
+      return await onSpaceUpdated(meta, data);
     case "space_deleted":
       return await onSpaceDeleted(data);
   }
@@ -211,6 +212,7 @@ async function onSpaceCreated(
       id: meta.operationId,
       calendarId: meta.stream.id,
       ownerId: meta.author,
+      lastWrite: meta.timestamp,
       ...data.fields,
     });
   } catch (e) {
@@ -218,11 +220,28 @@ async function onSpaceCreated(
   }
 }
 
-function onSpaceUpdated(data: SpaceUpdated["data"]): Promise<void> {
+function onSpaceUpdated(
+  meta: StreamMessageMeta,
+  data: SpaceUpdated["data"],
+): Promise<void> {
   const spaceId = data.id;
   const spaceAvailability = data.fields.availability;
 
   return db.transaction("rw", db.spaces, db.bookingRequests, async () => {
+    const space = await spaces.findById(data.id);
+    if (!space) {
+      // The space may have been deleted.
+      return;
+    }
+
+    // Updates should only be applied if they have a greater timestamp or in the case of timestamp
+    // equality, the hash is greater.
+    if (
+      !shouldUpdate(space.lastWrite, space.id, meta.timestamp, meta.operationId)
+    ) {
+      return;
+    }
+
     // Update `isValid` field of all booking requests associated with this space.
     await db.bookingRequests
       .where({ resourceId: spaceId })
@@ -249,7 +268,10 @@ function onSpaceUpdated(data: SpaceUpdated["data"]): Promise<void> {
     // invalid.
 
     // @TODO: add related location to spaces object.
-    await db.spaces.update(data.id, data.fields);
+    await db.spaces.update(data.id, {
+      ...data.fields,
+      lastWrite: meta.timestamp,
+    });
   });
 }
 

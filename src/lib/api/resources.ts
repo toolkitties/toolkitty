@@ -2,6 +2,7 @@ import { db } from "$lib/db";
 import { auth, bookings, publish, resources } from ".";
 import { promiseResult } from "$lib/promiseMap";
 import { TimeSpanClass } from "$lib/timeSpan";
+import { shouldUpdate } from "$lib/lww";
 
 /**
  * Queries
@@ -195,7 +196,7 @@ export async function process(message: ApplicationMessage) {
     case "resource_created":
       return await onResourceCreated(meta, data);
     case "resource_updated":
-      return await onResourceUpdated(data);
+      return await onResourceUpdated(meta, data);
     case "resource_deleted":
       return await onResourceDeleted(data);
   }
@@ -210,6 +211,7 @@ async function onResourceCreated(
       id: meta.operationId,
       calendarId: meta.stream.id,
       ownerId: meta.author,
+      lastWrite: meta.timestamp,
       ...data.fields,
     });
   } catch (e) {
@@ -217,11 +219,33 @@ async function onResourceCreated(
   }
 }
 
-function onResourceUpdated(data: ResourceUpdated["data"]): Promise<void> {
+function onResourceUpdated(
+  meta: StreamMessageMeta,
+  data: ResourceUpdated["data"],
+): Promise<void> {
   const resourceId = data.id;
   const resourceAvailability = data.fields.availability;
 
   return db.transaction("rw", db.resources, db.bookingRequests, async () => {
+    const resource = await resources.findById(data.id);
+    if (!resource) {
+      // The resource may have been deleted.
+      return;
+    }
+
+    // Updates should only be applied if they have a greater timestamp or in the case of timestamp
+    // equality, the hash is greater.
+    if (
+      !shouldUpdate(
+        resource.lastWrite,
+        resource.id,
+        meta.timestamp,
+        meta.operationId,
+      )
+    ) {
+      return;
+    }
+
     // Update `isavalid` field of all booking requests associated with this space.
     await db.bookingRequests.where({ resourceId }).modify((request) => {
       const requestTimeSpan = new TimeSpanClass(request.timeSpan);
@@ -245,7 +269,10 @@ function onResourceUpdated(data: ResourceUpdated["data"]): Promise<void> {
     // invalid.
 
     // @TODO: add related location to spaces object.
-    await db.resources.update(data.id, data.fields);
+    await db.resources.update(data.id, {
+      ...data.fields,
+      lastWrite: meta.timestamp,
+    });
   });
 }
 
