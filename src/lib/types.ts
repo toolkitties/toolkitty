@@ -659,6 +659,7 @@ type Calendar = {
   calendarInstructions?: string;
   spacePageText?: string;
   resourcePageText?: string;
+  lastWrite: bigint;
 };
 
 type AccessRequest = {

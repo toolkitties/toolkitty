@@ -2,6 +2,7 @@ import { db } from "$lib/db";
 import { promiseResult } from "$lib/promiseMap";
 import { liveQuery } from "dexie";
 import { auth, calendars, identity, publish, users } from ".";
+import { shouldUpdate } from "$lib/lww";
 
 /*
  * Queries
@@ -156,7 +157,7 @@ export async function process(message: ApplicationMessage) {
     case "calendar_created":
       return await onCalendarCreated(meta, data);
     case "calendar_updated":
-      return await onCalendarUpdated(data);
+      return await onCalendarUpdated(meta, data);
     case "calendar_deleted":
       return await onCalendarDeleted(data);
   }
@@ -205,8 +206,10 @@ async function onCalendarCreated(
           : undefined,
         spacePageText: spacePageText ? spacePageText : undefined,
         resourcePageText: resourcePageText ? resourcePageText : undefined,
+        lastWrite: meta.timestamp,
       });
     } catch (e) {
+      // Log error incase we try to insert the calendar twice.
       console.error(e);
     }
   } else {
@@ -221,11 +224,15 @@ async function onCalendarCreated(
         : undefined,
       spacePageText: spacePageText ? spacePageText : undefined,
       resourcePageText: resourcePageText ? resourcePageText : undefined,
+      lastWrite: meta.timestamp,
     });
   }
 }
 
-async function onCalendarUpdated(data: CalendarUpdated["data"]) {
+async function onCalendarUpdated(
+  meta: StreamMessageMeta,
+  data: CalendarUpdated["data"],
+) {
   // @TODO: move validation into own "validation" processor module (and maybe we don't want to
   // actually error here anyway?)
   validateFields(data.fields);
@@ -233,6 +240,25 @@ async function onCalendarUpdated(data: CalendarUpdated["data"]) {
   const { name, dates, calendarInstructions, spacePageText, resourcePageText } =
     data.fields;
   const timeSpan = dates[0];
+
+  const calendar = await calendars.findById(data.id);
+  if (!calendar) {
+    // The calendar may have been deleted.
+    return;
+  }
+
+  // Updates should only be applied if they have a greater timestamp or in the case of timestamp
+  // equality, the hash is greater.
+  if (
+    !shouldUpdate(
+      calendar.lastWrite,
+      calendar.id,
+      meta.timestamp,
+      meta.operationId,
+    )
+  ) {
+    return;
+  }
 
   await db.calendars.update(data.id, {
     name,
@@ -243,6 +269,7 @@ async function onCalendarUpdated(data: CalendarUpdated["data"]) {
       : undefined,
     spacePageText: spacePageText ? spacePageText : undefined,
     resourcePageText: resourcePageText ? resourcePageText : undefined,
+    lastWrite: meta.timestamp,
   });
 }
 
@@ -257,6 +284,6 @@ async function onCalendarDeleted(data: CalendarDeleted["data"]) {
 function validateFields(fields: CalendarFields) {
   const { dates } = fields;
   if (dates.length == 0) {
-    throw new Error("calendar dates must contain at least on time span");
+    throw new Error("calendar dates must contain at least one time span");
   }
 }
