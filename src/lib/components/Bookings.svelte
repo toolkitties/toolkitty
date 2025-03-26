@@ -1,3 +1,8 @@
+<!-- 
+ @component
+ Display bookings in a nice UX.
+  -->
+
 <script lang="ts">
   let {
     availability,

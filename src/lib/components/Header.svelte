@@ -1,3 +1,14 @@
+<!-- 
+ @component
+ Header for our app that always visible at the top of the screen
+
+ Displays:
+ - Active calendar name
+ - Page name
+ - Back button
+ - Avatar
+  -->
+
 <script>
   import Back from "./Back.svelte";
   import { calendars } from "$lib/api";

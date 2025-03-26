@@ -1,3 +1,10 @@
+<!-- 
+ @component
+ Set availability of a space or resource.
+ 
+ Used in space/resource create or edit forms.
+  -->
+
 <script lang="ts">
   import { Calendar } from "bits-ui";
   import type { DateValue } from "@internationalized/date";
