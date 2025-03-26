@@ -6,8 +6,7 @@ use tokio::sync::broadcast;
 use tracing::debug;
 
 use crate::app::{Rpc, RpcError};
-use crate::messages::{ChannelEvent, StreamArgs};
-use crate::node::extensions::LogId;
+use crate::messages::{ChannelEvent, StreamArgs, ToolkittyLogId};
 
 /// Initialize the app by passing it a channel from the frontend.
 #[tauri::command]
@@ -66,7 +65,7 @@ pub async fn add_topic_log(
     rpc: State<'_, Rpc>,
     public_key: PublicKey,
     topic: &str,
-    log_id: LogId,
+    log_id: ToolkittyLogId,
 ) -> Result<(), RpcError> {
     debug!(
         command.name = "add_topic_log",
@@ -75,7 +74,8 @@ pub async fn add_topic_log(
         "RPC request received"
     );
 
-    rpc.add_topic_log(&public_key, topic, &log_id).await?;
+    rpc.add_topic_log(&public_key, topic, &log_id.into())
+        .await?;
     Ok(())
 }
 
@@ -111,7 +111,7 @@ pub async fn publish_persisted(
     rpc: State<'_, Rpc>,
     payload: serde_json::Value,
     stream_args: StreamArgs,
-    log_path: Option<serde_json::Value>,
+    log_path: Option<String>,
     topic: Option<String>,
 ) -> Result<(Hash, Hash), RpcError> {
     debug!(
@@ -124,7 +124,7 @@ pub async fn publish_persisted(
         .publish_persisted(
             &payload,
             &stream_args,
-            log_path.map(Into::into).as_ref(),
+            log_path.as_deref(),
             topic.as_deref(),
         )
         .await?;

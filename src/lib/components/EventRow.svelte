@@ -1,13 +1,6 @@
 <script lang="ts">
   import Date from "./Date.svelte";
-  // TODO: Define the type of the event prop
-
   let { event }: { event: CalendarEventEnriched } = $props();
-
-  // TODO: possibly need to convert date to nice format from ISO 8601. TBC.
-
-  // tag colour possibly comes from event rather than hard coded light this.
-  // let tagColours = ["bg-yellow-light", "bg-fluro-green-light", "bg-red-light"];
 </script>
 
 <a
@@ -29,8 +22,12 @@
   {/if}
   <div class="flex flex-col gap-1 p-2">
     <h3>{event.name}</h3>
-    <span>🗓️ <Date date={event.startDate} /></span>
-    <span>🕣 <Date date={event.endDate} /></span>
+    <span>🗓️ <Date format="date" date={event.startDate} /></span>
+    <span
+      >🕣
+      <Date format="time" date={event.startDate} /> -
+      <Date format="time" date={event.endDate} />
+    </span>
     <span>📍 {event.space ? event.space.name : "no space yet"}</span>
   </div>
 </a>
