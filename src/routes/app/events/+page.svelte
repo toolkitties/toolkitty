@@ -10,6 +10,7 @@
   import { parseAbsoluteToLocal } from "@internationalized/date";
   import type { CalendarDate } from "@internationalized/date";
   import Calendar from "$lib/components/Calendar.svelte";
+  import DateRange from "$lib/components/DateRange.svelte";
 
   let { data }: PageProps = $props();
   let selectedDate: CalendarDate | undefined = $state();
@@ -92,6 +93,12 @@
 
 {#if $calendar && $calendar.calendarInstructions}
   <PageText text={$calendar.calendarInstructions} title="about calendar" />
+  {#if $calendar.startDate}
+    <Date date={$calendar.startDate} format="dateshort" />
+  {/if}
+  {#if $calendar.endDate}
+    &nbsp;- <Date date={$calendar.endDate} format="dateshort" />
+  {/if}
 {/if}
 
 {#if $eventsByDate && $eventsByDate.length > 0 && $calendar}
