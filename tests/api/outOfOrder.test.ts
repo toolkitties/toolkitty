@@ -36,6 +36,7 @@ const updateCalendar = createCalendarMessage(
   {
     type: "calendar_updated",
     calendarId: CALENDAR_ID,
+    timestamp: 10,
   },
 );
 const createEventOO1 = createEventMessage("event_001", OWNER_PUBLIC_KEY, {
@@ -47,6 +48,7 @@ const updateEvent001 = createEventMessage(
   {
     type: "event_updated",
     eventId: "event_001",
+    timestamp: 10,
   },
 );
 const createEventOO2 = createEventMessage("event_002", OWNER_PUBLIC_KEY, {
@@ -73,6 +75,7 @@ const updateResource001 = createResourceMessage(
   {
     type: "resource_updated",
     resourceId: "resource_001",
+    timestamp: 10,
   },
 );
 const createResourceOO2 = createResourceMessage(
@@ -99,6 +102,7 @@ const updateSpace001 = createSpaceMessage(
   {
     type: "space_updated",
     spaceId: "space_001",
+    timestamp: 10,
   },
 );
 const createSpaceOO2 = createSpaceMessage("space_002", OWNER_PUBLIC_KEY, {
@@ -164,6 +168,7 @@ const updateSpace002 = createSpaceMessage(
   {
     type: "space_updated",
     spaceId: "space_003",
+    timestamp: 10,
   },
 );
 const updateResource002 = createResourceMessage(
@@ -172,6 +177,7 @@ const updateResource002 = createResourceMessage(
   {
     type: "resource_updated",
     resourceId: "resource_003",
+    timestamp: 10,
   },
 );
 

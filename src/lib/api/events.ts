@@ -255,7 +255,7 @@ function onEventUpdated(
   const eventTimeSpan = new TimeSpanClass({ start: startDate, end: endDate });
 
   return db.transaction("rw", db.events, db.bookingRequests, async () => {
-    const event = await events.findById(data.id);
+    const event = await db.events.get(data.id);
     if (!event) {
       // The event may have been deleted.
       return;

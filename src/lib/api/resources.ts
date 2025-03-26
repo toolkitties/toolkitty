@@ -227,7 +227,7 @@ function onResourceUpdated(
   const resourceAvailability = data.fields.availability;
 
   return db.transaction("rw", db.resources, db.bookingRequests, async () => {
-    const resource = await resources.findById(data.id);
+    const resource = await db.resources.get(data.id);
     if (!resource) {
       // The resource may have been deleted.
       return;

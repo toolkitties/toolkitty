@@ -228,7 +228,7 @@ function onSpaceUpdated(
   const spaceAvailability = data.fields.availability;
 
   return db.transaction("rw", db.spaces, db.bookingRequests, async () => {
-    const space = await spaces.findById(data.id);
+    const space = await db.spaces.get(data.id);
     if (!space) {
       // The space may have been deleted.
       return;
