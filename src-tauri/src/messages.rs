@@ -151,6 +151,7 @@ pub struct ToolkittyEventMeta {
     pub author: PublicKey,
     pub stream: StreamMeta,
     pub log_path: Option<LogPath>,
+    pub timestamp: u64,
 }
 
 impl From<Header<Extensions>> for ToolkittyEventMeta {
@@ -163,6 +164,7 @@ impl From<Header<Extensions>> for ToolkittyEventMeta {
             author: header.public_key,
             stream: stream.into(),
             log_path,
+            timestamp: header.timestamp,
         }
     }
 }

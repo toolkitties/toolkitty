@@ -137,6 +137,7 @@ type StreamMessageMeta = {
   author: PublicKey;
   stream: Stream;
   logPath: LogPath;
+  timestamp: bigint;
 };
 
 /**
