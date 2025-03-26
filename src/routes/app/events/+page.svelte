@@ -10,7 +10,6 @@
   import { parseAbsoluteToLocal } from "@internationalized/date";
   import type { CalendarDate } from "@internationalized/date";
   import Calendar from "$lib/components/Calendar.svelte";
-  import DateRange from "$lib/components/DateRange.svelte";
 
   let { data }: PageProps = $props();
   let selectedDate: CalendarDate | undefined = $state();
