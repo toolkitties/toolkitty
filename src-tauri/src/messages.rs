@@ -1,9 +1,13 @@
-use p2panda_core::{Hash, PublicKey};
+use std::hash::Hash as StdHash;
+
+use p2panda_core::{Body, Hash, Header, PublicKey};
+use p2panda_node::extensions::LogId;
+use p2panda_node::stream::{StreamError, StreamEvent};
+use p2panda_node::topic::Topic;
 use serde::ser::SerializeStruct;
 use serde::{Deserialize, Serialize};
 
-use crate::node::StreamEvent;
-use crate::topic::Topic;
+use crate::extensions::{to_log_id, Extensions, LogPath, Stream, StreamOwner, StreamRootHash};
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -13,12 +17,154 @@ pub struct StreamArgs {
     pub(crate) owner: Option<PublicKey>,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolkittyLogId {
+    pub(crate) stream: Stream,
+    pub(crate) log_path: Option<LogPath>,
+}
+
+impl From<ToolkittyLogId> for LogId {
+    fn from(value: ToolkittyLogId) -> Self {
+        to_log_id(value.stream, value.log_path)
+    }
+}
+
 #[allow(clippy::large_enum_variant)]
 #[derive(Clone, Debug)]
 pub enum ChannelEvent {
-    Stream(StreamEvent),
+    Stream(ToolkittyStreamEvent),
     SubscribedToTopic(Topic),
     NetworkEvent(NetworkEvent),
+}
+
+#[allow(dead_code)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(untagged)]
+pub enum ToolkittyEventData {
+    Application(serde_json::Value),
+    Ephemeral(serde_json::Value),
+    Error(StreamError),
+}
+
+impl ToolkittyEventData {
+    fn tag(&self) -> &'static str {
+        match self {
+            ToolkittyEventData::Application(_) => "application",
+            ToolkittyEventData::Ephemeral(_) => "ephemeral",
+            ToolkittyEventData::Error(_) => "error",
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct ToolkittyStreamEvent {
+    pub meta: Option<ToolkittyEventMeta>,
+    pub data: ToolkittyEventData,
+}
+
+impl From<StreamEvent<Extensions>> for ToolkittyStreamEvent {
+    fn from(value: StreamEvent<Extensions>) -> Self {
+        match value.data {
+            p2panda_node::stream::EventData::Application(bytes) => {
+                ToolkittyStreamEvent::from_operation(
+                    value.header.expect("application message has header"),
+                    Body::new(&bytes),
+                )
+            }
+            p2panda_node::stream::EventData::Ephemeral(bytes) => {
+                ToolkittyStreamEvent::from_bytes(bytes)
+            }
+            p2panda_node::stream::EventData::Error(stream_error) => {
+                ToolkittyStreamEvent::from_error(
+                    stream_error,
+                    value.header.expect("stream error message has header"),
+                )
+            }
+        }
+    }
+}
+
+impl ToolkittyStreamEvent {
+    pub fn from_operation(header: Header<Extensions>, body: Body) -> Self {
+        let json = serde_json::from_slice(&body.to_bytes()).unwrap();
+
+        Self {
+            meta: Some(header.into()),
+            data: ToolkittyEventData::Application(json),
+        }
+    }
+
+    pub fn from_bytes(payload: Vec<u8>) -> Self {
+        let json = serde_json::from_slice(&payload).unwrap();
+
+        Self {
+            meta: None,
+            data: ToolkittyEventData::Ephemeral(json),
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn from_error(error: StreamError, header: Header<Extensions>) -> Self {
+        Self {
+            meta: Some(header.into()),
+            data: ToolkittyEventData::Error(error),
+        }
+    }
+}
+
+impl Serialize for ToolkittyStreamEvent {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let mut state = serializer.serialize_struct("StreamEvent", 3)?;
+        state.serialize_field("event", &self.data.tag())?;
+        state.serialize_field("meta", &self.meta)?;
+        state.serialize_field("data", &self.data)?;
+        state.end()
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StreamMeta {
+    pub(crate) id: Hash,
+    pub(crate) root_hash: StreamRootHash,
+    pub(crate) owner: StreamOwner,
+}
+
+impl From<Stream> for StreamMeta {
+    fn from(stream: Stream) -> Self {
+        StreamMeta {
+            id: stream.id(),
+            root_hash: stream.root_hash,
+            owner: stream.owner,
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolkittyEventMeta {
+    pub operation_id: Hash,
+    pub author: PublicKey,
+    pub stream: StreamMeta,
+    pub log_path: Option<LogPath>,
+}
+
+impl From<Header<Extensions>> for ToolkittyEventMeta {
+    fn from(header: Header<Extensions>) -> Self {
+        let stream: Stream = header.extension().expect("extract stream id extensions");
+        let log_path: Option<LogPath> = header.extension();
+
+        Self {
+            operation_id: header.hash(),
+            author: header.public_key,
+            stream: stream.into(),
+            log_path,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]

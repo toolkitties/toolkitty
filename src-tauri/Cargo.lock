@@ -1524,6 +1524,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "experimental-node"
+version = "0.1.0"
+source = "git+https://github.com/p2panda/experimental-node?rev=e5006c8cf573ee4a5882bd0c71a57b6435aa9483#e5006c8cf573ee4a5882bd0c71a57b6435aa9483"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "futures-util",
+ "iroh-io",
+ "mime",
+ "p2panda-blobs",
+ "p2panda-core",
+ "p2panda-discovery",
+ "p2panda-net",
+ "p2panda-store",
+ "p2panda-stream",
+ "p2panda-sync",
+ "serde",
+ "tempfile",
+ "thiserror 2.0.11",
+ "tokio",
+ "tokio-stream",
+ "tokio-util",
+ "tokio-utils",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "fallible-iterator"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7131,6 +7159,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
+ "experimental-node",
  "futures-util",
  "iroh-io",
  "mime",

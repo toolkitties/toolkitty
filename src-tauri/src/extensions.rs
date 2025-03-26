@@ -3,8 +3,8 @@ use std::hash::Hash as StdHash;
 
 use anyhow::anyhow;
 use p2panda_core::{Extension, Hash, Header, PruneFlag, PublicKey};
+use p2panda_node::extensions::LogId;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 
 /// Globally unique stream identified derived from hashing over the bytes of a streams' `root_hash`
 /// and `owner` fields.
@@ -82,32 +82,13 @@ impl Display for StreamOwner {
     }
 }
 
-/// Identifier for a log.
-///
-/// A log id is used to identify which log an operation is to be appended to. It is used in
-/// operation construction to know the current log height as well as for validation of other
-/// header values when receiving operations from the network.
-///
-/// Logs are single-writer, with the author being encoded on the operation header. For this reason
-/// log ids only need to be unique per-author.
-///
-/// A log id is constructed from a stream id id and a log path. The stream id ensures that no
-/// naming collision can occur _between_ logs in different streams, and the log path allows the
-/// application layer itself to design how logs are layed out within a stream.
-#[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct LogId {
-    pub(crate) stream: Stream,
-    pub(crate) log_path: Option<LogPath>,
-}
-
 /// The log path is any arbitrary value defined by the application layer. It's the application
 /// layers concern to ensure that no namespace collision occurs _within_ a stream.
 #[derive(Clone, Debug, PartialEq, Eq, StdHash, Serialize, Deserialize)]
-pub struct LogPath(pub(crate) Value);
+pub struct LogPath(pub(crate) String);
 
-impl From<Value> for LogPath {
-    fn from(value: Value) -> Self {
+impl From<String> for LogPath {
+    fn from(value: String) -> Self {
         Self(value)
     }
 }
@@ -119,8 +100,18 @@ impl TryFrom<Extensions> for LogId {
         let stream = Stream::try_from(extensions.clone())?;
         let log_path = extensions.log_path.clone();
 
-        Ok(Self { stream, log_path })
+        Ok(to_log_id(stream, log_path))
     }
+}
+
+pub fn to_log_id(stream: Stream, log_path: Option<LogPath>) -> LogId {
+    LogId(format!(
+        "{}/{}",
+        stream.id(),
+        log_path
+            .map(|path| path.to_string())
+            .unwrap_or("".to_string())
+    ))
 }
 
 impl Display for LogPath {
@@ -188,9 +179,9 @@ impl Extension<LogPath> for Extensions {
 
 impl Extension<LogId> for Extensions {
     fn extract(header: &Header<Self>) -> Option<LogId> {
-        let stream = header.extension().expect("extract stream id extension");
-        let log_path = header.extension();
-        Some(LogId { stream, log_path })
+        let stream: Stream = header.extension().expect("extract stream id extension");
+        let log_path: Option<LogPath> = header.extension();
+        Some(to_log_id(stream, log_path))
     }
 }
 
