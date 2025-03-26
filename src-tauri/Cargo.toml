@@ -19,7 +19,7 @@ async-trait = "0.1.85"
 futures-util = "0.3.31"
 iroh-io = "0.6.1"
 mime = "0.3.17"
-experimental-node = { git = "https://github.com/p2panda/experimental-node", rev = "a0a25311aeedce3d05dce82eda2a610583072608" }
+experimental-node = { git = "https://github.com/p2panda/experimental-node", rev = "e5006c8cf573ee4a5882bd0c71a57b6435aa9483u" }
 p2panda-blobs = { git = "https://github.com/p2panda/p2panda", rev = "79b7682deb5f253224745b7ad9a7faab90e89e87" }
 p2panda-core = { git = "https://github.com/p2panda/p2panda", rev = "79b7682deb5f253224745b7ad9a7faab90e89e87" }
 p2panda-net = { git = "https://github.com/p2panda/p2panda", rev = "79b7682deb5f253224745b7ad9a7faab90e89e87" }
