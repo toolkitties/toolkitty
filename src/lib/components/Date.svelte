@@ -1,10 +1,19 @@
+<!--
+@component
+Display dates in a nice format
+
+Format:
+- date = Tuesday 19.09.25
+- time = 17:00
+- datetime = 19.09.25 17:00
+-->
 <script lang="ts">
   const {
     date,
     format = "datetime",
   }: {
     date: string;
-    format: "date" | "time" | "datetime";
+    format?: "date" | "time" | "datetime";
   } = $props();
 
   const dateConfig: Intl.DateTimeFormatOptions = {
