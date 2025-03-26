@@ -11,6 +11,6 @@ export function shouldUpdate(
   if (currentId < updateId) {
     return true;
   } else {
-    throw Error("LWW comparator requires that ids are universally unique")
+    throw Error("LWW comparator requires that ids are universally unique");
   }
 }
