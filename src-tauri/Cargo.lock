@@ -7132,6 +7132,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "futures-util",
+ "hex",
  "iroh-io",
  "mime",
  "p2panda-blobs",
