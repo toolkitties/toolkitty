@@ -13,7 +13,7 @@ Format:
     format = "datetime",
   }: {
     date: string;
-    format?: "date" | "time" | "datetime";
+    format?: "date" | "dateshort" | "time" | "datetime";
   } = $props();
 
   const dateConfig: Intl.DateTimeFormatOptions = {
@@ -48,6 +48,11 @@ Format:
         new Date(date),
       );
       return `${weekdayStr} ${dateStr}`;
+    } else if (format === "dateshort") {
+      const dateStr = new Intl.DateTimeFormat(locale, dateConfig).format(
+        new Date(date),
+      );
+      return `${dateStr}`;
     } else if (format === "time") {
       return new Intl.DateTimeFormat(locale, timeConfig).format(new Date(date));
     } else {

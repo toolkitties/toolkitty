@@ -7,8 +7,12 @@
   import PageText from "$lib/components/PageText.svelte";
   import Contribute from "$lib/components/Contribute.svelte";
   import Date from "$lib/components/Date.svelte";
+  import { parseAbsoluteToLocal } from "@internationalized/date";
+  import type { CalendarDate } from "@internationalized/date";
+  import Calendar from "$lib/components/Calendar.svelte";
 
   let { data }: PageProps = $props();
+  let selectedDate: CalendarDate | undefined = $state();
 
   function getDay(event: CalendarEventEnriched): string {
     return event.startDate.split("T")[0];
@@ -63,27 +67,69 @@
     return result;
   });
 
-  let calendarInstructions = liveQuery(async () => {
+  let calendar = liveQuery(async () => {
     const activeCalendarId = await calendars.getActiveCalendarId();
     if (!activeCalendarId) return undefined;
     const calendar = await calendars.findById(activeCalendarId);
-    return calendar?.calendarInstructions;
+    return calendar;
+  });
+
+  /**
+   * Filter events by selected calendar date
+   */
+  let filteredEvents = $derived.by(() => {
+    if (!selectedDate) {
+      return $eventsByDate;
+    }
+
+    return $eventsByDate.filter(
+      (group) => group.date === selectedDate.toString(),
+    );
   });
 </script>
 
 <CalendarSelector />
 
-{#if $calendarInstructions}
-  <PageText text={$calendarInstructions} title="about calendar" />
+{#if $calendar && $calendar.calendarInstructions}
+  <PageText text={$calendar.calendarInstructions} title="about calendar" />
+  {#if $calendar.startDate}
+    <Date date={$calendar.startDate} format="dateshort" />
+  {/if}
+  {#if $calendar.endDate}
+    &nbsp;- <Date date={$calendar.endDate} format="dateshort" />
+  {/if}
 {/if}
 
-{#if $eventsByDate && $eventsByDate.length > 0}
-  {#each $eventsByDate as group (group.date)}
-    <Date date={group.date} format="date" />
-    {#each group.eventsList as event (event.id)}
-      <EventRow {event} />
+{#if $eventsByDate && $eventsByDate.length > 0 && $calendar}
+  <Calendar
+    type="single"
+    bind:value={selectedDate}
+    busyness={$eventsByDate}
+    minValue={$calendar.startDate
+      ? parseAbsoluteToLocal($calendar.startDate)
+      : undefined}
+    maxValue={$calendar.endDate
+      ? parseAbsoluteToLocal($calendar.endDate)
+      : undefined}
+  />
+
+  {#if filteredEvents.length > 0}
+    {#each filteredEvents as group (group.date)}
+      <div>
+        <div
+          id={`date-${group.date}`}
+          class="sticky top-0 bg-bg-secondary text-center"
+        >
+          <Date date={group.date} format="date" />
+        </div>
+        {#each group.eventsList as event (event.id)}
+          <EventRow {event} />
+        {/each}
+      </div>
     {/each}
-  {/each}
+  {:else}
+    <p>No events on selected date</p>
+  {/if}
 {:else}
   <p>no events yet, please create one.</p>
   <a href="/app/events/create" class="button inline-block">create event</a>

@@ -62,7 +62,8 @@
 }
 
 /* Fix scroll “bounce” on safari */
-:root {
+:root,
+main {
   overscroll-behavior: none;
 }
 
@@ -70,6 +71,11 @@
 html {
   font-size: 0.9375rem;
   @apply font-sans;
+}
+
+html,
+body {
+  @apply h-screen flex flex-col;
 }
 
 @layer base {
@@ -134,4 +140,55 @@ html {
   .form-error {
     @apply text-red-500 block mb-2;
   }
+}
+
+/* Hard-coded classes for bg-physical with rgba values */
+/* TODO: move to @theme colour when upgrading to tailwind v4 */
+.bg-physical\/0 {
+  background-color: rgba(253, 255, 180, 0); /* physical color with 0% opacity */
+}
+
+.bg-physical\/20 {
+  background-color: rgba(
+    253,
+    255,
+    180,
+    0.2
+  ); /* physical color with 20% opacity */
+}
+
+.bg-physical\/40 {
+  background-color: rgba(
+    253,
+    255,
+    180,
+    0.4
+  ); /* physical color with 40% opacity */
+}
+
+.bg-physical\/60 {
+  background-color: rgba(
+    253,
+    255,
+    180,
+    0.6
+  ); /* physical color with 60% opacity */
+}
+
+.bg-physical\/80 {
+  background-color: rgba(
+    253,
+    255,
+    180,
+    0.8
+  ); /* physical color with 80% opacity */
+}
+
+.bg-physical\/100 {
+  background-color: rgba(
+    253,
+    255,
+    180,
+    1
+  ); /* physical color with 100% opacity */
 }
