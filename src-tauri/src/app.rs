@@ -520,6 +520,7 @@ mod tests {
                     author,
                     stream,
                     log_path,
+                    ..
                 } = stream_event.meta.unwrap();
 
                 assert_eq!(author, private_key.public_key());
