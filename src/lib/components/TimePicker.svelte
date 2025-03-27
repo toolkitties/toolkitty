@@ -1,3 +1,8 @@
+<!-- 
+ @component
+ are we still using this in the app?
+  -->
+
 <script lang="ts">
   const { selectedDate, availableTimes } = $props();
 
