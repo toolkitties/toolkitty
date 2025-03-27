@@ -1,3 +1,8 @@
+<!-- 
+ @component
+ Generic dialog content component for consistent styling across all dialogs in the app
+  -->
+
 <script lang="ts">
   import { AlertDialog as AlertDialogPrimitive } from "bits-ui";
   import Icon from "@iconify/svelte";

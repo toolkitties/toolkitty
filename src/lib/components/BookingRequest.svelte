@@ -1,3 +1,10 @@
+<!-- 
+ @component
+ Display status and type of booking request for an event. 
+ Helps events owners and admins to understand overall 
+ status of all the bookings for a particular event
+  -->
+
 <script lang="ts">
   let { request }: { request: BookingRequestEnriched } = $props();
   import FootstepsIcon from "$lib/components/icons/FootstepsIcon.svelte";

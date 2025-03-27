@@ -1,3 +1,9 @@
+<!-- 
+ @component
+ Toast component for when a toast has a request attached to it.
+ This request can either be an access or booking request.
+  -->
+
 <script lang="ts">
   import { toast } from "$lib/toast.svelte";
   import { tick } from "svelte";

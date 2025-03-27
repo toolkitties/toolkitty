@@ -1,6 +1,6 @@
 <!-- 
  @component
- Display bookings in a nice UX.
+ Display bookings of a space/resource in a nice calendar like UX.
   -->
 
 <script lang="ts">
