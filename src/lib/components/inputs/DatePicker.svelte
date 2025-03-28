@@ -1,10 +1,10 @@
 <!-- 
- 
-Generic Date Input component
-Takes in an ISO8601 UTC string and
-has a bindable date property that returns an ISO8601 UTC string
+ @component
+ Generic date picker component
+ Takes in an ISO8601 UTC string and
+ has a bindable value property that returns an ISO8601 UTC string
 
-If no value is provided on mount then we get the current time in users timezone (set to start of the hour for nicer UX)
+ If no value is provided on mount then we get the current time in users timezone (set to start of the hour for nicer UX)
 -->
 <script lang="ts">
   import { DatePicker } from "bits-ui";
