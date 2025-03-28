@@ -11,6 +11,7 @@
   import { zod } from "sveltekit-superforms/adapters";
   import { events, resources, bookings } from "$lib/api";
   import { TimeSpanClass } from "$lib/timeSpan";
+  import DatePicker from "$lib/components/inputs/DatePicker.svelte";
 
   let {
     data,
@@ -419,28 +420,28 @@
 
       <p>Request access to selected space</p>
       <div class="flex flex-row">
-        <label for="startDate">Access Start *</label>
-        <input
+        <!-- <input
           type="datetime-local"
           name="startDate"
           required
           aria-invalid={$errors.startDate ? "true" : undefined}
           bind:value={$form.startDate}
           onchange={recalculateResourceAvailability}
-        />
+        /> -->
+        <DatePicker bind:value={$form.startDate} label="access start *" />
         {#if $errors.startDate}<span class="form-error"
             >{$errors.startDate}</span
           >{/if}
-
-        <label for="endDate">Access End *</label>
-        <input
+        <!-- <input
           type="datetime-local"
           name="endDate"
           required
           aria-invalid={$errors.endDate ? "true" : undefined}
           bind:value={$form.endDate}
           onchange={recalculateResourceAvailability}
-        />
+        /> -->
+        <DatePicker bind:value={$form.endDate} label="access end *" />
+
         {#if $errors.endDate}<span class="form-error">{$errors.endDate}</span
           >{/if}
       </div>
