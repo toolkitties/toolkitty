@@ -384,12 +384,10 @@ type ResourceFields = {
 type EventFields = {
   name: string;
   description: string;
-  spaceRequest?: SpaceRequestId;
   startDate: string;
   endDate: string;
   publicStartDate?: string;
   publicEndDate?: string;
-  resourcesRequests?: ReservationRequestId[];
   links?: Link[];
   images: Image[];
 };
@@ -717,6 +715,7 @@ type BookingRequest = {
   timeSpan: TimeSpan;
   isValid: "true" | "false";
   status: BookingRequestStatus;
+  createdAt: bigint;
 };
 
 type ResourceType = "space" | "resource";
@@ -763,15 +762,17 @@ type BookingQueryFilter = {
 };
 
 type CalendarEventEnriched = {
-  space?: {
-    bookingRequest?: BookingRequest;
-  } & Space;
-  resources?: CalendarEventResourceEnriched[];
+  spaceRequest?: {
+    bookingRequest: BookingRequest;
+    space?: Space;
+  };
+  resourceRequests: ResourceRequestEnriched[];
 } & CalendarEvent;
 
-type CalendarEventResourceEnriched = {
-  bookingRequest?: BookingRequest;
-} & Resource;
+type ResourceRequestEnriched = {
+  bookingRequest: BookingRequest;
+  resource?: Resource;
+};
 
 type BookingRequestEnriched = {
   event?: CalendarEvent;
