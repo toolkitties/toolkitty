@@ -96,35 +96,26 @@ async function enrichEvent(
   if (spaceRequests.length === 0) {
     return eventEnriched;
   }
-  eventEnriched.spaceRequest = spaceRequests[0];
+  eventEnriched.spaceRequest = { bookingRequest: spaceRequests[0] };
 
   // If the booking request is accepted add the space to the event as well.
-  if (spaceRequests[0].status == "accepted") {
-    eventEnriched.space = await db.spaces.get({
-      id: spaceRequests[0].resourceId,
-    });
-  }
+  eventEnriched.spaceRequest.space = await db.spaces.get({
+    id: spaceRequests[0].resourceId,
+  });
 
   // Add resource requests to event.
   const resourceRequests = await db.bookingRequests
     .where({ eventId: event.id, resourceType: "resource", isValid: "true" })
     .sortBy("createdAt");
-  eventEnriched.resourceRequests = resourceRequests;
 
   // Add any accepted resources to the event as well.
-  const resources = [];
+  eventEnriched.resourceRequests = [];
   for (const request of resourceRequests) {
-    if (request.status == "accepted") {
-      const resource = await db.resources.get({
-        id: request.resourceId,
-      });
-
-      if (resource) {
-        resources.push(resource);
-      }
-    }
+    const resource = await db.resources.get({
+      id: request.resourceId,
+    });
+    eventEnriched.resourceRequests.push({ bookingRequest: request, resource });
   }
-  eventEnriched.resources = resources;
 
   return eventEnriched;
 }

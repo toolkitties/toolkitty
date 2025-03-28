@@ -762,17 +762,17 @@ type BookingQueryFilter = {
 };
 
 type CalendarEventEnriched = {
-  spaceRequest?: BookingRequest;
-  resourceRequests: BookingRequest[];
-  space?: Space;
-  resources?: Resource[];
+  spaceRequest?: {
+    bookingRequest: BookingRequest;
+    space?: Space;
+  };
+  resourceRequests: ResourceRequestEnriched[];
 } & CalendarEvent;
 
-type CalendarEventResourceEnriched = {
-  // @TODO: is it important that the requests are kept here alongside the resource? Can they live
-  // on the CalendarEvent?
-  // bookingRequest?: BookingRequest;
-} & Resource;
+type ResourceRequestEnriched = {
+  bookingRequest: BookingRequest;
+  resource?: Resource;
+};
 
 type BookingRequestEnriched = {
   event?: CalendarEvent;
