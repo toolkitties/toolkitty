@@ -206,7 +206,8 @@ async function onCalendarCreated(
           : undefined,
         spacePageText: spacePageText ? spacePageText : undefined,
         resourcePageText: resourcePageText ? resourcePageText : undefined,
-        lastWrite: meta.timestamp,
+        createdAt: meta.timestamp,
+        updatedAt: meta.timestamp,
       });
     } catch (e) {
       // Log error incase we try to insert the calendar twice.
@@ -224,7 +225,7 @@ async function onCalendarCreated(
         : undefined,
       spacePageText: spacePageText ? spacePageText : undefined,
       resourcePageText: resourcePageText ? resourcePageText : undefined,
-      lastWrite: meta.timestamp,
+      updatedAt: meta.timestamp,
     });
   }
 }
@@ -251,7 +252,7 @@ async function onCalendarUpdated(
   // equality, the hash is greater.
   if (
     !shouldUpdate(
-      calendar.lastWrite,
+      calendar.updatedAt,
       calendar.id,
       meta.timestamp,
       meta.operationId,
@@ -269,7 +270,7 @@ async function onCalendarUpdated(
       : undefined,
     spacePageText: spacePageText ? spacePageText : undefined,
     resourcePageText: resourcePageText ? resourcePageText : undefined,
-    lastWrite: meta.timestamp,
+    updatedAt: meta.timestamp,
   });
 }
 

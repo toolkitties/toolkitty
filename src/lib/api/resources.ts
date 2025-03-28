@@ -211,7 +211,8 @@ async function onResourceCreated(
       id: meta.operationId,
       calendarId: meta.stream.id,
       ownerId: meta.author,
-      lastWrite: meta.timestamp,
+      createdAt: meta.timestamp,
+      updatedAt: meta.timestamp,
       ...data.fields,
     });
   } catch (e) {
@@ -237,7 +238,7 @@ function onResourceUpdated(
     // equality, the hash is greater.
     if (
       !shouldUpdate(
-        resource.lastWrite,
+        resource.updatedAt,
         resource.id,
         meta.timestamp,
         meta.operationId,
@@ -271,7 +272,7 @@ function onResourceUpdated(
     // @TODO: add related location to spaces object.
     await db.resources.update(data.id, {
       ...data.fields,
-      lastWrite: meta.timestamp,
+      updatedAt: meta.timestamp,
     });
   });
 }

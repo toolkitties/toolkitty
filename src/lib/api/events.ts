@@ -237,7 +237,8 @@ async function onEventCreated(
       id: meta.operationId,
       calendarId: meta.stream.id,
       ownerId: meta.author,
-      lastWrite: meta.timestamp,
+      createdAt: meta.timestamp,
+      updatedAt: meta.timestamp,
       ...data.fields,
     });
   } catch (e) {
@@ -264,7 +265,7 @@ function onEventUpdated(
     // Updates should only be applied if they have a greater timestamp or in the case of timestamp
     // equality, the hash is greater.
     if (
-      !shouldUpdate(event.lastWrite, event.id, meta.timestamp, meta.operationId)
+      !shouldUpdate(event.updatedAt, event.id, meta.timestamp, meta.operationId)
     ) {
       return;
     }
@@ -281,7 +282,7 @@ function onEventUpdated(
 
     await db.events.update(data.id, {
       ...data.fields,
-      lastWrite: meta.timestamp,
+      updatedAt: meta.timestamp,
     });
   });
 }

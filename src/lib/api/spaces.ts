@@ -212,7 +212,8 @@ async function onSpaceCreated(
       id: meta.operationId,
       calendarId: meta.stream.id,
       ownerId: meta.author,
-      lastWrite: meta.timestamp,
+      createdAt: meta.timestamp,
+      updatedAt: meta.timestamp,
       ...data.fields,
     });
   } catch (e) {
@@ -237,7 +238,7 @@ function onSpaceUpdated(
     // Updates should only be applied if they have a greater timestamp or in the case of timestamp
     // equality, the hash is greater.
     if (
-      !shouldUpdate(space.lastWrite, space.id, meta.timestamp, meta.operationId)
+      !shouldUpdate(space.updatedAt, space.id, meta.timestamp, meta.operationId)
     ) {
       return;
     }
@@ -270,7 +271,7 @@ function onSpaceUpdated(
     // @TODO: add related location to spaces object.
     await db.spaces.update(data.id, {
       ...data.fields,
-      lastWrite: meta.timestamp,
+      updatedAt: meta.timestamp,
     });
   });
 }
