@@ -1,3 +1,10 @@
+<!-- 
+ @component
+ View availability of a resource or space.
+
+ Used in events view/create/edit
+  -->
+
 <script lang="ts">
   import { Calendar } from "bits-ui";
   import type { DateValue } from "@internationalized/date";

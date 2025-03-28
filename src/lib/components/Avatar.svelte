@@ -1,3 +1,13 @@
+<!-- 
+ @component
+ Avatar displayed in the header of the app.
+ 
+ Dynamically changes between 3 states based on number of connected peers:
+ - Sad: Bad network health
+ - Ok: Ok network health
+ - Happy: Good network health
+  -->
+
 <script lang="ts">
   type Health = "sad" | "ok" | "happy";
 

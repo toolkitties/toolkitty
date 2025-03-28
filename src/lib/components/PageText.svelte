@@ -1,3 +1,12 @@
+<!-- 
+ @component
+ Text for events, space and resource pages.
+
+ Short version is rendered on the page, limited to 160 chars.
+ Longer version can be opened in a modal.
+
+  -->
+
 <script lang="ts">
   import * as AlertDialog from "$lib/components/dialog/index";
   import PlusIcon from "./icons/plusIcon.svelte";

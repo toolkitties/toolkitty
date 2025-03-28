@@ -1,3 +1,8 @@
+<!-- 
+ @component
+ Form for creating and updating a calendar
+  -->
+
 <script lang="ts">
   //   import FestivalCalendar from "./FestivalCalendar.svelte";
   import type { SuperValidated, Infer } from "sveltekit-superforms";

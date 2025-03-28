@@ -1,3 +1,8 @@
+<!-- 
+ @component
+ Button to go back to previous page
+  -->
+
 <script>
   import Icon from "@iconify/svelte";
 

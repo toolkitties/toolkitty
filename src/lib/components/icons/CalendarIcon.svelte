@@ -1,3 +1,8 @@
+<!-- 
+ @component
+ Icon for events / home
+  -->
+
 <script lang="ts">
   import { ICON_SIZE } from "$lib/constants";
   let { size = ICON_SIZE } = $props();

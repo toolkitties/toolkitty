@@ -1,3 +1,8 @@
+<!-- 
+ @component
+ Generic error component, used anytime we want to show an error to the user.
+  -->
+
 <script lang="ts">
   import { page } from "$app/state";
 </script>

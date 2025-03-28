@@ -1,3 +1,12 @@
+<!-- 
+ @component
+ Temporary messages that appear from the top of the screen.
+
+ Triggered by:
+ - Middleware processor
+ - Form submissions
+  -->
+
 <script lang="ts">
   import { toast } from "$lib/toast.svelte";
   import { fly } from "svelte/transition";
