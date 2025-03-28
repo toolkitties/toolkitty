@@ -659,6 +659,8 @@ type Calendar = {
   calendarInstructions?: string;
   spacePageText?: string;
   resourcePageText?: string;
+  createdAt: bigint;
+  updatedAt: bigint;
 };
 
 type AccessRequest = {
@@ -681,18 +683,24 @@ type CalendarEvent = {
   id: Hash;
   calendarId: Hash;
   ownerId: PublicKey;
+  createdAt: bigint;
+  updatedAt: bigint;
 } & EventFields;
 
 type Space = {
   id: Hash;
   calendarId: Hash;
   ownerId: PublicKey;
+  createdAt: bigint;
+  updatedAt: bigint;
 } & SpaceFields;
 
 type Resource = {
   id: Hash;
   calendarId: Hash;
   ownerId: PublicKey;
+  createdAt: bigint;
+  updatedAt: bigint;
 } & ResourceFields;
 
 type BookingRequestStatus = "accepted" | "rejected" | "pending";

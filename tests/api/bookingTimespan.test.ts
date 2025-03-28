@@ -40,6 +40,7 @@ describe("maintain booking request timespan validity", () => {
         author: OWNER_PUBLIC_KEY,
         stream: STREAM,
         logPath: LOG_PATH,
+        timestamp: BigInt(0),
       },
       event: "application",
       data: {
@@ -77,6 +78,7 @@ describe("maintain booking request timespan validity", () => {
         author: OWNER_PUBLIC_KEY,
         stream: STREAM,
         logPath: LOG_PATH,
+        timestamp: BigInt(0),
       },
       event: "application",
       data: {
@@ -112,6 +114,7 @@ describe("maintain booking request timespan validity", () => {
         author: OWNER_PUBLIC_KEY,
         stream: STREAM,
         logPath: LOG_PATH,
+        timestamp: BigInt(0),
       },
       event: "application",
       data: {
@@ -142,6 +145,7 @@ describe("maintain booking request timespan validity", () => {
         author: OWNER_PUBLIC_KEY,
         stream: STREAM,
         logPath: LOG_PATH,
+        timestamp: BigInt(0),
       },
       event: "application",
       data: {
@@ -177,6 +181,7 @@ describe("maintain booking request timespan validity", () => {
         author: OWNER_PUBLIC_KEY,
         stream: STREAM,
         logPath: LOG_PATH,
+        timestamp: BigInt(0),
       },
       event: "application",
       data: {
@@ -214,6 +219,7 @@ describe("maintain booking request timespan validity", () => {
         author: OWNER_PUBLIC_KEY,
         stream: STREAM,
         logPath: LOG_PATH,
+        timestamp: BigInt(0),
       },
       event: "application",
       data: {
@@ -249,6 +255,7 @@ describe("maintain booking request timespan validity", () => {
         author: OWNER_PUBLIC_KEY,
         stream: STREAM,
         logPath: LOG_PATH,
+        timestamp: BigInt(0),
       },
       event: "application",
       data: {
@@ -279,6 +286,7 @@ describe("maintain booking request timespan validity", () => {
         author: OWNER_PUBLIC_KEY,
         stream: STREAM,
         logPath: LOG_PATH,
+        timestamp: BigInt(0),
       },
       event: "application",
       data: {

@@ -38,6 +38,7 @@ describe("access tests", () => {
         author: requestingAuthor,
         stream: STREAM,
         logPath: LOG_PATH,
+        timestamp: BigInt(0),
       },
       event: "application",
       data: {
@@ -61,6 +62,7 @@ describe("access tests", () => {
         author: OWNER_PUBLIC_KEY,
         stream: STREAM,
         logPath: LOG_PATH,
+        timestamp: BigInt(0),
       },
       event: "application",
       data: {
@@ -82,6 +84,7 @@ describe("access tests", () => {
         author: OWNER_PUBLIC_KEY,
         stream: STREAM,
         logPath: LOG_PATH,
+        timestamp: BigInt(0),
       },
       event: "application",
       data: {
