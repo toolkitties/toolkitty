@@ -135,6 +135,12 @@
     @apply h-screen flex flex-col;
   }
 
+  /* overflow: hidden is set to fix strange bug on dashboard where there is large empty space below the html/body */
+  html,
+  body {
+    @apply overflow-hidden;
+  }
+
   input,
   textarea {
     @apply w-full p-2.5 border border-black rounded-sm;
