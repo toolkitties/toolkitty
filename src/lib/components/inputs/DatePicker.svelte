@@ -29,16 +29,21 @@
     label,
     minValue,
     maxValue,
+    onValueChange,
   }: {
     value?: string;
     label: string;
     minValue?: DateValue;
     maxValue?: DateValue;
+    onValueChange?: (newValue: string) => void;
   } = $props();
 
   let date: ZonedDateTime = $state(
     value ? parseAbsoluteToLocal(value) : startOfHour(now(getLocalTimeZone())),
   );
+
+  console.log(getLocalTimeZone());
+  console.log(now(getLocalTimeZone()).toString());
 
   function getDate() {
     return date;
@@ -50,6 +55,10 @@
   function setDate(newDate: ZonedDateTime) {
     date = newDate;
     value = newDate.toAbsoluteString();
+
+    if (onValueChange) {
+      onValueChange(value);
+    }
   }
 </script>
 
