@@ -142,7 +142,7 @@
 
   button,
   .button {
-    @apply border border-black bg-black/20 rounded-sm px-2 py-1.5 flex gap-1 items-center;
+    @apply border border-black bg-black/20 rounded-sm px-2 py-1.5 flex gap-1 items-center cursor-pointer;
   }
 
   .tag {
