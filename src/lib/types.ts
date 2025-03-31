@@ -25,7 +25,8 @@ type OperationId = Hash;
 type Topic = string;
 
 /**
- * ISO8601 date as string in UTC / zero hour offset.
+ * ISO8601 date as string in UTC timezone / zero hour offset.
+ * For example: 2025-03-20T16:00Z
  */
 type ISO8601UTC = string;
 
