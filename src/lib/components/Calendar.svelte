@@ -68,12 +68,12 @@
                 <Calendar.Cell {date} month={month.value}>
                   <Calendar.Day
                     class={`border-black border
-                      rounded data-[outside-month]:pointer-events-none
-                      data-[outside-month]:text-gray-300
-                      data-[selected]:bg-black
-                      data-[selected]:text-white
-                      data-[disabled]:opacity-50
-                      data-[disabled]:border-0
+                      rounded data-outside-month:pointer-events-none
+                      data-outside-month:text-gray-300
+                      data-selected:bg-black
+                      data-selected:text-white
+                      data-disabled:opacity-50
+                      data-disabled:border-0
                       ${busyness && `bg-physical/${getBusynessOpacity(date)}`}`}
                   >
                     {date.day}

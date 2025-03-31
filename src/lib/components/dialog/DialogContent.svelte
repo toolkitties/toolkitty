@@ -8,7 +8,7 @@
 <AlertDialogPrimitive.Portal>
   <!-- TODO: Add transition back to overlay -->
   <AlertDialogPrimitive.Overlay
-    class="fixed inset-0 z-40 backdrop-blur bg-black/30"
+    class="fixed inset-0 z-40 backdrop-blur-sm bg-black/30"
   />
   <AlertDialogPrimitive.Content
     interactOutsideBehavior="close"

@@ -5,7 +5,7 @@
 </script>
 
 <div
-  class="border border-black rounded p-2 flex justify-between w-full text-left"
+  class="border border-black rounded-sm p-2 flex justify-between w-full text-left"
 >
   {#if request.resourceType === "resource"}
     <div class="flex gap-2 items-center">

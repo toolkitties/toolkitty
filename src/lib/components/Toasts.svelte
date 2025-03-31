@@ -40,6 +40,8 @@
 {/snippet}
 
 <style>
+  @reference "tailwindcss";
+
   .toast {
     @apply flex gap-1.5 p-2.5 border-black border rounded;
   }
