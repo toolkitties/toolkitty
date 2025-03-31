@@ -73,7 +73,7 @@ db.version(1).stores({
   resources: "&id, calendarId, [calendarId+ownerId]",
   events: "&id, name, startDate, calendarId, [calendarId+ownerId]",
   bookingRequests:
-    "&id, eventId, calendarId, requester, resourceType, resourceId, validTime, status, [resourceId+status], [calendarId+resourceId]",
+    "&id, eventId, calendarId, requester, resourceType, resourceId, validTime, status, [resourceId+status], [calendarId+resourceId], [calendarId+status+resourceOwner]",
   bookingResponses: "&id, eventId, requestId, calendarId, answer",
   streams: "&id",
   settings: "&name",
