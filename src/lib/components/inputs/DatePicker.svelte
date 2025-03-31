@@ -56,6 +56,7 @@
 <DatePicker.Root
   granularity="minute"
   hourCycle={24}
+  locale="en-UK"
   bind:value={getDate, setDate}
   {minValue}
   {maxValue}
