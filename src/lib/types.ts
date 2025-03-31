@@ -25,6 +25,12 @@ type OperationId = Hash;
 type Topic = string;
 
 /**
+ * ISO8601 date as string in UTC timezone / zero hour offset.
+ * For example: 2025-03-20T16:00Z
+ */
+type ISO8601UTC = string;
+
+/**
  * A long-lived "owned" data stream.
  */
 type Stream = {
@@ -317,8 +323,8 @@ type Link = {
 };
 
 type TimeSpan = {
-  start: string;
-  end: string | undefined;
+  start: ISO8601UTC;
+  end: ISO8601UTC | undefined;
 };
 
 type BookedTimeSpan = TimeSpan & {
@@ -385,10 +391,10 @@ type EventFields = {
   name: string;
   description: string;
   spaceRequest?: SpaceRequestId;
-  startDate: string;
-  endDate: string;
-  publicStartDate?: string;
-  publicEndDate?: string;
+  startDate: ISO8601UTC;
+  endDate: ISO8601UTC;
+  publicStartDate?: ISO8601UTC;
+  publicEndDate?: ISO8601UTC;
   resourcesRequests?: ReservationRequestId[];
   links?: Link[];
   images: Image[];
@@ -654,8 +660,8 @@ type Calendar = {
   // `CalendarCreated` fields contains a TimeSpan[] so it's possible to encode non-consecutive
   // dates there, but we don't need to support that in the app right now. Here I've left it as a
   // single time range.
-  startDate?: string;
-  endDate?: string;
+  startDate?: ISO8601UTC;
+  endDate?: ISO8601UTC;
   calendarInstructions?: string;
   spacePageText?: string;
   resourcePageText?: string;
@@ -750,8 +756,8 @@ type BookingQueryFilter = {
   resourceOwner?: PublicKey;
   isValid?: "true" | "false";
   status?: BookingRequestStatus;
-  from?: Date;
-  to?: Date;
+  from?: ISO8601UTC;
+  to?: ISO8601UTC;
 };
 
 type CalendarEventEnriched = {
