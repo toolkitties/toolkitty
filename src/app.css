@@ -58,9 +58,7 @@
   ::file-selector-button {
     border-color: var(--color-gray-200, currentColor);
   }
-}
 
-@layer utilities {
   /* Custom fonts ＼(；￢_￢) */
   @font-face {
     font-family: "Atkinson-Hyperlegible";
@@ -136,9 +134,7 @@
   body {
     @apply h-screen flex flex-col;
   }
-}
 
-@layer base {
   input,
   textarea {
     @apply w-full p-2.5 border border-black rounded-sm;
