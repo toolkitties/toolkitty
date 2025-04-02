@@ -1,4 +1,5 @@
 import { db } from "$lib/db";
+import { shouldUpdate } from "$lib/lww";
 import { promiseResult } from "$lib/promiseMap";
 import { TimeSpanClass } from "$lib/timeSpan";
 import { auth, events, publish } from ".";
@@ -221,7 +222,7 @@ export async function process(message: ApplicationMessage) {
     case "event_created":
       return await onEventCreated(meta, data);
     case "event_updated":
-      return await onEventUpdated(data);
+      return await onEventUpdated(meta, data);
     case "event_deleted":
       return await onEventDeleted(data);
   }
@@ -236,19 +237,39 @@ async function onEventCreated(
       id: meta.operationId,
       calendarId: meta.stream.id,
       ownerId: meta.author,
+      createdAt: meta.timestamp,
+      updatedAt: meta.timestamp,
       ...data.fields,
     });
   } catch (e) {
+    // In case we try to add the event twice log the error.
     console.error(e);
   }
 }
 
-function onEventUpdated(data: EventUpdated["data"]): Promise<void> {
+function onEventUpdated(
+  meta: StreamMessageMeta,
+  data: EventUpdated["data"],
+): Promise<void> {
   const eventId = data.id;
   const { endDate, startDate } = data.fields;
   const eventTimeSpan = new TimeSpanClass({ start: startDate, end: endDate });
 
   return db.transaction("rw", db.events, db.bookingRequests, async () => {
+    const event = await db.events.get(data.id);
+    if (!event) {
+      // The event may have been deleted.
+      return;
+    }
+
+    // Updates should only be applied if they have a greater timestamp or in the case of timestamp
+    // equality, the hash is greater.
+    if (
+      !shouldUpdate(event.updatedAt, event.id, meta.timestamp, meta.operationId)
+    ) {
+      return;
+    }
+
     // Update `validTime` field of all booking requests associated with this event.
     await db.bookingRequests.where({ eventId }).modify((request) => {
       const requestTimeSpan = new TimeSpanClass(request.timeSpan);
@@ -261,6 +282,7 @@ function onEventUpdated(data: EventUpdated["data"]): Promise<void> {
 
     await db.events.update(data.id, {
       ...data.fields,
+      updatedAt: meta.timestamp,
     });
   });
 }

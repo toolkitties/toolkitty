@@ -25,13 +25,21 @@ export function createCalendarMessage(
   auth: PublicKey,
   headerData: { type: "calendar_created" },
   fieldsOverwrites?: Partial<CalendarFields>,
-): ApplicationMessage & { data: { type: "calendar_created" } };
+): ApplicationMessage & {
+  data: { type: "calendar_created" };
+};
 export function createCalendarMessage(
   id: Hash,
   auth: PublicKey,
-  headerData: { type: "calendar_updated"; calendarId: string },
+  headerData: {
+    type: "calendar_updated";
+    calendarId: string;
+    timestamp: number;
+  },
   fieldsOverwrites?: Partial<CalendarFields>,
-): ApplicationMessage & { data: { type: "calendar_updated" } };
+): ApplicationMessage & {
+  data: { type: "calendar_updated" };
+};
 export function createCalendarMessage(
   id: Hash,
   auth: PublicKey,
@@ -43,14 +51,16 @@ export function createCalendarMessage(
   id: Hash,
   author: PublicKey,
   headerData:
-    | { type: "calendar_created" }
+    | { type: "calendar_created"; timestamp?: number }
     | {
         type: "calendar_updated";
         calendarId: string;
+        timestamp: number;
       }
     | {
         type: "calendar_deleted";
         calendarId: string;
+        timestamp?: number;
       },
   fieldsOverwrites?: Partial<CalendarFields>,
 ): ApplicationMessage {
@@ -84,6 +94,9 @@ export function createCalendarMessage(
       author: author,
       stream: STREAM,
       logPath: LOG_PATH,
+      timestamp: headerData.timestamp
+        ? BigInt(headerData.timestamp)
+        : BigInt(0),
     },
     event: "application",
     data,
@@ -93,19 +106,19 @@ export function createCalendarMessage(
 export function createEventMessage(
   id: Hash,
   auth: PublicKey,
-  headerData: { type: "event_created" },
+  headerData: { type: "event_created"; timestamp?: number },
   fieldsOverwrites?: Partial<EventFields>,
 ): ApplicationMessage & { data: { type: "event_created" } };
 export function createEventMessage(
   id: Hash,
   auth: PublicKey,
-  headerData: { type: "event_updated"; eventId: string },
+  headerData: { type: "event_updated"; eventId: string; timestamp: number },
   fieldsOverwrites?: Partial<EventFields>,
 ): ApplicationMessage & { data: { type: "event_updated" } };
 export function createEventMessage(
   id: Hash,
   auth: PublicKey,
-  headerData: { type: "event_deleted"; eventId: string },
+  headerData: { type: "event_deleted"; eventId: string; timestamp?: number },
   fieldsOverwrites?: Partial<EventFields>,
 ): ApplicationMessage & { data: { type: "event_deleted" } };
 
@@ -113,9 +126,9 @@ export function createEventMessage(
   id: Hash,
   author: PublicKey,
   headerData:
-    | { type: "event_created" }
-    | { type: "event_updated"; eventId: string }
-    | { type: "event_deleted"; eventId: string },
+    | { type: "event_created"; timestamp?: number }
+    | { type: "event_updated"; eventId: string; timestamp: number }
+    | { type: "event_deleted"; eventId: string; timestamp?: number },
   fieldsOverwrites?: Partial<EventFields>,
 ): ApplicationMessage {
   const eventFields = createEventFields(fieldsOverwrites);
@@ -148,6 +161,9 @@ export function createEventMessage(
       author,
       stream: STREAM,
       logPath: LOG_PATH,
+      timestamp: headerData.timestamp
+        ? BigInt(headerData.timestamp)
+        : BigInt(0),
     },
     event: "application",
     data,
@@ -157,19 +173,27 @@ export function createEventMessage(
 export function createResourceMessage(
   id: Hash,
   auth: PublicKey,
-  headerData: { type: "resource_created" },
+  headerData: { type: "resource_created"; timestamp?: number },
   fieldsOverwrites?: Partial<ResourceFields>,
 ): ApplicationMessage & { data: { type: "resource_created" } };
 export function createResourceMessage(
   id: Hash,
   auth: PublicKey,
-  headerData: { type: "resource_updated"; resourceId: string },
+  headerData: {
+    type: "resource_updated";
+    resourceId: string;
+    timestamp: number;
+  },
   fieldsOverwrites?: Partial<ResourceFields>,
 ): ApplicationMessage & { data: { type: "resource_updated" } };
 export function createResourceMessage(
   id: Hash,
   auth: PublicKey,
-  headerData: { type: "resource_deleted"; resourceId: string },
+  headerData: {
+    type: "resource_deleted";
+    resourceId: string;
+    timestamp?: number;
+  },
   fieldsOverwrites?: Partial<ResourceFields>,
 ): ApplicationMessage & { data: { type: "resource_deleted" } };
 
@@ -177,9 +201,9 @@ export function createResourceMessage(
   id: Hash,
   author: PublicKey,
   headerData:
-    | { type: "resource_created" }
-    | { type: "resource_updated"; resourceId: string }
-    | { type: "resource_deleted"; resourceId: string },
+    | { type: "resource_created"; timestamp?: number }
+    | { type: "resource_updated"; resourceId: string; timestamp: number }
+    | { type: "resource_deleted"; resourceId: string; timestamp?: number },
   fieldsOverwrites?: Partial<ResourceFields>,
 ): ApplicationMessage {
   const resourceFields = createResourceFields(fieldsOverwrites);
@@ -212,6 +236,9 @@ export function createResourceMessage(
       author,
       stream: STREAM,
       logPath: LOG_PATH,
+      timestamp: headerData.timestamp
+        ? BigInt(headerData.timestamp)
+        : BigInt(0),
     },
     event: "application",
     data,
@@ -223,17 +250,17 @@ export function createSpaceMessage(
   auth: PublicKey,
   headerData: { type: "space_created" },
   fieldsOverwrites?: Partial<SpaceFields>,
-): ApplicationMessage & { data: { type: "space_created" } };
+): ApplicationMessage & { data: { type: "space_created"; timestamp?: number } };
 export function createSpaceMessage(
   id: Hash,
   auth: PublicKey,
-  headerData: { type: "space_updated"; spaceId: string },
+  headerData: { type: "space_updated"; spaceId: string; timestamp: number },
   fieldsOverwrites?: Partial<SpaceFields>,
 ): ApplicationMessage & { data: { type: "space_updated" } };
 export function createSpaceMessage(
   id: Hash,
   auth: PublicKey,
-  headerData: { type: "space_deleted"; spaceId: string },
+  headerData: { type: "space_deleted"; spaceId: string; timestamp?: number },
   fieldsOverwrites?: Partial<SpaceFields>,
 ): ApplicationMessage & { data: { type: "space_deleted" } };
 
@@ -241,9 +268,9 @@ export function createSpaceMessage(
   id: Hash,
   author: PublicKey,
   headerData:
-    | { type: "space_created" }
-    | { type: "space_updated"; spaceId: string }
-    | { type: "space_deleted"; spaceId: string },
+    | { type: "space_created"; timestamp?: number }
+    | { type: "space_updated"; spaceId: string; timestamp: number }
+    | { type: "space_deleted"; spaceId: string; timestamp?: number },
   fieldsOverwrites?: Partial<SpaceFields>,
 ): ApplicationMessage {
   const spaceFields = createSpaceFields(fieldsOverwrites);
@@ -276,6 +303,9 @@ export function createSpaceMessage(
       author,
       stream: STREAM,
       logPath: LOG_PATH,
+      timestamp: headerData.timestamp
+        ? BigInt(headerData.timestamp)
+        : BigInt(0),
     },
     event: "application",
     data,
@@ -302,6 +332,7 @@ export function createBookingRequestMessage(
       author,
       stream: STREAM,
       logPath: LOG_PATH,
+      timestamp: BigInt(0),
     },
     event: "application",
     data: {
@@ -329,6 +360,7 @@ export function createBookingResponseMessage(
       author,
       stream: STREAM,
       logPath: LOG_PATH,
+      timestamp: BigInt(0),
     },
     event: "application",
     data: {
@@ -355,6 +387,7 @@ export function createAssignRoleMessage(
       author,
       stream: STREAM,
       logPath: LOG_PATH,
+      timestamp: BigInt(0),
     },
     event: "application",
     data: {
@@ -377,6 +410,7 @@ export function createRequestAccessMessage(
       author,
       stream: STREAM,
       logPath: LOG_PATH,
+      timestamp: BigInt(0),
     },
     event: "application",
     data: {
@@ -408,6 +442,7 @@ export function createAccessResponseMessage(
       author,
       stream: STREAM,
       logPath: LOG_PATH,
+      timestamp: BigInt(0),
     },
     event: "application",
     data: {

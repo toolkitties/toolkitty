@@ -40,6 +40,7 @@ describe("owners can perform updates", () => {
         author: OWNER_PUBLIC_KEY,
         stream: STREAM,
         logPath: LOG_PATH,
+        timestamp: BigInt(0),
       },
       event: "application",
       data: {
@@ -61,6 +62,7 @@ describe("owners can perform updates", () => {
         author: OWNER_PUBLIC_KEY,
         stream: STREAM,
         logPath: LOG_PATH,
+        timestamp: BigInt(0),
       },
       event: "application",
       data: {
@@ -82,6 +84,7 @@ describe("owners can perform updates", () => {
         author: OWNER_PUBLIC_KEY,
         stream: STREAM,
         logPath: LOG_PATH,
+        timestamp: BigInt(0),
       },
       event: "application",
       data: {
@@ -103,6 +106,7 @@ describe("owners can perform updates", () => {
         author: OWNER_PUBLIC_KEY,
         stream: STREAM,
         logPath: LOG_PATH,
+        timestamp: BigInt(0),
       },
       event: "application",
       data: {
@@ -126,6 +130,7 @@ describe("non-owners cannot perform updates", () => {
         author: NON_OWNER_PUBLIC_KEY,
         stream: STREAM,
         logPath: LOG_PATH,
+        timestamp: BigInt(0),
       },
       event: "application",
       data: {
@@ -133,6 +138,7 @@ describe("non-owners cannot perform updates", () => {
         data: {
           id: CALENDAR_ID,
           fields: {
+            userName: "Me",
             name: "New calendar name",
             dates: [
               {
@@ -160,6 +166,7 @@ describe("non-owners cannot perform updates", () => {
         author: NON_OWNER_PUBLIC_KEY,
         stream: STREAM,
         logPath: LOG_PATH,
+        timestamp: BigInt(0),
       },
       event: "application",
       data: {
@@ -183,6 +190,7 @@ describe("non-owners cannot perform updates", () => {
         author: NON_OWNER_PUBLIC_KEY,
         stream: STREAM,
         logPath: LOG_PATH,
+        timestamp: BigInt(0),
       },
       event: "application",
       data: {
@@ -206,6 +214,7 @@ describe("non-owners cannot perform updates", () => {
         author: NON_OWNER_PUBLIC_KEY,
         stream: STREAM,
         logPath: LOG_PATH,
+        timestamp: BigInt(0),
       },
       event: "application",
       data: {
@@ -231,6 +240,7 @@ describe("admin can update things too", () => {
         author: OWNER_PUBLIC_KEY,
         stream: STREAM,
         logPath: LOG_PATH,
+        timestamp: BigInt(0),
       },
       event: "application",
       data: {
@@ -253,6 +263,7 @@ describe("admin can update things too", () => {
         author: NON_OWNER_PUBLIC_KEY,
         stream: STREAM,
         logPath: LOG_PATH,
+        timestamp: BigInt(0),
       },
       event: "application",
       data: {
@@ -278,6 +289,7 @@ describe("admin can update things too", () => {
         author: NON_OWNER_PUBLIC_KEY,
         stream: STREAM,
         logPath: LOG_PATH,
+        timestamp: BigInt(0),
       },
       event: "application",
       data: {
@@ -303,6 +315,7 @@ describe("admin can update things too", () => {
         author: NON_OWNER_PUBLIC_KEY,
         stream: STREAM,
         logPath: LOG_PATH,
+        timestamp: BigInt(0),
       },
       event: "application",
       data: {
@@ -328,6 +341,7 @@ describe("admin can update things too", () => {
         author: NON_OWNER_PUBLIC_KEY,
         stream: STREAM,
         logPath: LOG_PATH,
+        timestamp: BigInt(0),
       },
       event: "application",
       data: {
