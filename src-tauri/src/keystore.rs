@@ -1,8 +1,10 @@
 //! Persistent storage for private keys.
 
+#[cfg(not(windows))]
+use std::os::unix::fs::PermissionsExt;
+
 use std::fs::{self, File};
 use std::io::prelude::*;
-use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 
 use anyhow::{Context, Result};
@@ -35,7 +37,12 @@ impl KeyStore for PrivateKey {
         file.sync_all()?;
 
         let mut permissions = file.metadata()?.permissions();
+
+        #[cfg(windows)]
+        permissions.set_readonly(true);
+        #[cfg(not(windows))]
         permissions.set_mode(0o600);
+
         fs::set_permissions(path, permissions)?;
 
         Ok(())
