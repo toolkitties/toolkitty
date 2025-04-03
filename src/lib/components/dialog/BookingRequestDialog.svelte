@@ -1,3 +1,8 @@
+<!-- 
+ @component
+ Alert dialog to accept or reject a booking request.
+  -->
+
 <script lang="ts">
   import * as AlertDialog from "./index";
   import { bookings } from "$lib/api";

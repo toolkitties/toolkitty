@@ -1,3 +1,12 @@
+<!-- 
+ @component
+ Change the active calendar, create or join a calendar
+ 
+ When active calendar is changed the following happens:
+ - activeCalendar is updated in frontend database settings table.
+ - All data in app in invalidated (client side page reload)
+  -->
+
 <script lang="ts">
   import { calendars } from "$lib/api";
   import { onMount } from "svelte";

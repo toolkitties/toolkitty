@@ -1,7 +1,7 @@
-<!--
-  Upcoming Bookings component 
-  displayed to resource/space owners when viewing a space/resource
--->
+<!-- 
+ @component
+ List of upcoming bookings displayed to resource/space owners when viewing a space/resource
+  -->
 
 <script lang="ts">
   import type { Observable } from "dexie";

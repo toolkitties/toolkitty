@@ -1,3 +1,8 @@
+<!-- 
+ @component
+ Display bookings of a space/resource in a nice calendar like UX.
+  -->
+
 <script lang="ts">
   let {
     availability,

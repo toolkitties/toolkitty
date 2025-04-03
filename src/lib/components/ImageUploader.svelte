@@ -1,3 +1,8 @@
+<!-- 
+ @component
+ Upload multiple images as part of a form
+  -->
+
 <script lang="ts">
   import { uploadFile } from "$lib/api/blobs";
 

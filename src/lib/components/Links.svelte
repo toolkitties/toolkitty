@@ -1,3 +1,8 @@
+<!-- 
+ @component
+ Generic component for rendering a list of links.
+  -->
+
 <script lang="ts">
   let { links }: { links: Link[] } = $props();
   import TicketIcon from "./icons/TicketIcon.svelte";

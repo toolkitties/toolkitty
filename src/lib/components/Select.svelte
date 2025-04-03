@@ -1,3 +1,8 @@
+<!-- 
+ @component
+ Generic select component used in forms
+  -->
+
 <script lang="ts">
   import { Select } from "bits-ui";
   import Icon from "@iconify/svelte";

@@ -1,3 +1,8 @@
+<!-- 
+ @component
+ Render images in a nice gallery
+  -->
+
 <script lang="ts">
   let { images }: { images: string[] } = $props();
 </script>
