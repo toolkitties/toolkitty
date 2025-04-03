@@ -131,7 +131,7 @@
               {#each weekDates as date (date)}
                 <Calendar.Cell {date} month={month.value}>
                   <Calendar.Day
-                    class={"data-[outside-month]:pointer-events-none data-[outside-month]:text-gray-300 data-[selected]:bg-black data-[selected]:text-white " +
+                    class={"data-outside-month:pointer-events-none data-outside-month:text-gray-300 data-selected:bg-black data-selected:text-white " +
                       (availableDates.some((d) => d.date === date.toString())
                         ? "bg-green-500 text-white"
                         : "") +

@@ -34,7 +34,7 @@
     onValueChange={(value) => handleCalendarSelected(value)}
   >
     <Select.Trigger class="w-full flex items-center">
-      <span class="flex-grow">
+      <span class="grow">
         {selectedCalendarName}
       </span>
       <ChevronIcon size={16} />

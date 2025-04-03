@@ -52,7 +52,7 @@
       {#snippet children({ cells })}
         {#each cells as cell, i (i)}
           <PinInput.Cell
-            class="flex items-center justify-center h-16 w-10 border rounded data-active:outline-primary data-active:outline-1"
+            class="flex items-center justify-center h-16 w-10 border rounded-sm data-active:outline-primary data-active:outline-1"
             {cell}
           >
             {#if cell.char !== null}
@@ -75,7 +75,7 @@
         <span>Show</span>
       {/if}
     </Toggle.Root>
-    <button class="border border-black rounded p-4" onclick={() => join()}
+    <button class="border border-black rounded-sm p-4" onclick={() => join()}
       >Join</button
     >
   {:else}
@@ -88,6 +88,6 @@
 
 <a
   href="/create"
-  class="border border-black rounded p-4 text-center"
+  class="border border-black rounded-sm p-4 text-center"
   type="submit">Create</a
 >

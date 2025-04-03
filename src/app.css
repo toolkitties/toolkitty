@@ -1,92 +1,154 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-/* Custom fonts ＼(；￢_￢) */
-@font-face {
-  font-family: "Atkinson-Hyperlegible";
-  src:
-    url("/fonts/Atkinson-Hyperlegible-Regular.woff2") format("woff2"),
-    url("/fonts/Atkinson-Hyperlegible-Regular.woff") format("woff");
-  font-weight: bold;
-  font-style: normal;
+@theme {
+  --color-bg: var(--bg-color);
+  --color-bg-secondary: var(--bg-secondary-color);
+  --color-primary: var(--primary-color);
+  --color-physical: var(--physical-color);
+  --color-geo: var(--geo-color);
+  --color-virtual: var(--virtual-color);
+  --color-text: var(--text-color);
+
+  --color-red-light: #ff9a9c;
+
+  --color-purple-default: #c398ff;
+  --color-purple-very-light: #e6dbf5;
+
+  --color-grey-very-light: #f0f0f0;
+  --color-grey-light: #e1e1e1;
+  --color-grey-dark: #8c8c8c;
+  --color-grey-darker: #474747;
+
+  --color-brown-dark: #322113;
+
+  --color-black: #020202;
+
+  --color-pink-hot: #ff00e5;
+  --color-pink-light: #ffdffa;
+
+  --color-blue-light: #d6f1ff;
+
+  --color-green-light-fluro: #b4ffb2;
+
+  --font-sans: Atkinson-Hyperlegible, sans-serif;
+  --font-pixel: Handjet, serif;
+
+  --shadow-default: -4px 4px 10px rgba(0, 0, 0, 0.25);
+
+  --background-image-gradient-attention: linear-gradient(
+    90deg,
+    var(--primary-color) 24%,
+    #ff9a9c 100%
+  );
 }
 
-@font-face {
-  font-family: "Atkinson-Hyperlegible";
-  src:
-    url("/fonts/Atkinson-Hyperlegible-Italic.woff2") format("woff2"),
-    url("/fonts/Atkinson-Hyperlegible-Italic.woff") format("woff");
-  font-weight: normal;
-  font-style: italic;
-}
+/*
+  The default border color has changed to `currentColor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
 
-@font-face {
-  font-family: "Atkinson-Hyperlegible";
-  src:
-    url("/fonts/Atkinson-Hyperlegible-Bold.woff2") format("woff2"),
-    url("/fonts/Atkinson-Hyperlegible-Bold.woff") format("woff");
-  font-weight: bold;
-  font-style: italic;
-}
-
-@font-face {
-  font-family: "Handjet";
-  src:
-    url("/fonts/Handjet-Regular.woff2") format("woff2"),
-    url("/fonts/Handjet-Regular.woff") format("woff");
-  font-weight: normal;
-  font-style: normal;
-}
-
-/* Theme colors (　＾＾)人(＾＾　) */
-/* Other colours that don't change between themes are declared directly in tailwind  */
-:root {
-  --bg-color: #ffffff;
-  --bg-secondary-color: #c2c2c2;
-  --primary-color: #b4ffb2;
-  --physical-color: #fdffb4;
-  --geo-color: #ffdffa;
-  --virtual-color: #baceff;
-  --text-color: #000000;
-}
-
-.theme-dark {
-  --background-color: #020202;
-  --bg-secondary-color: #3d3d3d;
-  --primary-color: #b4ffb2;
-  --physical-color: #051f07;
-  --geo-color: #010143;
-  --virtual-color: #3b0346;
-  --text-color: #ffffff;
-}
-
-/* Fix scroll “bounce” on safari */
-:root,
-main {
-  overscroll-behavior: none;
-}
-
-/* Base styles φ(￣ー￣ )ノ */
-html {
-  font-size: 0.9375rem;
-  @apply font-sans;
-}
-
-html,
-body {
-  @apply h-screen flex flex-col;
-}
-
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
 @layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+
+  /* Custom fonts ＼(；￢_￢) */
+  @font-face {
+    font-family: "Atkinson-Hyperlegible";
+    src:
+      url("/fonts/Atkinson-Hyperlegible-Regular.woff2") format("woff2"),
+      url("/fonts/Atkinson-Hyperlegible-Regular.woff") format("woff");
+    font-weight: bold;
+    font-style: normal;
+  }
+
+  @font-face {
+    font-family: "Atkinson-Hyperlegible";
+    src:
+      url("/fonts/Atkinson-Hyperlegible-Italic.woff2") format("woff2"),
+      url("/fonts/Atkinson-Hyperlegible-Italic.woff") format("woff");
+    font-weight: normal;
+    font-style: italic;
+  }
+
+  @font-face {
+    font-family: "Atkinson-Hyperlegible";
+    src:
+      url("/fonts/Atkinson-Hyperlegible-Bold.woff2") format("woff2"),
+      url("/fonts/Atkinson-Hyperlegible-Bold.woff") format("woff");
+    font-weight: bold;
+    font-style: italic;
+  }
+
+  @font-face {
+    font-family: "Handjet";
+    src:
+      url("/fonts/Handjet-Regular.woff2") format("woff2"),
+      url("/fonts/Handjet-Regular.woff") format("woff");
+    font-weight: normal;
+    font-style: normal;
+  }
+
+  /* Theme colors (　＾＾)人(＾＾　) */
+  /* Other colours that don't change between themes are declared directly in tailwind  */
+  :root {
+    --bg-color: #ffffff;
+    --bg-secondary-color: #c2c2c2;
+    --primary-color: #b4ffb2;
+    --physical-color: #fdffb4;
+    --geo-color: #ffdffa;
+    --virtual-color: #d6f1ff;
+    --text-color: #000000;
+  }
+
+  .theme-dark {
+    --background-color: #020202;
+    --bg-secondary-color: #3d3d3d;
+    --primary-color: #b4ffb2;
+    --physical-color: #051f07;
+    --geo-color: #010143;
+    --virtual-color: #3b0346;
+    --text-color: #ffffff;
+  }
+
+  /* Fix scroll “bounce” on safari */
+  :root,
+  main {
+    overscroll-behavior: none;
+  }
+
+  /* Base styles φ(￣ー￣ )ノ */
+  html {
+    font-size: 0.9375rem;
+    @apply font-sans;
+  }
+
+  html,
+  body {
+    @apply h-screen flex flex-col;
+  }
+
+  /* overflow: hidden is set to fix strange bug on dashboard where there is large empty space below the html/body */
+  html,
+  body {
+    @apply overflow-hidden;
+  }
+
   input,
   textarea {
-    @apply w-full p-2.5 border border-black rounded;
+    @apply w-full p-2.5 border border-black rounded-sm;
   }
 
   button,
   .button {
-    @apply border border-black bg-black/20 rounded px-2 py-1.5 flex gap-1 items-center;
+    @apply border border-black bg-black/20 rounded-sm px-2 py-1.5 flex gap-1 items-center cursor-pointer;
   }
 
   .tag {
@@ -132,7 +194,7 @@ body {
 
   /* style json nicely */
   pre {
-    @apply border border-black p-2 rounded overflow-auto bg-green-50;
+    @apply border border-black p-2 rounded-sm overflow-auto bg-green-50;
   }
 }
 
@@ -140,55 +202,60 @@ body {
   .form-error {
     @apply text-red-500 block mb-2;
   }
-}
 
-/* Hard-coded classes for bg-physical with rgba values */
-/* TODO: move to @theme colour when upgrading to tailwind v4 */
-.bg-physical\/0 {
-  background-color: rgba(253, 255, 180, 0); /* physical color with 0% opacity */
-}
+  /* Hard-coded classes for bg-physical with rgba values */
+  /* TODO: move to @theme colour when upgrading to tailwind v4 */
+  .bg-physical\/0 {
+    background-color: rgba(
+      253,
+      255,
+      180,
+      0
+    ); /* physical color with 0% opacity */
+  }
 
-.bg-physical\/20 {
-  background-color: rgba(
-    253,
-    255,
-    180,
-    0.2
-  ); /* physical color with 20% opacity */
-}
+  .bg-physical\/20 {
+    background-color: rgba(
+      253,
+      255,
+      180,
+      0.2
+    ); /* physical color with 20% opacity */
+  }
 
-.bg-physical\/40 {
-  background-color: rgba(
-    253,
-    255,
-    180,
-    0.4
-  ); /* physical color with 40% opacity */
-}
+  .bg-physical\/40 {
+    background-color: rgba(
+      253,
+      255,
+      180,
+      0.4
+    ); /* physical color with 40% opacity */
+  }
 
-.bg-physical\/60 {
-  background-color: rgba(
-    253,
-    255,
-    180,
-    0.6
-  ); /* physical color with 60% opacity */
-}
+  .bg-physical\/60 {
+    background-color: rgba(
+      253,
+      255,
+      180,
+      0.6
+    ); /* physical color with 60% opacity */
+  }
 
-.bg-physical\/80 {
-  background-color: rgba(
-    253,
-    255,
-    180,
-    0.8
-  ); /* physical color with 80% opacity */
-}
+  .bg-physical\/80 {
+    background-color: rgba(
+      253,
+      255,
+      180,
+      0.8
+    ); /* physical color with 80% opacity */
+  }
 
-.bg-physical\/100 {
-  background-color: rgba(
-    253,
-    255,
-    180,
-    1
-  ); /* physical color with 100% opacity */
+  .bg-physical\/100 {
+    background-color: rgba(
+      253,
+      255,
+      180,
+      1
+    ); /* physical color with 100% opacity */
+  }
 }
