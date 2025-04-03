@@ -88,27 +88,25 @@ export function findById(id: Hash): Promise<CalendarEventEnriched | undefined> {
 async function enrichEvent(
   event: CalendarEvent,
 ): Promise<CalendarEventEnriched> {
-  // Add space booking request to event.
   const eventEnriched = event as CalendarEventEnriched;
+
+  // Add space booking request to event.
   const spaceRequests = await db.bookingRequests
     .where({ eventId: event.id, resourceType: "space", isValid: "true" })
     .sortBy("createdAt");
-  if (spaceRequests.length === 0) {
-    return eventEnriched;
+    
+  if (spaceRequests.length !== 0) {
+    eventEnriched.spaceRequest = { bookingRequest: spaceRequests[0] };
+    eventEnriched.spaceRequest.space = await db.spaces.get({
+      id: spaceRequests[0].resourceId,
+    });
   }
-  eventEnriched.spaceRequest = { bookingRequest: spaceRequests[0] };
 
-  // If the booking request is accepted add the space to the event as well.
-  eventEnriched.spaceRequest.space = await db.spaces.get({
-    id: spaceRequests[0].resourceId,
-  });
-
-  // Add resource requests to event.
+  // Add resource booking requests to event.
   const resourceRequests = await db.bookingRequests
     .where({ eventId: event.id, resourceType: "resource", isValid: "true" })
     .sortBy("createdAt");
 
-  // Add any accepted resources to the event as well.
   eventEnriched.resourceRequests = [];
   for (const request of resourceRequests) {
     const resource = await db.resources.get({
