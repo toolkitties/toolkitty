@@ -1,3 +1,12 @@
+<!-- 
+ @component
+ Temporary messages that appear from the top of the screen.
+
+ Triggered by:
+ - Middleware processor
+ - Form submissions
+  -->
+
 <script lang="ts">
   import { toast } from "$lib/toast.svelte";
   import { fly } from "svelte/transition";
@@ -9,7 +18,11 @@
     {#each toast.toasts as toastie (toastie.id)}
       <li
         aria-live="polite"
-        class={`toast ${toastie.type}`}
+        class={`flex gap-1.5 p-2.5 border-black border rounded 
+        ${toastie.type === "error" && "bg-red-light"}
+        ${toastie.type === "success" && "bg-green-light-fluro"}
+        ${toastie.type === "info" && "bg-pink-light"}
+        `}
         transition:fly={{ y: -50, duration: 500 }}
       >
         {#if toastie.link}
@@ -38,21 +51,3 @@
   {/if}
   <p class="text-center">{toast.message}</p>
 {/snippet}
-
-<style>
-  .toast {
-    @apply flex gap-1.5 p-2.5 border-black border rounded;
-  }
-
-  .toast.error {
-    @apply bg-red-light;
-  }
-
-  .toast.success {
-    @apply bg-green-light-fluro;
-  }
-
-  .toast.info {
-    @apply bg-pink-light;
-  }
-</style>

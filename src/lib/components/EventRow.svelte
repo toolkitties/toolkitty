@@ -1,3 +1,8 @@
+<!-- 
+ @component
+ Render events for the events/home page
+  -->
+
 <script lang="ts">
   import Date from "./Date.svelte";
   let { event }: { event: CalendarEventEnriched } = $props();

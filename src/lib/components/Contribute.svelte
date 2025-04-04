@@ -1,3 +1,9 @@
+<!-- 
+ @component
+ Contribute button displayed on events, spaces and resources page.
+ Allows the user to quickly navigate to create pages.
+  -->
+
 <script lang="ts">
   let contributeButtonOpen: boolean = $state(false);
 </script>

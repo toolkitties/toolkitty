@@ -1,3 +1,8 @@
+<!-- 
+ @component
+ Alert dialog to delete a space/resource/event with a friendly warning about the consequences of doing so.
+  -->
+
 <script lang="ts">
   import * as AlertDialog from "$lib/components/dialog/index";
   import { events, spaces, resources } from "$lib/api";

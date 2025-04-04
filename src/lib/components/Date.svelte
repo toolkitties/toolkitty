@@ -1,19 +1,20 @@
-<!--
-@component
-Display dates in a nice format
+<!-- 
+ @component
+ Display dates in a nice format
 
-Format:
-- date = Tuesday 19.09.25
-- time = 17:00
-- datetime = 19.09.25 17:00
+ Format:
+ - date = Tuesday 19.09.25
+ - time = 17:00
+ - datetime = 19.09.25 17:00
 -->
+
 <script lang="ts">
   const {
     date,
     format = "datetime",
   }: {
     date: string;
-    format?: "date" | "time" | "datetime";
+    format?: "date" | "dateshort" | "time" | "datetime";
   } = $props();
 
   const dateConfig: Intl.DateTimeFormatOptions = {
@@ -48,6 +49,11 @@ Format:
         new Date(date),
       );
       return `${weekdayStr} ${dateStr}`;
+    } else if (format === "dateshort") {
+      const dateStr = new Intl.DateTimeFormat(locale, dateConfig).format(
+        new Date(date),
+      );
+      return `${dateStr}`;
     } else if (format === "time") {
       return new Intl.DateTimeFormat(locale, timeConfig).format(new Date(date));
     } else {

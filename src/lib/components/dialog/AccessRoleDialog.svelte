@@ -1,3 +1,8 @@
+<!-- 
+ @component
+ Alert dialog to assign a user to a new role and/or accept calendar access request.
+  -->
+
 <script lang="ts">
   import * as AlertDialog from "./index";
   import { access, roles, calendars } from "$lib/api";

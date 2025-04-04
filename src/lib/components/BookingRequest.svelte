@@ -1,3 +1,10 @@
+<!-- 
+ @component
+ Display status and type of booking request for an event. 
+ Helps events owners and admins to understand overall 
+ status of all the bookings for a particular event
+  -->
+
 <script lang="ts">
   let { request }: { request: BookingRequestEnriched } = $props();
   import FootstepsIcon from "$lib/components/icons/FootstepsIcon.svelte";
@@ -5,7 +12,7 @@
 </script>
 
 <div
-  class="border border-black rounded p-2 flex justify-between w-full text-left"
+  class="border border-black rounded-sm p-2 flex justify-between w-full text-left"
 >
   {#if request.resourceType === "resource"}
     <div class="flex gap-2 items-center">

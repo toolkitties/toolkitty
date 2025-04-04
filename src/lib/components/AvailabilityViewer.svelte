@@ -1,3 +1,10 @@
+<!-- 
+ @component
+ View availability of a resource or space.
+
+ Used in events view/create/edit
+  -->
+
 <script lang="ts">
   import { Calendar } from "bits-ui";
   import type { DateValue } from "@internationalized/date";
@@ -108,10 +115,10 @@
               {#each weekDates as date (date.toString())}
                 <Calendar.Cell {date} month={month.value}>
                   <Calendar.Day
-                    class={`data-[outside-month]:pointer-events-none
-                data-[outside-month]:text-gray-300
-                data-[selected]:bg-black
-                data-[selected]:text-white
+                    class={`data-outside-month:pointer-events-none
+                data-outside-month:text-gray-300
+                data-selected:bg-black
+                data-selected:text-white
                 ${isAvailableDay(date) ? "bg-green-300" : ""}
                 ${!isAvailableDay(date) ? "text-gray-400 pointer-events-none" : ""}`}
                     aria-disabled={!isAvailableDay(date) ? "true" : undefined}

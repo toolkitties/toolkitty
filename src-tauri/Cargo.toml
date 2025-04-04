@@ -17,6 +17,7 @@ tauri-build = { version = "2", features = [] }
 anyhow = "1.0.95"
 async-trait = "0.1.85"
 futures-util = "0.3.31"
+hex = "0.4.3"
 iroh-io = "0.6.1"
 mime = "0.3.17"
 experimental-node = { git = "https://github.com/p2panda/experimental-node", rev = "e5006c8cf573ee4a5882bd0c71a57b6435aa9483" }
