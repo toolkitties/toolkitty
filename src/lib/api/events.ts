@@ -17,21 +17,18 @@ export function findMany(calendarId: Hash): Promise<CalendarEventEnriched[]> {
     db.events,
     db.bookingRequests,
     db.spaces,
+    db.resources,
     async () => {
-      const events: CalendarEventEnriched[] = await db.events
+      const events: CalendarEvent[] = await db.events
         .where({ calendarId })
         .sortBy("startDate");
-      // Add space to each event.
+
+      const eventsEnriched = [];
       for (const event of events) {
-        if (event.spaceRequest) {
-          const request = await db.bookingRequests.get(event.spaceRequest);
-          if (!request) {
-            continue;
-          }
-          event.space = await db.spaces.get({ id: request.resourceId });
-        }
+        const eventEnriched = await enrichEvent(event);
+        eventsEnriched.push(eventEnriched);
       }
-      return events;
+      return eventsEnriched;
     },
   );
 }
@@ -50,44 +47,16 @@ export function findByOwner(
     db.resources,
     db.spaces,
     async () => {
-      const events: CalendarEventEnriched[] = await db.events
+      const events: CalendarEvent[] = await db.events
         .where({ ownerId, calendarId })
         .sortBy("startDate");
+
+      const eventsEnriched = [];
       for (const event of events) {
-        // Add space to each event.
-        if (event.spaceRequest) {
-          const request = await db.bookingRequests.get(event.spaceRequest);
-          if (!request) {
-            continue;
-          }
-          event.space = await db.spaces.get({ id: request.resourceId });
-          if (event.space) {
-            event.space.bookingRequest = request;
-          }
-        }
-
-        if (!event.resources) {
-          continue;
-        }
-
-        // Add resources to each event.
-        const resources: CalendarEventResourceEnriched[] = [];
-        for (const requestId of event.resources) {
-          const request = await db.bookingRequests.get(requestId);
-          if (!request) {
-            continue;
-          }
-          const resource: CalendarEventResourceEnriched | undefined =
-            await db.resources.get(request.resourceId);
-          if (resource) {
-            resource.bookingRequest = request;
-            resources.push(resource);
-          }
-        }
-
-        event.resources = resources;
+        const eventEnriched = await enrichEvent(event);
+        eventsEnriched.push(eventEnriched);
       }
-      return events;
+      return eventsEnriched;
     },
   );
 }
@@ -101,21 +70,52 @@ export function findById(id: Hash): Promise<CalendarEventEnriched | undefined> {
     db.events,
     db.bookingRequests,
     db.spaces,
+    db.resources,
     async () => {
-      const event: CalendarEventEnriched | undefined = await db.events.get({
+      const event = await db.events.get({
         id,
       });
-      // Add space to event.
-      if (event?.spaceRequest) {
-        const request = await db.bookingRequests.get(event.spaceRequest);
-        if (!request) {
-          return event;
-        }
-        event.space = await db.spaces.get({ id: request.resourceId });
+
+      if (!event) {
+        return;
       }
-      return event;
+
+      return await enrichEvent(event);
     },
   );
+}
+
+async function enrichEvent(
+  event: CalendarEvent,
+): Promise<CalendarEventEnriched> {
+  const eventEnriched = event as CalendarEventEnriched;
+
+  // Add space booking request to event.
+  const spaceRequests = await db.bookingRequests
+    .where({ eventId: event.id, resourceType: "space", isValid: "true" })
+    .sortBy("createdAt");
+
+  if (spaceRequests.length !== 0) {
+    eventEnriched.spaceRequest = { bookingRequest: spaceRequests[0] };
+    eventEnriched.spaceRequest.space = await db.spaces.get({
+      id: spaceRequests[0].resourceId,
+    });
+  }
+
+  // Add resource booking requests to event.
+  const resourceRequests = await db.bookingRequests
+    .where({ eventId: event.id, resourceType: "resource", isValid: "true" })
+    .sortBy("createdAt");
+
+  eventEnriched.resourceRequests = [];
+  for (const request of resourceRequests) {
+    const resource = await db.resources.get({
+      id: request.resourceId,
+    });
+    eventEnriched.resourceRequests.push({ bookingRequest: request, resource });
+  }
+
+  return eventEnriched;
 }
 
 export async function isOwner(

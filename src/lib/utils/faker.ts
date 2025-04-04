@@ -484,10 +484,8 @@ export function createEventFields(
   const fields = {
     name: `${nameFirst} ${nameSecond} ${nameThird}`,
     description: faker.commerce.productDescription(),
-    spaceRequest: faker.string.hexadecimal({ length: 32 }),
     startDate: start.toISOString(),
     endDate: end.toISOString(),
-    resourcesRequests: ["/toolkitty-mascot.png"],
     links: [
       {
         type: faker.helpers.arrayElement(["custom", "ticket"]),
@@ -495,7 +493,7 @@ export function createEventFields(
         url: faker.internet.url(),
       },
     ],
-    images: [],
+    images: ["/toolkitty-mascot.png"],
   };
   return { ...fields, ...fieldsOverwrites };
 }

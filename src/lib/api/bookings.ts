@@ -251,6 +251,7 @@ async function onBookingRequested(
         resourceOwner: resource!.ownerId,
         isValid: "false",
         status: "pending",
+        createdAt: meta.timestamp,
         ...data,
       };
 
