@@ -276,7 +276,6 @@ type ResolveInviteCodeResponse = {
  * similar words for this), we've created or changed our application data
  * which is further defined below.
  */
-
 type ApplicationEvent =
   | UserProfileUpdated
   | CalendarCreated
@@ -299,8 +298,6 @@ type ApplicationEvent =
   | BookingRequested
   | BookingRequestAccepted
   | BookingRequestRejected
-  | BookingRequestCancelled
-  | BookingRequestAcceptanceRevoked
   | UserRoleAssigned;
 
 /**
@@ -348,56 +345,213 @@ type VirtualLocation = {
 
 type Answer = "accept" | "reject";
 
+/**
+ * Data fields of calendar created and updated messages.
+ */
 type CalendarFields = {
+  /**
+   * Username of the calendar creator.
+   *
+   * @TODO: move this out of fields into CalendarCreated event.
+   */
   userName: string;
+
+  /**
+   * Name of the calendar.
+   */
   name: string;
+
+  /**
+   * Dates that the calendar is "active" for.
+   *
+   * @TODO: use from and to dates as we don't support non-consecutive calendar dates yet.
+   */
   dates: TimeSpan[];
+
+  /**
+   * Instructions for calendar users.
+   */
   calendarInstructions?: string;
+
+  /**
+   * Text to be displayed on the spaces page.
+   */
   spacePageText?: string;
+
+  /**
+   * Text to be displayed on the resources page.
+   */
   resourcePageText?: string;
 };
 
+/**
+ * Data fields of space created and updated messages.
+ */
 type SpaceFields = {
+  /**
+   * Name of the space.
+   */
   name: string;
+
+  /**
+   * Location of this space, can be a physical location (with an address), a GPS location, or a
+   * virtual location.
+   */
   location: PhysicalLocation | GPSLocation | VirtualLocation;
+
+  /**
+   * Space capacity.
+   */
   capacity: number | null;
+
+  /**
+   * Accessibility information relating to this space.
+   */
   accessibility: string;
+
+  /**
+   * General description of this space.
+   */
   description: string;
+
+  /**
+   * Contact details for the owner of this space.
+   */
   contact: string;
+
+  /**
+   * Website or other link for this space.
+   */
   link?: Link | null;
+
+  /**
+   * Message to be displayed to organisers requesting this space.
+   */
   messageForRequesters: string;
+
+  /**
+   * Images of this space.
+   */
   images: Image[];
+
+  /**
+   * Availability for this space as an array of timespans or the string "always" to show this
+   * space is always available.
+   */
   availability: TimeSpan[] | "always";
+
+  /**
+   * Boolean value denoting if multiple bookings can be made at the same time for this space.
+   *
+   * This might be useful for large spaces, such as parks or large halls, where multiple events
+   * could happen simultaneously.
+   */
   multiBookable: boolean;
 };
 
+/**
+ * Data fields of resource created and updated messages.
+ */
 type ResourceFields = {
+  /**
+   * Name of this resource.
+   */
   name: string;
+
+  /**
+   * Description of this resource.
+   */
   description: string;
+
+  /**
+   * Contact details for the owner of this resource.
+   */
   contact: string;
+
+  /**
+   * Website or other link for this resource.
+   */
   link?: Link;
+
+  /**
+   * Images of this space.
+   */
   images: Image[];
+
+  /**
+   * Availability for this resource as an array of timespans or the string "always" to show this
+   * resource is always available.
+   */
   availability: TimeSpan[] | "always";
+
+  /**
+   * Boolean value denoting if multiple bookings can be made at the same time for this resource.
+   */
   multiBookable: boolean;
 };
 
+/**
+ * Data fields of event created and updated messages.
+ */
 type EventFields = {
+  /**
+   * Name of this event.
+   */
   name: string;
+
+  /**
+   * Description of this event.
+   */
   description: string;
+
+  /**
+   * Start date and time of this event as an ISO string.
+   */
   startDate: string;
+
+  /**
+   * End date and time of this event as an ISO string.
+   */
   endDate: string;
+
+  /**
+   * Optional public start date and time of this event as an ISO string.
+   *
+   * This may be different from `startDate` when the event organiser wants to access a space early
+   * before any public arrive.
+   */
   publicStartDate?: string;
+
+  /**
+   * Optional public end date and time of this event as an ISO string.
+   *
+   * This may be different from `endDate` when the event organiser wants to leave a space after
+   * later than the public.
+   */
   publicEndDate?: string;
-  links?: Link[];
+
+  /**
+   * Ticketing or other link for this event.
+   */
+  link?: Link;
+
+  /**
+   * Images of this event.
+   */
   images: Image[];
 };
 
 /**
  * User
  *
- * NOTE: sent on `inbox` channel
+ * NOTE: sent on `calendar` channel
  */
 
+/**
+ * Author has updated their username.
+ *
+ * NOTE: currently not supported.
+ */
 type UserProfileUpdated = {
   type: "user_profile_updated";
   data: {
@@ -411,15 +565,41 @@ type UserProfileUpdated = {
  * NOTE: sent on `inbox` channel
  */
 
+/**
+ * Access to a calendar has been requested.
+ */
 type CalendarAccessRequested = {
   type: "calendar_access_requested";
   data: {
+    /**
+     * ID of the calendar the author wishes to have access to.
+     */
     calendarId: Hash;
+
+    /**
+     * Name of the requesting author.
+     *
+     * This name will be taken as the username associated with the authors public key for this
+     * calendar the access request is accepted.
+     */
     name: string;
+
+    /**
+     * Message for anyone receiving this access request.
+     */
     message: string;
   };
 };
 
+/**
+ * A calendar access request was accepted.
+ *
+ * Access requests to a calendar can only be accepted by the calendar owner or a calendar admin.
+ *
+ * On observing a valid access request acceptance a new user is created for the relevant calendar and
+ * public key. The new peer now subscribes to any relevant calendar topics and any other peers
+ * observing this event should add the new peer to their calendar topic map.
+ */
 type CalendarAccessAccepted = {
   type: "calendar_access_accepted";
   data: {
@@ -427,6 +607,15 @@ type CalendarAccessAccepted = {
   };
 };
 
+/**
+ * A calendar access request was rejected.
+ *
+ * Access requests to a calendar can only be accepted by the calendar owner or a calendar admin.
+ *
+ * On observing a valid access request acceptance a new user is created for the relevant calendar and
+ * public key. The new peer now subscribes to any relevant calendar topics and any other peers
+ * observing this event should add the new peer to their calendar topic map.
+ */
 type CalendarAccessRejected = {
   type: "calendar_access_rejected";
   data: {
@@ -438,6 +627,9 @@ type CalendarAccessRejected = {
  * Calendar
  */
 
+/**
+ * A new calendar was created.
+ */
 type CalendarCreated = {
   type: "calendar_created";
   data: {
@@ -445,14 +637,29 @@ type CalendarCreated = {
   };
 };
 
+/**
+ * The calendar was updated.
+ *
+ * Only the calendar "owner" or an "admin" can update the calendar.
+ */
 type CalendarUpdated = {
   type: "calendar_updated";
   data: {
+    /**
+     * ID of the calendar that was updated.
+     */
     id: Hash;
     fields: CalendarFields;
   };
 };
 
+/**
+ * Text for a calendar page was updated.
+ *
+ * Only the calendar "owner" or an "admin" can update calendar pages.
+ *
+ * NOTE: not yet supported.
+ */
 type PageUpdated = {
   type: "page_updated";
   data: {
@@ -462,6 +669,11 @@ type PageUpdated = {
   };
 };
 
+/**
+ * The calendar was deleted.
+ *
+ * Only the calendar "owner" or an "admin" can delete the calendar.
+ */
 type CalendarDeleted = {
   type: "calendar_deleted";
   data: {
@@ -473,6 +685,11 @@ type CalendarDeleted = {
  * Space
  */
 
+/**
+ * A new space was created.
+ *
+ * The signing author of this message is the "owner" of this space.
+ */
 type SpaceCreated = {
   type: "space_created";
   data: {
@@ -480,14 +697,28 @@ type SpaceCreated = {
   };
 };
 
+/**
+ * The space was updated.
+ *
+ * Only the space "owner" or a calendar "admin" can update a space.
+ */
 type SpaceUpdated = {
   type: "space_updated";
   data: {
+    /**
+     * ID of the space that was updated.
+     */
     id: Hash;
+
     fields: SpaceFields;
   };
 };
 
+/**
+ * The space was deleted.
+ *
+ * Only the space "owner" or a calendar "admin" can delete a space.
+ */
 type SpaceDeleted = {
   type: "space_deleted";
   data: {
@@ -499,6 +730,11 @@ type SpaceDeleted = {
  * Resource
  */
 
+/**
+ * A new resource was created.
+ *
+ * The signing author of this message is the "owner" of this resource.
+ */
 type ResourceCreated = {
   type: "resource_created";
   data: {
@@ -506,6 +742,11 @@ type ResourceCreated = {
   };
 };
 
+/**
+ * The resource was updated.
+ *
+ * Only the resource "owner" or a calendar "admin" can update a resource.
+ */
 type ResourceUpdated = {
   type: "resource_updated";
   data: {
@@ -514,6 +755,11 @@ type ResourceUpdated = {
   };
 };
 
+/**
+ * The resource was deleted.
+ *
+ * Only the resource "owner" or a calendar "admin" can delete a resource.
+ */
 type ResourceDeleted = {
   type: "resource_deleted";
   data: {
@@ -525,6 +771,11 @@ type ResourceDeleted = {
  * Event
  */
 
+/**
+ * A new event was created.
+ *
+ * The signing author of this message is the "owner" of the event.
+ */
 type EventCreated = {
   type: "event_created";
   data: {
@@ -532,6 +783,11 @@ type EventCreated = {
   };
 };
 
+/**
+ * The event was updated.
+ *
+ * Only the event "owner" or a calendar "admin" can update an event.
+ */
 type EventUpdated = {
   type: "event_updated";
   data: {
@@ -540,6 +796,11 @@ type EventUpdated = {
   };
 };
 
+/**
+ * The event was deleted.
+ *
+ * Only the event "owner" or a calendar "admin" can delete an event.
+ */
 type EventDeleted = {
   type: "event_deleted";
   data: {
@@ -548,55 +809,69 @@ type EventDeleted = {
 };
 
 /**
- * Requests and responses
+ * Booking requests and responses
  */
 
+/**
+ * A resource or space has been requested.
+ */
 type BookingRequested = {
   type: "booking_requested";
   data: {
+    /**
+     * Does this request concern a "resource" or a "space".
+     */
     type: "resource" | "space";
+
+    /**
+     * ID of the space or resource being requested.
+     */
     resourceId: Hash;
+
+    /**
+     * ID of the event this resource is being requested for.
+     */
     eventId: Hash;
+
+    /**
+     * Message to the resource or space owner.
+     */
     message: string;
+
+    /**
+     * The timespan for which the space or resource is being requested.
+     */
     timeSpan: TimeSpan;
   };
 };
 
+/**
+ * A booking request has been been accepted.
+ *
+ * Only the owner of a space or resource can accept a booking request for it.
+ */
 type BookingRequestAccepted = {
   type: "booking_request_accepted";
   data: {
+    /**
+     * ID of the booking request which is being accepted.
+     */
     requestId: Hash;
   };
 };
 
+/**
+ * A booking request has been been rejected.
+ *
+ * Only the owner of a space or resource can reject a booking request for it.
+ */
 type BookingRequestRejected = {
   type: "booking_request_rejected";
   data: {
+    /**
+     * ID of the booking request which is being rejected.
+     */
     requestId: Hash;
-  };
-};
-
-/**
- * Message for explicitly cancelling a previously issued resource request. Should not be used when a
- * request can be considered implicitly cancelled due to event deletion or other changes which may
- * impact existing requests.
- */
-type BookingRequestCancelled = {
-  type: "booking_request_cancelled";
-  data: {
-    requestId: Hash;
-  };
-};
-
-/**
- * Message for explicitly revoking a previously accepted resource request. Should not be used when a
- * request can be considered implicitly revoked due to resource deletion or other changes which may
- * impact existing requests.
- */
-type BookingRequestAcceptanceRevoked = {
-  type: "booking_request_acceptance_revoked";
-  data: {
-    requestAcceptanceId: Hash;
   };
 };
 
