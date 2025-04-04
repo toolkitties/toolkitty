@@ -27,12 +27,13 @@ beforeAll(async () => {
 
 describe("maintain booking request timespan validity", () => {
   test("space with update and delete", async () => {
-    let pendingBookings = await bookings.findAll({
+    let bookingRequests = await bookings.findAll({
       calendarId: CALENDAR_ID,
       eventId: "event_001",
       resourceType: "space",
     });
-    expect(pendingBookings).lengthOf(1);
+    expect(bookingRequests).lengthOf(1);
+    expect(bookingRequests[0].isValid).toBe("true");
 
     const invalidRequest: ApplicationMessage = {
       meta: {
@@ -50,7 +51,7 @@ describe("maintain booking request timespan validity", () => {
           resourceId: "space_001",
           eventId: "event_001",
           message: "Hi, can I haz your Conference Room A?",
-          // This timeSpan is outside the available timeSpan for space_002
+          // This timeSpan is outside the available timeSpan for space_001
           timeSpan: {
             start: "2025-04-01T09:00:00Z",
             end: "2025-05-01T17:00:00Z",
@@ -61,13 +62,14 @@ describe("maintain booking request timespan validity", () => {
 
     await processMessage(invalidRequest);
 
-    pendingBookings = await bookings.findAll({
+    bookingRequests = await bookings.findAll({
       calendarId: CALENDAR_ID,
       eventId: "event_001",
       resourceType: "space",
-      isValid: "true",
     });
-    expect(pendingBookings).lengthOf(1);
+    expect(bookingRequests).lengthOf(2);
+    expect(bookingRequests[0].isValid).toBe("true");
+    expect(bookingRequests[1].isValid).toBe("false");
 
     const space = await spaces.findById("space_001");
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -100,13 +102,14 @@ describe("maintain booking request timespan validity", () => {
 
     await processMessage(updateSpace);
 
-    pendingBookings = await bookings.findAll({
+    bookingRequests = await bookings.findAll({
       calendarId: CALENDAR_ID,
       eventId: "event_001",
       resourceType: "space",
-      isValid: "true",
     });
-    expect(pendingBookings).lengthOf(0);
+    expect(bookingRequests).lengthOf(2);
+    expect(bookingRequests[0].isValid).toBe("false");
+    expect(bookingRequests[1].isValid).toBe("false");
 
     updateSpace = {
       meta: {
@@ -131,13 +134,15 @@ describe("maintain booking request timespan validity", () => {
 
     await processMessage(updateSpace);
 
-    pendingBookings = await bookings.findAll({
+    bookingRequests = await bookings.findAll({
       calendarId: CALENDAR_ID,
       eventId: "event_001",
       resourceType: "space",
-      isValid: "true",
     });
-    expect(pendingBookings).lengthOf(2);
+
+    expect(bookingRequests).lengthOf(2);
+    expect(bookingRequests[0].isValid).toBe("true");
+    expect(bookingRequests[1].isValid).toBe("true");
 
     const deleteSpace: ApplicationMessage = {
       meta: {
@@ -158,24 +163,26 @@ describe("maintain booking request timespan validity", () => {
 
     await processMessage(deleteSpace);
 
-    pendingBookings = await bookings.findAll({
+    bookingRequests = await bookings.findAll({
       calendarId: CALENDAR_ID,
       eventId: "event_001",
       resourceType: "space",
-      isValid: "true",
     });
-    expect(pendingBookings).lengthOf(0);
+    expect(bookingRequests).lengthOf(2);
+    expect(bookingRequests[0].isValid).toBe("false");
+    expect(bookingRequests[1].isValid).toBe("false");
   });
 
   test("resource with update and delete", async () => {
-    let pendingBookings = await bookings.findAll({
+    let bookingRequests = await bookings.findAll({
       calendarId: CALENDAR_ID,
       eventId: "event_001",
       resourceType: "resource",
     });
-    expect(pendingBookings).lengthOf(1);
+    expect(bookingRequests).lengthOf(1);
+    expect(bookingRequests[0].isValid).toBe("true");
 
-    const invalidRequest: ApplicationMessage = {
+    const validRequest: ApplicationMessage = {
       meta: {
         operationId: "resource_request_004",
         author: OWNER_PUBLIC_KEY,
@@ -200,15 +207,16 @@ describe("maintain booking request timespan validity", () => {
       },
     };
 
-    await processMessage(invalidRequest);
+    await processMessage(validRequest);
 
-    pendingBookings = await bookings.findAll({
+    bookingRequests = await bookings.findAll({
       calendarId: CALENDAR_ID,
       eventId: "event_001",
       resourceType: "resource",
-      isValid: "true",
     });
-    expect(pendingBookings).lengthOf(2);
+    expect(bookingRequests).lengthOf(2);
+    expect(bookingRequests[0].isValid).toBe("true");
+    expect(bookingRequests[1].isValid).toBe("true");
 
     const resource = await resources.findById("resource_001");
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -241,13 +249,14 @@ describe("maintain booking request timespan validity", () => {
 
     await processMessage(updateResource);
 
-    pendingBookings = await bookings.findAll({
+    bookingRequests = await bookings.findAll({
       calendarId: CALENDAR_ID,
       eventId: "event_001",
       resourceType: "resource",
-      isValid: "true",
     });
-    expect(pendingBookings).lengthOf(0);
+    expect(bookingRequests).lengthOf(2);
+    expect(bookingRequests[0].isValid).toBe("false");
+    expect(bookingRequests[1].isValid).toBe("false");
 
     updateResource = {
       meta: {
@@ -272,13 +281,14 @@ describe("maintain booking request timespan validity", () => {
 
     await processMessage(updateResource);
 
-    pendingBookings = await bookings.findAll({
+    bookingRequests = await bookings.findAll({
       calendarId: CALENDAR_ID,
       eventId: "event_001",
       resourceType: "resource",
-      isValid: "true",
     });
-    expect(pendingBookings).lengthOf(2);
+    expect(bookingRequests).lengthOf(2);
+    expect(bookingRequests[0].isValid).toBe("true");
+    expect(bookingRequests[1].isValid).toBe("true");
 
     const deleteSpace: ApplicationMessage = {
       meta: {
@@ -299,12 +309,13 @@ describe("maintain booking request timespan validity", () => {
 
     await processMessage(deleteSpace);
 
-    pendingBookings = await bookings.findAll({
+    bookingRequests = await bookings.findAll({
       calendarId: CALENDAR_ID,
       eventId: "event_001",
       resourceType: "resource",
-      isValid: "true",
     });
-    expect(pendingBookings).lengthOf(0);
+    expect(bookingRequests).lengthOf(2);
+    expect(bookingRequests[0].isValid).toBe("false");
+    expect(bookingRequests[1].isValid).toBe("false");
   });
 });

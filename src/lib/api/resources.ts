@@ -224,9 +224,6 @@ function onResourceUpdated(
   meta: StreamMessageMeta,
   data: ResourceUpdated["data"],
 ): Promise<void> {
-  const resourceId = data.id;
-  const resourceAvailability = data.fields.availability;
-
   return db.transaction("rw", db.resources, db.bookingRequests, async () => {
     const resource = await db.resources.get(data.id);
     if (!resource) {
@@ -247,28 +244,6 @@ function onResourceUpdated(
       return;
     }
 
-    // Update `isavalid` field of all booking requests associated with this space.
-    await db.bookingRequests.where({ resourceId }).modify((request) => {
-      const requestTimeSpan = new TimeSpanClass(request.timeSpan);
-      if (resourceAvailability == "always") {
-        request.isValid = "true";
-        return;
-      }
-      request.isValid = "false";
-      for (const span of resourceAvailability) {
-        const availabilityTimeSpan = new TimeSpanClass(span);
-        const isValid = availabilityTimeSpan.contains(requestTimeSpan);
-        if (isValid) {
-          request.isValid = "true";
-          break;
-        }
-      }
-      request.isValid = "false";
-    });
-
-    // @TODO: we could show a toast to the user if a previously valid request timespan now became
-    // invalid.
-
     // @TODO: add related location to spaces object.
     await db.resources.update(data.id, {
       ...data.fields,
@@ -279,14 +254,5 @@ function onResourceUpdated(
 
 function onResourceDeleted(data: ResourceDeleted["data"]): Promise<void> {
   const resourceId = data.id;
-
-  return db.transaction("rw", db.resources, db.bookingRequests, async () => {
-    // Update `isavalid` field of all booking requests associated with this resource.
-    await db.bookingRequests.where({ resourceId }).modify({ isValid: "false" });
-
-    // @TODO: we could show a toast to the user if a previously valid event timespan now became
-    // invalid.
-
-    await db.resources.delete(resourceId);
-  });
+  return db.resources.delete(resourceId);
 }

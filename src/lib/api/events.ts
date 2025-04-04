@@ -1,7 +1,6 @@
 import { db } from "$lib/db";
 import { shouldUpdate } from "$lib/lww";
 import { promiseResult } from "$lib/promiseMap";
-import { TimeSpanClass } from "$lib/timeSpan";
 import { auth, events, publish } from ".";
 
 /**
@@ -251,10 +250,6 @@ function onEventUpdated(
   meta: StreamMessageMeta,
   data: EventUpdated["data"],
 ): Promise<void> {
-  const eventId = data.id;
-  const { endDate, startDate } = data.fields;
-  const eventTimeSpan = new TimeSpanClass({ start: startDate, end: endDate });
-
   return db.transaction("rw", db.events, db.bookingRequests, async () => {
     const event = await db.events.get(data.id);
     if (!event) {
@@ -270,16 +265,6 @@ function onEventUpdated(
       return;
     }
 
-    // Update `validTime` field of all booking requests associated with this event.
-    await db.bookingRequests.where({ eventId }).modify((request) => {
-      const requestTimeSpan = new TimeSpanClass(request.timeSpan);
-      const isSub = eventTimeSpan.contains(requestTimeSpan);
-      request.isValid = isSub ? "true" : "false";
-    });
-
-    // @TODO: we could show a toast to the user if a previously valid event timespan now became
-    // invalid.
-
     await db.events.update(data.id, {
       ...data.fields,
       updatedAt: meta.timestamp,
@@ -288,15 +273,5 @@ function onEventUpdated(
 }
 
 function onEventDeleted(data: EventDeleted["data"]): Promise<void> {
-  const eventId = data.id;
-
-  return db.transaction("rw", db.events, db.bookingRequests, async () => {
-    // Update `validTime` field of all booking requests associated with this space.
-    await db.bookingRequests.where({ eventId }).modify({ isValid: "false" });
-
-    // @TODO: we could show a toast to the user if a previously valid space timespan now became
-    // invalid.
-
-    await db.events.delete(data.id);
-  });
+  return db.events.delete(data.id);
 }
