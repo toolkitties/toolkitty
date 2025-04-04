@@ -94,7 +94,7 @@ async function enrichEvent(
   const spaceRequests = await db.bookingRequests
     .where({ eventId: event.id, resourceType: "space", isValid: "true" })
     .sortBy("createdAt");
-    
+
   if (spaceRequests.length !== 0) {
     eventEnriched.spaceRequest = { bookingRequest: spaceRequests[0] };
     eventEnriched.spaceRequest.space = await db.spaces.get({
