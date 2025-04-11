@@ -420,27 +420,25 @@
 
       <p>Request access to selected space</p>
       <div class="flex flex-row">
-        <!-- <input
+        <input
           type="datetime-local"
           name="startDate"
           required
           aria-invalid={$errors.startDate ? "true" : undefined}
           bind:value={$form.startDate}
           onchange={recalculateResourceAvailability}
-        /> -->
-        <DatePicker bind:value={$form.startDate} label="access start *" />
+        />
         {#if $errors.startDate}<span class="form-error"
             >{$errors.startDate}</span
           >{/if}
-        <!-- <input
+        <input
           type="datetime-local"
           name="endDate"
           required
           aria-invalid={$errors.endDate ? "true" : undefined}
           bind:value={$form.endDate}
           onchange={recalculateResourceAvailability}
-        /> -->
-        <DatePicker bind:value={$form.endDate} label="access end *" />
+        />
 
         {#if $errors.endDate}<span class="form-error">{$errors.endDate}</span
           >{/if}
