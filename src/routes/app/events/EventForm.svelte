@@ -419,7 +419,6 @@
 
       <p>Request access to selected space</p>
       <div class="flex flex-row">
-        <label for="startDate">Access Start *</label>
         <input
           type="datetime-local"
           name="startDate"
@@ -431,8 +430,6 @@
         {#if $errors.startDate}<span class="form-error"
             >{$errors.startDate}</span
           >{/if}
-
-        <label for="endDate">Access End *</label>
         <input
           type="datetime-local"
           name="endDate"
@@ -441,6 +438,7 @@
           bind:value={$form.endDate}
           onchange={recalculateResourceAvailability}
         />
+
         {#if $errors.endDate}<span class="form-error">{$errors.endDate}</span
           >{/if}
       </div>
