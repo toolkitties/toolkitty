@@ -6,8 +6,9 @@
   -->
 
 <script lang="ts">
-  import { Calendar } from "bits-ui";
+  import Calendar from "./Calendar.svelte";
   import type { DateValue } from "@internationalized/date";
+  import { parseAbsoluteToLocal } from "@internationalized/date";
 
   let {
     availability = $bindable(),
@@ -16,6 +17,11 @@
     availability: TimeSpan[];
     calendarDates: TimeSpan;
   } = $props();
+
+  let parsedCalendarStartDate = parseAbsoluteToLocal(calendarDates.start);
+  let parsedCalendarEndDate = calendarDates.end
+    ? parseAbsoluteToLocal(calendarDates.end)
+    : undefined;
 
   // used to color available dates in the calendar
   let availableDates: { date: string }[] = $state(
@@ -49,10 +55,6 @@
   };
 
   let currentlySelectedDate: DateValue | undefined = $state(undefined);
-
-  const handleDateSelect = (value: DateValue | undefined) => {
-    currentlySelectedDate = value || undefined;
-  };
 
   let endTimeError: boolean = $state(false);
   const handleAddAvailability = (e: Event) => {
@@ -110,8 +112,14 @@
   };
 </script>
 
+<Calendar
+  type="single"
+  bind:value={currentlySelectedDate}
+  minValue={parsedCalendarStartDate}
+  maxValue={parsedCalendarEndDate}
+/>
 <!-- TODO: Refactor Calendar into one component as we are using in a few places now -->
-<Calendar.Root
+<!-- <Calendar.Root
   type="single"
   bind:value={currentlySelectedDate}
   onValueChange={handleDateSelect}
@@ -165,7 +173,7 @@
       </Calendar.Grid>
     {/each}
   {/snippet}
-</Calendar.Root>
+</Calendar.Root> -->
 {#if availabilityList.length > 0}
   <h3>Current Availability:</h3>
   <ul>

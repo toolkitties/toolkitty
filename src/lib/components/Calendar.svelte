@@ -2,12 +2,14 @@
   import { Calendar } from "bits-ui";
   import type { CalendarRootProps } from "bits-ui";
   import type { DateValue } from "@internationalized/date";
+  import { fromDate } from "@internationalized/date";
 
   type extendedCalendarRootProps = CalendarRootProps & {
-    busyness: {
+    busyness?: {
       date: string;
       eventsList: CalendarEventEnriched[];
     }[];
+    availability?: TimeSpan[];
   };
 
   let {
@@ -15,8 +17,20 @@
     minValue,
     maxValue,
     value = $bindable(),
+    onValueChange,
     busyness,
+    availability,
   }: extendedCalendarRootProps = $props();
+
+  // Set minValue and maxValue based on availability
+  if (availability && availability.length > 0) {
+    const sortedAvailability = availability
+      .map(({ start }) => fromDate(new Date(start), "UTC"))
+      .sort((a, b) => a.compare(b));
+
+    minValue = sortedAvailability[0]; // Earliest available date
+    maxValue = sortedAvailability[sortedAvailability.length - 1]; // Latest available date
+  }
 
   /**
    * Busy-ness indicator on highlighted dates
@@ -40,9 +54,25 @@
     const eventCount = Math.min(groupForDate.eventsList.length, 5);
     return (eventCount / 5) * 100;
   }
+
+  // Disable dates based on availability prop
+  function isDateDisabled(date: DateValue) {
+    if (!availability) return false;
+    return !availability.some(({ start }) => {
+      const availableDate: DateValue = fromDate(new Date(start), "UTC"); //@TODO - think about how to properly handle timezone
+      return date.compare(availableDate) === 0;
+    });
+  }
 </script>
 
-<Calendar.Root {type} {minValue} {maxValue} bind:value>
+<Calendar.Root
+  {isDateDisabled}
+  {type}
+  {minValue}
+  {maxValue}
+  bind:value
+  {onValueChange}
+>
   {#snippet children({ months, weekdays })}
     <Calendar.Header class="flex flex-row">
       <Calendar.PrevButton class="w-8 mr-2">←</Calendar.PrevButton>
@@ -72,6 +102,8 @@
                       data-outside-month:text-gray-300
                       data-selected:bg-black
                       data-selected:text-white
+                      cursor-pointer
+                      data-disabled:cursor-not-allowed
                       data-disabled:opacity-50
                       data-disabled:border-0
                       ${busyness && `bg-physical/${getBusynessOpacity(date)}`}`}

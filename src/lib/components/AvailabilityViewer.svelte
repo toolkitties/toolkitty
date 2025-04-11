@@ -6,7 +6,7 @@
   -->
 
 <script lang="ts">
-  import { Calendar } from "bits-ui";
+  import Calendar from "./Calendar.svelte";
   import type { DateValue } from "@internationalized/date";
   import { fromDate } from "@internationalized/date";
   import { spaces } from "$lib/api";
@@ -32,9 +32,11 @@
   let booked: BookingRequest[] = $state([]);
   let loading: boolean = $state(true);
 
+  // move to a derived value for availabilityByDay and booked so it also reacts to data coming in changing.
   const handleDateSelect = async (
     value: DateValue | DateValue[] | undefined,
   ) => {
+    console.log(value);
     if (!value) {
       availabilityByDay = null;
       booked = [];
@@ -77,23 +79,18 @@
     );
   };
 
-  function isAvailableDay(date: DateValue) {
-    return availability.some(({ start }) => {
-      const availableDate: DateValue = fromDate(new Date(start), "UTC"); //@TODO - think about how to properly handle timezone
-      return date.compare(availableDate) === 0;
-    });
-  }
-
   // Trigger a "dateSelect" event so that the initial UI shows availability.
   handleDateSelect(selectedDate);
 </script>
 
-<!-- TODO: Refactor Calendar into one component as we are using in a few places now -->
-<Calendar.Root
+<Calendar
   type="single"
   bind:value={currentlySelectedDate}
-  onValueChange={handleDateSelect}
->
+  onValueChange={(value) => handleDateSelect(value)}
+  {availability}
+/>
+<!-- TODO: Refactor Calendar into one component as we are using in a few places now -->
+<!-- <Calendar.Root>
   {#snippet children({ months, weekdays })}
     <Calendar.Header class="flex flex-row">
       <Calendar.PrevButton class="w-8 mr-2">←</Calendar.PrevButton>
@@ -131,7 +128,7 @@
       </Calendar.Grid>
     {/each}
   {/snippet}
-</Calendar.Root>
+</Calendar.Root> -->
 {#if currentlySelectedDate && !loading}
   <Bookings availability={availabilityByDay} {data} {booked} />
 {/if}
