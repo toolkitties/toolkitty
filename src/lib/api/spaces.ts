@@ -225,9 +225,6 @@ function onSpaceUpdated(
   meta: StreamMessageMeta,
   data: SpaceUpdated["data"],
 ): Promise<void> {
-  const spaceId = data.id;
-  const spaceAvailability = data.fields.availability;
-
   return db.transaction("rw", db.spaces, db.bookingRequests, async () => {
     const space = await db.spaces.get(data.id);
     if (!space) {
@@ -243,31 +240,6 @@ function onSpaceUpdated(
       return;
     }
 
-    // Update `isValid` field of all booking requests associated with this space.
-    await db.bookingRequests
-      .where({ resourceId: spaceId })
-      .modify((request) => {
-        const requestTimeSpan = new TimeSpanClass(request.timeSpan);
-        console.log("modify booking request: ", request.id);
-        if (spaceAvailability == "always") {
-          request.isValid = "true";
-          return;
-        }
-        request.isValid = "false";
-        for (const span of spaceAvailability) {
-          const availabilityTimeSpan = new TimeSpanClass(span);
-          const isValid = availabilityTimeSpan.contains(requestTimeSpan);
-          if (isValid) {
-            request.isValid = "true";
-            break;
-          }
-        }
-        request.isValid = "false";
-      });
-
-    // @TODO: we could show a toast to the user if a previously valid request timespan now became
-    // invalid.
-
     // @TODO: add related location to spaces object.
     await db.spaces.update(data.id, {
       ...data.fields,
@@ -278,16 +250,5 @@ function onSpaceUpdated(
 
 function onSpaceDeleted(data: SpaceDeleted["data"]): Promise<void> {
   const spaceId = data.id;
-
-  return db.transaction("rw", db.spaces, db.bookingRequests, async () => {
-    // Update `isValid` field of all booking requests associated with this event.
-    await db.bookingRequests
-      .where({ resourceId: spaceId })
-      .modify({ isValid: "false" });
-
-    // @TODO: we could show a toast to the user if a previously valid event timespan now became
-    // invalid.
-
-    await db.spaces.delete(spaceId);
-  });
+  return db.spaces.delete(spaceId);
 }

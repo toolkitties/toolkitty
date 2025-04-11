@@ -719,7 +719,6 @@ type BookingRequest = {
   resourceOwner: PublicKey;
   message: string;
   timeSpan: TimeSpan;
-  isValid: "true" | "false";
   status: BookingRequestStatus;
   createdAt: bigint;
 };
@@ -761,7 +760,6 @@ type BookingQueryFilter = {
   requester?: PublicKey;
   resourceType?: ResourceType;
   resourceOwner?: PublicKey;
-  isValid?: "true" | "false";
   status?: BookingRequestStatus;
   from?: ISO8601UTC;
   to?: ISO8601UTC;
@@ -784,6 +782,7 @@ type BookingRequestEnriched = {
   event?: CalendarEvent;
   resource?: Resource;
   space?: Space;
+  isValid?: "true" | "false";
 } & BookingRequest;
 
 type AccessRequestStatus =

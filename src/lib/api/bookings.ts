@@ -82,6 +82,14 @@ export function findAll(
           );
         }
 
+        // Check if this booking refers to a space or resource who's availability has changed, making it
+        // no longer available for the requested period. Set the isValid flag on booking request
+        // accordingly.
+        //
+        // NOTE: We don't check if the event associated with this booking has changed time, or
+        // been deleted.
+        setIsValid(bookingRequest);
+
         // Add event to booking.
         bookingRequest.event = await db.events.get(bookingRequest.eventId);
       }
@@ -89,6 +97,39 @@ export function findAll(
       return bookingRequests;
     },
   );
+}
+
+function setIsValid(booking: BookingRequestEnriched) {
+  booking.isValid = "false";
+  if (booking.space) {
+    if (hasValidAvailability(booking, booking.space.availability)) {
+      booking.isValid = "true";
+    }
+  } else if (booking.resource) {
+    if (hasValidAvailability(booking, booking.resource.availability)) {
+      booking.isValid = "true";
+    }
+  }
+}
+
+function hasValidAvailability(
+  booking: BookingRequestEnriched,
+  availability: TimeSpan[] | "always",
+): boolean {
+  let isValid = false;
+  if (availability == "always") {
+    isValid = true;
+  } else {
+    const requestTimeSpan = new TimeSpanClass(booking.timeSpan);
+    for (const span of availability) {
+      const availabilityTimeSpan = new TimeSpanClass(span);
+      isValid = availabilityTimeSpan.contains(requestTimeSpan);
+      if (isValid) {
+        break;
+      }
+    }
+  }
+  return isValid;
 }
 
 /**
@@ -241,32 +282,16 @@ async function onBookingRequested(
         resource = await db.spaces.get(data.resourceId);
       }
 
-      const resourceAvailability = resource!.availability;
-
       const resourceRequest: BookingRequest = {
         id: meta.operationId,
         calendarId: meta.stream.id,
         requester: meta.author,
         resourceType: data.type,
         resourceOwner: resource!.ownerId,
-        isValid: "false",
         status: "pending",
         createdAt: meta.timestamp,
         ...data,
       };
-
-      if (resourceAvailability == "always") {
-        resourceRequest.isValid = "true";
-      } else {
-        for (const span of resourceAvailability) {
-          const availabilityTimeSpan = new TimeSpanClass(span);
-          const requestTimeSpan = new TimeSpanClass(resourceRequest.timeSpan);
-          const isSub = availabilityTimeSpan.contains(requestTimeSpan);
-          if (isSub) {
-            resourceRequest.isValid = "true";
-          }
-        }
-      }
 
       const acceptResponses = await db.bookingResponses
         .where({ requestId: meta.operationId, answer: "accept" })
