@@ -11,7 +11,6 @@
   import { zod } from "sveltekit-superforms/adapters";
   import { events, resources, bookings } from "$lib/api";
   import { TimeSpanClass } from "$lib/timeSpan";
-  import DatePicker from "$lib/components/inputs/DatePicker.svelte";
 
   let {
     data,
