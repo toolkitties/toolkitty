@@ -12,6 +12,7 @@
   import { spaces } from "$lib/api";
   import Bookings from "./Bookings.svelte";
   import { TimeSpanClass } from "$lib/timeSpan";
+  import BookingRequest from "./BookingRequest.svelte";
 
   let {
     data,
@@ -26,50 +27,33 @@
   let availability: TimeSpan[] = Array.isArray(data.availability)
     ? data.availability
     : [];
-  let availabilityByDay: TimeSpan | null = $state(null);
   let selectedDate = selected ? fromDate(new Date(selected), "UTC") : undefined;
   let currentlySelectedDate: DateValue | undefined = $state(selectedDate);
-  let booked: BookingRequest[] = $state([]);
-  let loading: boolean = $state(true);
 
-  // move to a derived value for availabilityByDay and booked so it also reacts to data coming in changing.
-  const handleDateSelect = async (
-    value: DateValue | DateValue[] | undefined,
-  ) => {
-    console.log(value);
-    if (!value) {
-      availabilityByDay = null;
-      booked = [];
-      return;
+  let availabilityByDay: TimeSpan | null = $derived.by(() => {
+    if (!currentlySelectedDate) {
+      return null;
     }
-    if (Array.isArray(value)) {
-      value = value[0];
-    }
-
-    if (!value) {
-      availabilityByDay = null;
-      booked = [];
-      return;
-    }
-
-    loading = true;
-    availabilityByDay = null;
 
     for (let timeSpan of availability) {
       let timeSpanStartDateValue = fromDate(new Date(timeSpan.start), "UTC");
-      if (isSameDate(timeSpanStartDateValue, value)) {
-        availabilityByDay = { start: timeSpan.start, end: timeSpan.end };
-
-        booked = await spaces.findBookings(
-          data.id,
-          new TimeSpanClass(availabilityByDay),
-        );
-
-        loading = false;
-        break;
+      if (isSameDate(timeSpanStartDateValue, currentlySelectedDate)) {
+        return { start: timeSpan.start, end: timeSpan.end };
       }
     }
-  };
+
+    return null;
+  });
+
+  let booked = $derived.by(async () => {
+    if (!availabilityByDay) {
+      return [];
+    }
+    return await spaces.findBookings(
+      data.id,
+      new TimeSpanClass(availabilityByDay),
+    );
+  });
 
   const isSameDate = (date1: DateValue, date2: DateValue): boolean => {
     return (
@@ -78,17 +62,9 @@
       date1.day === date2.day
     );
   };
-
-  // Trigger a "dateSelect" event so that the initial UI shows availability.
-  handleDateSelect(selectedDate);
 </script>
 
-<Calendar
-  type="single"
-  bind:value={currentlySelectedDate}
-  onValueChange={(value) => handleDateSelect(value)}
-  {availability}
-/>
+<Calendar type="single" bind:value={currentlySelectedDate} {availability} />
 <!-- TODO: Refactor Calendar into one component as we are using in a few places now -->
 <!-- <Calendar.Root>
   {#snippet children({ months, weekdays })}
@@ -129,9 +105,11 @@
     {/each}
   {/snippet}
 </Calendar.Root> -->
-{#if currentlySelectedDate && !loading}
-  <Bookings availability={availabilityByDay} {data} {booked} />
-{/if}
+{#await booked then bookedData}
+  {#if currentlySelectedDate}
+    <Bookings availability={availabilityByDay} {data} booked={bookedData} />
+  {/if}
+{/await}
 {#if data.multiBookable}
   <p>
     This {#if type == "space"}space{/if}

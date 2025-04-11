@@ -44,16 +44,6 @@
         : [],
     );
 
-  // Disable any calendar dates not inside calendar dates
-  const isDateInRange = (date: DateValue, range: TimeSpan) => {
-    const dateStr = date.toString();
-    const startDate = range.start.split("T")[0];
-    const endDate = range.end ? range.end.split("T")[0] : undefined;
-
-    // If there is no end date, allow all dates after the start date
-    return dateStr >= startDate && (endDate ? dateStr <= endDate : true);
-  };
-
   let currentlySelectedDate: DateValue | undefined = $state(undefined);
 
   let endTimeError: boolean = $state(false);
