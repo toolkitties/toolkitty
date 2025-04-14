@@ -11,6 +11,7 @@
   import { zod } from "sveltekit-superforms/adapters";
   import { events, resources, bookings } from "$lib/api";
   import { TimeSpanClass } from "$lib/timeSpan";
+  import DatePicker from "$lib/components/inputs/DatePicker.svelte";
 
   let {
     data,
@@ -419,24 +420,19 @@
 
       <p>Request access to selected space</p>
       <div class="flex flex-row">
-        <input
-          type="datetime-local"
-          name="startDate"
-          required
-          aria-invalid={$errors.startDate ? "true" : undefined}
+        <DatePicker
+          label="start"
           bind:value={$form.startDate}
-          onchange={recalculateResourceAvailability}
+          onValueChange={recalculateResourceAvailability}
         />
+
         {#if $errors.startDate}<span class="form-error"
             >{$errors.startDate}</span
           >{/if}
-        <input
-          type="datetime-local"
-          name="endDate"
-          required
-          aria-invalid={$errors.endDate ? "true" : undefined}
+        <DatePicker
+          label="end"
           bind:value={$form.endDate}
-          onchange={recalculateResourceAvailability}
+          onValueChange={recalculateResourceAvailability}
         />
 
         {#if $errors.endDate}<span class="form-error">{$errors.endDate}</span
@@ -445,24 +441,11 @@
 
       <p>Set public event start and end</p>
       <div class="flex flex-row">
-        <label for="publicStartDate">Start *</label>
-        <input
-          type="datetime-local"
-          name="startDate"
-          aria-invalid={$errors.publicStartDate ? "true" : undefined}
-          bind:value={$form.publicStartDate}
-        />
+        <DatePicker label="start*" bind:value={$form.publicStartDate} />
         {#if $errors.publicStartDate}<span class="form-error"
             >{$form.publicStartDate}</span
           >{/if}
-
-        <label for="publicEndDate">End *</label>
-        <input
-          type="datetime-local"
-          name="publicEndDate"
-          aria-invalid={$errors.publicEndDate ? "true" : undefined}
-          bind:value={$form.publicEndDate}
-        />
+        <DatePicker label="end*" bind:value={$form.publicEndDate} />
         {#if $errors.publicEndDate}<span class="form-error"
             >{$errors.publicEndDate}</span
           >{/if}
