@@ -5,10 +5,10 @@
   import { fromDate } from "@internationalized/date";
 
   type extendedCalendarRootProps = CalendarRootProps & {
-    busyness?: {
-      date: string;
-      eventsList: CalendarEventEnriched[];
-    }[];
+    // busyness?: {
+    //   date: string;
+    //   eventsList: CalendarEventEnriched[];
+    // }[];
     availability?: TimeSpan[];
   };
 
@@ -18,7 +18,7 @@
     maxValue,
     value = $bindable(),
     onValueChange,
-    busyness,
+    // busyness,
     availability,
   }: extendedCalendarRootProps = $props();
 
@@ -38,22 +38,22 @@
    * 0 = no events
    * 100 = 5 or more events.
    */
-  function getBusynessOpacity(date: DateValue): number {
-    if (!busyness) {
-      return 0;
-    }
+  // function getBusynessOpacity(date: DateValue): number {
+  //   if (!busyness) {
+  //     return 0;
+  //   }
 
-    const groupForDate = busyness.find(
-      (group) => group.date === date.toString(),
-    );
+  //   const groupForDate = busyness.find(
+  //     (group) => group.date === date.toString(),
+  //   );
 
-    if (!groupForDate) {
-      return 0;
-    }
+  //   if (!groupForDate) {
+  //     return 0;
+  //   }
 
-    const eventCount = Math.min(groupForDate.eventsList.length, 5);
-    return (eventCount / 5) * 100;
-  }
+  //   const eventCount = Math.min(groupForDate.eventsList.length, 5);
+  //   return (eventCount / 5) * 100;
+  // }
 
   // Disable dates based on availability prop
   function isDateDisabled(date: DateValue) {
@@ -105,8 +105,7 @@
                       cursor-pointer
                       data-disabled:cursor-not-allowed
                       data-disabled:opacity-50
-                      data-disabled:border-0
-                      ${busyness && `bg-physical/${getBusynessOpacity(date)}`}`}
+                      data-disabled:border-0`}
                   >
                     {date.day}
                   </Calendar.Day>

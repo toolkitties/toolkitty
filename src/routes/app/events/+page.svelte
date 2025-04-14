@@ -104,7 +104,6 @@
   <Calendar
     type="single"
     bind:value={selectedDate}
-    busyness={$eventsByDate}
     minValue={$calendar.startDate
       ? parseAbsoluteToLocal($calendar.startDate)
       : undefined}
