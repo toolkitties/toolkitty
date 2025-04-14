@@ -65,46 +65,6 @@
 </script>
 
 <Calendar type="single" bind:value={currentlySelectedDate} {availability} />
-<!-- TODO: Refactor Calendar into one component as we are using in a few places now -->
-<!-- <Calendar.Root>
-  {#snippet children({ months, weekdays })}
-    <Calendar.Header class="flex flex-row">
-      <Calendar.PrevButton class="w-8 mr-2">←</Calendar.PrevButton>
-      <Calendar.Heading />
-      <Calendar.NextButton class="w-8 ml-2">→</Calendar.NextButton>
-    </Calendar.Header>
-    {#each months as month (month.value)}
-      <Calendar.Grid>
-        <Calendar.GridHead>
-          <Calendar.GridRow>
-            {#each weekdays as day, index (index)}
-              <Calendar.HeadCell>{day}</Calendar.HeadCell>
-            {/each}
-          </Calendar.GridRow>
-        </Calendar.GridHead>
-        <Calendar.GridBody>
-          {#each month.weeks as weekDates, weekIndex (weekIndex)}
-            <Calendar.GridRow>
-              {#each weekDates as date (date.toString())}
-                <Calendar.Cell {date} month={month.value}>
-                  <Calendar.Day
-                    class={`data-outside-month:pointer-events-none
-                data-outside-month:text-gray-300
-                data-selected:bg-black
-                data-selected:text-white
-                ${isAvailableDay(date) ? "bg-green-300" : ""}
-                ${!isAvailableDay(date) ? "text-gray-400 pointer-events-none" : ""}`}
-                    aria-disabled={!isAvailableDay(date) ? "true" : undefined}
-                  />
-                </Calendar.Cell>
-              {/each}
-            </Calendar.GridRow>
-          {/each}
-        </Calendar.GridBody>
-      </Calendar.Grid>
-    {/each}
-  {/snippet}
-</Calendar.Root> -->
 {#await booked then bookedData}
   {#if currentlySelectedDate}
     <Bookings availability={availabilityByDay} {data} booked={bookedData} />

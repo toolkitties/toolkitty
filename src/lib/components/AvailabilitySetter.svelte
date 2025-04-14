@@ -108,62 +108,6 @@
   minValue={parsedCalendarStartDate}
   maxValue={parsedCalendarEndDate}
 />
-<!-- TODO: Refactor Calendar into one component as we are using in a few places now -->
-<!-- <Calendar.Root
-  type="single"
-  bind:value={currentlySelectedDate}
-  onValueChange={handleDateSelect}
->
-  {#snippet children({ months, weekdays })}
-    <Calendar.Header class="flex flex-row">
-      <Calendar.PrevButton class="w-8 mr-2">←</Calendar.PrevButton>
-      <Calendar.Heading />
-      <Calendar.NextButton class="w-8 ml-2">→</Calendar.NextButton>
-    </Calendar.Header>
-
-    {#each months as month (month.value)}
-      <Calendar.Grid>
-        <Calendar.GridHead>
-          <Calendar.GridRow>
-            {#each weekdays as day, i ("day" + i)}
-              <Calendar.HeadCell>{day}</Calendar.HeadCell>
-            {/each}
-          </Calendar.GridRow>
-        </Calendar.GridHead>
-        <Calendar.GridBody>
-          {#each month.weeks as weekDates, i ("weekDates" + i)}
-            <Calendar.GridRow>
-              {#each weekDates as date (date)}
-                <Calendar.Cell {date} month={month.value}>
-                  <Calendar.Day
-                    class={"data-outside-month:pointer-events-none data-outside-month:text-gray-300 data-selected:bg-black data-selected:text-white " +
-                      (availableDates.some((d) => d.date === date.toString())
-                        ? "bg-green-500 text-white"
-                        : "") +
-                      (!isDateInRange(date, calendarDates)
-                        ? " pointer-events-none text-gray-400"
-                        : "")}
-                    aria-label={"Date " +
-                      date.toString() +
-                      (availableDates.some((d) => d.date === date.toString())
-                        ? " - Availability set"
-                        : " - No availability")}
-                    title={availableDates.some(
-                      (d) => d.date === date.toString(),
-                    )
-                      ? "Availability set"
-                      : "No availability"}
-                    aria-disabled={!isDateInRange(date, calendarDates)}
-                  />
-                </Calendar.Cell>
-              {/each}
-            </Calendar.GridRow>
-          {/each}
-        </Calendar.GridBody>
-      </Calendar.Grid>
-    {/each}
-  {/snippet}
-</Calendar.Root> -->
 {#if availabilityList.length > 0}
   <h3>Current Availability:</h3>
   <ul>
