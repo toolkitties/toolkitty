@@ -154,6 +154,13 @@
     @apply border border-black bg-black/20 rounded-sm px-2 py-1.5 flex gap-1 items-center cursor-pointer;
   }
 
+  .button-small {
+    @apply py-0 rounded-lg;
+  }
+  .button-small.button-pink {
+    @apply bg-pink-light;
+  }
+
   .tag {
     @apply border border-black rounded-full px-2.5 py-[3px];
   }
