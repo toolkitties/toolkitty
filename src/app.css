@@ -161,6 +161,20 @@
     @apply bg-pink-light;
   }
 
+  .button-edit {
+    @apply bg-green-light-fluro justify-center;
+    position: relative;
+  }
+
+  .button-edit span {
+    position: relative;
+    content: "";
+    background-image: url("/images/crayon.svg");
+    background-size: contain;
+    background-repeat: no-repeat;
+    padding-left: 22px;
+  }
+
   .tag {
     @apply border border-black rounded-full px-2.5 py-[3px];
   }

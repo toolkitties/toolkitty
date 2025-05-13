@@ -3,10 +3,6 @@
  Button question mark at header of the page
   -->
 
-<script>
-  import Icon from "@iconify/svelte";
-</script>
-
 <button class="w-10 h-full question-mark-button ml-auto">
   <img src="/images/question_mark.svg" alt="question mark" />
   <span class="sr-only">Question Mark</span>

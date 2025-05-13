@@ -138,7 +138,7 @@
 <Contribute />
 
 {#if data.userRole === "admin"}
-  <a class="button mt-4 inline-block" href="/app/calendars/edit"
-    >Edit Calendar</a
+  <a class="button-edit button mt-4 inline-block" href="/app/calendars/edit"
+    ><span>edit calendar</span></a
   >
 {/if}
