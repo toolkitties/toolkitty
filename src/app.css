@@ -175,6 +175,21 @@
     padding-left: 22px;
   }
 
+  .button-delete {
+    @apply bg-red-light rounded-xl justify-center;
+    width: 100%;
+  }
+
+  button[data-alert-dialog-cancel]:not(.button-cancel) {
+    background: none;
+    border: none;
+  }
+
+  .button-cancel {
+    @apply bg-grey-light rounded-xl justify-center;
+    width: 100%;
+  }
+
   .tag {
     @apply border border-black rounded-full px-2.5 py-[3px];
   }

@@ -9,6 +9,7 @@ const Title = AlertDialogPrimitive.Title;
 const Trigger = AlertDialogPrimitive.Trigger;
 const Action = AlertDialogPrimitive.Action;
 const Cancel = AlertDialogPrimitive.Cancel;
+const Close = AlertDialogPrimitive.Close;
 const Portal = AlertDialogPrimitive.Portal;
 const Description = AlertDialogPrimitive.Description;
 
