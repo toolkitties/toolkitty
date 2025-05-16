@@ -77,6 +77,7 @@
       >
     {/if}
     <AlertDialog.Action
+      class="button button-edit"
       onclick={() => assignRole("admin")}
       disabled={role === "admin"}
       >admin {role === "admin" ? "(current)" : ""}</AlertDialog.Action
@@ -89,7 +90,9 @@
     {#if isAccessRequest}
       <AlertDialog.Action onclick={rejectRequest}>reject</AlertDialog.Action>
     {:else}
-      <AlertDialog.Cancel>cancel</AlertDialog.Cancel>
+      <AlertDialog.Cancel class="button button-cancel"
+        >cancel</AlertDialog.Cancel
+      >
     {/if}
   </AlertDialog.Content>
 </AlertDialog.Portal>

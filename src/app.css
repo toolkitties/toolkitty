@@ -162,7 +162,8 @@
   }
 
   .button-edit {
-    @apply bg-green-light-fluro justify-center;
+    @apply bg-green-light-fluro justify-center rounded-xl;
+    width: 100%;
     position: relative;
   }
 
