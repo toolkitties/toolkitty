@@ -24,8 +24,6 @@
     userRole: string;
   } = $props();
 
-  console.log("Received userRole:", userRole);
-
   let alwaysAvailable: boolean = $state(data.data.availability === "always");
 
   const { form, errors, enhance } = superForm(data, {
@@ -354,7 +352,6 @@
   <ImageUploader bind:images={$form.images as string[]} />
 
   <br />
-  {console.log("data", data)}
 
   <ActionFormButtons
     id={$form.id!}

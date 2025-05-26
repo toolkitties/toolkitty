@@ -166,7 +166,7 @@
     @apply bg-green-light-fluro justify-center rounded-xl;
   }
 
-  .button-green span {
+  .button-green > span {
     position: relative;
     content: "";
     background-image: url("/images/crayon.svg");
@@ -192,7 +192,7 @@
     @apply bg-grey-light rounded-xl justify-center;
   }
 
-  .button-delete span {
+  .button-delete > span {
     padding-left: 22px;
     background-image: url("/images/bin.svg");
     background-size: contain;

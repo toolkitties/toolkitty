@@ -16,9 +16,6 @@
     userRole: string;
     onSaveDraft: () => void;
   } = $props();
-
-  console.log("User role:", userRole);
-  console.log("form id:", id);
 </script>
 
 <div

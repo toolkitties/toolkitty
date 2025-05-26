@@ -31,7 +31,6 @@
   <div class="grid grid-cols-3 items-center h-10">
     <Back />
     <Avatar />
-
     <QuestionMark />
   </div>
 </div>

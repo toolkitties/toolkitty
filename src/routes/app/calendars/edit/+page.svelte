@@ -3,7 +3,6 @@
   import CalendarForm from "$lib/components/CalendarForm.svelte";
   import { calendars } from "$lib/api";
   import { toast } from "$lib/toast.svelte";
-  import Delete from "$lib/components/dialog/Delete.svelte";
   import { goto } from "$app/navigation";
 
   let { data }: PageProps = $props();

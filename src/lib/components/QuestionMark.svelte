@@ -12,8 +12,8 @@
   .question-mark-button {
     background-color: var(--color-pink-light);
     border-radius: 50%;
-    display: flex; /* Dodano */
-    justify-content: center; /* Dodano */
-    align-items: center; /* Dodano */
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 </style>
