@@ -3,6 +3,7 @@
   import CalendarForm from "$lib/components/CalendarForm.svelte";
   import { calendars } from "$lib/api";
   import { toast } from "$lib/toast.svelte";
+  import Delete from "$lib/components/dialog/Delete.svelte";
   import { goto } from "$app/navigation";
 
   let { data }: PageProps = $props();
@@ -20,4 +21,9 @@
 </script>
 
 <CalendarForm data={data.form} />
-<button onclick={() => handleDelete()}>Delete</button>
+{#if data.userRole === "admin"}
+  <button
+    onclick={() => handleDelete()}
+    class="button button-grey button-delete w-full">delete</button
+  >
+{/if}

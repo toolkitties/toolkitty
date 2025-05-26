@@ -14,6 +14,7 @@
   import { zod } from "sveltekit-superforms/adapters";
   import { superForm } from "sveltekit-superforms";
   import SuperDebug from "sveltekit-superforms";
+  import ActionFormButtons from "$lib/components/ActionFormButtons.svelte";
 
   let { data }: { data: SuperValidated<Infer<CalendarSchema>> } = $props();
 
@@ -152,6 +153,5 @@
         >{$errors.resourcePageText}</span
       >{/if}
   {/if}
-
-  <button type="submit">{$form.id ? "Update" : "Create"}</button>
+  <button type="submit" class="button button-green w-full"> create </button>
 </form>

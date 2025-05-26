@@ -69,8 +69,9 @@
     <ImageGallery images={$event.images} />
 
     {#if data.userRole == "admin" || amOwner}
-      <a class="button-edit button" href="/app/events/edit?id={$event!.id}"
-        ><span>edit</span></a
+      <a
+        class="button-green button w-full"
+        href="/app/events/edit?id={$event!.id}"><span>edit</span></a
       >
     {/if}
 

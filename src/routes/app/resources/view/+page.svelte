@@ -63,8 +63,9 @@
     {/if}
 
     {#if data.userRole == "admin" || amOwner}
-      <a class="button-edit button" href="/app/resources/edit?id={$resource.id}"
-        ><span>edit</span></a
+      <a
+        class="button-green button w-full"
+        href="/app/resources/edit?id={$resource.id}"><span>edit</span></a
       >
     {/if}
 

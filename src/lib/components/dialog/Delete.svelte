@@ -52,7 +52,9 @@
 </script>
 
 <AlertDialog.Root bind:open>
-  <AlertDialog.Trigger class="button button-delete">delete</AlertDialog.Trigger>
+  <AlertDialog.Trigger class="button button-grey button-delete w-full"
+    ><span>delete</span></AlertDialog.Trigger
+  >
   <AlertDialog.Portal>
     <AlertDialog.Content>
       <AlertDialog.Title
@@ -78,10 +80,10 @@
         {/if}
       </AlertDialog.Description>
       <AlertDialog.Action
-        class="button button-delete"
+        class="button button-red w-full"
         onclick={() => deleteForSure()}>delete</AlertDialog.Action
       >
-      <AlertDialog.Cancel class="button button-cancel"
+      <AlertDialog.Cancel class="button button-grey w-full"
         >cancel</AlertDialog.Cancel
       >
     </AlertDialog.Content>

@@ -30,7 +30,10 @@
 
 <section class="section">
   <h2>Share</h2>
-  <button class="button" onclick={() => copyToClipboard(data.shareCode)}>
+  <button
+    class="button button-light-blue w-full"
+    onclick={() => copyToClipboard(data.shareCode)}
+  >
     <span>🔐 calendar code: {data.shareCode}</span>
     <span>copy</span>
   </button>

@@ -10,16 +10,21 @@
   import { zod } from "sveltekit-superforms/adapters";
   import { superForm } from "sveltekit-superforms";
   import SuperDebug from "sveltekit-superforms";
+  import ActionFormButtons from "$lib/components/ActionFormButtons.svelte";
 
   let {
     data,
     activeCalendarId,
     calendarDates,
+    userRole,
   }: {
     data: SuperValidated<Infer<SpaceSchema>>;
     activeCalendarId: Hash;
     calendarDates: TimeSpan;
+    userRole: string;
   } = $props();
+
+  console.log("Received userRole:", userRole);
 
   let alwaysAvailable: boolean = $state(data.data.availability === "always");
 
@@ -349,6 +354,12 @@
   <ImageUploader bind:images={$form.images as string[]} />
 
   <br />
+  {console.log("data", data)}
 
-  <button type="submit">{$form.id ? "Update" : "Create"}</button>
+  <ActionFormButtons
+    id={$form.id!}
+    name={$form.name}
+    {userRole}
+    onSaveDraft={() => {}}
+  />
 </form>

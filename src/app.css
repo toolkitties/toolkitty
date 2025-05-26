@@ -157,17 +157,16 @@
   .button-small {
     @apply py-0 rounded-lg;
   }
+
   .button-small.button-pink {
     @apply bg-pink-light;
   }
 
-  .button-edit {
+  .button-green {
     @apply bg-green-light-fluro justify-center rounded-xl;
-    width: 100%;
-    position: relative;
   }
 
-  .button-edit span {
+  .button-green span {
     position: relative;
     content: "";
     background-image: url("/images/crayon.svg");
@@ -176,19 +175,37 @@
     padding-left: 22px;
   }
 
-  .button-delete {
-    @apply bg-red-light rounded-xl justify-center;
-    width: 100%;
+  .button-shadow {
+    box-shadow: -4px 4px 10px rgba(0, 0, 0, 0.25);
   }
 
-  button[data-alert-dialog-cancel]:not(.button-cancel) {
+  .button-red {
+    @apply bg-red-light rounded-xl justify-center;
+  }
+
+  button[data-alert-dialog-cancel]:not(.button-grey) {
     background: none;
     border: none;
   }
 
-  .button-cancel {
+  .button-grey {
     @apply bg-grey-light rounded-xl justify-center;
-    width: 100%;
+  }
+
+  .button-delete span {
+    padding-left: 22px;
+    background-image: url("/images/bin.svg");
+    background-size: contain;
+    background-repeat: no-repeat;
+    width: 16px;
+    height: 20px;
+  }
+  .button-light-blue {
+    @apply bg-blue-light rounded-xl justify-center;
+  }
+
+  .button-light-pink {
+    @apply bg-pink-light rounded-xl justify-center;
   }
 
   .tag {
