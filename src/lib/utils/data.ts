@@ -83,15 +83,10 @@ export async function seedData() {
   });
 
   const eventId = await events.create(calendarId, eventFields);
-  await events.create(calendarId, eventFields);
-  await events.create(calendarId, eventFields);
-  await events.create(calendarId, eventFields);
-  await events.create(calendarId, eventFields2);
-  await events.create(calendarId, eventFields2);
   await events.create(calendarId, eventFields2);
 
   // Make space request for first event.
-  const spaceRequestId = await bookings.request(
+  await bookings.request(
     eventId,
     spaceId,
     "space",
@@ -99,21 +94,11 @@ export async function seedData() {
     { start: eventStartDate, end: eventEndDate },
   );
 
-  const resourceRequestId = await bookings.request(
+  await bookings.request(
     eventId,
     resourceId,
     "resource",
     "please can i haz?",
     { start: eventStartDate, end: eventEndDate },
-  );
-
-  // Update first event with resource and space requests.
-  await events.update(
-    eventId,
-    createEventFields({
-      ...eventFields,
-      resourcesRequests: [resourceRequestId],
-      spaceRequest: spaceRequestId,
-    }),
   );
 }
