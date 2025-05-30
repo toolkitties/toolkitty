@@ -33,7 +33,11 @@
       <Date format="time" date={event.startDate} /> -
       <Date format="time" date={event.endDate} />
     </span>
-    <span>📍 {event.spaceRequest?.space ? event.spaceRequest.space!.name : "no space yet"}</span>
+    <span
+      >📍 {event.spaceRequest?.space
+        ? event.spaceRequest.space!.name
+        : "no space yet"}</span
+    >
   </div>
 </a>
 

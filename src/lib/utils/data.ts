@@ -86,19 +86,13 @@ export async function seedData() {
   await events.create(calendarId, eventFields2);
 
   // Make space request for first event.
-  await bookings.request(
-    eventId,
-    spaceId,
-    "space",
-    "please can i haz?",
-    { start: eventStartDate, end: eventEndDate },
-  );
+  await bookings.request(eventId, spaceId, "space", "please can i haz?", {
+    start: eventStartDate,
+    end: eventEndDate,
+  });
 
-  await bookings.request(
-    eventId,
-    resourceId,
-    "resource",
-    "please can i haz?",
-    { start: eventStartDate, end: eventEndDate },
-  );
+  await bookings.request(eventId, resourceId, "resource", "please can i haz?", {
+    start: eventStartDate,
+    end: eventEndDate,
+  });
 }
