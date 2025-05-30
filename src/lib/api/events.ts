@@ -91,7 +91,7 @@ async function enrichEvent(
 
   // Add space booking request to event.
   const spaceRequests = await db.bookingRequests
-    .where({ eventId: event.id, resourceType: "space", isValid: "true" })
+    .where({ eventId: event.id, resourceType: "space" })
     .sortBy("createdAt");
 
   if (spaceRequests.length !== 0) {
@@ -103,7 +103,7 @@ async function enrichEvent(
 
   // Add resource booking requests to event.
   const resourceRequests = await db.bookingRequests
-    .where({ eventId: event.id, resourceType: "resource", isValid: "true" })
+    .where({ eventId: event.id, resourceType: "resource" })
     .sortBy("createdAt");
 
   eventEnriched.resourceRequests = [];
