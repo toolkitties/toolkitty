@@ -158,7 +158,7 @@
     @apply py-0 rounded-lg;
   }
 
-  .button-small.button-pink {
+  .button-pink {
     @apply bg-pink-light;
   }
 
