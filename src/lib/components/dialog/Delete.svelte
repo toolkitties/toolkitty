@@ -52,12 +52,15 @@
 </script>
 
 <AlertDialog.Root bind:open>
-  <AlertDialog.Trigger class="button">Delete</AlertDialog.Trigger>
+  <AlertDialog.Trigger class="button button-grey button-delete w-full"
+    ><span>delete</span></AlertDialog.Trigger
+  >
   <AlertDialog.Portal>
     <AlertDialog.Content>
       <AlertDialog.Title
         >Are you sure you want to delete {name}?</AlertDialog.Title
       >
+      <AlertDialog.Close class="button-alert-close" />
       <AlertDialog.Description>
         {#if type === "event"}
           <p>
@@ -76,10 +79,13 @@
           </p>
         {/if}
       </AlertDialog.Description>
-      <AlertDialog.Action onclick={() => deleteForSure()}
-        >yes</AlertDialog.Action
+      <AlertDialog.Action
+        class="button button-red w-full"
+        onclick={() => deleteForSure()}>delete</AlertDialog.Action
       >
-      <AlertDialog.Cancel>cancel</AlertDialog.Cancel>
+      <AlertDialog.Cancel class="button button-grey w-full"
+        >cancel</AlertDialog.Cancel
+      >
     </AlertDialog.Content>
   </AlertDialog.Portal>
 </AlertDialog.Root>

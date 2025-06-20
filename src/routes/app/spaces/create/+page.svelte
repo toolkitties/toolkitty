@@ -15,4 +15,5 @@
   data={data.form}
   activeCalendarId={data.activeCalendarId!}
   calendarDates={data.calendarDates}
+  userRole={data.userRole!}
 />

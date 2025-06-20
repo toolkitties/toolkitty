@@ -75,8 +75,7 @@
         <span>Show</span>
       {/if}
     </Toggle.Root>
-    <button class="border border-black rounded-sm p-4" onclick={() => join()}
-      >Join</button
+    <button class="button button-light-blue" onclick={() => join()}>Join</button
     >
   {:else}
     <div>
@@ -86,8 +85,6 @@
   {/if}
 </div>
 
-<a
-  href="/create"
-  class="border border-black rounded-sm p-4 text-center"
-  type="submit">Create</a
+<a href="/create" class="button button-green" type="submit"
+  >+ Create new calendar</a
 >

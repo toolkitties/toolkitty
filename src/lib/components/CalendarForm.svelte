@@ -152,6 +152,5 @@
         >{$errors.resourcePageText}</span
       >{/if}
   {/if}
-
-  <button type="submit">{$form.id ? "Update" : "Create"}</button>
+  <button type="submit" class="button button-green w-full"> create </button>
 </form>

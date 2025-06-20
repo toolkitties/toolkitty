@@ -20,9 +20,9 @@
 
     <button
       onclick={() => (contributeButtonOpen = !contributeButtonOpen)}
-      class="bg-black text-white"
+      class="button button-green button-shadow"
     >
-      Contribute
+      contribute
     </button>
   </div>
 </div>

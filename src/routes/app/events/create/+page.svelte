@@ -12,4 +12,5 @@
   activeCalendarId={data.activeCalendarId!}
   spaces={data.spacesList}
   resourcesList={data.resourcesList}
+  userRole={data.userRole!}
 />

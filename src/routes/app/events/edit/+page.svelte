@@ -1,7 +1,6 @@
 <script lang="ts">
   import EventForm from "../EventForm.svelte";
   import type { PageProps } from "./$types";
-  import Delete from "$lib/components/dialog/Delete.svelte";
 
   let { data }: PageProps = $props();
 </script>
@@ -12,7 +11,5 @@
   spaces={data.spacesList}
   resourcesList={data.resourcesList}
   currentSpace={data.currentSpace}
+  userRole={data.userRole!}
 />
-{#if data.userRole === "admin"}
-  <Delete id={data.form.data.id!} name={data.form.data.name} type="event" />
-{/if}

@@ -13,6 +13,7 @@
   import Back from "./Back.svelte";
   import { calendars } from "$lib/api";
   import Avatar from "./Avatar.svelte";
+  import QuestionMark from "./QuestionMark.svelte";
 
   // TODO: change or remove default title once we have a name.
   let { title = "(^._.^)ﾉ" } = $props();
@@ -30,5 +31,6 @@
   <div class="grid grid-cols-3 items-center h-10">
     <Back />
     <Avatar />
+    <QuestionMark />
   </div>
 </div>

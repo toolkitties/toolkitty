@@ -3,6 +3,7 @@
   import type { ResourceSchema } from "$lib/schemas";
   import { superForm } from "sveltekit-superforms";
   import SuperDebug from "sveltekit-superforms";
+  import ActionFormButtons from "$lib/components/ActionFormButtons.svelte";
   import AvailabilitySetter from "$lib/components/AvailabilitySetter.svelte";
   import ImageUploader from "$lib/components/ImageUploader.svelte";
   import { resources } from "$lib/api";
@@ -15,10 +16,12 @@
     data,
     activeCalendarId,
     calendarDates,
+    userRole,
   }: {
     data: SuperValidated<Infer<ResourceSchema>>;
     activeCalendarId: Hash;
     calendarDates: TimeSpan;
+    userRole: string;
   } = $props();
   let alwaysAvailable: boolean = $state(data.data.availability === "always");
 
@@ -182,5 +185,10 @@
 
   <br />
 
-  <button type="submit">{$form.id ? "Update" : "Create"}</button>
+  <ActionFormButtons
+    id={$form.id!}
+    name={$form.name}
+    {userRole}
+    onSaveDraft={() => {}}
+  />
 </form>
