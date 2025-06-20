@@ -48,8 +48,10 @@
       <p>
         <DateRange startDate={$event.startDate} endDate={$event.endDate} />
       </p>
-      {#if $event.space}
-        <a href={`/spaces/view?id=${$event.space.id}`}>{$event.space.name}</a>
+      {#if $event.spaceRequest?.space}
+        <a href={`/spaces/view?id=${$event.spaceRequest?.space.id}`}
+          >{$event.spaceRequest?.space.name}</a
+        >
       {/if}
     </div>
 

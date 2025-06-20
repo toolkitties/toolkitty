@@ -51,14 +51,21 @@
       >
         <h4>{event.name}</h4>
         <DateRange startDate={event.startDate} endDate={event.endDate} />
-        <p>{event.space ? event.space.name : "no space yet"}</p>
-        {#if event.space}
-          <div>{event.space.name} {event.space.bookingRequest?.status}</div>
+        <p>
+          {event.spaceRequest?.space
+            ? event.spaceRequest?.space.name
+            : "no space yet"}
+        </p>
+        {#if event.spaceRequest?.space}
+          <div>
+            {event.spaceRequest?.space.name}
+            {event.spaceRequest?.bookingRequest?.status}
+          </div>
         {/if}
-        {#if event.resources}
-          {#each event.resources as resource (resource.id)}
+        {#if event.resourceRequests}
+          {#each event.resourceRequests as resource (resource.bookingRequest.id)}
             <div>
-              <p>{resource.name} {resource.bookingRequest?.status}</p>
+              <p>{resource.resource?.name} {resource.bookingRequest?.status}</p>
             </div>
           {/each}
         {/if}
