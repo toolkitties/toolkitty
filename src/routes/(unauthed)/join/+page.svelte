@@ -4,6 +4,8 @@
   import { toast } from "$lib/toast.svelte";
   import { resolveInviteCode } from "$lib/api/access";
   import { invalidateAll } from "$app/navigation";
+  import LockIcon from "$lib/components/icons/LockIcon.svelte";
+  import HideIcon from "$lib/components/icons/HideIcon.svelte";
 
   let value = $state("");
   let show = $state(true);
@@ -41,45 +43,54 @@
 
 <div class="flex flex-col gap-4 grow justify-center mx-auto">
   {#if !searching}
-    <!-- TODO: Make this a form for better semantics -->
-    <PinInput.Root
-      bind:value
-      class="flex items-center gap-2"
-      maxlength={4}
-      pattern={REGEX_ONLY_CHARS_AND_DIGITS}
-      onComplete={join}
-    >
-      {#snippet children({ cells })}
-        {#each cells as cell, i (i)}
-          <PinInput.Cell
-            class="flex items-center justify-center h-16 w-10 border rounded-sm data-active:outline-primary data-active:outline-1"
-            {cell}
-          >
-            {#if cell.char !== null}
-              <div>
-                {show ? cell.char : "·"}
-              </div>
-            {/if}
-          </PinInput.Cell>
-        {/each}
-      {/snippet}
-    </PinInput.Root>
-    <Toggle.Root
-      aria-label="toggle code visibility"
-      class="inline-flex size-10 items-center justify-center rounded-[9px] text-foreground/40 transition-all hover:bg-muted active:scale-98 active:bg-dark-10 active:data-[state=on]:bg-dark-10"
-      bind:pressed={show}
-    >
-      {#if show}
-        <span>Hide</span>
-      {:else}
-        <span>Show</span>
-      {/if}
-    </Toggle.Root>
-    <button class="button button-light-blue" onclick={() => join()}>Join</button
-    >
+    <form onsubmit={join} class="flex flex-col gap-4">
+      <div class="flex items-center justify-center max-w-[158px]">
+        <LockIcon />
+      </div>
+      <div class="flex items-center gap-2">
+        <PinInput.Root
+          bind:value
+          maxlength={4}
+          class="flex items-center gap-2"
+          pattern={REGEX_ONLY_CHARS_AND_DIGITS}
+          onComplete={join}
+        >
+          {#snippet children({ cells })}
+            {#each cells as cell, i (i)}
+              <PinInput.Cell
+                class="flex items-center justify-center w-9 h-9 px-[10px] py-2 border border-black rounded-lg bg-white shadow-[0px_4px_4px_rgba(0,0,0,0.25)] flex-none order-0 flex-grow-0 z-0"
+                {cell}
+              >
+                {#if cell.char !== null}
+                  <div>
+                    {show ? cell.char : "·"}
+                  </div>
+                {/if}
+              </PinInput.Cell>
+            {/each}
+          {/snippet}
+        </PinInput.Root>
+        <Toggle.Root
+          aria-label="toggle code visibility"
+          class="inline-flex items-center rounded-[9px] text-foreground/40 hover:bg-transparent active:scale-98 border-0 bg-transparent"
+          bind:pressed={show}
+        >
+          {#if show}
+            <HideIcon size={24} />
+          {:else}
+            <span>Show</span>
+          {/if}
+        </Toggle.Root>
+      </div>
+      <div class="flex items-center justify-center max-w-[158px]">
+        <button type="submit" class="button button-light-blue max-w-fit"
+          >join</button
+        >
+      </div>
+    </form>
   {:else}
     <div>
-      <img class="w-12 mx-auto" alt="" src="/images/searching.gif" />
+      <img class="w-12 mx-auto" alt="searching" src="/images/searching.gif" />
       <span>searching for calendar...</span>
     </div>
   {/if}
