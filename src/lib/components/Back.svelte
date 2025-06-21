@@ -5,14 +5,18 @@
 
 <script>
   import Icon from "@iconify/svelte";
+  import ArrowIcon from "$lib/components/icons/ArrowIcon.svelte";
 
   function goBack() {
     window.history.back();
   }
 </script>
 
-<button onclick={goBack} class="w-10 h-full back-button">
-  <Icon class="h-6 w-6" icon="lucide:arrow-left" />
+<button
+  onclick={goBack}
+  class="w-9 h-9 back-button flex items-center justify-center"
+>
+  <ArrowIcon size={13} />
   <span class="sr-only">Back</span>
 </button>
 
@@ -20,5 +24,6 @@
   .back-button {
     background-color: var(--color-light-yellow);
     border-radius: 50%;
+    padding: 6px;
   }
 </style>
