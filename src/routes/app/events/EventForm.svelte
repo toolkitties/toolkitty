@@ -237,12 +237,9 @@
     try {
       const eventId = await events.create(activeCalendarId, payload);
 
-      let spaceBookingId: string | undefined = undefined;
-      let resourceBookingIds: string[] = [];
-
       // Request selected space booking
       if (selectedSpace) {
-        const spaceBooking = await bookings.request(
+        await bookings.request(
           eventId,
           selectedSpace.id,
           "space",
@@ -252,13 +249,12 @@
             end: payload.endDate,
           },
         );
-        spaceBookingId = spaceBooking; // store to update event with booking id
       }
 
       // Request selected resources booking
       if (selectedResources.length > 0) {
         for (const resource of selectedResources) {
-          const resourceBooking = await bookings.request(
+          await bookings.request(
             eventId,
             resource.id,
             "resource",
@@ -268,16 +264,8 @@
               end: payload.endDate,
             },
           );
-          resourceBookingIds.push(resourceBooking);
         }
       }
-
-      // after booking request are sent, update event with booking ids
-      await events.update(eventId, {
-        ...payload,
-        spaceRequest: spaceBookingId,
-        resourcesRequests: resourceBookingIds ? resourceBookingIds : undefined,
-      });
 
       toast.success("Event created!");
       goto(`/app/events/view?id=${eventId}`);
