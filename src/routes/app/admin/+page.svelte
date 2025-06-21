@@ -4,6 +4,8 @@
   import RequestDialog from "./RequestDialog.svelte";
   import { users, access } from "$lib/api";
   import { liveQuery } from "dexie";
+  import LockIcon from "$lib/components/icons/LockIcon.svelte";
+  import LinkIcon from "$lib/components/icons/LinkIcon.svelte";
 
   let { data }: PageProps = $props();
 
@@ -15,31 +17,60 @@
     return access.getPending(data.activeCalendarId!);
   });
 
-  async function copyToClipboard(text: string): Promise<void> {
+  async function copyToClipboard(
+    text: string,
+    successMessage: string = "invite code copied!",
+  ): Promise<void> {
     if (text)
       try {
         await navigator.clipboard.writeText(text);
-        toast.success("invite code copied!");
+        toast.success(successMessage);
       } catch (err) {
         console.error("Failed to copy: ", err);
-        // TODO: show toast error message
-        toast.error("failed to copy invite code!");
+        toast.error("failed to copy!");
       }
   }
 </script>
 
-<section class="section">
+<section
+  class="section flex flex-col items-center p-2.5 mt-3.5 mb-3.5 gap-2 bg-purple-very-light rounded-[6px] flex-none order-1 flex-grow-0 z-10"
+>
   <h2>Share</h2>
-  <button
-    class="button button-light-blue w-full"
-    onclick={() => copyToClipboard(data.shareCode)}
+  <LockIcon />
+  <div
+    class="w-full bg-white border border-black rounded flex items-center justify-between p-2 px-3"
   >
-    <span>🔐 calendar code: {data.shareCode}</span>
-    <span>copy</span>
-  </button>
+    <span class="flex items-center gap-2 text-[17px]">
+      <LockIcon size={18} />
+      calendar code: {data.shareCode}
+    </span>
+    <button
+      class="button-small button-light-blue"
+      onclick={() => copyToClipboard(data.shareCode, "invite code copied!")}
+    >
+      copy
+    </button>
+  </div>
+  <div
+    class="w-full bg-white border border-black rounded flex items-center justify-between p-2 px-3"
+  >
+    <!-- TODO: add calendar link -->
+    <span class="flex items-center gap-2 text-[17px]">
+      <LinkIcon size={19} />
+      calendar link
+    </span>
+    <button
+      class="button-small button-light-blue"
+      onclick={() => copyToClipboard("calendar link", "invite link copied!")}
+    >
+      copy
+    </button>
+  </div>
 </section>
 
-<section class="section">
+<section
+  class="section flex flex-col items-center pt-3.5 pb-3 px-3.5 gap-2 bg-purple-very-light rounded-[6px] flex-none order-1 flex-grow-0 z-10 mb-3.5 text-center"
+>
   <!-- TODO: Only show if we are user -->
   <h2>Users</h2>
   <!-- <p>
@@ -60,4 +91,16 @@
       <RequestDialog data={user} publicKey={data.publicKey} />
     {/each}
   {/if}
+</section>
+
+<section
+  class="section flex flex-col items-center pt-3.5 pb-3 px-3.5 gap-2 bg-purple-very-light rounded-[6px] flex-none order-1 flex-grow-0 z-10 mb-3.5 text-center"
+>
+  <h2>Leave Calendar</h2>
+  <p>
+    To re-join you will have to request access again. Your data from this
+    session won't be recovered.
+  </p>
+  <!-- TODO add leave calendar function -->
+  <button class="button button-red w-full">leave</button>
 </section>
