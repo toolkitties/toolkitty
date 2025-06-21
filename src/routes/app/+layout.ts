@@ -1,6 +1,6 @@
 import type { LayoutLoad } from "./$types";
 import { goto } from "$app/navigation";
-import { access } from "$lib/api";
+import { access, users } from "$lib/api";
 
 export const load: LayoutLoad = async ({ parent }) => {
   const parentData = await parent();
@@ -20,7 +20,11 @@ export const load: LayoutLoad = async ({ parent }) => {
 
   // TODO: handle rejected state. Where do we go?
 
+  const user = await users.get(activeCalendarId!, publicKey);
+  const userRole = user?.role;
+
   return {
     activeCalendarId: activeCalendarId as string,
+    userRole,
   };
 };
