@@ -11,13 +11,12 @@
 
 <script lang="ts">
   import Back from "./Back.svelte";
-  import type { PageProps } from "./$types";
   import { calendars } from "$lib/api";
   import Avatar from "./Avatar.svelte";
   import QuestionMark from "./QuestionMark.svelte";
 
   // TODO: change or remove default title once we have a name.
-  let { title = "(^._.^)ﾉ", data } = $props();
+  let { title = "(^._.^)ﾉ", userRole } = $props();
 
   const activeCalendarName = calendars.getActiveCalendar;
 </script>
@@ -32,7 +31,7 @@
   <div class="grid grid-cols-3 items-center h-10">
     <div class="flex flex-row items-center gap-2">
       <Back />
-      {#if data && data.userRole === "admin"}
+      {#if userRole === "admin"}
         <a
           class="button-green button inline-block text-center"
           href="/app/calendars/edit"
