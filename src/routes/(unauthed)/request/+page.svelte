@@ -6,6 +6,7 @@
   import { toast } from "$lib/toast.svelte";
   import { onDestroy } from "svelte";
   import CalendarSelector from "$lib/components/CalendarSelector.svelte";
+  import BubbleIcon from "$lib/components/icons/BubbleIcon.svelte";
 
   let { data }: PageProps = $props();
   let requestStatus = $state(data.accessStatus);
@@ -56,20 +57,35 @@
 </script>
 
 <div class="h-6"></div>
+<h2 class="text-center">Request Access to my festival</h2>
 <CalendarSelector />
 {#if requestStatus == "pending"}
-  <div class="mx-auto">
-    <img class="w-12 mx-auto" alt="" src="/images/pending.gif" />
-    <span>request pending...</span>
+  <div class="fixed inset-0 flex items-center justify-center">
+    <div class="text-center">
+      <img class="w-12 mx-auto" alt="" src="/images/pending.gif" />
+      <span class="block mt-2">request pending...</span>
+    </div>
   </div>
 {:else if requestStatus == "rejected"}
-  <p>Your request was rejected!!</p>
+  <div class="fixed inset-0 flex items-center justify-center">
+    <div class="text-center">
+      <p class="block">Your request was rejected!!</p>
+    </div>
+  </div>
 {:else}
-  <p>Welcome to Toolkitties</p>
-  <form onsubmit={join}>
-    <input id="name" name="name" type="text" placeholder="Your name" required />
-    <textarea id="message" name="message" rows="4" placeholder="Your message"
-    ></textarea>
-    <button class="button button-grey" type="submit">Request access</button>
-  </form>
+  <div class="mt-3">
+    <p class="mb-4">Welcome to Toolkitties!</p>
+    <form onsubmit={join}>
+      <label for="name" class="mb-2">Your name*</label>
+      <input name="name" type="text" class="mb-4" />
+      <label for="message" class="flex items-center gap-2 mb-2">
+        <BubbleIcon size={22} />
+        Message the admins
+      </label>
+      <textarea id="message" name="message" rows="4" class="mb-4"></textarea>
+      <div class="flex justify-center">
+        <button class="button button-grey" type="submit">request access</button>
+      </div>
+    </form>
+  </div>
 {/if}
