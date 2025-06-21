@@ -133,6 +133,10 @@
     @apply font-sans;
   }
 
+  label {
+    font-size: 1.3333rem;
+  }
+
   html,
   body {
     @apply h-screen flex flex-col;
@@ -151,11 +155,11 @@
 
   button,
   .button {
-    @apply border border-black bg-black/20 rounded-sm px-2 py-1.5 flex gap-1 items-center cursor-pointer;
+    @apply border border-black bg-black/20 rounded-sm px-2 pt-2 pb-1 flex gap-1 items-center cursor-pointer text-[1.25rem] leading-[1.15];
   }
 
   .button-small {
-    @apply py-0 rounded-lg;
+    @apply py-1 px-1 rounded-[8px] text-[12px];
   }
 
   .button-pink {
@@ -200,12 +204,23 @@
     width: 16px;
     height: 20px;
   }
+
   .button-light-blue {
     @apply bg-blue-light rounded-xl justify-center;
   }
 
+  .button-light-yellow {
+    @apply bg-light-yellow rounded-xl justify-center;
+  }
+
   .button-light-pink {
     @apply bg-pink-light rounded-xl justify-center;
+  }
+
+  .button-light-blue.button-small,
+  .button-light-yellow.button-small,
+  .button-green.button-small {
+    @apply rounded-[8px];
   }
 
   .tag {
@@ -215,7 +230,7 @@
   h1,
   h2 {
     font-size: 1.375rem;
-    text-transform: capitalize;
+    text-transform: uppercase;
   }
 
   h3,
