@@ -14,6 +14,7 @@
   import { calendars } from "$lib/api";
   import Avatar from "./Avatar.svelte";
   import QuestionMark from "./QuestionMark.svelte";
+  import { page } from "$app/stores";
 
   // TODO: change or remove default title once we have a name.
   let { title = "(^._.^)ﾉ", userRole } = $props();
@@ -31,7 +32,7 @@
   <div class="grid grid-cols-3 items-center h-10">
     <div class="flex flex-row items-center gap-2">
       <Back />
-      {#if userRole === "admin"}
+      {#if userRole === "admin" && $page.url.pathname === "/app/events"}
         <a
           class="button-green button inline-block text-center"
           href="/app/calendars/edit"
