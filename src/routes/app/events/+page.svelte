@@ -90,46 +90,56 @@
 
 <CalendarSelector />
 
-{#if $calendar && $calendar.calendarInstructions}
-  <PageText text={$calendar.calendarInstructions} title="about calendar" />
-  {#if $calendar.startDate}
-    <Date date={$calendar.startDate} format="dateshort" />
-  {/if}
-  {#if $calendar.endDate}
-    &nbsp;- <Date date={$calendar.endDate} format="dateshort" />
+{#if $calendar && ($calendar.startDate || $calendar.endDate)}
+  <div class="text-center text-[25px] leading-[24px] py-3.5">
+    {#if $calendar.startDate}
+      <Date date={$calendar.startDate} format="dateshort" />
+    {/if}
+    {#if $calendar.endDate}
+      &nbsp;- <Date date={$calendar.endDate} format="dateshort" />
+    {/if}
+  </div>
+  {#if $calendar.calendarInstructions}
+    <div class="text-center">
+      <PageText text={$calendar.calendarInstructions} title="about calendar" />
+    </div>
   {/if}
 {/if}
 
 {#if $eventsByDate && $eventsByDate.length > 0 && $calendar}
-  <Calendar
-    type="single"
-    bind:value={selectedDate}
-    busyness={$eventsByDate}
-    minValue={$calendar.startDate
-      ? parseAbsoluteToLocal($calendar.startDate)
-      : undefined}
-    maxValue={$calendar.endDate
-      ? parseAbsoluteToLocal($calendar.endDate)
-      : undefined}
-  />
+  <div class="py-3.5 -mx-3.5">
+    <Calendar
+      type="single"
+      bind:value={selectedDate}
+      busyness={$eventsByDate}
+      minValue={$calendar.startDate
+        ? parseAbsoluteToLocal($calendar.startDate)
+        : undefined}
+      maxValue={$calendar.endDate
+        ? parseAbsoluteToLocal($calendar.endDate)
+        : undefined}
+    />
 
-  {#if filteredEvents.length > 0}
-    {#each filteredEvents as group (group.date)}
-      <div>
-        <div
-          id={`date-${group.date}`}
-          class="sticky top-0 bg-bg-secondary text-center"
-        >
-          <Date date={group.date} format="date" />
+    {#if filteredEvents.length > 0}
+      {#each filteredEvents as group, i (group.date)}
+        <div>
+          <div
+            id={`date-${group.date}`}
+            class="sticky top-0 bg-bg-secondary text-center text-[20px] {i === 0
+              ? 'border-t border-t-black'
+              : ''}"
+          >
+            <Date date={group.date} format="date" />
+          </div>
+          {#each group.eventsList as event (event.id)}
+            <EventRow {event} />
+          {/each}
         </div>
-        {#each group.eventsList as event (event.id)}
-          <EventRow {event} />
-        {/each}
-      </div>
-    {/each}
-  {:else}
-    <p>No events on selected date</p>
-  {/if}
+      {/each}
+    {:else}
+      <p>No events on selected date</p>
+    {/if}
+  </div>
 {:else}
   <p>no events yet, please create one.</p>
   <a href="/app/events/create" class="button inline-block">create event</a>
