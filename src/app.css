@@ -172,8 +172,6 @@
     background-image: url("/images/crayon.svg");
     background-size: contain;
     background-repeat: no-repeat;
-    width: 16px;
-    height: 20px;
   }
 
   .button-delete > span {
