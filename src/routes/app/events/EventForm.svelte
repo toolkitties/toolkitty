@@ -305,7 +305,9 @@
     No available spaces have been contributed. Create at least one space before
     creating an event.
   </p>
-  <a href="/app/spaces/create" class="button button-green mt-4 inline-block"
+  <a
+    href="/app/spaces/create"
+    class="bg-green-light-fluro justify-center rounded-xl mt-4 inline-block"
     >Create space</a
   >
 {:else}

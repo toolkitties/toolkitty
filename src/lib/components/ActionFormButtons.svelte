@@ -32,7 +32,7 @@
     {/if}
     <button
       type="button"
-      class="button bg-grey-light rounded-xl justify-center"
+      class="bg-grey-light rounded-xl justify-center"
       on:click={goBack}
     >
       cancel
@@ -40,18 +40,20 @@
   {:else}
     <button
       type="button"
-      class="button bg-grey-light rounded-xl justify-center"
+      class="bg-grey-light rounded-xl justify-center"
       on:click={goBack}
     >
       discard
     </button>
     <button
       type="button"
-      class="button bg-grey-light rounded-xl justify-center"
+      class="bg-grey-light rounded-xl justify-center"
       on:click={onSaveDraft}
     >
       save draft
     </button>
   {/if}
-  <button type="submit" class="button button-green"> publish </button>
+  <button type="submit" class="bg-green-light-fluro justify-center rounded-xl">
+    publish
+  </button>
 </div>

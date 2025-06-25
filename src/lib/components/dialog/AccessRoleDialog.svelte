@@ -77,14 +77,14 @@
       >
     {/if}
     <AlertDialog.Action
-      class="button button-green w-full mb-2"
+      class="button bg-green-light-fluro justify-center rounded-xl w-full mb-2"
       onclick={() => assignRole("admin")}
       disabled={role === "admin"}
       >admin {role === "admin" ? "(current)" : ""}</AlertDialog.Action
     >
     {#if role !== "admin"}
       <AlertDialog.Action
-        class="button button-light-pink w-full mb-2"
+        class="button bg-pink-light rounded-xl justify-center w-full mb-2"
         onclick={() => assignRole("organiser")}
         >organiser {role === "organiser" ? "(current)" : ""}
       </AlertDialog.Action>

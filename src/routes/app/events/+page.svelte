@@ -139,7 +139,9 @@
 
 {#if data.userRole === "admin"}
   <a
-    class="button-green button mt-4 inline-block w-full text-center"
-    href="/app/calendars/edit"><span>edit calendar</span></a
+    class="button bg-green-light-fluro justify-center rounded-xl mt-4 inline-block w-full text-center"
+    href="/app/calendars/edit"
   >
+    <span class="edit-icon">edit calendar</span>
+  </a>
 {/if}

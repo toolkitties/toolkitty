@@ -158,19 +158,6 @@
     @apply py-0 rounded-lg;
   }
 
-  .button-green {
-    @apply bg-green-light-fluro justify-center rounded-xl;
-  }
-
-  .button-green > span {
-    position: relative;
-    content: "";
-    background-image: url("/images/crayon.svg");
-    background-size: contain;
-    background-repeat: no-repeat;
-    padding-left: 22px;
-  }
-
   .button-shadow {
     box-shadow: -4px 4px 10px rgba(0, 0, 0, 0.25);
   }
@@ -179,21 +166,21 @@
     @apply bg-grey-light rounded-xl justify-center;
   }
 
-  .button-delete > span {
+  .edit-icon {
+    position: relative;
     padding-left: 22px;
-    background-image: url("/images/bin.svg");
+    background-image: url("/images/crayon.svg");
     background-size: contain;
     background-repeat: no-repeat;
     width: 16px;
     height: 20px;
   }
 
-  .button-light-blue {
-    @apply bg-blue-light rounded-xl justify-center;
-  }
-
-  .button-light-pink {
-    @apply bg-pink-light rounded-xl justify-center;
+  .button-delete > span {
+    padding-left: 22px;
+    background-image: url("/images/bin.svg");
+    background-size: contain;
+    background-repeat: no-repeat;
   }
 
   .tag {

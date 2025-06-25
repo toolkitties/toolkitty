@@ -70,9 +70,11 @@
 
     {#if data.userRole == "admin" || amOwner}
       <a
-        class="button-green button w-full"
-        href="/app/events/edit?id={$event!.id}"><span>edit</span></a
+        class="button bg-green-light-fluro justify-center rounded-xl w-full"
+        href="/app/events/edit?id={$event!.id}"
       >
+        <span class="edit-icon">edit</span>
+      </a>
     {/if}
 
     <pre>{JSON.stringify($event, null, 2)}</pre>

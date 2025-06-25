@@ -152,5 +152,10 @@
         >{$errors.resourcePageText}</span
       >{/if}
   {/if}
-  <button type="submit" class="button button-green w-full"> create </button>
+  <button
+    type="submit"
+    class="bg-green-light-fluro justify-center rounded-xl w-full"
+  >
+    create
+  </button>
 </form>
