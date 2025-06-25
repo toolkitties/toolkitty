@@ -60,7 +60,7 @@
 
 {#if $activeCalendar?.name}
   <Header title={page.data.title} userRole={data.userRole} />
-  <main class="grow overflow-auto px-3.5">
+  <main class="grow overflow-auto px-3.5 py-3.5">
     {@render children()}
   </main>
   <nav class="w-full py-2.5 px-6 border-t border-black bg-grey-very-light">
