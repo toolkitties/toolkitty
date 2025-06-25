@@ -30,14 +30,26 @@
       {console.log("User role is admin:", userRole)}
       <Delete {id} {name} type="event" />
     {/if}
-    <button type="button" class="button button-grey" onclick={goBack}>
+    <button
+      type="button"
+      class="button bg-grey-light rounded-xl justify-center"
+      on:click={goBack}
+    >
       cancel
     </button>
   {:else}
-    <button type="button" class="button button-grey" onclick={goBack}>
+    <button
+      type="button"
+      class="button bg-grey-light rounded-xl justify-center"
+      on:click={goBack}
+    >
       discard
     </button>
-    <button type="button" class="button button-grey" onclick={onSaveDraft}>
+    <button
+      type="button"
+      class="button bg-grey-light rounded-xl justify-center"
+      on:click={onSaveDraft}
+    >
       save draft
     </button>
   {/if}

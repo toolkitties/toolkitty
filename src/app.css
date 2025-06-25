@@ -158,10 +158,6 @@
     @apply py-0 rounded-lg;
   }
 
-  .button-pink {
-    @apply bg-pink-light;
-  }
-
   .button-green {
     @apply bg-green-light-fluro justify-center rounded-xl;
   }
@@ -179,16 +175,7 @@
     box-shadow: -4px 4px 10px rgba(0, 0, 0, 0.25);
   }
 
-  .button-red {
-    @apply bg-red-light rounded-xl justify-center;
-  }
-
-  button[data-alert-dialog-cancel]:not(.button-grey) {
-    background: none;
-    border: none;
-  }
-
-  .button-grey {
+  button[data-alert-dialog-cancel]:not(.bg-grey-light) {
     @apply bg-grey-light rounded-xl justify-center;
   }
 
@@ -200,6 +187,7 @@
     width: 16px;
     height: 20px;
   }
+
   .button-light-blue {
     @apply bg-blue-light rounded-xl justify-center;
   }

@@ -92,10 +92,12 @@
     {#if isAccessRequest}
       <AlertDialog.Action
         onclick={rejectRequest}
-        class="button button-red w-full">reject</AlertDialog.Action
+        class="button bg-red-light rounded-xl justify-center w-full"
+        >reject</AlertDialog.Action
       >
     {:else}
-      <AlertDialog.Cancel class="button button-grey w-full"
+      <AlertDialog.Cancel
+        class="button bg-grey-light rounded-xl justify-center w-full"
         >cancel</AlertDialog.Cancel
       >
     {/if}

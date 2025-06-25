@@ -23,6 +23,7 @@
 {#if data.userRole === "admin"}
   <button
     onclick={() => handleDelete()}
-    class="button button-grey button-delete w-full">delete</button
+    class="button bg-grey-light rounded-xl justify-center button-delete w-full"
+    >delete</button
   >
 {/if}
