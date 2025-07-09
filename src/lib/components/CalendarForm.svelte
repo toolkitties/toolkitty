@@ -100,6 +100,7 @@
   <div class="flex flex-row">
     <div class="start-date">
       <label for="calendar-start-date">Start Date *</label>
+      <!-- TODO: Move to bits ui date range picker -->
       <input
         name="calendar-start-date"
         type="date"
