@@ -17,7 +17,7 @@
 >
   {#if event.images.length > 0}
     <img
-      src={`blobstore://${event.images[0]}`}
+      src="/toolkitty-mascot.png"
       class="aspect-square object-cover w-[30%] min-w-32 max-w-72 grow"
       alt=""
     />
@@ -28,7 +28,7 @@
       alt=""
     />
   {/if}
-  <div class="flex flex-col gap-2 p-3 w-full">
+  <div class="flex flex-col p-2 pt-0.5 w-full">
     <h3 class="text-[20px]">{event.name}</h3>
     <div class="flex gap-2">
       <div class="flex items-center justify-center">
@@ -58,6 +58,12 @@
           ? event.spaceRequest.space!.name
           : "no space yet"}
       </div>
+    </div>
+    <!-- TODO add tag functionality -->
+    <div class="flex gap-2">
+      <div class="button button-small bg-light-yellow">tag name</div>
+      <div class="button button-small bg-blue-light">tag name</div>
+      <div class="button button-small bg-pink-light">tag name</div>
     </div>
   </div></a
 >

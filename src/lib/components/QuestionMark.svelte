@@ -4,10 +4,14 @@
   -->
 
 <script lang="ts">
+  import { goto } from "$app/navigation";
   import QuestionIcon from "$lib/components/icons/QuestionIcon.svelte";
 </script>
 
-<button class="w-10 h-full question-mark-button ml-auto">
+<button
+  onclick={() => goto("/app/about")}
+  class="w-10 h-full question-mark-button ml-auto"
+>
   <QuestionIcon size={16} />
   <span class="sr-only">Question Mark</span>
 </button>

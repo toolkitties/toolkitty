@@ -6,6 +6,7 @@
   import { invalidateAll } from "$app/navigation";
   import LockIcon from "$lib/components/icons/LockIcon.svelte";
   import HideIcon from "$lib/components/icons/HideIcon.svelte";
+  import Back from "$lib/components/Back.svelte";
 
   let value = $state("");
   let show = $state(true);
@@ -39,9 +40,13 @@
   }
 </script>
 
-<h1 class="text-3xl text-center">Toolkitty 🐈</h1>
+<div class="fixed top-2 left-2">
+  <Back />
+</div>
 
-<div class="flex flex-col gap-4 grow justify-center mx-auto">
+<h1 class="text-3xl text-center pt-8">Toolkitty 🐈</h1>
+
+<div class="flex flex-col gap-4 grow justify-center mx-auto px-3.5 py-3.5">
   {#if !searching}
     <form onsubmit={join} class="flex flex-col gap-4">
       <div class="flex items-center justify-center max-w-[158px]">
@@ -96,6 +101,8 @@
   {/if}
 </div>
 
-<a href="/create" class="button button-green mb-17" type="submit"
-  >+ Create new calendar</a
->
+<div class="px-3.5 py-3.5">
+  <a href="/create" class="button button-green mb-17" type="submit"
+    >+ Create new calendar</a
+  >
+</div>

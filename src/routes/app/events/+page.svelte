@@ -101,7 +101,7 @@
   </div>
   {#if $calendar.calendarInstructions}
     <div class="text-center">
-      <PageText text={$calendar.calendarInstructions} title="about calendar" />
+      <PageText text={$calendar.calendarInstructions} title="About calendar" />
     </div>
   {/if}
 {/if}
@@ -125,7 +125,7 @@
         <div>
           <div
             id={`date-${group.date}`}
-            class="sticky top-0 bg-bg-secondary text-center text-[20px] {i === 0
+            class="top-0 bg-bg-secondary text-center text-[20px] {i === 0
               ? 'border-t border-t-black'
               : ''}"
           >
@@ -141,8 +141,12 @@
     {/if}
   </div>
 {:else}
-  <p>no events yet, please create one.</p>
-  <a href="/app/events/create" class="button inline-block">create event</a>
+  <div class="flex flex-col items-center justify-center m-8">
+    <p>No events yet, please create one.</p>
+    <a href="/app/events/create" class="button button-green inline-block"
+      >create event</a
+    >
+  </div>
 {/if}
 
 <Contribute />

@@ -112,7 +112,7 @@
 
   <fieldset>
     <legend>🔗 Useful link (website, social media)</legend>
-    <div class="flex flex-row">
+    <div class="flex flex-row gap-2">
       <div>
         <label for="link-text">Link Title</label>
         <input

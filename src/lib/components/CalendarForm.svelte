@@ -14,6 +14,7 @@
   import { zod } from "sveltekit-superforms/adapters";
   import { superForm } from "sveltekit-superforms";
   import SuperDebug from "sveltekit-superforms";
+  import ShareIcon from "$lib/components/icons/ShareIcon.svelte";
 
   let { data }: { data: SuperValidated<Infer<CalendarSchema>> } = $props();
 
@@ -70,7 +71,7 @@
 
 <SuperDebug data={{ $form, $errors }} />
 <form method="POST" use:enhance>
-  <label for="name">Calendar name*</label>
+  <label for="name">Programme name*</label>
   <input
     type="text"
     name="name"
@@ -97,7 +98,7 @@
   Would be a consideration for form validation, we would need to make sure EITHER the
   dates have been selected in the calendar or as start and end/no end -->
   <!-- <FestivalCalendar selectMultiple={true} /> -->
-  <div class="flex flex-row">
+  <div class="flex flex-row gap-2">
     <div class="start-date">
       <label for="calendar-start-date">Start Date *</label>
       <input
@@ -122,35 +123,62 @@
     </div>
   </div>
   {#if $form.id}
-    <label for="calendarInstructions">About your calendar</label>
+    <label
+      for="calendarInstructions"
+      class="bg-grey-medium border border-black rounded-t flex items-center justify-between p-1.5 px-2 border-b border-b-black"
+      >Page: Home</label
+    >
     <textarea
       name="calendarInstructions"
       aria-invalid={$errors.calendarInstructions ? "true" : undefined}
       bind:value={$form.calendarInstructions}
+      rows="10"
+      class="w-full p-2 px-3 resize-y border-t-0 rounded-b rounded-t-none border-l border-r border-b border-black"
+      placeholder="Enter your calendar instructions here..."
     ></textarea>
     {#if $errors.calendarInstructions}<span class="form-error"
         >{$errors.calendarInstructions}</span
       >{/if}
 
-    <label for="spacePageText">Spaces page text</label>
+    <label
+      for="spacePageText"
+      class="bg-grey-medium border border-black rounded-t flex items-center justify-between p-1.5 px-2 border-b border-b-black"
+      >Page: Spaces</label
+    >
     <textarea
       name="spacePageText"
       aria-invalid={$errors.spacePageText ? "true" : undefined}
       bind:value={$form.spacePageText}
+      rows="10"
+      class="w-full p-2 px-3 resize-y border-t-0 rounded-b rounded-t-none border-l border-r border-b border-black"
+      placeholder="Enter your spaces page text here..."
     ></textarea>
     {#if $errors.spacePageText}<span class="form-error"
         >{$errors.spacePageText}</span
       >{/if}
 
-    <label for="resourcePageText">Resources page text</label>
+    <label
+      for="resourcePageText"
+      class="bg-grey-medium border border-black rounded-t flex items-center justify-between p-1.5 px-2 border-b border-b-black"
+      >Page: Resources</label
+    >
     <textarea
       name="resourcePageText"
       aria-invalid={$errors.resourcePageText ? "true" : undefined}
       bind:value={$form.resourcePageText}
+      rows="10"
+      class="w-full p-2 px-3 resize-y border-t-0 rounded-b rounded-t-none border-l border-r border-b border-black"
+      placeholder="Enter your resources page text here..."
     ></textarea>
     {#if $errors.resourcePageText}<span class="form-error"
         >{$errors.resourcePageText}</span
       >{/if}
   {/if}
+  <div class="flex flex-col items-center justify-end text-center mb-4">
+    <ShareIcon size={28} />
+    <span class="text-[15px] mt-3"
+      >Calendars are private. Invite others with your calendar code.</span
+    >
+  </div>
   <button type="submit" class="button button-green w-full"> create </button>
 </form>

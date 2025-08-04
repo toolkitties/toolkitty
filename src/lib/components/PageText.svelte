@@ -31,7 +31,10 @@
       >
       <AlertDialog.Portal>
         <AlertDialog.Content>
-          <AlertDialog.Title>{title}</AlertDialog.Title>
+          <AlertDialog.Title
+            ><span class="font-[Handjet] font-size-[20px]">{title}</span
+            ></AlertDialog.Title
+          >
           <AlertDialog.Description>
             <p class="max-h-[50vh] overflow-auto">{text}</p>
           </AlertDialog.Description>

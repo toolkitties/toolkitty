@@ -11,7 +11,7 @@
   import { calendars } from "$lib/api";
   import { onMount } from "svelte";
   import { invalidateAll } from "$app/navigation";
-  import { Select, Accordion } from "bits-ui";
+  import { Accordion } from "bits-ui";
   import ChevronIcon from "$lib/components/icons/ChevronIcon.svelte";
 
   let calendarList: Calendar[] = $state([]);
@@ -63,6 +63,11 @@
                 href="/join"
                 class="text-[20px] bg-[var(--color-grey-medium)] px-2 py-1 text-center border-b border-black"
                 >Join Calendar</a
+              >
+              <a
+                href="/request"
+                class="text-[20px] bg-[var(--color-grey-medium)] px-2 py-1 text-center border-b border-black"
+                >Request access</a
               >
               <a
                 href="/create"

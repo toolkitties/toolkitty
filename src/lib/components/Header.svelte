@@ -23,7 +23,7 @@
 </script>
 
 <div
-  class="p-3 right-2 w-full bg-grey-very-light space-y-1.5 border-b border-black header"
+  class="p-3 right-2 w-full bg-grey-very-light space-y-1.5 border-b-2 border-dashed border-black header"
 >
   <div class="flex justify-between border border-black rounded-full px-3">
     <span>{$activeCalendarName}</span>

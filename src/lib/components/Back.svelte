@@ -4,7 +4,6 @@
   -->
 
 <script>
-  import Icon from "@iconify/svelte";
   import ArrowIcon from "$lib/components/icons/ArrowIcon.svelte";
 
   function goBack() {

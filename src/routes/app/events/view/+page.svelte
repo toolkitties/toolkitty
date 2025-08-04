@@ -8,6 +8,8 @@
   import DateRange from "$lib/components/DateRange.svelte";
   import BookingRequest from "$lib/components/BookingRequest.svelte";
   import ImageGallery from "$lib/components/ImageGallery.svelte";
+  import LinkIcon from "$lib/components/icons/LinkIcon.svelte";
+  import TicketIcon from "$lib/components/icons/TicketIcon.svelte";
 
   let { data }: PageProps = $props();
   let upcomingBookings: Observable<BookingRequestEnriched[]>;
@@ -42,9 +44,9 @@
 
 {#if $event}
   <div class="space-y-4">
-    <h1>{$event.name}</h1>
+    <h1 class="text-center mb-2.5">{$event.name}</h1>
 
-    <div>
+    <div class="text-center bg-pink-light p-2 rounded pb-1">
       <p>
         <DateRange startDate={$event.startDate} endDate={$event.endDate} />
       </p>
@@ -64,12 +66,20 @@
       </section>
     {/if}
 
-    <p>{$event.description}</p>
+    <div class="rounded bg-grey-lighter p-2 py-3 text-center">
+      <p>{$event.description}</p>
+    </div>
+
+    <div
+      class="rounded bg-light-yellow p-2 py-3 flex items-center justify-center"
+    >
+      <span class="mr-2"><TicketIcon size={22} /></span> Useful link: (website, social
+      media)
+    </div>
 
     <Links links={$event.links} />
 
     <ImageGallery images={$event.images} />
-
     {#if data.userRole == "admin" || amOwner}
       <a
         class="button-green button w-full"

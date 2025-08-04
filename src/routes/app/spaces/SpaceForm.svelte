@@ -264,7 +264,7 @@
 
   <fieldset>
     <legend>🔗 Useful link (website, social media)</legend>
-    <div class="flex flex-row">
+    <div class="flex flex-row gap-2">
       <div>
         <!-- TODO: Fix type issue with '$form.link' is possibly being 'null'. -->
         <label for="space-link-text">Link Title</label>

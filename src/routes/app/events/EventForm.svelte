@@ -321,7 +321,7 @@
     {#if $form.links}
       {#if $form.links[0]}
         <p>🎫 Ticket Link</p>
-        <div class="flex flex-row">
+        <div class="flex flex-row gap-2">
           <div>
             <label for="ticket-link-text">Link text</label>
             <input

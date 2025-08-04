@@ -19,10 +19,14 @@
   };
 </script>
 
+<section class="text-center">
+  <h2>Calendar Presets</h2>
+</section>
 <CalendarForm data={data.form} />
 {#if data.userRole === "admin"}
   <button
     onclick={() => handleDelete()}
-    class="button button-grey button-delete w-full">delete</button
+    class="button button-grey button-delete w-full text-center mt-2"
+    ><span>delete</span></button
   >
 {/if}
