@@ -26,7 +26,7 @@
   {shortText}
   {#if isLong}
     <AlertDialog.Root bind:open>
-      <AlertDialog.Trigger class="button"
+      <AlertDialog.Trigger class="button-small bg-pink-light"
         ><PlusIcon size={7} /> read more</AlertDialog.Trigger
       >
       <AlertDialog.Portal>

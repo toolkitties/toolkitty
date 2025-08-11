@@ -11,6 +11,7 @@
   import { zod } from "sveltekit-superforms/adapters";
   import { events, resources, bookings } from "$lib/api";
   import { TimeSpanClass } from "$lib/timeSpan";
+  import ActionFormButtons from "$lib/components/ActionFormButtons.svelte";
 
   let {
     data,
@@ -18,12 +19,14 @@
     currentSpace,
     spaces,
     resourcesList,
+    userRole,
   }: {
     data: SuperValidated<Infer<EventSchema>>;
     activeCalendarId: Hash;
     currentSpace?: Space;
     spaces: Space[];
     resourcesList: Resource[];
+    userRole: string;
   } = $props();
 
   let selectedSpace = $state<Space | undefined>(currentSpace);
@@ -290,7 +293,11 @@
     No available spaces have been contributed. Create at least one space before
     creating an event.
   </p>
-  <a href="/app/spaces/create" class="button mt-4 inline-block">Create space</a>
+  <a
+    href="/app/spaces/create"
+    class="bg-green-light-fluro justify-center rounded-xl mt-4 inline-block"
+    >Create space</a
+  >
 {:else}
   <SuperDebug data={{ $form, $errors }} />
   <form method="POST" use:enhance>
@@ -480,11 +487,15 @@
     <ImageUploader bind:images={$form.images as string[]} />
 
     <br />
-
     <!-- {#if $errors.selectedSpace}<span class="form-error"
         >{$errors.selectedSpace}</span
       >{/if} -->
 
-    <button type="submit">{$form.id ? "Update" : "Create"}</button>
+    <ActionFormButtons
+      id={$form.id!}
+      name={$form.name}
+      {userRole}
+      onSaveDraft={() => {}}
+    />
   </form>
 {/if}

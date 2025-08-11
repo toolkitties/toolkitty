@@ -77,19 +77,29 @@
       >
     {/if}
     <AlertDialog.Action
+      class="button bg-green-light-fluro justify-center rounded-xl w-full mb-2"
       onclick={() => assignRole("admin")}
       disabled={role === "admin"}
       >admin {role === "admin" ? "(current)" : ""}</AlertDialog.Action
     >
     {#if role !== "admin"}
-      <AlertDialog.Action onclick={() => assignRole("organiser")}
+      <AlertDialog.Action
+        class="button bg-pink-light rounded-xl justify-center w-full mb-2"
+        onclick={() => assignRole("organiser")}
         >organiser {role === "organiser" ? "(current)" : ""}
       </AlertDialog.Action>
     {/if}
     {#if isAccessRequest}
-      <AlertDialog.Action onclick={rejectRequest}>reject</AlertDialog.Action>
+      <AlertDialog.Action
+        onclick={rejectRequest}
+        class="button bg-red-light rounded-xl justify-center w-full"
+        >reject</AlertDialog.Action
+      >
     {:else}
-      <AlertDialog.Cancel>cancel</AlertDialog.Cancel>
+      <AlertDialog.Cancel
+        class="button bg-grey-light rounded-xl justify-center w-full"
+        >cancel</AlertDialog.Cancel
+      >
     {/if}
   </AlertDialog.Content>
 </AlertDialog.Portal>

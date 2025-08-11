@@ -70,7 +70,7 @@
     <input id="name" name="name" type="text" placeholder="Your name" required />
     <textarea id="message" name="message" rows="4" placeholder="Your message"
     ></textarea>
-    <button class="border border-black rounded-sm p-4" type="submit"
+    <button class="button bg-grey-light rounded-xl justify-center" type="submit"
       >Request access</button
     >
   </form>

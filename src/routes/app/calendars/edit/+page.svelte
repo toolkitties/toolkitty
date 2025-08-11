@@ -20,4 +20,10 @@
 </script>
 
 <CalendarForm data={data.form} />
-<button onclick={() => handleDelete()}>Delete</button>
+{#if data.userRole === "admin"}
+  <button
+    onclick={() => handleDelete()}
+    class="button bg-grey-light rounded-xl justify-center button-delete w-full"
+    >delete</button
+  >
+{/if}

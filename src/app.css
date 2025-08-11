@@ -30,6 +30,9 @@
 
   --color-green-light-fluro: #b4ffb2;
 
+  --color-white: #ffffff;
+  --color-light-yellow: #fdffb4;
+
   --font-sans: Atkinson-Hyperlegible, sans-serif;
   --font-pixel: Handjet, serif;
 
@@ -149,6 +152,33 @@
   button,
   .button {
     @apply border border-black bg-black/20 rounded-sm px-2 py-1.5 flex gap-1 items-center cursor-pointer;
+  }
+
+  .button-small {
+    @apply py-0 rounded-lg;
+  }
+
+  .button-shadow {
+    box-shadow: -4px 4px 10px rgba(0, 0, 0, 0.25);
+  }
+
+  button[data-alert-dialog-cancel]:not(.bg-grey-light) {
+    @apply bg-grey-light rounded-xl justify-center;
+  }
+
+  .edit-icon {
+    position: relative;
+    padding-left: 22px;
+    background-image: url("/images/crayon.svg");
+    background-size: contain;
+    background-repeat: no-repeat;
+  }
+
+  .button-delete > span {
+    padding-left: 22px;
+    background-image: url("/images/bin.svg");
+    background-size: contain;
+    background-repeat: no-repeat;
   }
 
   .tag {
