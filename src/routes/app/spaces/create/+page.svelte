@@ -1,16 +1,19 @@
 <script lang="ts">
   import type { PageProps } from "./$types";
   import SpaceForm from "../SpaceForm.svelte";
+  import InfoBoxTop from "$lib/components/InfoBoxTop.svelte";
 
   let { data }: PageProps = $props();
 </script>
 
-<h1 class="font-pixel">{data.title}</h1>
-<p>
-  Hello Organisers! Fill in this form to upload your own space. Once published,
+<InfoBoxTop
+  >Hello Organisers! Fill in this form to upload your own space. Once published,
   event organisers will be able to book your space for their events. Manage
-  requests in your dashboard.
-</p>
+  requests in your dashboard.</InfoBoxTop
+>
+
+<h1 class="font-pixel">{data.title}</h1>
+
 <SpaceForm
   data={data.form}
   activeCalendarId={data.activeCalendarId!}
