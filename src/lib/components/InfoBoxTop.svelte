@@ -11,7 +11,7 @@
 
 {#if isVisible}
   <div
-    class="bg-blue-light font-mono font-size-[15px] pt-6 -mx-3.5 p-3.5 text-center relative"
+    class="bg-blue-light font-mono font-size-[15px] pt-6 -mx-3.5 p-3.5 text-center relative -top-3.5"
   >
     <button
       onclick={closeBanner}
