@@ -155,7 +155,7 @@
 
   input,
   textarea {
-    @apply w-full p-2.5 border border-black rounded-sm mb-2;
+    @apply w-full p-2.5 border border-black rounded-sm mb-2 italic;
   }
 
   button,
@@ -255,6 +255,23 @@
 
   [data-state="open"] [data-accordion-content] {
     border-radius: 0 0 10px 10px;
+  }
+
+  /* Checkbox styles */
+  .hidden-checkbox {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    border: 0;
+  }
+
+  .grey-lighter-box {
+    @apply bg-grey-lighter text-center p-2 rounded-sm;
   }
 
   /* colour icons for dark theme */
