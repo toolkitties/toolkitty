@@ -5,13 +5,14 @@
 
 <script lang="ts">
   import type { Observable } from "dexie";
+  import type { BookingRequestEnriched } from "$lib/types";
 
   let {
     upcomingBookings,
-  }: { upcomingBookings: Observable<BookingRequestEnriched[]> } = $props();
+  }: { upcomingBookings?: Observable<BookingRequestEnriched[]> } = $props();
 </script>
 
-{#if $upcomingBookings?.length > 0}
+{#if upcomingBookings && $upcomingBookings?.length}
   <div>
     <h3>Upcoming bookings</h3>
     {#each $upcomingBookings as booking (booking.id)}
