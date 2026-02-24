@@ -70,13 +70,6 @@
       <p>{$event.description}</p>
     </div>
 
-    <div
-      class="rounded bg-light-yellow p-2 py-3 flex items-center justify-center"
-    >
-      <span class="mr-2"><TicketIcon size={22} /></span> Useful link: (website, social
-      media)
-    </div>
-
     <Links links={$event.links} />
 
     <ImageGallery images={$event.images} />
