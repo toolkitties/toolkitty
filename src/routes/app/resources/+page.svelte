@@ -28,12 +28,13 @@
     {#each $resourcesList as resource (resource.id)}
       <a
         href={`/app/resources/view?id=${resource.id}`}
-        class="flex border-black event-row border-t resource-row"
+        class="flex border-black event-row border-t resource-row bg-grey-very-light"
       >
         <div class="flex flex-col gap-1 p-2">
           <h3>{resource.name}</h3>
           <p class="text-xs italic">{resource.description}</p>
           <p class="text-xs italic mt-1 text-grey-dark">
+            <!-- TODO we miss location info here in resourceData -->
             Vague location (e.g. south London) or space it belongs to
           </p>
         </div>
