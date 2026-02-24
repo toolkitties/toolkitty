@@ -316,7 +316,7 @@ type ApplicationEvent =
 type SpaceRequestId = Hash;
 type ReservationRequestId = Hash;
 
-type Link = {
+export type Link = {
   type: "ticket" | "custom";
   title: null | string;
   url: string;
@@ -778,7 +778,7 @@ type ResourceRequestEnriched = {
   resource?: Resource;
 };
 
-type BookingRequestEnriched = {
+export type BookingRequestEnriched = {
   event?: CalendarEvent;
   resource?: Resource;
   space?: Space;
