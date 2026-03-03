@@ -6,6 +6,8 @@
   import ActionFormButtons from "$lib/components/ActionFormButtons.svelte";
   import AvailabilitySetter from "$lib/components/AvailabilitySetter.svelte";
   import ImageUploader from "$lib/components/ImageUploader.svelte";
+  import BubbleIcon from "$lib/components/icons/BubbleIcon.svelte";
+  import ToggleCheckbox from "$lib/components/ToggleCheckbox.svelte";
   import { resources } from "$lib/api";
   import { resourceSchema } from "$lib/schemas";
   import { zod } from "sveltekit-superforms/adapters";
@@ -51,6 +53,14 @@
     },
   });
 
+  $effect(() => {
+    if (alwaysAvailable) {
+      $form.availability = "always";
+    } else if (Array.isArray($form.availability)) {
+      $form.availability = [];
+    }
+  });
+
   async function handleCreateResource(payload: ResourceFields) {
     try {
       const resourceId: Hash = await resources.create(
@@ -80,7 +90,7 @@
   }
 </script>
 
-<SuperDebug data={{ $form, $errors }} />
+<!-- <SuperDebug data={{ $form, $errors }} /> -->
 <form method="POST" use:enhance>
   <label for="name">Resource Name*</label>
   <input
@@ -97,6 +107,7 @@
     name="description"
     aria-invalid={$errors.description ? "true" : undefined}
     bind:value={$form.description}
+    placeholder="You can use Markdown to format your text. Add any useful information relating to the arrangement (i.e. you will be responsible for pick-up and return, I won’t travel further than East London etc.)"
   ></textarea>
   {#if $errors.description}<span class="form-error">{$errors.description}</span
     >{/if}
@@ -107,37 +118,54 @@
     name="contact"
     aria-invalid={$errors.contact ? "true" : undefined}
     bind:value={$form.contact}
+    placeholder="e.g. phone number, signal code, email"
   />
   {#if $errors.contact}<span class="form-error">{$errors.contact}</span>{/if}
 
   <fieldset>
-    <legend>🔗 Useful link (website, social media)</legend>
     <div class="flex flex-row gap-2">
       <div>
-        <label for="link-text">Link Title</label>
+        <label for="link-text">Useful link (website, social media)</label>
         <input
           type="text"
           name="title"
           aria-invalid={$errors.link?.title ? "true" : undefined}
           bind:value={$form.link.title}
+          placeholder="Link title"
         />
       </div>
       {#if $errors.link?.title}<span class="form-error"
           >{$errors.link.title}</span
         >{/if}
       <div>
-        <label for="link-url">URL</label>
+        <label for="link-url">Url</label>
         <input
           type="url"
           name="link-url"
           aria-invalid={$errors.link?.url ? "true" : undefined}
           bind:value={$form.link.url}
+          placeholder="http://www.example.com"
         />
       </div>
     </div>
     {#if $errors.link?.url}<span class="form-error">{$errors.link.url}</span
       >{/if}
   </fieldset>
+
+  <label for="resource-message" class="flex items-center gap-1">
+    <BubbleIcon size={18} />
+    <span>Your message to anyone booking this resource</span>
+  </label>
+  <input
+    type="text"
+    name="resource-message"
+    placeholder="Please let me know in advance if..."
+    aria-invalid={$errors.messageForRequesters ? "true" : undefined}
+    bind:value={$form.messageForRequesters}
+  />
+  {#if $errors.messageForRequesters}<span class="form-error"
+      >{$errors.messageForRequesters}</span
+    >{/if}
 
   <p>Resource availability</p>
   {#if $form.availability === "always"}
@@ -152,7 +180,7 @@
       <span class="form-error">{$errors.availability._errors}</span>
     {/if}
   {/if}
-
+  <!--
   <label>
     <input
       type="checkbox"
@@ -166,19 +194,33 @@
       }}
     />
     Always Available
-  </label>
+  </label> -->
 
-  <fieldset>
-    <label for="multiBookable"
-      >Can this resource have multiple bookings at the same time?
-    </label>
-    <input
-      id="multiBookable"
-      type="checkbox"
-      name="multiBookable"
-      bind:checked={$form.multiBookable}
-    />
-  </fieldset>
+  <ToggleCheckbox
+    id="always-available"
+    name="always-available"
+    label="Always available"
+    checked={alwaysAvailable}
+    onChange={(checked) => {
+      alwaysAvailable = checked;
+      if (alwaysAvailable) {
+        $form.availability = "always";
+      } else {
+        $form.availability = [];
+      }
+    }}
+  />
+
+  <ToggleCheckbox
+    id="multiBookable"
+    name="multiBookable"
+    className="mt-3"
+    label="Can this resource have multiple bookings at the same time?"
+    checked={$form.multiBookable}
+    onChange={(checked) => {
+      $form.multiBookable = checked;
+    }}
+  />
 
   <p>Images</p>
   <ImageUploader bind:images={$form.images as string[]} />
