@@ -271,7 +271,7 @@
   }
 
   .grey-lighter-box {
-    @apply bg-grey-lighter text-center p-2 rounded-sm;
+    @apply bg-grey-lighter text-center p-2 rounded;
   }
 
   /* colour icons for dark theme */

@@ -382,6 +382,7 @@ type ResourceFields = {
   description: string;
   contact: string;
   link?: Link;
+  messageForRequesters?: string;
   images: Image[];
   availability: TimeSpan[] | "always";
   multiBookable: boolean;

@@ -55,7 +55,7 @@
       <p>{$resource.description}</p>
     </div>
 
-    <!-- TODO should be map and grey-lighter-box with location details -->
+    <!-- TODO should be map and grey-lighter-box with location details (not available currently in resource object) -->
 
     <ImageGallery images={$resource.images} />
 

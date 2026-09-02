@@ -1,4 +1,4 @@
-<!-- 
+<!--
  @component
  Render images in a nice gallery
   -->

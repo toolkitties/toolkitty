@@ -12,7 +12,9 @@
   import { events, resources, bookings } from "$lib/api";
   import { TimeSpanClass } from "$lib/timeSpan";
   import ActionFormButtons from "$lib/components/ActionFormButtons.svelte";
-
+  import TicketIcon from "$lib/components/icons/TicketIcon.svelte";
+  import { Accordion } from "bits-ui";
+  import ChevronIcon from "$lib/components/icons/ChevronIcon.svelte";
   let {
     data,
     activeCalendarId,
@@ -35,6 +37,28 @@
   let selectedResources: Resource[] = $state([]);
   let availableResourceBookings: { resourceId: string; timeSpan: TimeSpan }[] =
     $state([]);
+
+  let availableTimes = $state([
+    { start: "10:00", end: "10:30", available: false, selected: false },
+    { start: "10:30", end: "11:00", available: false, selected: false },
+    { start: "11:00", end: "11:30", available: true, selected: false },
+    { start: "11:30", end: "12:00", available: true, selected: false },
+    { start: "12:00", end: "12:30", available: false, selected: false },
+    { start: "12:30", end: "13:00", available: true, selected: false },
+    { start: "13:00", end: "13:30", available: true, selected: false },
+    { start: "13:30", end: "14:00", available: true, selected: false },
+    { start: "14:00", end: "14:30", available: true, selected: false },
+    { start: "14:30", end: "15:00", available: true, selected: false },
+    { start: "15:00", end: "15:30", available: true, selected: false },
+    { start: "15:30", end: "16:00", available: true, selected: false },
+    { start: "16:00", end: "16:30", available: true, selected: false },
+    { start: "16:30", end: "17:00", available: true, selected: false },
+    { start: "17:00", end: "17:30", available: true, selected: false },
+    { start: "17:30", end: "18:00", available: true, selected: false },
+  ]);
+  console.log("currentSpace", currentSpace);
+  console.log("selectedSpace", selectedSpace);
+  console.log("spaces", spaces);
 
   // resource filtering if update form
   // if (currentSpace && currentSpace.availability !== "always") {
@@ -88,6 +112,8 @@
       }
     }
   }
+
+  async function handleTimeSelection() {}
 
   function calculateSpaceTimespan(availability: TimeSpan[]): TimeSpan {
     return {
@@ -312,6 +338,7 @@
     <textarea
       name="description"
       aria-invalid={$errors.description ? "true" : undefined}
+      placeholder="You can use Markdown to format your text. Make sure you give enough information about the event."
       bind:value={$form.description}
     ></textarea>
     {#if $errors.description}<span class="form-error"
@@ -320,13 +347,18 @@
 
     {#if $form.links}
       {#if $form.links[0]}
-        <p>🎫 Ticket Link</p>
+        <label for="ticket-link-text">
+          <span class="relative top-[4px] inline-block"
+            ><TicketIcon size={22} /></span
+          >
+          Ticket Link
+        </label>
         <div class="flex flex-row gap-2">
           <div>
-            <label for="ticket-link-text">Link text</label>
             <input
               type="text"
               name="ticket-link-text"
+              placeholder="Link title"
               aria-invalid={$errors.links?.[0].title ? "true" : undefined}
               bind:value={$form.links[0].title}
             />
@@ -335,10 +367,10 @@
               >{/if}
           </div>
           <div>
-            <label for="ticket-link-url">URL</label>
             <input
               type="url"
               name="ticket-link-url"
+              placeholder="http://www.example.com"
               aria-invalid={$errors.links?.[0].url ? "true" : undefined}
               bind:value={$form.links[0].url}
             />
@@ -350,13 +382,15 @@
       {/if}
 
       {#if $form.links[1]}
-        <p>🔗 Additional Link</p>
-        <div class="flex flex-row">
+        <label for="additional-link-text"
+          >Other link (website, social media)</label
+        >
+        <div class="flex flex-row gap-2">
           <div>
-            <label for="additional-link-text">Link text</label>
             <input
               type="text"
               name="additional-link-text"
+              placeholder="Link title"
               aria-invalid={$errors.links?.[1].title ? "true" : undefined}
               bind:value={$form.links[1].title}
             />
@@ -365,10 +399,10 @@
               >{/if}
           </div>
           <div>
-            <label for="additional-link-url">URL</label>
             <input
               type="url"
               name="additional-link-url"
+              placeholder="http://www.example.com"
               aria-invalid={$errors.links?.[1].url ? "true" : undefined}
               bind:value={$form.links[1].url}
             />
@@ -380,86 +414,279 @@
       {/if}
     {/if}
 
-    <p>Select a space:</p>
-    <ul>
-      {#each spaces as space (space.id)}
-        <li>
-          <input
-            type="radio"
-            id={space.id}
-            name="selected-space"
-            onchange={() => handleSpaceSelection(space)}
-            value={space.id}
-            bind:group={selectedSpaceId}
-          />
-          <label for={space.id}>{space.name}</label>
-        </li>
-      {/each}
-    </ul>
-    {#if selectedSpace}
-      <div class="space-availability">
-        <p>View availability for {selectedSpace.name}</p>
-        {#if selectedSpace.availability === "always"}
-          <p>This space is always available :D</p>
-        {:else}
-          <AvailabilityViewer
-            data={selectedSpace}
-            selected={$form.startDate}
-            type="space"
-          />
-        {/if}
-      </div>
+    <div class="space-y-4">
+      <Accordion.Root type="single" class="w-full">
+        <Accordion.Item value="calendar-list" data-state="closed">
+          <Accordion.Trigger
+            class="bg-grey-medium rounded-t rounded-b-none w-full"
+          >
+            <label
+              for="aboutText"
+              class="bg-grey-medium w-full flex justify-between cursor-pointer pb-0.75"
+              >Select a space*
+            </label>
+            <span
+              class="transition-transform duration-200 data-[state=open]:rotate-180"
+            >
+              <ChevronIcon size={16} />
+            </span>
+          </Accordion.Trigger>
 
-      <p>Request access to selected space</p>
-      <div class="flex flex-row">
-        <input
-          type="datetime-local"
-          name="startDate"
-          required
-          aria-invalid={$errors.startDate ? "true" : undefined}
-          bind:value={$form.startDate}
-          onchange={recalculateResourceAvailability}
-        />
-        {#if $errors.startDate}<span class="form-error"
-            >{$errors.startDate}</span
-          >{/if}
-        <input
-          type="datetime-local"
-          name="endDate"
-          required
-          aria-invalid={$errors.endDate ? "true" : undefined}
-          bind:value={$form.endDate}
-          onchange={recalculateResourceAvailability}
-        />
+          <Accordion.Content class="border border-black border-t-0 rounded">
+            <ul>
+              {#each spaces as space (space.id)}
+                <li
+                  class={`flex justify-between p-2 ${
+                    space.location?.type === "virtual"
+                      ? "bg-blue-light"
+                      : space.location?.type === "physical"
+                        ? "bg-light-yellow"
+                        : space.location?.type === "gps"
+                          ? "bg-pink-light"
+                          : ""
+                  }`}
+                >
+                  <label
+                    for={space.id}
+                    class={`cursor-pointer  w-full text-left pl-2 ${selectedSpaceId === space.id ? "font-bold italic" : ""}`}
+                  >
+                    {space.name}
+                  </label>
+                  <input
+                    type="radio"
+                    id={space.id}
+                    name="selected-space"
+                    onchange={() => handleSpaceSelection(space)}
+                    value={space.id}
+                    bind:group={selectedSpaceId}
+                    class="h-4 w-4"
+                  />
+                </li>
+              {/each}
+            </ul>
+          </Accordion.Content>
+        </Accordion.Item>
+      </Accordion.Root>
+    </div>
 
-        {#if $errors.endDate}<span class="form-error">{$errors.endDate}</span
-          >{/if}
-      </div>
+    <p>drugi accordion takie sobie oddzielenie hehe</p>
+    <!-- TODO: finish calendar part -->
+    <div class="space-y-4">
+      <Accordion.Root type="single" class="w-full">
+        <Accordion.Item value="available-date" data-state="closed">
+          <Accordion.Trigger
+            class="bg-grey-medium rounded-t rounded-b-none w-full"
+          >
+            <label
+              for="aboutText"
+              class="bg-grey-medium w-full flex justify-between cursor-pointer pb-0.75"
+              >Select from available date*
+            </label>
+            <span
+              class="transition-transform duration-200 data-[state=open]:rotate-180"
+            >
+              <ChevronIcon size={16} />
+            </span>
+          </Accordion.Trigger>
 
-      <p>Set public event start and end</p>
-      <div class="flex flex-row">
-        <label for="publicStartDate">Start *</label>
-        <input
-          type="datetime-local"
-          name="startDate"
-          aria-invalid={$errors.publicStartDate ? "true" : undefined}
-          bind:value={$form.publicStartDate}
-        />
-        {#if $errors.publicStartDate}<span class="form-error"
-            >{$form.publicStartDate}</span
-          >{/if}
+          <!-- TODO: finish calendar part -->
+          <Accordion.Content class="border border-black border-t-0 rounded">
+            {#if selectedSpace}
+              <div class="space-availability">
+                <p>View availability for {selectedSpace.name}</p>
+                {#if selectedSpace.availability === "always"}
+                  <p>This space is always available :D</p>
+                {:else}
+                  <AvailabilityViewer
+                    data={selectedSpace}
+                    selected={$form.startDate}
+                    type="space"
+                  />
+                {/if}
+              </div>
+              <p>Request access to selected space</p>
+              <div class="flex flex-row">
+                <input
+                  type="datetime-local"
+                  name="startDate"
+                  required
+                  aria-invalid={$errors.startDate ? "true" : undefined}
+                  bind:value={$form.startDate}
+                  onchange={recalculateResourceAvailability}
+                />
+                {#if $errors.startDate}<span class="form-error"
+                    >{$errors.startDate}</span
+                  >{/if}
+                <input
+                  type="datetime-local"
+                  name="endDate"
+                  required
+                  aria-invalid={$errors.endDate ? "true" : undefined}
+                  bind:value={$form.endDate}
+                  onchange={recalculateResourceAvailability}
+                />
 
-        <label for="publicEndDate">End *</label>
-        <input
-          type="datetime-local"
-          name="publicEndDate"
-          aria-invalid={$errors.publicEndDate ? "true" : undefined}
-          bind:value={$form.publicEndDate}
-        />
-        {#if $errors.publicEndDate}<span class="form-error"
-            >{$errors.publicEndDate}</span
-          >{/if}
-      </div>
+                {#if $errors.endDate}<span class="form-error"
+                    >{$errors.endDate}</span
+                  >{/if}
+              </div>
+
+              <p>Set public event start and end</p>
+              <div class="flex flex-row">
+                <label for="publicStartDate">Start *</label>
+                <input
+                  type="datetime-local"
+                  name="startDate"
+                  aria-invalid={$errors.publicStartDate ? "true" : undefined}
+                  bind:value={$form.publicStartDate}
+                />
+                {#if $errors.publicStartDate}<span class="form-error"
+                    >{$form.publicStartDate}</span
+                  >{/if}
+
+                <label for="publicEndDate">End *</label>
+                <input
+                  type="datetime-local"
+                  name="publicEndDate"
+                  aria-invalid={$errors.publicEndDate ? "true" : undefined}
+                  bind:value={$form.publicEndDate}
+                />
+                {#if $errors.publicEndDate}<span class="form-error"
+                    >{$errors.publicEndDate}</span
+                  >{/if}
+              </div>
+            {/if}
+          </Accordion.Content>
+        </Accordion.Item>
+      </Accordion.Root>
+
+      <p>trzeci accordion</p>
+
+      <Accordion.Root type="single" class="w-full">
+        <Accordion.Item value="calendar-time" data-state="closed">
+          <Accordion.Trigger
+            class="bg-grey-medium rounded-t rounded-b-none w-full"
+          >
+            <label
+              for="aboutText"
+              class="bg-grey-medium w-full flex justify-between cursor-pointer pb-0.75"
+              >Select from available times (including set-up)*
+            </label>
+            <span
+              class="transition-transform duration-200 data-[state=open]:rotate-180"
+            >
+              <ChevronIcon size={16} />
+            </span>
+          </Accordion.Trigger>
+
+          <!-- TODO: lista czasow -->
+          <Accordion.Content class="border border-black border-t-0 rounded">
+            <div class="flex flex-col">
+              {#each availableTimes as timeSlot, i (i)}
+                <label
+                  class={`p-1 rounded border cursor-pointer transition-colors ${
+                    !timeSlot.available
+                      ? "text-grey-medium cursor-not-allowed border-gray-200"
+                      : timeSlot.selected
+                        ? "bg-green-light-fluro"
+                        : "hover:bg-green-light-fluro"
+                  }`}
+                >
+                  <div class="flex items-center justify-center w-full gap-3">
+                    <input
+                      type="checkbox"
+                      class="hidden-checkbox"
+                      disabled={!timeSlot.available}
+                      checked={timeSlot.selected}
+                      onchange={() => {
+                        if (timeSlot.available) {
+                          availableTimes = availableTimes.map((slot, idx) =>
+                            idx === i
+                              ? { ...slot, selected: !slot.selected }
+                              : slot,
+                          );
+                        }
+                      }}
+                    />
+                    <span class="text-center">
+                      {timeSlot.start} - {timeSlot.end}
+                    </span>
+                  </div>
+                </label>
+              {/each}
+            </div>
+          </Accordion.Content>
+        </Accordion.Item>
+      </Accordion.Root>
+
+      Event time (excluding set-up)*
+
+      <Accordion.Root type="single" class="w-full">
+        <Accordion.Item value="calendar-time" data-state="closed">
+          <Accordion.Trigger
+            class="bg-grey-medium rounded-t rounded-b-none w-full"
+          >
+            <label
+              for="aboutText"
+              class="bg-grey-medium w-full flex justify-between cursor-pointer pb-0.75"
+              >Select resources
+            </label>
+            <span
+              class="transition-transform duration-200 data-[state=open]:rotate-180"
+            >
+              <ChevronIcon size={16} />
+            </span>
+          </Accordion.Trigger>
+
+          <Accordion.Content class="border border-black border-t-0 rounded">
+            <!-- {#if availableResources.length > 0}
+              <label for="resource-list">Select from available resources</label>
+              <ul id="resource-list">
+                {#each availableResources as resource (resource.id)}
+                  <li>
+                    <input
+                      type="checkbox"
+                      id="resource-{resource.id}"
+                      value={resource}
+                      bind:group={selectedResources}
+                    />
+                    <label for="resource-{resource.id}">{resource.name}</label>
+                  </li>
+                {/each}
+              </ul>
+            {:else}
+              <p>No available resources.</p>
+            {/if} -->
+
+            {#if availableResources.length > 0}
+              <div class="flex flex-col">
+                {#each availableResources as resource (resource.id)}
+                  <label
+                    class={`p-1 rounded cursor-pointer transition-colors ${
+                      selectedResources.includes(resource)
+                        ? "bg-green-light-fluro"
+                        : "hover:bg-green-light-fluro"
+                    }`}
+                  >
+                    <div class="flex items-center justify-between w-full gap-3">
+                      <span>
+                        {resource.name}
+                      </span>
+                      <input
+                        class="text-right"
+                        type="checkbox"
+                        id="resource-{resource.id}"
+                        value={resource}
+                        bind:group={selectedResources}
+                      />
+                    </div>
+                  </label>
+                {/each}
+              </div>
+            {/if}
+          </Accordion.Content>
+        </Accordion.Item>
+      </Accordion.Root>
 
       {#if availableResources.length > 0}
         <label for="resource-list">Select from available resources</label>
@@ -479,7 +706,100 @@
       {:else}
         <p>No available resources.</p>
       {/if}
-    {/if}
+    </div>
+
+    <p>takie sobie oddzielenie hehe</p>
+
+    <div class="bg-white border border-black rounded">
+      <label
+        for="aboutText"
+        class="bg-grey-medium rounded-t flex items-center justify-between p-1.5 px-2 border-b border-b-black"
+        >Select a space*
+      </label>
+      {#if selectedSpace}
+        <div class="space-availability">
+          <p>View availability for {selectedSpace.name}</p>
+          {#if selectedSpace.availability === "always"}
+            <p>This space is always available :D</p>
+          {:else}
+            <AvailabilityViewer
+              data={selectedSpace}
+              selected={$form.startDate}
+              type="space"
+            />
+          {/if}
+        </div>
+        <p>Request access to selected space</p>
+        <div class="flex flex-row">
+          <input
+            type="datetime-local"
+            name="startDate"
+            required
+            aria-invalid={$errors.startDate ? "true" : undefined}
+            bind:value={$form.startDate}
+            onchange={recalculateResourceAvailability}
+          />
+          {#if $errors.startDate}<span class="form-error"
+              >{$errors.startDate}</span
+            >{/if}
+          <input
+            type="datetime-local"
+            name="endDate"
+            required
+            aria-invalid={$errors.endDate ? "true" : undefined}
+            bind:value={$form.endDate}
+            onchange={recalculateResourceAvailability}
+          />
+
+          {#if $errors.endDate}<span class="form-error">{$errors.endDate}</span
+            >{/if}
+        </div>
+
+        <p>Set public event start and end</p>
+        <div class="flex flex-row">
+          <label for="publicStartDate">Start *</label>
+          <input
+            type="datetime-local"
+            name="startDate"
+            aria-invalid={$errors.publicStartDate ? "true" : undefined}
+            bind:value={$form.publicStartDate}
+          />
+          {#if $errors.publicStartDate}<span class="form-error"
+              >{$form.publicStartDate}</span
+            >{/if}
+
+          <label for="publicEndDate">End *</label>
+          <input
+            type="datetime-local"
+            name="publicEndDate"
+            aria-invalid={$errors.publicEndDate ? "true" : undefined}
+            bind:value={$form.publicEndDate}
+          />
+          {#if $errors.publicEndDate}<span class="form-error"
+              >{$errors.publicEndDate}</span
+            >{/if}
+        </div>
+
+        {#if availableResources.length > 0}
+          <label for="resource-list">Select from available resources</label>
+          <ul id="resource-list">
+            {#each availableResources as resource (resource.id)}
+              <li>
+                <input
+                  type="checkbox"
+                  id="resource-{resource.id}"
+                  value={resource}
+                  bind:group={selectedResources}
+                />
+                <label for="resource-{resource.id}">{resource.name}</label>
+              </li>
+            {/each}
+          </ul>
+        {:else}
+          <p>No available resources.</p>
+        {/if}
+      {/if}
+    </div>
 
     <p>Images</p>
     <ImageUploader bind:images={$form.images as string[]} />
