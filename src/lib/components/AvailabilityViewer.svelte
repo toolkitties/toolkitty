@@ -6,10 +6,10 @@
   -->
 
 <script lang="ts">
-  import { Calendar } from "bits-ui";
   import type { DateValue } from "@internationalized/date";
   import { fromDate } from "@internationalized/date";
   import { spaces } from "$lib/api";
+  import Calendar from "$lib/components/Calendar.svelte";
   import Bookings from "./Bookings.svelte";
   import { TimeSpanClass } from "$lib/timeSpan";
 
@@ -84,54 +84,23 @@
     });
   }
 
+  const getDayClass = (date: DateValue) =>
+    isAvailableDay(date) ? "bg-green-300" : "text-gray-400 pointer-events-none";
+
+  const getDayAriaDisabled = (date: DateValue) =>
+    !isAvailableDay(date) || undefined;
+
   // Trigger a "dateSelect" event so that the initial UI shows availability.
   handleDateSelect(selectedDate);
 </script>
 
-<!-- TODO: Refactor Calendar into one component as we are using in a few places now -->
-<Calendar.Root
+<Calendar
   type="single"
   bind:value={currentlySelectedDate}
   onValueChange={handleDateSelect}
->
-  {#snippet children({ months, weekdays })}
-    <Calendar.Header class="flex flex-row">
-      <Calendar.PrevButton class="w-8 mr-2">←</Calendar.PrevButton>
-      <Calendar.Heading />
-      <Calendar.NextButton class="w-8 ml-2">→</Calendar.NextButton>
-    </Calendar.Header>
-    {#each months as month (month.value)}
-      <Calendar.Grid>
-        <Calendar.GridHead>
-          <Calendar.GridRow>
-            {#each weekdays as day, index (index)}
-              <Calendar.HeadCell>{day}</Calendar.HeadCell>
-            {/each}
-          </Calendar.GridRow>
-        </Calendar.GridHead>
-        <Calendar.GridBody>
-          {#each month.weeks as weekDates, weekIndex (weekIndex)}
-            <Calendar.GridRow>
-              {#each weekDates as date (date.toString())}
-                <Calendar.Cell {date} month={month.value}>
-                  <Calendar.Day
-                    class={`data-outside-month:pointer-events-none
-                data-outside-month:text-gray-300
-                data-selected:bg-black
-                data-selected:text-white
-                ${isAvailableDay(date) ? "bg-green-300" : ""}
-                ${!isAvailableDay(date) ? "text-gray-400 pointer-events-none" : ""}`}
-                    aria-disabled={!isAvailableDay(date) ? "true" : undefined}
-                  />
-                </Calendar.Cell>
-              {/each}
-            </Calendar.GridRow>
-          {/each}
-        </Calendar.GridBody>
-      </Calendar.Grid>
-    {/each}
-  {/snippet}
-</Calendar.Root>
+  dayClass={getDayClass}
+  dayAriaDisabled={getDayAriaDisabled}
+/>
 {#if currentlySelectedDate && !loading}
   <Bookings availability={availabilityByDay} {data} {booked} />
 {/if}

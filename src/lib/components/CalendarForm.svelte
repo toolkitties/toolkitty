@@ -12,13 +12,14 @@
   import { goto, invalidateAll } from "$app/navigation";
   import { calendarSchema } from "$lib/schemas";
   import { zod } from "sveltekit-superforms/adapters";
-  import { superForm } from "sveltekit-superforms";
+  import { setError, superForm } from "sveltekit-superforms";
   import SuperDebug from "sveltekit-superforms";
   import ShareIcon from "$lib/components/icons/ShareIcon.svelte";
+  import CalendarDateRangePicker from "$lib/components/calendar/CalendarDateRangePicker.svelte";
 
   let { data }: { data: SuperValidated<Infer<CalendarSchema>> } = $props();
 
-  let noEndDate = $state(false);
+  let noEndDate = $state(!data.data.endDate);
 
   const { form, errors, enhance } = superForm(data, {
     SPA: true,
@@ -27,8 +28,27 @@
     dataType: "json",
     async onUpdate({ form }) {
       if (form.valid) {
+        if (!noEndDate && !form.data.endDate) {
+          setError(form, "endDate", "An end date is required");
+          return;
+        }
+
+        if (
+          form.data.endDate &&
+          new Date(form.data.endDate) < new Date(form.data.startDate)
+        ) {
+          setError(
+            form,
+            "endDate",
+            "The end date cannot be before the start date",
+          );
+          return;
+        }
+
         const { id, startDate, endDate, ...payload } = form.data;
-        const dates = [{ start: startDate, end: endDate }];
+        const dates = [
+          { start: startDate, end: noEndDate ? undefined : endDate },
+        ];
         if (form.data.id) {
           handleUpdateCalendar(id!, { dates, ...payload });
         } else {
@@ -98,30 +118,17 @@
   Would be a consideration for form validation, we would need to make sure EITHER the
   dates have been selected in the calendar or as start and end/no end -->
   <!-- <FestivalCalendar selectMultiple={true} /> -->
-  <div class="flex flex-row gap-2">
-    <div class="start-date">
-      <label for="calendar-start-date">Start Date *</label>
-      <input
-        name="calendar-start-date"
-        type="date"
-        bind:value={$form.startDate}
-      />
-    </div>
-    <div class="end-date">
-      <label for="calendar-end-date">End Date *</label>
-      <input
-        name="calendar-end-date"
-        type="date"
-        bind:value={$form.endDate}
-        min={$form.startDate}
-        disabled={noEndDate}
-      />
-      <label>
-        <input type="checkbox" bind:checked={noEndDate} />
-        no end date
-      </label>
-    </div>
-  </div>
+  <CalendarDateRangePicker
+    bind:startDate={$form.startDate}
+    bind:endDate={$form.endDate}
+    bind:noEndDate
+  />
+  {#if $errors.startDate}
+    <span class="form-error">{$errors.startDate}</span>
+  {/if}
+  {#if !noEndDate && $errors.endDate}
+    <span class="form-error">{$errors.endDate}</span>
+  {/if}
   {#if $form.id}
     <label
       for="calendarInstructions"
