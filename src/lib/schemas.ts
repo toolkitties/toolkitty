@@ -117,6 +117,7 @@ export const calendarSchema = z
     calendarInstructions: z.string().optional(),
     spacePageText: z.string().optional(),
     resourcePageText: z.string().optional(),
+    newsPageText: z.string().optional(),
   })
   .refine((data) => data.id || data.userName, {
     message: "Name is required",

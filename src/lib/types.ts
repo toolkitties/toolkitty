@@ -361,6 +361,7 @@ type CalendarFields = {
   calendarInstructions?: string;
   spacePageText?: string;
   resourcePageText?: string;
+  newsPageText?: string;
 };
 
 type SpaceFields = {
@@ -664,6 +665,7 @@ type Calendar = {
   calendarInstructions?: string;
   spacePageText?: string;
   resourcePageText?: string;
+  newsPageText?: string;
   createdAt: bigint;
   updatedAt: bigint;
 };

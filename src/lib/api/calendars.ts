@@ -178,6 +178,7 @@ async function onCalendarCreated(
     calendarInstructions,
     spacePageText,
     resourcePageText,
+    newsPageText,
   } = data.fields;
   const timeSpan = dates[0];
 
@@ -206,6 +207,7 @@ async function onCalendarCreated(
           : undefined,
         spacePageText: spacePageText ? spacePageText : undefined,
         resourcePageText: resourcePageText ? resourcePageText : undefined,
+        newsPageText: newsPageText ? newsPageText : undefined,
         createdAt: meta.timestamp,
         updatedAt: meta.timestamp,
       });
@@ -225,6 +227,7 @@ async function onCalendarCreated(
         : undefined,
       spacePageText: spacePageText ? spacePageText : undefined,
       resourcePageText: resourcePageText ? resourcePageText : undefined,
+      newsPageText: newsPageText ? newsPageText : undefined,
       updatedAt: meta.timestamp,
     });
   }
@@ -238,8 +241,14 @@ async function onCalendarUpdated(
   // actually error here anyway?)
   validateFields(data.fields);
 
-  const { name, dates, calendarInstructions, spacePageText, resourcePageText } =
-    data.fields;
+  const {
+    name,
+    dates,
+    calendarInstructions,
+    spacePageText,
+    resourcePageText,
+    newsPageText,
+  } = data.fields;
   const timeSpan = dates[0];
 
   const calendar = await calendars.findById(data.id);
@@ -270,6 +279,7 @@ async function onCalendarUpdated(
       : undefined,
     spacePageText: spacePageText ? spacePageText : undefined,
     resourcePageText: resourcePageText ? resourcePageText : undefined,
+    newsPageText: newsPageText ? newsPageText : undefined,
     updatedAt: meta.timestamp,
   });
 }

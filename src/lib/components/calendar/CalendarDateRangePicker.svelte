@@ -137,7 +137,7 @@
   });
 </script>
 
-<section class="overflow-hidden rounded-sm border border-black bg-grey-lighter">
+<section class="mt-4 overflow-hidden rounded-sm border border-black bg-grey-lighter">
   <h3
     class="border-b border-black bg-grey-medium px-3 py-2 text-center text-[1.25rem] leading-tight normal-case"
   >
@@ -146,7 +146,7 @@
 
   <Calendar
     type="single"
-    variant="programme"
+    variant="standard"
     bind:value={selectedDate}
     bind:placeholder
     onValueChange={selectDate}

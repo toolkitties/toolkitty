@@ -17,7 +17,13 @@
   import ShareIcon from "$lib/components/icons/ShareIcon.svelte";
   import CalendarDateRangePicker from "$lib/components/calendar/CalendarDateRangePicker.svelte";
 
-  let { data }: { data: SuperValidated<Infer<CalendarSchema>> } = $props();
+  let {
+    data,
+    onDelete,
+  }: {
+    data: SuperValidated<Infer<CalendarSchema>>;
+    onDelete?: () => void;
+  } = $props();
 
   let noEndDate = $state(!data.data.endDate);
 
@@ -118,25 +124,29 @@
   Would be a consideration for form validation, we would need to make sure EITHER the
   dates have been selected in the calendar or as start and end/no end -->
   <!-- <FestivalCalendar selectMultiple={true} /> -->
-  <CalendarDateRangePicker
-    bind:startDate={$form.startDate}
-    bind:endDate={$form.endDate}
-    bind:noEndDate
-  />
-  {#if $errors.startDate}
-    <span class="form-error">{$errors.startDate}</span>
-  {/if}
-  {#if !noEndDate && $errors.endDate}
-    <span class="form-error">{$errors.endDate}</span>
+  {#if !$form.id}
+    <CalendarDateRangePicker
+      bind:startDate={$form.startDate}
+      bind:endDate={$form.endDate}
+      bind:noEndDate
+    />
+    {#if $errors.startDate}
+      <span class="form-error">{$errors.startDate}</span>
+    {/if}
+    {#if !noEndDate && $errors.endDate}
+      <span class="form-error">{$errors.endDate}</span>
+    {/if}
   {/if}
   {#if $form.id}
-    <label
-      for="calendarInstructions"
+    <h3
+      id="calendarInstructionsLabel"
       class="bg-grey-medium border border-black rounded-t flex items-center justify-between p-1.5 px-2 border-b border-b-black"
-      >Page: Home</label
     >
+      Page: Home
+    </h3>
     <textarea
       name="calendarInstructions"
+      aria-labelledby="calendarInstructionsLabel"
       aria-invalid={$errors.calendarInstructions ? "true" : undefined}
       bind:value={$form.calendarInstructions}
       rows="10"
@@ -147,13 +157,27 @@
         >{$errors.calendarInstructions}</span
       >{/if}
 
-    <label
-      for="spacePageText"
-      class="bg-grey-medium border border-black rounded-t flex items-center justify-between p-1.5 px-2 border-b border-b-black"
-      >Page: Spaces</label
+    <CalendarDateRangePicker
+      bind:startDate={$form.startDate}
+      bind:endDate={$form.endDate}
+      bind:noEndDate
+    />
+    {#if $errors.startDate}
+      <span class="form-error">{$errors.startDate}</span>
+    {/if}
+    {#if !noEndDate && $errors.endDate}
+      <span class="form-error">{$errors.endDate}</span>
+    {/if}
+
+    <h3
+      id="spacePageTextLabel"
+      class="mt-4 bg-grey-medium border border-black rounded-t flex items-center justify-between p-1.5 px-2 border-b border-b-black"
     >
+      Page: Spaces
+    </h3>
     <textarea
       name="spacePageText"
+      aria-labelledby="spacePageTextLabel"
       aria-invalid={$errors.spacePageText ? "true" : undefined}
       bind:value={$form.spacePageText}
       rows="10"
@@ -164,13 +188,15 @@
         >{$errors.spacePageText}</span
       >{/if}
 
-    <label
-      for="resourcePageText"
+    <h3
+      id="resourcePageTextLabel"
       class="bg-grey-medium border border-black rounded-t flex items-center justify-between p-1.5 px-2 border-b border-b-black"
-      >Page: Resources</label
     >
+      Page: Resources
+    </h3>
     <textarea
       name="resourcePageText"
+      aria-labelledby="resourcePageTextLabel"
       aria-invalid={$errors.resourcePageText ? "true" : undefined}
       bind:value={$form.resourcePageText}
       rows="10"
@@ -180,12 +206,42 @@
     {#if $errors.resourcePageText}<span class="form-error"
         >{$errors.resourcePageText}</span
       >{/if}
+
+    <h3
+      id="newsPageTextLabel"
+      class="bg-grey-medium border border-black rounded-t flex items-center justify-between p-1.5 px-2 border-b border-b-black"
+    >
+      Page: News
+    </h3>
+    <textarea
+      name="newsPageText"
+      aria-labelledby="newsPageTextLabel"
+      aria-invalid={$errors.newsPageText ? "true" : undefined}
+      bind:value={$form.newsPageText}
+      rows="10"
+      class="w-full p-2 px-3 resize-y border-t-0 rounded-b rounded-t-none border-l border-r border-b border-black"
+      placeholder="Enter your news page text here..."
+    ></textarea>
+    {#if $errors.newsPageText}<span class="form-error"
+        >{$errors.newsPageText}</span
+      >{/if}
   {/if}
-  <div class="flex flex-col items-center justify-end text-center mb-4">
+  <div class="mt-4 flex flex-col items-center justify-end text-center mb-4">
     <ShareIcon size={28} />
     <span class="text-[15px] mt-3"
       >Calendars are private. Invite others with your calendar code.</span
     >
   </div>
-  <button type="submit" class="button button-green w-full"> create </button>
+  <div class={`grid gap-2 ${data.data.id && onDelete ? "grid-cols-2" : "grid-cols-1"}`}>
+    {#if data.data.id && onDelete}
+      <button
+        type="button"
+        onclick={onDelete}
+        class="button button-grey button-delete w-full"
+      ><span>delete</span></button>
+    {/if}
+    <button type="submit" class="button button-green w-full">
+      {data.data.id ? "update" : "create"}
+    </button>
+  </div>
 </form>

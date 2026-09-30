@@ -467,6 +467,7 @@ export function createCalendarFields(
     calendarInstructions: faker.lorem.paragraphs(10),
     spacePageText: faker.lorem.paragraphs(10),
     resourcePageText: faker.lorem.paragraphs(10),
+    newsPageText: faker.lorem.paragraphs(10),
   };
 
   return { ...fields, ...fieldsOverwrites };
