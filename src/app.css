@@ -73,7 +73,7 @@
     src:
       url("/fonts/Atkinson-Hyperlegible-Regular.woff2") format("woff2"),
       url("/fonts/Atkinson-Hyperlegible-Regular.woff") format("woff");
-    font-weight: bold;
+    font-weight: normal;
     font-style: normal;
   }
 
@@ -92,7 +92,7 @@
       url("/fonts/Atkinson-Hyperlegible-Bold.woff2") format("woff2"),
       url("/fonts/Atkinson-Hyperlegible-Bold.woff") format("woff");
     font-weight: bold;
-    font-style: italic;
+    font-style: normal;
   }
 
   @font-face {
@@ -302,7 +302,7 @@
 
   /* style json nicely */
   pre {
-    @apply border border-black p-2 rounded-sm overflow-auto bg-green-50;
+    @apply border border-black p-2 rounded-sm overflow-auto bg-grey-darker text-white;
   }
 }
 
