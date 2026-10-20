@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 
 /**
  * Opens a file selector dialog in the backend and imports the selected file
@@ -16,7 +16,10 @@ import { invoke } from "@tauri-apps/api/core";
  * Make sure to check the Tauri CSP settings if you intend to use the blobstore
  * scheme in other contexts as well.
  */
-export async function uploadFile(): Promise<Hash> {
-  const blobHash = await invoke("upload_file");
-  return blobHash as Hash;
+export async function uploadFiles(): Promise<Hash[]> {
+  return invoke<Hash[]>("upload_file");
+}
+
+export function blobUrl(hash: Hash): string {
+  return convertFileSrc(hash, "blobstore");
 }
