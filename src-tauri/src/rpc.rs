@@ -146,14 +146,21 @@ pub async fn publish_ephemeral(
 
 /// Upload a file.
 #[tauri::command]
-pub async fn upload_file(rpc: State<'_, Rpc>, app: AppHandle) -> Result<Option<Hash>, RpcError> {
+pub async fn upload_file(rpc: State<'_, Rpc>, app: AppHandle) -> Result<Vec<Hash>, RpcError> {
     debug!(command.name = "upload_file", "RPC request received");
-    match app.dialog().file().blocking_pick_file() {
-        Some(file_path) => {
-            let file_path = file_path.into_path().expect("parseable file path");
-            let file_hash = rpc.upload_file(file_path).await?;
-            Ok(Some(file_hash))
-        }
-        None => Ok(None),
+    let Some(file_paths) = app
+        .dialog()
+        .file()
+        .add_filter("Images", &["png", "jpg", "jpeg", "gif", "webp"])
+        .blocking_pick_files()
+    else {
+        return Ok(Vec::new());
+    };
+
+    let mut hashes = Vec::with_capacity(file_paths.len());
+    for file_path in file_paths {
+        let file_path = file_path.into_path().expect("parseable file path");
+        hashes.push(rpc.upload_file(file_path).await?);
     }
+    Ok(hashes)
 }

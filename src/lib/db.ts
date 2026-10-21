@@ -80,4 +80,22 @@ db.version(1).stores({
   users: "&[calendarId+publicKey]",
 });
 
+// Compound indexes used while enriching events and resolving booking responses.
+// Without them Dexie scans the full booking tables after every booking update.
+db.version(2).stores({
+  accessRequests: "&id, calendarId",
+  accessResponses: "&[requestId+answer], id, calendarId",
+  calendars: "&id, name, calendarId",
+  spaces: "&id, calendarId, [calendarId+ownerId]",
+  resources: "&id, calendarId, [calendarId+ownerId]",
+  events: "&id, name, startDate, calendarId, [calendarId+ownerId]",
+  bookingRequests:
+    "&id, eventId, calendarId, requester, resourceType, resourceId, validTime, status, [eventId+resourceType], [resourceId+status], [calendarId+resourceId], [calendarId+status+resourceOwner]",
+  bookingResponses:
+    "&id, eventId, requestId, calendarId, answer, [requestId+answer]",
+  streams: "&id",
+  settings: "&name",
+  users: "&[calendarId+publicKey]",
+});
+
 export { db };
