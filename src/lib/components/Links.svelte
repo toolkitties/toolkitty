@@ -31,7 +31,9 @@
           Useful link:
         {/if}
       </span>
-      {link.title}: {link.url}
+      <span>
+        {#if link.title?.trim()}{link.title}:&nbsp;{/if}{link.url}
+      </span>
     </div>
   </a>
 {/each}
