@@ -8,50 +8,59 @@
   import { db } from "$lib/db";
   import { invalidateAll } from "$app/navigation";
   import { INVITE_TOPIC } from "$lib/api/publish";
+  import { toast } from "$lib/toast.svelte";
   import "../app.css";
 
   let { children }: LayoutProps = $props();
 
   onMount(async () => {
-    // Hacky workaround to only call "init" once in a Svelte HMR life-cycle.
-    //
-    // @TODO(adz): This might need some more investigation as it currently
-    // breaks when an error was thrown. After fixing that error, HMR re-loads
-    // fully and calls "init" again.
-    if (!("isInit" in window)) {
-      init().then(async () => {
-        if (import.meta.env.DEV && !sessionStorage.getItem("seeded_db")) {
-          console.info("seeding db");
+    const appWindow = window as Window & { isInit?: boolean };
+    // Reattach the current processor after HMR, even when startup already ran.
+    const channelReady = init();
+    if (!appWindow.isInit) {
+      // Mark initialization as in progress so HMR cannot start another channel.
+      // Clear the flag if startup fails, allowing a retry on reload.
+      appWindow.isInit = true;
+      channelReady
+        .then(async () => {
+          if (import.meta.env.DEV && !sessionStorage.getItem("seeded_db")) {
+            console.info("seeding db");
 
-          // Delete any old version of db
-          await db.delete({ disableAutoOpen: false });
+            // Delete any old version of db
+            await db.delete({ disableAutoOpen: false });
 
-          // TODO(sam): for testing publish some events to the network.
-          await data.seedData();
+            // TODO(sam): for testing publish some events to the network.
+            await data.seedData();
 
-          // invalidate all data in load functions so we get latest data that just seeded.
-          await invalidateAll();
+            // invalidate all data in load functions so we get latest data that just seeded.
+            await invalidateAll();
 
-          // set session storage so we don't reseed database on HMR or page reload.
-          sessionStorage.setItem("seeded_db", "true");
+            // set session storage so we don't reseed database on HMR or page reload.
+            sessionStorage.setItem("seeded_db", "true");
 
-          console.info("finished seeding db");
-        }
+            console.info("finished seeding db");
+          }
 
-        if (import.meta.env.PROD) {
-          // Delete frontend database for now as there is no persistence on the backend yet.
-          // AS without persistence, everytime we launch app in prod we get a new publicKey and all events.
-          await db.delete({ disableAutoOpen: false });
-        }
+          if (import.meta.env.PROD) {
+            // Delete frontend database for now as there is no persistence on the backend yet.
+            // AS without persistence, everytime we launch app in prod we get a new publicKey and all events.
+            await db.delete({ disableAutoOpen: false });
+          }
 
-        await topics.subscribeEphemeral(INVITE_TOPIC);
+          await topics.subscribeEphemeral(INVITE_TOPIC);
 
-        // @TODO(sam): we have no persistence layer at the moment so we don't need to subscribe to
-        // calendars we already know about.
-      });
-
-      // @ts-expect-error isInit does not exist on window
-      window.isInit = true;
+          // @TODO(sam): we have no persistence layer at the moment so we don't need to subscribe to
+          // calendars we already know about.
+        })
+        .catch((error) => {
+          console.error("Toolkitty initialization failed:", error);
+          toast.error("Could not connect to the app backend. Restart the app.");
+          delete appWindow.isInit;
+        });
+    } else {
+      void channelReady.catch((error) =>
+        console.error("Toolkitty channel unavailable:", error),
+      );
     }
   });
 </script>
