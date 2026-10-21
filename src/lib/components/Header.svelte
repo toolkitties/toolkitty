@@ -16,14 +16,13 @@
   import QuestionMark from "./QuestionMark.svelte";
   import { page } from "$app/stores";
 
-  // TODO: change or remove default title once we have a name.
-  let { title = "(^._.^)ﾉ", userRole } = $props();
+  let { title = "about", userRole } = $props();
 
   const activeCalendarName = calendars.getActiveCalendar;
 </script>
 
 <div
-  class="p-3 right-2 w-full bg-grey-very-light space-y-1.5 border-b-2 border-dashed border-black header"
+  class="header w-full shrink-0 space-y-1.5 border-b-2 border-dashed border-black bg-grey-very-light p-3"
 >
   <div class="flex justify-between border border-black rounded-full px-3">
     <span>{$activeCalendarName}</span>
