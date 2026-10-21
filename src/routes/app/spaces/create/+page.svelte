@@ -6,13 +6,13 @@
   let { data }: PageProps = $props();
 </script>
 
-<InfoBoxTop
-  >Hello Organisers! Fill in this form to upload your own space. Once published,
-  event organisers will be able to book your space for their events. Manage
-  requests in your dashboard.</InfoBoxTop
->
-
-<h1 class="font-pixel">{data.title}</h1>
+<div class="-mx-3.5 -mt-3.5 mb-3.5">
+  <InfoBoxTop
+    >Hello Organisers! Fill in this form to upload your own space. Once
+    published, event organisers will be able to book your space for their
+    events. Manage requests in your dashboard.</InfoBoxTop
+  >
+</div>
 
 <SpaceForm
   data={data.form}
