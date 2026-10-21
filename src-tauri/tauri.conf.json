@@ -24,8 +24,9 @@
         "style-src": "'self' 'unsafe-inline'",
         "font-src": "'self'",
         "script-src": "'self'",
-        "img-src": "'self' data: blobstore:",
-        "media-src": "'self' blobstore:"
+        "frame-src": "https://www.openstreetmap.org",
+        "img-src": "'self' data: blobstore: http://blobstore.localhost",
+        "media-src": "'self' blobstore: http://blobstore.localhost"
       }
     }
   },
