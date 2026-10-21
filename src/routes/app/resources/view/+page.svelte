@@ -10,6 +10,7 @@
 
   import { error } from "@sveltejs/kit";
   import ImageGallery from "$lib/components/ImageGallery.svelte";
+  import Markdown from "$lib/components/Markdown.svelte";
 
   let { data }: PageProps = $props();
   let now = new Date();
@@ -52,7 +53,7 @@
       <UpcomingBookings {upcomingBookings} />
     {/if}
     <div class="grey-lighter-box">
-      <p>{$resource.description}</p>
+      <Markdown content={$resource.description} />
     </div>
 
     <!-- TODO should be map and grey-lighter-box with location details (not available currently in resource object) -->
