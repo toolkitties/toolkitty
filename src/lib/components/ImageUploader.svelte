@@ -4,8 +4,9 @@
   -->
 
 <script lang="ts">
-  import { uploadFile } from "$lib/api/blobs";
+  import { blobUrl, uploadFiles } from "$lib/api/blobs";
   import UploadIcon from "$lib/components/icons/UploadIcon.svelte";
+  import { toast } from "$lib/toast.svelte";
 
   let {
     images = $bindable(),
@@ -13,47 +14,61 @@
     images: Image[];
   } = $props();
 
-  async function selectImage(event: Event) {
-    // FIXME(adz): Note sure why we need to do this as this is strictly
-    // speaking not a submit event, but without it it causes superform to
-    // submit the whole thing.
-    event.preventDefault();
+  let uploadingSlot: number | undefined = $state();
 
-    const image = await uploadFile();
-    images = [...images, image];
+  async function selectImages(index: number) {
+    if (uploadingSlot !== undefined || images.length >= 3) return;
+
+    uploadingSlot = index;
+    try {
+      const selectedImages = await uploadFiles();
+      const availableSlots = 3 - images.length;
+      images = [...images, ...selectedImages.slice(0, availableSlots)];
+
+      if (selectedImages.length > availableSlots) {
+        toast.error("You can add up to 3 images");
+      }
+    } catch (error) {
+      console.error("Error uploading images:", error);
+      toast.error("Images could not be uploaded");
+    } finally {
+      uploadingSlot = undefined;
+    }
   }
 
-  function removeImage(event: Event, index: number) {
-    event.preventDefault();
-    images = images.filter((_, i) => index != i);
+  function removeImage(index: number) {
+    images = images.filter((_, i) => index !== i);
   }
 </script>
 
 <div class="space-y-2">
-  <h3 class="text-center">Add images</h3>
+  <h3 class="mt-4 text-center">Add images</h3>
 
-  <div class="grid grid-cols-[1fr_1.4fr] gap-2">
+  <div
+    class="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2 overflow-hidden"
+  >
     {#each [0, 1, 2] as index (index)}
       <div
         class={index === 0
-          ? "aspect-square"
+          ? "min-w-0 overflow-hidden aspect-square"
           : index === 1
-            ? "aspect-[3/2]"
-            : "col-span-2 aspect-[7/3]"}
+            ? "min-w-0 overflow-hidden aspect-square"
+            : "col-span-2 min-w-0 overflow-hidden aspect-[7/3]"}
       >
         {#if images[index]}
           <!-- Existing image slot -->
           <div
-            class="relative h-full w-full overflow-hidden rounded border border-black bg-grey-medium"
+            class="relative flex h-full w-full items-center justify-center overflow-hidden rounded border border-black bg-grey-medium"
           >
             <img
-              src={`blobstore://${images[index]}`}
-              alt={images[index]}
-              class="h-full w-full object-cover"
+              src={blobUrl(images[index])}
+              alt={`Uploaded image ${index + 1}`}
+              class="block h-full w-full object-contain object-center"
             />
             <button
+              type="button"
               class="absolute bottom-1 right-1 inline-flex items-center rounded-full border border-black bg-white px-2 py-[2px] text-[11px] leading-none"
-              onclick={(event) => removeImage(event, index)}
+              onclick={() => removeImage(index)}
             >
               remove
             </button>
@@ -61,14 +76,19 @@
         {:else}
           <!-- Empty slot with upload UI -->
           <button
+            type="button"
+            disabled={uploadingSlot !== undefined}
+            aria-label={`Upload one or more images, starting at slot ${index + 1}`}
             class="flex h-full w-full flex-col items-center justify-center rounded border border-black bg-grey-medium"
-            onclick={(event) => selectImage(event)}
+            onclick={() => selectImages(index)}
           >
             <div
               class="mb-2 rounded-lg border border-black bg-white px-3 py-[3px] inline-flex items-center gap-1"
             >
               <UploadIcon size={16} />
-              <span class="text-xs leading-none">upload</span>
+              <span class="text-xs leading-none"
+                >{uploadingSlot === index ? "uploading…" : "upload"}</span
+              >
             </div>
           </button>
         {/if}
