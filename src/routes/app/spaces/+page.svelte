@@ -5,6 +5,7 @@
   let { data }: PageProps = $props();
   import PageText from "$lib/components/PageText.svelte";
   import Contribute from "$lib/components/Contribute.svelte";
+  import { blobUrl } from "$lib/api/blobs";
 
   let spacesList = liveQuery(() => spaces.findMany(data.activeCalendarId));
 
@@ -29,7 +30,7 @@
       >
         {#if space.images.length > 0}
           <img
-            src={`blobstore://${space.images[0]}`}
+            src={blobUrl(space.images[0])}
             class="aspect-square object-cover w-[30%] min-w-32 max-w-72 grow border-r"
             alt=""
           />
