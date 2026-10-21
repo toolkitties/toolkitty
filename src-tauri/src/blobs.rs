@@ -76,25 +76,28 @@ pub fn blobstore_protocol<R: Runtime>(
 ///               |
 ///           URI "host"
 fn parse_blob_hash(uri: &Uri) -> Result<Hash> {
-    if uri.scheme_str() != Some(BLOBSTORE_URI_SCHEME) {
-        bail!("uri scheme is not blobstore");
-    };
+    let host = uri.host().unwrap_or_default();
+    let path = uri.path().trim_matches('/');
 
-    let Some(hash_str) = uri.host() else {
-        bail!("blob hash missing");
-    };
-
-    let Ok(hash) = Hash::from_str(hash_str) else {
-        bail!("invalid hexadecimal blob hash string");
-    };
-
-    if let Some(path) = uri.path_and_query() {
-        if *path != "/" {
-            bail!("suspicious suffix after blob hash");
-        }
+    // `convertFileSrc` uses blobstore://localhost/<hash> on Unix and
+    // http://blobstore.localhost/<hash> on Windows. Keep supporting the old
+    // blobstore://<hash> form for existing callers as well.
+    if uri.query().is_some() || path.contains('/') {
+        bail!("suspicious suffix after blob hash");
     }
 
-    Ok(hash)
+    let hash_str = match (uri.scheme_str(), host) {
+        (Some(BLOBSTORE_URI_SCHEME), "localhost") => path,
+        (Some(BLOBSTORE_URI_SCHEME), host) if !host.is_empty() && path.is_empty() => host,
+        (Some("http" | "https"), "blobstore.localhost") => path,
+        _ => bail!("uri is not a valid blobstore URL"),
+    };
+
+    if hash_str.is_empty() {
+        bail!("blob hash missing");
+    }
+
+    Hash::from_str(hash_str).map_err(|_| anyhow::anyhow!("invalid hexadecimal blob hash string"))
 }
 
 async fn handle_request(
@@ -109,6 +112,7 @@ async fn handle_request(
         Ok(Some(mut file)) => match file.read_to_end().await {
             Ok(file_bytes) => Response::builder()
                 .status(StatusCode::OK)
+                .header(header::CONTENT_TYPE, image_content_type(&file_bytes))
                 .body(file_bytes.to_vec()),
             Err(err) => error(StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
         },
@@ -145,6 +149,20 @@ async fn try_lazy_sync(context: Arc<RwLock<Context>>, blob_hash: Hash) -> Respon
                 elapsed
             ),
         ),
+    }
+}
+
+fn image_content_type(bytes: &[u8]) -> &'static str {
+    if bytes.starts_with(b"\x89PNG\r\n\x1a\n") {
+        "image/png"
+    } else if bytes.starts_with(b"\xff\xd8\xff") {
+        "image/jpeg"
+    } else if bytes.starts_with(b"GIF87a") || bytes.starts_with(b"GIF89a") {
+        "image/gif"
+    } else if bytes.len() >= 12 && &bytes[..4] == b"RIFF" && &bytes[8..12] == b"WEBP" {
+        "image/webp"
+    } else {
+        "application/octet-stream"
     }
 }
 
