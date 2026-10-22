@@ -1,9 +1,13 @@
 <script lang="ts">
   import type { PageProps } from "./$types";
+  import { calendars } from "$lib/api";
+  import { toast } from "$lib/toast.svelte";
+  import { liveQuery } from "dexie";
 
   let { data }: PageProps = $props();
 
-  let aboutText = `The Antiuniversity is an ongoing programme of self organised radical learning
+  let aboutText =
+    $state(`The Antiuniversity is an ongoing programme of self organised radical learning
 and mutual education events. It is a collaborative experiment to challenge
 academic and class hierarchy - in, outside and against existing institutional
 structures. 
@@ -34,11 +38,33 @@ discuss your ideas with us. We will be holding a facilitation session for this.
 Our registration system simplifies the registration process and spreads the work
 of organising a festival across all participants. You will now be able to upload
 your event directly and instantly to the Antiuni website. No more boring admin
-emails!`;
+emails!`);
 
-  // TODO: Handle update (placeholder for now)
-  function handleUpdate() {
-    console.log("Update functionality will be implemented here");
+  let savedText = $state(aboutText);
+  let isSaving = $state(false);
+  const calendar = liveQuery(() => calendars.findById(data.activeCalendarId));
+
+  $effect(() => {
+    if ($calendar?.aboutPageText !== undefined) {
+      aboutText = $calendar.aboutPageText;
+      savedText = $calendar.aboutPageText;
+    }
+  });
+
+  async function handleUpdate() {
+    if (isSaving || aboutText === savedText) return;
+    isSaving = true;
+    const textToSave = aboutText;
+    try {
+      await calendars.updatePage(data.activeCalendarId, "about", textToSave);
+      savedText = textToSave;
+      toast.success("About Us changes saved!");
+    } catch (error) {
+      console.error("Error saving About Us page:", error);
+      toast.error("Could not save About Us changes.");
+    } finally {
+      isSaving = false;
+    }
   }
 </script>
 
@@ -63,14 +89,14 @@ emails!`;
   {#if data.userRole === "admin"}
     <textarea
       name="description"
-      aria-invalid={"false"}
-      value={aboutText}
+      aria-invalid="false"
+      bind:value={aboutText}
       class="border-none"
       rows="10"
     ></textarea>
   {:else}
     <div class="p-2.5 pt-0">
-      {aboutText}
+      {$calendar?.aboutPageText ?? aboutText}
     </div>
   {/if}
 </div>
@@ -80,8 +106,9 @@ emails!`;
     <button
       onclick={handleUpdate}
       class="button button-grey w-full text-center"
+      disabled={isSaving || aboutText === savedText}
     >
-      Update
+      {isSaving ? "Saving…" : "Update"}
     </button>
   </div>
 {/if}

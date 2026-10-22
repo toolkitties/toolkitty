@@ -59,12 +59,7 @@
           : "no space yet"}
       </div>
     </div>
-    <!-- TODO add tag functionality -->
-    <div class="flex gap-2">
-      <div class="button button-small bg-light-yellow">tag name</div>
-      <div class="button button-small bg-blue-light">tag name</div>
-      <div class="button button-small bg-pink-light">tag name</div>
-    </div>
+    <!-- TODO: Reintroduce event tags when tag functionality is implemented. -->
   </div></a
 >
 

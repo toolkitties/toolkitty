@@ -663,6 +663,7 @@ type Calendar = {
   startDate?: ISO8601UTC;
   endDate?: ISO8601UTC;
   calendarInstructions?: string;
+  aboutPageText?: string;
   spacePageText?: string;
   resourcePageText?: string;
   newsPageText?: string;

@@ -117,6 +117,20 @@ export async function update(
   return operationId;
 }
 
+export async function updatePage(
+  calendarId: Hash,
+  pageType: PageUpdated["data"]["page_type"],
+  description: string,
+): Promise<Hash> {
+  const pageUpdated: PageUpdated = {
+    type: "page_updated",
+    data: { id: calendarId, page_type: pageType, description },
+  };
+  const [operationId] = await publish.toCalendar(calendarId, pageUpdated);
+  await promiseResult(operationId);
+  return operationId;
+}
+
 export async function deleteCalendar(calendarId: Hash): Promise<Hash> {
   const amAdmin = await auth.amAdmin(calendarId);
   const amOwner = await calendars.amOwner(calendarId);
@@ -154,6 +168,8 @@ export async function process(message: ApplicationMessage) {
   const { data, type } = message.data;
 
   switch (type) {
+    case "page_updated":
+      return await onPageUpdated(meta, data as PageUpdated["data"]);
     case "calendar_created":
       return await onCalendarCreated(meta, data);
     case "calendar_updated":
@@ -282,6 +298,32 @@ async function onCalendarUpdated(
     newsPageText: newsPageText ? newsPageText : undefined,
     updatedAt: meta.timestamp,
   });
+}
+
+async function onPageUpdated(
+  meta: StreamMessageMeta,
+  data: PageUpdated["data"],
+) {
+  const calendar = await calendars.findById(data.id);
+  if (!calendar) return;
+
+  if (
+    !shouldUpdate(
+      calendar.updatedAt,
+      calendar.id,
+      meta.timestamp,
+      meta.operationId,
+    )
+  ) {
+    return;
+  }
+
+  if (data.page_type === "about") {
+    await db.calendars.update(data.id, {
+      aboutPageText: data.description,
+      updatedAt: meta.timestamp,
+    });
+  }
 }
 
 async function onCalendarDeleted(data: CalendarDeleted["data"]) {
