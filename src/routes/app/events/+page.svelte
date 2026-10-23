@@ -162,7 +162,7 @@
 {:else}
   <div class="flex flex-col items-center justify-center m-8">
     <p>No events yet, please create one.</p>
-    <a href="/app/events/create" class="button button-green inline-block"
+    <a href="/app/events/create" class="button button-green inline-block m-5"
       >create event</a
     >
   </div>
