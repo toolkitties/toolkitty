@@ -13,6 +13,7 @@
   import { TimeSpanClass } from "$lib/timeSpan";
   import {
     availabilityTimeSlots,
+    initialAvailabilityDate,
     slotDateTime,
   } from "$lib/utils/availabilitySlots";
 
@@ -42,17 +43,18 @@
   const toDateKey = (value: string | DateValue) =>
     value.toString().split("T")[0];
 
-  const firstAvailableDate = availability[0]?.start
-    ? toDateKey(availability[0].start)
-    : calendarDates?.start
-      ? toDateKey(calendarDates.start)
-      : undefined;
-
+  const today = new Date();
+  const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  const minimumDate = initialAvailabilityDate(
+    calendarDates?.start ?? todayKey,
+    calendarDates?.end,
+  );
   const initialDate = selected
     ? fromDate(new Date(selected), "UTC")
-    : firstAvailableDate
-      ? parseDate(firstAvailableDate)
-      : undefined;
+    : initialAvailabilityDate(
+        calendarDates?.start ?? todayKey,
+        calendarDates?.end,
+      );
   let currentlySelectedDate: DateValue | undefined = $state(initialDate);
   let calendarPlaceholder: DateValue | undefined = $state(initialDate);
   let booked: BookingRequestEnriched[] = $state([]);
@@ -68,8 +70,9 @@
 
   function isAvailableDay(date: DateValue): boolean {
     if (!isInCalendarRange(date)) return false;
-    if (alwaysAvailable) return true;
     const dateKey = toDateKey(date);
+    if (dateKey < todayKey) return false;
+    if (alwaysAvailable) return true;
     return availability.some((entry) => toDateKey(entry.start) === dateKey);
   }
 
@@ -143,9 +146,7 @@
     variant="standard"
     bind:value={currentlySelectedDate}
     bind:placeholder={calendarPlaceholder}
-    minValue={calendarDates?.start
-      ? parseDate(toDateKey(calendarDates.start))
-      : undefined}
+    minValue={minimumDate}
     maxValue={calendarDates?.end
       ? parseDate(toDateKey(calendarDates.end))
       : undefined}
