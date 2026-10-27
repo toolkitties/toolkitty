@@ -11,6 +11,7 @@
   import ChevronIcon from "$lib/components/icons/ChevronIcon.svelte";
   import {
     availabilityTimeSlots as timeSlots,
+    initialAvailabilityDate,
     slotDateTime,
   } from "$lib/utils/availabilitySlots";
 
@@ -19,7 +20,7 @@
     calendarDates,
     allSelected = false,
     currentlySelectedDate = $bindable(
-      parseDate(calendarDates.start.split("T")[0]),
+      initialAvailabilityDate(calendarDates.start, calendarDates.end),
     ),
   }: {
     availability: TimeSpan[];
@@ -35,7 +36,17 @@
     value.includes("T") ? value.split("T")[1].slice(0, 5) : "";
 
   const programmeStart = toDateKey(calendarDates.start);
-  let calendarPlaceholder: DateValue = $state(parseDate(programmeStart));
+  const today = new Date();
+  const todayDate = parseDate(
+    `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`,
+  );
+  const minimumDate =
+    todayDate.toString() < programmeStart
+      ? parseDate(programmeStart)
+      : todayDate;
+  let calendarPlaceholder: DateValue = $state(
+    initialAvailabilityDate(calendarDates.start, calendarDates.end),
+  );
   let slotsOpen = $state(true);
 
   let availableDateKeys = $derived(
@@ -48,7 +59,11 @@
       ? toDateKey(calendarDates.end)
       : undefined;
 
-    return dateKey >= programmeStart && (!endDate || dateKey <= endDate);
+    return (
+      dateKey >= minimumDate.toString() &&
+      dateKey >= programmeStart &&
+      (!endDate || dateKey <= endDate)
+    );
   }
 
   function isSlotSelected(date: string, start: string, end: string): boolean {
@@ -98,6 +113,10 @@
     variant="standard"
     bind:value={currentlySelectedDate}
     bind:placeholder={calendarPlaceholder}
+    minValue={minimumDate}
+    maxValue={calendarDates.end
+      ? parseDate(toDateKey(calendarDates.end))
+      : undefined}
     dayClass={getDayClass}
     dayAriaDisabled={(date) => !isDateInRange(date) || undefined}
     dayAriaLabel={(date) =>
