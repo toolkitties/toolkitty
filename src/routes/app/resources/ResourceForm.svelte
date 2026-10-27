@@ -11,11 +11,13 @@
   import { zod } from "sveltekit-superforms/adapters";
   import { toast } from "$lib/toast.svelte";
   import { goto } from "$app/navigation";
-  import { parseDate, type DateValue } from "@internationalized/date";
+  import type { DateValue } from "@internationalized/date";
   import {
     availabilityTimeSlots,
+    initialAvailabilityDate,
     slotDateTime,
   } from "$lib/utils/availabilitySlots";
+  import { hasFormErrors, scrollToFirstFormError } from "$lib/utils/formErrors";
 
   let {
     data,
@@ -30,7 +32,7 @@
   } = $props();
   let legacyAlways = $state(data.data.availability === "always");
   let selectedAvailabilityDate: DateValue | undefined = $state(
-    parseDate(calendarDates.start.split("T")[0]),
+    initialAvailabilityDate(calendarDates.start, calendarDates.end),
   );
   let availabilitySlots: TimeSpan[] = $state(
     Array.isArray(data.data.availability) ? data.data.availability : [],
@@ -104,14 +106,15 @@
     },
   });
 
+  $effect(() => {
+    if (hasFormErrors($errors)) scrollToFirstFormError();
+  });
+
   async function handleCreateResource(payload: ResourceFields) {
     try {
-      const resourceId: Hash = await resources.create(
-        activeCalendarId,
-        payload,
-      );
+      await resources.create(activeCalendarId, payload);
       toast.success("Resource created!");
-      goto(`/app/resources/view?id=${resourceId}`);
+      goto("/app/resources");
     } catch (error) {
       toast.error("Error creating resource!");
       console.error("Error creating resource:", error);
@@ -125,7 +128,7 @@
     try {
       await resources.update(resourceId, payload);
       toast.success("Resource updated!");
-      goto(`/app/resources/view?id=${resourceId}`);
+      goto("/app/resources");
     } catch (error) {
       toast.error("Error updating resource!");
       console.error("Error updating resource:", error);
