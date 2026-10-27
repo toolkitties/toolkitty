@@ -11,7 +11,11 @@
 </script>
 
 {#each links as link, i (i)}
-  <a href={link.url} target="_blank" class="">
+  <a
+    href={link.url}
+    target="_blank"
+    class={i < links.length - 1 ? "mb-4 block" : "block"}
+  >
     <div
       class="rounded p-2 py-3 flex items-center justify-between {link.type ===
       'ticket'
