@@ -16,6 +16,7 @@
   import SuperDebug from "sveltekit-superforms";
   import ShareIcon from "$lib/components/icons/ShareIcon.svelte";
   import CalendarDateRangePicker from "$lib/components/calendar/CalendarDateRangePicker.svelte";
+  import { hasFormErrors, scrollToFirstFormError } from "$lib/utils/formErrors";
 
   let {
     data,
@@ -62,6 +63,10 @@
         }
       }
     },
+  });
+
+  $effect(() => {
+    if (hasFormErrors($errors)) scrollToFirstFormError();
   });
 
   async function handleCreateCalendar(payload: CalendarFields) {
@@ -232,13 +237,16 @@
       >Calendars are private. Invite others with your calendar code.</span
     >
   </div>
-  <div class={`grid gap-2 ${data.data.id && onDelete ? "grid-cols-2" : "grid-cols-1"}`}>
+  <div
+    class={`grid gap-2 ${data.data.id && onDelete ? "grid-cols-2" : "grid-cols-1"}`}
+  >
     {#if data.data.id && onDelete}
       <button
         type="button"
         onclick={onDelete}
         class="button button-grey button-delete w-full"
-      ><span>delete</span></button>
+        ><span>delete</span></button
+      >
     {/if}
     <button type="submit" class="button button-green w-full">
       {data.data.id ? "update" : "create"}
