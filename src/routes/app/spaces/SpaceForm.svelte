@@ -12,11 +12,13 @@
   import SuperDebug from "sveltekit-superforms";
   import ActionFormButtons from "$lib/components/ActionFormButtons.svelte";
   import BubbleIcon from "$lib/components/icons/BubbleIcon.svelte";
-  import { parseDate, type DateValue } from "@internationalized/date";
+  import type { DateValue } from "@internationalized/date";
   import {
     availabilityTimeSlots,
+    initialAvailabilityDate,
     slotDateTime,
   } from "$lib/utils/availabilitySlots";
+  import { hasFormErrors, scrollToFirstFormError } from "$lib/utils/formErrors";
 
   let {
     data,
@@ -33,7 +35,7 @@
   // Preserve existing globally available spaces until their schedule is changed.
   let legacyAlways = $state(data.data.availability === "always");
   let selectedAvailabilityDate: DateValue | undefined = $state(
-    parseDate(calendarDates.start.split("T")[0]),
+    initialAvailabilityDate(calendarDates.start, calendarDates.end),
   );
   let availabilitySlots: TimeSpan[] = $state(
     Array.isArray(data.data.availability) ? data.data.availability : [],
@@ -126,11 +128,15 @@
     },
   });
 
+  $effect(() => {
+    if (hasFormErrors($errors)) scrollToFirstFormError();
+  });
+
   async function handleCreateSpace(payload: SpaceFields) {
     try {
-      const spaceId: Hash = await spaces.create(activeCalendarId, payload);
+      await spaces.create(activeCalendarId, payload);
       toast.success("Space created!");
-      goto(`/app/spaces/view?id=${spaceId}`);
+      goto("/app/spaces");
     } catch (error) {
       console.error("Error creating space: ", error);
       toast.error("Error creating space!");
@@ -141,7 +147,7 @@
     try {
       await spaces.update(spaceId, payload);
       toast.success("Space updated!");
-      goto(`/app/spaces/view?id=${spaceId}`);
+      goto("/app/spaces");
     } catch (error) {
       console.error("Error updating space: ", error);
       toast.error("Error updating space!");
@@ -390,7 +396,7 @@
 
   <label for="space-message" class="flex items-center gap-1">
     <BubbleIcon size={18} />
-    <span>Your message to anyone booking this space</span>
+    <span>Your message to anyone booking this space*</span>
   </label>
   <input
     type="text"
