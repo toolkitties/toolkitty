@@ -9,6 +9,7 @@
   import { superForm, setError } from "sveltekit-superforms";
   import { eventSchema } from "$lib/schemas";
   import { zod } from "sveltekit-superforms/adapters";
+  import { hasFormErrors, scrollToFirstFormError } from "$lib/utils/formErrors";
   import { events, resources, bookings, spaces as spacesApi } from "$lib/api";
   import { TimeSpanClass } from "$lib/timeSpan";
   import ActionFormButtons from "$lib/components/ActionFormButtons.svelte";
@@ -35,10 +36,51 @@
     userRole: string;
   } = $props();
 
+  const todayDateKey = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  function selectionsFromRange(
+    start?: string,
+    end?: string,
+  ): Record<string, string[]> {
+    if (!start || !end) return {};
+    const startTime = new Date(start).getTime();
+    const endTime = new Date(end).getTime();
+    if (!Number.isFinite(startTime) || !Number.isFinite(endTime)) return {};
+
+    const selections: Record<string, string[]> = {};
+    const startDay = start.split("T")[0];
+    const endDay = end.split("T")[0];
+    const cursor = new Date(`${startDay}T12:00:00`);
+    const lastDay = new Date(`${endDay}T12:00:00`);
+
+    while (cursor <= lastDay) {
+      const date = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}-${String(cursor.getDate()).padStart(2, "0")}`;
+      const selected = availabilityTimeSlots
+        .filter((slot) => {
+          const slotStart = new Date(`${date}T${slot.start}`).getTime();
+          const slotEnd = new Date(slotDateTime(date, slot.end)).getTime();
+          return slotStart >= startTime && slotEnd <= endTime;
+        })
+        .map((slot) => slot.start);
+      if (selected.length) selections[date] = selected;
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return selections;
+  }
+
+  let selectedSlotsByDate = $state(
+    selectionsFromRange(data.data.startDate, data.data.endDate),
+  );
   let selectedSpace = $state<Space | undefined>(currentSpace);
   let selectedSpaceId = $state<string | undefined>(currentSpace?.id);
   let selectedAvailabilityDate = $state(
-    data.data.startDate?.split("T")[0] ?? "",
+    data.data.startDate?.split("T")[0] ?? (currentSpace ? todayDateKey() : ""),
   );
   let availableResources: Resource[] = $state(resourcesList);
   let selectedResources: Resource[] = $state([]);
@@ -82,6 +124,7 @@
         available: false,
         selected: false,
       }));
+      selectedSlotsByDate = {};
       $form.startDate = "";
       $form.endDate = "";
       $form.publicStartDate = "";
@@ -90,9 +133,7 @@
 
     selectedSpace = space;
     selectedSpaceId = space.id;
-    selectedAvailabilityDate = Array.isArray(space.availability)
-      ? (space.availability[0]?.start.split("T")[0] ?? "")
-      : new Date().toISOString().split("T")[0];
+    selectedAvailabilityDate = todayDateKey();
     if (selectedAvailabilityDate) {
       void refreshAvailableTimes(space, selectedAvailabilityDate).catch(
         (error) => console.error("Could not load available times:", error),
@@ -175,7 +216,7 @@
       return {
         ...slot,
         available: availableFromSchedule && !booked,
-        selected: false,
+        selected: selectedSlotsByDate[date]?.includes(slot.start) ?? false,
       };
     });
   }
@@ -188,10 +229,6 @@
       available: false,
       selected: false,
     }));
-    $form.startDate = "";
-    $form.endDate = "";
-    $form.publicStartDate = "";
-    $form.publicEndDate = "";
     if (selectedSpace) {
       void refreshAvailableTimes(selectedSpace, date).catch((error) =>
         console.error("Could not load available times:", error),
@@ -220,22 +257,70 @@
   function toggleAvailableTime(index: number) {
     if (!selectedAvailabilityDate || !availableTimes[index].available) return;
 
-    availableTimes = availableTimes.map((slot, slotIndex) =>
+    const nextTimes = availableTimes.map((slot, slotIndex) =>
       slotIndex === index ? { ...slot, selected: !slot.selected } : slot,
     );
+    availableTimes = nextTimes;
+    const selectedForDate = nextTimes
+      .filter((slot) => slot.selected)
+      .map((slot) => slot.start);
+    if (selectedForDate.length) {
+      selectedSlotsByDate = {
+        ...selectedSlotsByDate,
+        [selectedAvailabilityDate]: selectedForDate,
+      };
+    } else {
+      const remaining = { ...selectedSlotsByDate };
+      delete remaining[selectedAvailabilityDate];
+      selectedSlotsByDate = remaining;
+    }
 
-    const selectedSlots = availableTimes.filter((slot) => slot.selected);
-    if (selectedSlots.length === 0) {
+    const allSelectedSlots = Object.entries(selectedSlotsByDate).flatMap(
+      ([date, starts]) =>
+        starts.flatMap((start) => {
+          const slot = availabilityTimeSlots.find(
+            (candidate) => candidate.start === start,
+          );
+          return slot
+            ? [
+                {
+                  start: new Date(`${date}T${slot.start}`).getTime(),
+                  end: new Date(slotDateTime(date, slot.end)).getTime(),
+                  startValue: `${date}T${slot.start}`,
+                  endValue: slotDateTime(date, slot.end),
+                },
+              ]
+            : [];
+        }),
+    );
+
+    if (!allSelectedSlots.length) {
       $form.startDate = "";
       $form.endDate = "";
+      $form.publicStartDate = "";
+      $form.publicEndDate = "";
       return;
     }
 
-    $form.startDate = `${selectedAvailabilityDate}T${selectedSlots[0].start}`;
-    $form.endDate = `${selectedAvailabilityDate}T${selectedSlots.at(-1)!.end}`;
+    const firstSlot = allSelectedSlots.reduce((first, slot) =>
+      slot.start < first.start ? slot : first,
+    );
+    const lastSlot = allSelectedSlots.reduce((last, slot) =>
+      slot.end > last.end ? slot : last,
+    );
+    $form.startDate = firstSlot.startValue;
+    $form.endDate = lastSlot.endValue;
 
-    if (!$form.publicStartDate) $form.publicStartDate = $form.startDate;
-    if (!$form.publicEndDate) $form.publicEndDate = $form.endDate;
+    if (!$form.publicStartDate || $form.publicStartDate < $form.startDate) {
+      $form.publicStartDate = $form.startDate;
+    }
+    if (!$form.publicEndDate || $form.publicEndDate > $form.endDate) {
+      $form.publicEndDate = $form.endDate;
+    }
+    if ($form.publicEndDate < $form.publicStartDate) {
+      $form.publicStartDate = $form.startDate;
+      $form.publicEndDate = $form.endDate;
+    }
     recalculateResourceAvailability();
   }
 
@@ -379,6 +464,10 @@
     },
   });
 
+  $effect(() => {
+    if (hasFormErrors($errors)) scrollToFirstFormError();
+  });
+
   // Remove date proxies as temp fix for date.
   // TODO(@jack): refactor to use bits ui date picker
   // let startDateProxy = $state(
@@ -449,7 +538,7 @@
       }
 
       toast.success("Event created!");
-      await goto(`/app/events/view?id=${eventId}`);
+      await goto("/app/events");
     } catch (error) {
       console.error("Error creating event:", error);
       toast.error(
@@ -465,7 +554,7 @@
       await events.update(eventId, payload);
 
       toast.success("Event updated!");
-      goto(`/app/events/view?id=${eventId}`);
+      goto("/app/events");
     } catch (error) {
       console.error("Error updating event: ", error);
       toast.error("Error updating event!");
@@ -474,13 +563,15 @@
 </script>
 
 {#if spaces.length == 0}
-  <p>
-    No available spaces have been contributed. Create at least one space before
-    creating an event.
-  </p>
-  <a href="/app/spaces/create" class="button button-green mt-4 mx-auto w-fit"
-    >Create space</a
-  >
+  <div class="flex flex-col items-center text-center">
+    <p>
+      No available spaces have been contributed. Create at least one space
+      before creating an event.
+    </p>
+    <a href="/app/spaces/create" class="button button-green mt-4 w-fit"
+      >Create space</a
+    >
+  </div>
 {:else}
   <form method="POST" use:enhance>
     <label for="name">Event name*</label>
