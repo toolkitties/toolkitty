@@ -72,9 +72,11 @@
 
     {#if data.userRole == "admin" || amOwner}
       <a
-        class="button-green button w-full"
-        href="/app/resources/edit?id={$resource.id}"><span>edit</span></a
+        class="bg-green-light-fluro justify-center rounded-xl button w-full"
+        href="/app/resources/edit?id={$resource.id}"
       >
+        <span class="edit-icon">edit</span>
+      </a>
     {/if}
 
     <pre>{JSON.stringify($resource, null, 2)}</pre>
