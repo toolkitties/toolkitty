@@ -23,7 +23,7 @@
   {/if}
 
   {#if $spacesList && $spacesList.length > 0}
-    {#each $spacesList as space, i (space.id)}
+    {#each $spacesList as space (space.id)}
       <a
         href={`/app/spaces/view?id=${space.id}`}
         class="flex border-black border event-row border-b-0 border-l-0 border-r-0 border-t space-row"

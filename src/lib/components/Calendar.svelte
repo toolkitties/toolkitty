@@ -109,7 +109,9 @@
   {minValue}
   {maxValue}
   bind:placeholder={internalPlaceholder}
-  class={variant === "standard" ? "w-full bg-grey-light px-3 pb-3 pt-2" : undefined}
+  class={variant === "standard"
+    ? "w-full bg-grey-light px-3 pb-3 pt-2"
+    : undefined}
   bind:value
   {onValueChange}
   fixedWeeks={variant === "standard"}
@@ -117,10 +119,14 @@
 >
   {#snippet children({ months, weekdays })}
     <Calendar.Header
-      class={variant === "standard" ? "mb-3 grid w-full grid-cols-[1fr_auto_auto] items-center gap-1" : "flex flex-row"}
+      class={variant === "standard"
+        ? "mb-3 grid w-full grid-cols-[1fr_auto_auto] items-center gap-1"
+        : "flex flex-row"}
     >
       <Calendar.Heading
-        class={variant === "standard" ? "col-start-1 text-left text-[1.35rem] leading-none normal-case" : ""}
+        class={variant === "standard"
+          ? "col-start-1 text-left text-[1.35rem] leading-none normal-case"
+          : ""}
       />
       {#if variant === "standard"}
         <div class="col-span-2 flex justify-end gap-2">
@@ -143,25 +149,29 @@
         <Calendar.PrevButton
           type="button"
           aria-label="Previous month"
-          class="w-8 mr-2"
-        >←</Calendar.PrevButton>
+          class="w-8 mr-2">←</Calendar.PrevButton
+        >
         <Calendar.NextButton
           type="button"
           aria-label="Next month"
-          class="w-8 ml-2"
-        >→</Calendar.NextButton>
+          class="w-8 ml-2">→</Calendar.NextButton
+        >
       {/if}
     </Calendar.Header>
 
     {#each months as month (month.value)}
-        <Calendar.Grid
-          class={variant === "standard" ? "w-full table-fixed border-separate border-spacing-y-2" : ""}
-        >
+      <Calendar.Grid
+        class={variant === "standard"
+          ? "w-full table-fixed border-separate border-spacing-y-2"
+          : ""}
+      >
         <Calendar.GridHead>
           <Calendar.GridRow>
             {#each weekdays as day, index (index)}
               <Calendar.HeadCell
-                class={variant === "standard" ? "pb-2 text-center font-sans text-[1.1rem] font-normal leading-none" : ""}
+                class={variant === "standard"
+                  ? "pb-2 text-center font-sans text-[1.1rem] font-normal leading-none"
+                  : ""}
               >
                 {day}
               </Calendar.HeadCell>

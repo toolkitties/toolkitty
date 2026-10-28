@@ -8,8 +8,6 @@
   import DateRange from "$lib/components/DateRange.svelte";
   import BookingRequest from "$lib/components/BookingRequest.svelte";
   import ImageGallery from "$lib/components/ImageGallery.svelte";
-  import LinkIcon from "$lib/components/icons/LinkIcon.svelte";
-  import TicketIcon from "$lib/components/icons/TicketIcon.svelte";
 
   let { data }: PageProps = $props();
   let upcomingBookings: Observable<BookingRequestEnriched[]>;

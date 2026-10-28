@@ -9,7 +9,7 @@
   let { data }: PageProps = $props();
 </script>
 
-<Header title={page.data.title} userRole={"unauthed"} />
+<Header title={page.data.title} userRole="unauthed" />
 
 <InfoBoxTop>
   Welcome to ToolKitties! Start here to organise your own programme.
