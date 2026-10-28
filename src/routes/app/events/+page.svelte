@@ -8,14 +8,18 @@
   import Contribute from "$lib/components/Contribute.svelte";
   import Date from "$lib/components/Date.svelte";
   import { parseAbsoluteToLocal } from "@internationalized/date";
-  import type { CalendarDate } from "@internationalized/date";
+  import type { DateValue } from "@internationalized/date";
   import Calendar from "$lib/components/Calendar.svelte";
 
   let { data }: PageProps = $props();
-  let selectedDate: CalendarDate | undefined = $state();
+  let selectedDate: DateValue | undefined = $state();
+
+  function getDateKey(date: DateValue | string): string {
+    return date.toString().split("T")[0];
+  }
 
   function getDay(event: CalendarEventEnriched): string {
-    return event.startDate.split("T")[0];
+    return getDateKey(event.startDate);
   }
 
   /**
@@ -38,33 +42,23 @@
       return [];
     }
 
-    const result = [];
-
-    let currentDate = getDay(allEvents[0]);
-    let currentEventsList = [];
+    const eventsGroupedByDate = new Map<string, CalendarEventEnriched[]>();
 
     for (const event of allEvents) {
       const startDay = getDay(event);
-
-      if (startDay !== currentDate) {
-        result.push({
-          date: currentDate,
-          eventsList: currentEventsList,
-        });
-
-        currentDate = startDay;
-        currentEventsList = [];
-      }
-
-      currentEventsList.push(event);
+      const eventsForDate = eventsGroupedByDate.get(startDay) ?? [];
+      eventsForDate.push(event);
+      eventsGroupedByDate.set(startDay, eventsForDate);
     }
 
-    result.push({
-      date: currentDate,
-      eventsList: currentEventsList,
-    });
-
-    return result;
+    return [...eventsGroupedByDate.entries()]
+      .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+      .map(([date, eventsList]) => ({
+        date,
+        eventsList: eventsList.sort((a, b) =>
+          a.startDate.localeCompare(b.startDate),
+        ),
+      }));
   });
 
   let calendar = liveQuery(async () => {
@@ -82,57 +76,96 @@
       return $eventsByDate;
     }
 
+    const selectedDateString = getDateKey(selectedDate);
     return $eventsByDate.filter(
-      (group) => group.date === selectedDate.toString(),
+      (group) => getDateKey(group.date) === selectedDateString,
     );
   });
+
+  function handleDateSelected(value: DateValue | undefined) {
+    if (value && selectedDate?.toString() === value.toString()) {
+      selectedDate = undefined;
+      return;
+    }
+
+    selectedDate = value;
+  }
 </script>
 
 <CalendarSelector />
 
-{#if $calendar && $calendar.calendarInstructions}
-  <PageText text={$calendar.calendarInstructions} title="about calendar" />
-  {#if $calendar.startDate}
-    <Date date={$calendar.startDate} format="dateshort" />
-  {/if}
-  {#if $calendar.endDate}
-    &nbsp;- <Date date={$calendar.endDate} format="dateshort" />
+{#if $calendar && ($calendar.startDate || $calendar.endDate)}
+  <div class="text-center text-[25px] leading-[24px] py-3.5">
+    {#if $calendar.startDate}
+      <Date date={$calendar.startDate} format="dateshort" />
+    {/if}
+    {#if $calendar.endDate}
+      &nbsp;- <Date date={$calendar.endDate} format="dateshort" />
+    {/if}
+  </div>
+  {#if $calendar.calendarInstructions}
+    <div class="text-center">
+      <PageText text={$calendar.calendarInstructions} title="About calendar" />
+    </div>
   {/if}
 {/if}
 
 {#if $eventsByDate && $eventsByDate.length > 0 && $calendar}
-  <Calendar
-    type="single"
-    bind:value={selectedDate}
-    busyness={$eventsByDate}
-    minValue={$calendar.startDate
-      ? parseAbsoluteToLocal($calendar.startDate)
-      : undefined}
-    maxValue={$calendar.endDate
-      ? parseAbsoluteToLocal($calendar.endDate)
-      : undefined}
-  />
-
-  {#if filteredEvents.length > 0}
-    {#each filteredEvents as group (group.date)}
-      <div>
-        <div
-          id={`date-${group.date}`}
-          class="sticky top-0 bg-bg-secondary text-center"
-        >
-          <Date date={group.date} format="date" />
-        </div>
-        {#each group.eventsList as event (event.id)}
-          <EventRow {event} />
-        {/each}
+  <div class="py-3.5 -mx-3.5">
+    <div class="border-y border-black bg-grey-light">
+      <div
+        class="flex min-h-9 items-center justify-between border-b border-black bg-grey-medium px-3 text-[20px] leading-none"
+      >
+        <span>date</span>
+        {#if selectedDate}
+          <button
+            type="button"
+            class="border-0 bg-transparent p-0 text-[15px] leading-none underline"
+            onclick={() => (selectedDate = undefined)}
+          >
+            show all
+          </button>
+        {/if}
       </div>
-    {/each}
-  {:else}
-    <p>No events on selected date</p>
-  {/if}
+      <Calendar
+        type="single"
+        variant="standard"
+        value={selectedDate}
+        onValueChange={handleDateSelected}
+        busyness={$eventsByDate}
+        placeholder={$calendar.startDate
+          ? parseAbsoluteToLocal($calendar.startDate)
+          : undefined}
+      />
+    </div>
+
+    {#if filteredEvents.length > 0}
+      {#each filteredEvents as group, i (group.date)}
+        <div>
+          <div
+            id={`date-${group.date}`}
+            class="top-0 bg-bg-secondary text-center text-[20px] {i === 0
+              ? 'border-t border-t-black'
+              : ''}"
+          >
+            <Date date={group.date} format="date" />
+          </div>
+          {#each group.eventsList as event (event.id)}
+            <EventRow {event} />
+          {/each}
+        </div>
+      {/each}
+    {:else}
+      <p>No events on selected date</p>
+    {/if}
+  </div>
 {:else}
-  <p>no events yet, please create one.</p>
-  <a href="/app/events/create" class="button inline-block">create event</a>
+  <div class="flex flex-col items-center justify-center m-8">
+    <p>No events yet, please create one.</p>
+    <a href="/app/events/create" class="button button-green inline-block m-5"
+      >create event</a
+    >
+  </div>
 {/if}
 
 <Contribute />

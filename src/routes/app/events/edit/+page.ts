@@ -45,7 +45,7 @@ export const load: PageLoad = async ({ parent, url }) => {
   const userRole = user!.role;
 
   return {
-    title: "edit space",
+    title: "edit event",
     form,
     currentSpace: event.space,
     calendarId,

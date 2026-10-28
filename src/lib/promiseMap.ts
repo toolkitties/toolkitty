@@ -7,6 +7,25 @@ const promiseMap: Map<
   { promise: Promise<void>; resolve: ResolveFn; reject: RejectFn }
 > = new Map();
 
+// Backend messages can be processed before publish_persisted returns the
+// operation id. Remember recent results so promiseResult cannot miss them.
+// Bound the cache because responses from other peers also pass through here.
+const completedResults = new Map<
+  string,
+  { error?: unknown; rejected: boolean }
+>();
+const MAX_COMPLETED_RESULTS = 512;
+
+function rememberResult(
+  id: string,
+  result: { error?: unknown; rejected: boolean },
+) {
+  completedResults.set(id, result);
+  if (completedResults.size > MAX_COMPLETED_RESULTS) {
+    completedResults.delete(completedResults.keys().next().value!);
+  }
+}
+
 /**
  * Create and return a promise which is assigned an id and returns a result
  * when another method calls the "resolvePromise" or "rejectPromise" methods
@@ -16,6 +35,17 @@ const promiseMap: Map<
  * application which might be finished somewhere else.
  */
 export function promiseResult(id: string): Promise<void> {
+  const completed = completedResults.get(id);
+  if (completed) {
+    completedResults.delete(id);
+    return completed.rejected
+      ? Promise.reject(completed.error)
+      : Promise.resolve();
+  }
+
+  const pending = promiseMap.get(id);
+  if (pending) return pending.promise;
+
   let resolveFn: ResolveFn;
   let rejectFn: RejectFn;
 
@@ -41,6 +71,8 @@ export function resolvePromise(id: string): void {
   if (task) {
     task.resolve();
     promiseMap.delete(id);
+  } else {
+    rememberResult(id, { rejected: false });
   }
 }
 
@@ -52,5 +84,7 @@ export function rejectPromise(id: string, err: unknown): void {
   if (task) {
     task.reject(err);
     promiseMap.delete(id);
+  } else {
+    rememberResult(id, { rejected: true, error: err });
   }
 }

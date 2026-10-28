@@ -42,9 +42,9 @@
 
 {#if $event}
   <div class="space-y-4">
-    <h1>{$event.name}</h1>
+    <h1 class="text-center mb-2.5">{$event.name}</h1>
 
-    <div>
+    <div class="text-center bg-pink-light p-2 rounded pb-1">
       <p>
         <DateRange startDate={$event.startDate} endDate={$event.endDate} />
       </p>
@@ -64,12 +64,13 @@
       </section>
     {/if}
 
-    <p>{$event.description}</p>
+    <div class="rounded bg-grey-lighter p-2 py-3 text-center">
+      <p>{$event.description}</p>
+    </div>
 
     <Links links={$event.links} />
 
     <ImageGallery images={$event.images} />
-
     {#if data.userRole == "admin" || amOwner}
       <a
         class="button bg-green-light-fluro justify-center rounded-xl w-full"

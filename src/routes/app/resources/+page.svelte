@@ -17,41 +17,43 @@
   });
 </script>
 
-<h1 class="font-pixel">{data.title}</h1>
+<div class="-mx-3.5">
+  {#if $resourcePageText}
+    <div class="text-center mb-4">
+      <PageText text={$resourcePageText} title="About resources" />
+    </div>
+  {/if}
 
-{#if $resourcePageText}
-  <PageText text={$resourcePageText} title="about resources" />
-{/if}
-
-{#if $resourcesList && $resourcesList.length > 0}
-  {#each $resourcesList as resource (resource.id)}
-    <a
-      href={`/app/resources/view?id=${resource.id}`}
-      class="flex border-black border event-row"
-    >
-      {#if resource.images.length > 0}
-        <img
-          src={`blobstore://${resource.images[0]}`}
-          class="aspect-square object-cover w-[30%] min-w-32 max-w-72 grow"
-          alt=""
-        />
-      {:else}
-        <img
-          src="/toolkitty-mascot.png"
-          class="aspect-square object-cover w-[30%] min-w-32 max-w-72 grow"
-          alt=""
-        />
-      {/if}
-      <div class="flex flex-col gap-1 p-2">
-        <h3>{resource.name}</h3>
-        <p>{resource.description}</p>
-      </div>
-    </a>
-  {/each}
-{:else}
-  <p>no resources yet, please create one.</p>
-  <a href="/app/resources/create" class="button inline-block">create resource</a
-  >
-{/if}
+  {#if $resourcesList && $resourcesList.length > 0}
+    {#each $resourcesList as resource (resource.id)}
+      <a
+        href={`/app/resources/view?id=${resource.id}`}
+        class="flex border-black event-row border-t resource-row bg-grey-very-light"
+      >
+        <div class="flex flex-col gap-1 p-2">
+          <h3>{resource.name}</h3>
+          <p class="text-xs italic">{resource.description}</p>
+          <p class="text-xs italic mt-1 text-grey-dark">
+            <!-- TODO we miss location info here in resourceData -->
+            Vague location (e.g. south London) or space it belongs to
+          </p>
+        </div>
+      </a>
+    {/each}
+  {:else}
+    <div class="flex flex-col items-center justify-center m-8">
+      <p class="mb-4 text-center">No resources yet, please create one.</p>
+      <a href="/app/resources/create" class="button button-green inline-block"
+        >create resource</a
+      >
+    </div>
+  {/if}
+</div>
 
 <Contribute />
+
+<style>
+  .resource-row:last-child {
+    border-bottom: 1px solid black;
+  }
+</style>

@@ -26,12 +26,15 @@
   {shortText}
   {#if isLong}
     <AlertDialog.Root bind:open>
-      <AlertDialog.Trigger class="button-small bg-pink-light"
+      <AlertDialog.Trigger class="button-small button-pink m-auto mt-1"
         ><PlusIcon size={7} /> read more</AlertDialog.Trigger
       >
       <AlertDialog.Portal>
         <AlertDialog.Content>
-          <AlertDialog.Title>{title}</AlertDialog.Title>
+          <AlertDialog.Title
+            ><span class="font-[Handjet] font-size-[20px]">{title}</span
+            ></AlertDialog.Title
+          >
           <AlertDialog.Description>
             <p class="max-h-[50vh] overflow-auto">{text}</p>
           </AlertDialog.Description>

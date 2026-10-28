@@ -316,7 +316,7 @@ type ApplicationEvent =
 type SpaceRequestId = Hash;
 type ReservationRequestId = Hash;
 
-type Link = {
+export type Link = {
   type: "ticket" | "custom";
   title: null | string;
   url: string;
@@ -361,6 +361,7 @@ type CalendarFields = {
   calendarInstructions?: string;
   spacePageText?: string;
   resourcePageText?: string;
+  newsPageText?: string;
 };
 
 type SpaceFields = {
@@ -382,6 +383,7 @@ type ResourceFields = {
   description: string;
   contact: string;
   link?: Link;
+  messageForRequesters?: string;
   images: Image[];
   availability: TimeSpan[] | "always";
   multiBookable: boolean;
@@ -661,8 +663,10 @@ type Calendar = {
   startDate?: ISO8601UTC;
   endDate?: ISO8601UTC;
   calendarInstructions?: string;
+  aboutPageText?: string;
   spacePageText?: string;
   resourcePageText?: string;
+  newsPageText?: string;
   createdAt: bigint;
   updatedAt: bigint;
 };
@@ -778,7 +782,7 @@ type ResourceRequestEnriched = {
   resource?: Resource;
 };
 
-type BookingRequestEnriched = {
+export type BookingRequestEnriched = {
   event?: CalendarEvent;
   resource?: Resource;
   space?: Space;

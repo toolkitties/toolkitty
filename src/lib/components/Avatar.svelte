@@ -23,10 +23,14 @@
       alt="kitten sleeping next to toolkit box"
     />
   {:else if kittyHealth === "ok"}
-    <img
-      src="/images/toolkitty-avatar-ok.png"
-      alt="kitten holding toolkit box"
-    />
+    <div class="flex items-center gap-2">
+      <img
+        src="/images/toolkitty.png"
+        alt="kitten holding toolkit box"
+        width="40"
+        height="42"
+      />
+    </div>
   {:else if kittyHealth === "happy"}
     <img
       src="/images/toolkitty-avatar-happy.png"

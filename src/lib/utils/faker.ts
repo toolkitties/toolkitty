@@ -467,6 +467,7 @@ export function createCalendarFields(
     calendarInstructions: faker.lorem.paragraphs(10),
     spacePageText: faker.lorem.paragraphs(10),
     resourcePageText: faker.lorem.paragraphs(10),
+    newsPageText: faker.lorem.paragraphs(10),
   };
 
   return { ...fields, ...fieldsOverwrites };
@@ -559,6 +560,7 @@ export function createResourceFields(
       title: faker.company.name(),
       url: faker.internet.url(),
     },
+    messageForRequesters: faker.word.words(8),
     images: [],
     availability: faker.helpers.multiple(() => {
       const start = faker.date.soon().toISOString();

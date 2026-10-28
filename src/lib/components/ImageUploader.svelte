@@ -1,10 +1,12 @@
-<!-- 
+<!--
  @component
  Upload multiple images as part of a form
   -->
 
 <script lang="ts">
-  import { uploadFile } from "$lib/api/blobs";
+  import { blobUrl, uploadFiles } from "$lib/api/blobs";
+  import UploadIcon from "$lib/components/icons/UploadIcon.svelte";
+  import { toast } from "$lib/toast.svelte";
 
   let {
     images = $bindable(),
@@ -12,34 +14,85 @@
     images: Image[];
   } = $props();
 
-  async function selectImage(event: Event) {
-    // FIXME(adz): Note sure why we need to do this as this is strictly
-    // speaking not a submit event, but without it it causes superform to
-    // submit the whole thing.
-    event.preventDefault();
+  let uploadingSlot: number | undefined = $state();
 
-    const image = await uploadFile();
-    images = [...images, image];
+  async function selectImages(index: number) {
+    if (uploadingSlot !== undefined || images.length >= 3) return;
+
+    uploadingSlot = index;
+    try {
+      const selectedImages = await uploadFiles();
+      const availableSlots = 3 - images.length;
+      images = [...images, ...selectedImages.slice(0, availableSlots)];
+
+      if (selectedImages.length > availableSlots) {
+        toast.error("You can add up to 3 images");
+      }
+    } catch (error) {
+      console.error("Error uploading images:", error);
+      toast.error("Images could not be uploaded");
+    } finally {
+      uploadingSlot = undefined;
+    }
   }
 
-  function removeImage(event: Event, index: number) {
-    event.preventDefault();
-    images = images.filter((_, i) => index != i);
+  function removeImage(index: number) {
+    images = images.filter((_, i) => index !== i);
   }
 </script>
 
-<div class="grid grid-cols-3 gap-4">
-  <!--
-    Same images are de-duplicated on the backend and result in the same hash.
-    We still want to show the same image multiple times though if the user
-    wants that, this is why we're using the index as part of the key.
-  -->
-  {#each images as image, index (`${image}${index}`)}
-    <div class="border-2 rounded-lg border-gray-200">
-      <img src={`blobstore://${image}`} alt={image} />
-      <button onclick={(event) => removeImage(event, index)}>Remove</button>
-    </div>
-  {/each}
-</div>
+<div class="space-y-2">
+  <h3 class="mt-4 text-center">Add images</h3>
 
-<button onclick={(event) => selectImage(event)}>Upload image</button>
+  <div
+    class="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2 overflow-hidden"
+  >
+    {#each [0, 1, 2] as index (index)}
+      <div
+        class={index === 0
+          ? "min-w-0 overflow-hidden aspect-square"
+          : index === 1
+            ? "min-w-0 overflow-hidden aspect-square"
+            : "col-span-2 min-w-0 overflow-hidden aspect-[7/3]"}
+      >
+        {#if images[index]}
+          <!-- Existing image slot -->
+          <div
+            class="relative flex h-full w-full items-center justify-center overflow-hidden rounded border border-black bg-grey-medium"
+          >
+            <img
+              src={blobUrl(images[index])}
+              alt={`Uploaded image ${index + 1}`}
+              class="block h-full w-full object-contain object-center"
+            />
+            <button
+              type="button"
+              class="absolute bottom-1 right-1 inline-flex items-center rounded-full border border-black bg-white px-2 py-[2px] text-[11px] leading-none"
+              onclick={() => removeImage(index)}
+            >
+              remove
+            </button>
+          </div>
+        {:else}
+          <!-- Empty slot with upload UI -->
+          <button
+            type="button"
+            disabled={uploadingSlot !== undefined}
+            aria-label={`Upload one or more images, starting at slot ${index + 1}`}
+            class="flex h-full w-full flex-col items-center justify-center rounded border border-black bg-grey-medium"
+            onclick={() => selectImages(index)}
+          >
+            <div
+              class="mb-2 rounded-lg border border-black bg-white px-3 py-[3px] inline-flex items-center gap-1"
+            >
+              <UploadIcon size={16} />
+              <span class="text-xs leading-none"
+                >{uploadingSlot === index ? "uploading…" : "upload"}</span
+              >
+            </div>
+          </button>
+        {/if}
+      </div>
+    {/each}
+  </div>
+</div>

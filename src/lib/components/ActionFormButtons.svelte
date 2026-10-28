@@ -10,11 +10,13 @@
     name,
     userRole,
     onSaveDraft,
+    disabled = false,
   }: {
     id: string;
     name: string;
     userRole: string;
     onSaveDraft: () => void;
+    disabled?: boolean;
   } = $props();
 </script>
 
@@ -53,7 +55,11 @@
       save draft
     </button>
   {/if}
-  <button type="submit" class="bg-green-light-fluro justify-center rounded-xl">
-    publish
+  <button
+    type="submit"
+    class="button button-green disabled:cursor-wait disabled:opacity-60"
+    {disabled}
+  >
+    {disabled ? "publishing…" : "publish"}
   </button>
 </div>

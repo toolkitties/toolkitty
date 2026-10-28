@@ -5,9 +5,11 @@ import { zod } from "sveltekit-superforms/adapters";
 
 export const load: PageLoad = async () => {
   const form = defaults(zod(calendarSchema));
+  const today = new Date().toISOString().split("T")[0];
+  form.data.startDate = `${today}T00:00:00Z`;
 
   return {
-    title: "create calendar",
+    title: "create new calendar",
     form,
   };
 };

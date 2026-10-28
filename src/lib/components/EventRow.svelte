@@ -5,6 +5,9 @@
 
 <script lang="ts">
   import Date from "./Date.svelte";
+  import CalendarIcon from "./icons/CalendarIcon.svelte";
+  import ClockIcon from "./icons/ClockIcon.svelte";
+  import PinIcon from "./icons/PinIcon.svelte";
   let { event }: { event: CalendarEventEnriched } = $props();
 </script>
 
@@ -14,7 +17,7 @@
 >
   {#if event.images.length > 0}
     <img
-      src={`blobstore://${event.images[0]}`}
+      src="/toolkitty-mascot.png"
       class="aspect-square object-cover w-[30%] min-w-32 max-w-72 grow"
       alt=""
     />
@@ -25,21 +28,40 @@
       alt=""
     />
   {/if}
-  <div class="flex flex-col gap-1 p-2">
-    <h3>{event.name}</h3>
-    <span>🗓️ <Date format="date" date={event.startDate} /></span>
-    <span
-      >🕣
-      <Date format="time" date={event.startDate} /> -
-      <Date format="time" date={event.endDate} />
-    </span>
-    <span
-      >📍 {event.spaceRequest?.space
-        ? event.spaceRequest.space!.name
-        : "no space yet"}</span
-    >
-  </div>
-</a>
+  <div class="flex flex-col p-2 pt-0.5 w-full">
+    <h3 class="text-[20px]">{event.name}</h3>
+    <div class="flex gap-2">
+      <div class="flex items-center justify-center">
+        <CalendarIcon size={16} />
+      </div>
+      <div class="pt-1 flex items-center">
+        <Date format="date" date={event.startDate} />
+      </div>
+    </div>
+    <div class="flex gap-2">
+      <div class="flex items-center justify-center">
+        <ClockIcon size={16} />
+      </div>
+      <div class="pt-1 flex items-center">
+        <Date format="time" date={event.startDate} /> - <Date
+          format="time"
+          date={event.endDate}
+        />
+      </div>
+    </div>
+    <div class="flex gap-2">
+      <div class="flex items-center justify-center">
+        <PinIcon size={16} />
+      </div>
+      <div class="pt-1 flex items-center">
+        {event.spaceRequest?.space
+          ? event.spaceRequest.space!.name
+          : "no space yet"}
+      </div>
+    </div>
+    <!-- TODO: Reintroduce event tags when tag functionality is implemented. -->
+  </div></a
+>
 
 <style>
   .event-row:not(:last-child) {

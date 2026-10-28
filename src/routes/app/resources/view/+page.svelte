@@ -2,19 +2,18 @@
   import type { PageProps } from "./$types";
   import { liveQuery } from "dexie";
   import type { Observable } from "dexie";
+  import type { BookingRequestEnriched } from "$lib/types";
   import { bookings, resources } from "$lib/api";
   import UpcomingBookings from "$lib/components/UpcomingBookings.svelte";
   import AvailabilityViewer from "$lib/components/AvailabilityViewer.svelte";
   import Links from "$lib/components/Links.svelte";
+
   import { error } from "@sveltejs/kit";
   import ImageGallery from "$lib/components/ImageGallery.svelte";
+  import Markdown from "$lib/components/Markdown.svelte";
 
   let { data }: PageProps = $props();
   let now = new Date();
-  // TODO: look into if this should be declared with `$state(...)` as errors says.
-  // Should be fixed with $derived.by todo below.
-  let upcomingBookings: Observable<BookingRequestEnriched[]>;
-  let amOwner = $state(false);
 
   let resource = liveQuery(async () => {
     const resource = await resources.findById(data.resourceId);
@@ -26,13 +25,16 @@
     return resource;
   });
 
-  // TODO: use $derived.by instead of $effect here.
-  $effect(() => {
-    if ($resource) {
-      amOwner = $resource.ownerId === data.publicKey;
-      if (amOwner) {
+  let amOwner = $derived.by(() => {
+    const isOwner = $resource?.ownerId === data.publicKey;
+    return isOwner;
+  });
+
+  let upcomingBookings: Observable<BookingRequestEnriched[]> | undefined =
+    $derived.by(() => {
+      if ($resource && amOwner) {
         // TODO: Perhaps adjust to account for bookings taking place right now.
-        upcomingBookings = liveQuery(() =>
+        return liveQuery(() =>
           bookings.findAll({
             calendarId: data.activeCalendarId,
             resourceId: data.resourceId,
@@ -40,17 +42,23 @@
           }),
         );
       }
-    }
-  });
+      return undefined;
+    });
 </script>
 
 {#if $resource}
   <div class="space-y-4">
-    <h1>{$resource.name}</h1>
+    <h1 class="text-center">{$resource.name}</h1>
     {#if amOwner}
       <UpcomingBookings {upcomingBookings} />
     {/if}
-    <p>{$resource.description}</p>
+    <div class="grey-lighter-box">
+      <Markdown content={$resource.description} />
+    </div>
+
+    <!-- TODO should be map and grey-lighter-box with location details (not available currently in resource object) -->
+
+    <ImageGallery images={$resource.images} />
 
     {#if $resource.link}
       <Links links={[$resource.link]} />
@@ -70,8 +78,6 @@
         <span class="edit-icon">edit</span>
       </a>
     {/if}
-
-    <ImageGallery images={$resource.images} />
 
     <pre>{JSON.stringify($resource, null, 2)}</pre>
   </div>

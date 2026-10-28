@@ -3,8 +3,16 @@
  Button question mark at header of the page
   -->
 
-<button class="w-10 h-full question-mark-button ml-auto">
-  <img src="/images/question_mark.svg" alt="question mark" />
+<script lang="ts">
+  import { goto } from "$app/navigation";
+  import QuestionIcon from "$lib/components/icons/QuestionIcon.svelte";
+</script>
+
+<button
+  onclick={() => goto("/app/about")}
+  class="w-10 h-full question-mark-button ml-auto"
+>
+  <QuestionIcon size={16} />
   <span class="sr-only">Question Mark</span>
 </button>
 
@@ -15,5 +23,6 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    padding: 6px;
   }
 </style>

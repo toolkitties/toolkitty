@@ -5,6 +5,7 @@
   import { liveQuery } from "dexie";
   import PlusIcon from "$lib/components/icons/plusIcon.svelte";
   import DateRange from "$lib/components/DateRange.svelte";
+  import InfoBoxTop from "$lib/components/InfoBoxTop.svelte";
 
   let { data }: PageProps = $props();
 
@@ -29,7 +30,10 @@
   );
 </script>
 
-<h1>Dashboard</h1>
+<InfoBoxTop>
+  Here is your personal space. Look after the health of your avatar and keep
+  track of your events, resources and requests.
+</InfoBoxTop>
 
 <section class="mb-8">
   <h3>pending requests</h3>

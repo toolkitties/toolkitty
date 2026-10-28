@@ -2,17 +2,24 @@
   import AvailabilityViewer from "$lib/components/AvailabilityViewer.svelte";
   import ImageUploader from "$lib/components/ImageUploader.svelte";
   import { goto } from "$app/navigation";
+  import { onMount } from "svelte";
   import { toast } from "$lib/toast.svelte";
   import type { SuperValidated, Infer } from "sveltekit-superforms";
   import type { EventSchema } from "$lib/schemas";
   import { superForm, setError } from "sveltekit-superforms";
-  import SuperDebug from "sveltekit-superforms";
   import { eventSchema } from "$lib/schemas";
   import { zod } from "sveltekit-superforms/adapters";
-  import { events, resources, bookings } from "$lib/api";
+  import { hasFormErrors, scrollToFirstFormError } from "$lib/utils/formErrors";
+  import { events, resources, bookings, spaces as spacesApi } from "$lib/api";
   import { TimeSpanClass } from "$lib/timeSpan";
   import ActionFormButtons from "$lib/components/ActionFormButtons.svelte";
-
+  import TicketIcon from "$lib/components/icons/TicketIcon.svelte";
+  import { Accordion } from "bits-ui";
+  import ChevronIcon from "$lib/components/icons/ChevronIcon.svelte";
+  import {
+    availabilityTimeSlots,
+    slotDateTime,
+  } from "$lib/utils/availabilitySlots";
   let {
     data,
     activeCalendarId,
@@ -29,12 +36,66 @@
     userRole: string;
   } = $props();
 
+  const todayDateKey = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  function selectionsFromRange(
+    start?: string,
+    end?: string,
+  ): Record<string, string[]> {
+    if (!start || !end) return {};
+    const startTime = new Date(start).getTime();
+    const endTime = new Date(end).getTime();
+    if (!Number.isFinite(startTime) || !Number.isFinite(endTime)) return {};
+
+    const selections: Record<string, string[]> = {};
+    const startDay = start.split("T")[0];
+    const endDay = end.split("T")[0];
+    const cursor = new Date(`${startDay}T12:00:00`);
+    const lastDay = new Date(`${endDay}T12:00:00`);
+
+    while (cursor <= lastDay) {
+      const date = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}-${String(cursor.getDate()).padStart(2, "0")}`;
+      const selected = availabilityTimeSlots
+        .filter((slot) => {
+          const slotStart = new Date(`${date}T${slot.start}`).getTime();
+          const slotEnd = new Date(slotDateTime(date, slot.end)).getTime();
+          return slotStart >= startTime && slotEnd <= endTime;
+        })
+        .map((slot) => slot.start);
+      if (selected.length) selections[date] = selected;
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return selections;
+  }
+
+  let selectedSlotsByDate = $state(
+    selectionsFromRange(data.data.startDate, data.data.endDate),
+  );
   let selectedSpace = $state<Space | undefined>(currentSpace);
   let selectedSpaceId = $state<string | undefined>(currentSpace?.id);
+  let selectedAvailabilityDate = $state(
+    data.data.startDate?.split("T")[0] ?? (currentSpace ? todayDateKey() : ""),
+  );
   let availableResources: Resource[] = $state(resourcesList);
   let selectedResources: Resource[] = $state([]);
   let availableResourceBookings: { resourceId: string; timeSpan: TimeSpan }[] =
     $state([]);
+  let isSubmitting = $state(false);
+  let publishStatusUnknown = $state(false);
+
+  let availableTimes = $state(
+    availabilityTimeSlots.map((slot) => ({
+      ...slot,
+      available: false,
+      selected: false,
+    })),
+  );
 
   // resource filtering if update form
   // if (currentSpace && currentSpace.availability !== "always") {
@@ -57,7 +118,28 @@
   // }
 
   async function handleSpaceSelection(space: Space) {
+    if (selectedSpaceId !== space.id) {
+      availableTimes = availableTimes.map((slot) => ({
+        ...slot,
+        available: false,
+        selected: false,
+      }));
+      selectedSlotsByDate = {};
+      $form.startDate = "";
+      $form.endDate = "";
+      $form.publicStartDate = "";
+      $form.publicEndDate = "";
+    }
+
     selectedSpace = space;
+    selectedSpaceId = space.id;
+    selectedAvailabilityDate = todayDateKey();
+    if (selectedAvailabilityDate) {
+      void refreshAvailableTimes(space, selectedAvailabilityDate).catch(
+        (error) => console.error("Could not load available times:", error),
+      );
+    }
+    availableResourceBookings = [];
     if (selectedSpace.availability == "always") {
       availableResources = resourcesList;
     } else {
@@ -100,6 +182,148 @@
     };
   }
 
+  async function refreshAvailableTimes(space: Space, date: string) {
+    const bookingsForDay = space.multiBookable
+      ? []
+      : await spacesApi.findBookings(
+          space.id,
+          new TimeSpanClass({
+            start: `${date}T00:00`,
+            end: slotDateTime(date, "24:00"),
+          }),
+        );
+
+    if (selectedSpaceId !== space.id || selectedAvailabilityDate !== date) {
+      return;
+    }
+
+    availableTimes = availabilityTimeSlots.map((slot) => {
+      const slotStart = new Date(`${date}T${slot.start}`).getTime();
+      const slotEnd = new Date(slotDateTime(date, slot.end)).getTime();
+      const availableFromSchedule =
+        space.availability === "always" ||
+        space.availability.some((entry) => {
+          const availableStart = new Date(entry.start).getTime();
+          const availableEnd = new Date(entry.end).getTime();
+          return availableStart <= slotStart && availableEnd >= slotEnd;
+        });
+      const booked = bookingsForDay.some((booking) => {
+        const bookingStart = new Date(booking.timeSpan.start).getTime();
+        const bookingEnd = new Date(booking.timeSpan.end).getTime();
+        return bookingStart < slotEnd && bookingEnd > slotStart;
+      });
+
+      return {
+        ...slot,
+        available: availableFromSchedule && !booked,
+        selected: selectedSlotsByDate[date]?.includes(slot.start) ?? false,
+      };
+    });
+  }
+
+  function handleAvailableDateChange(date: string) {
+    if (selectedAvailabilityDate === date) return;
+    selectedAvailabilityDate = date;
+    availableTimes = availableTimes.map((slot) => ({
+      ...slot,
+      available: false,
+      selected: false,
+    }));
+    if (selectedSpace) {
+      void refreshAvailableTimes(selectedSpace, date).catch((error) =>
+        console.error("Could not load available times:", error),
+      );
+    }
+  }
+
+  onMount(() => {
+    if (selectedSpace && selectedAvailabilityDate) {
+      void refreshAvailableTimes(selectedSpace, selectedAvailabilityDate).catch(
+        (error) => console.error("Could not load available times:", error),
+      );
+    }
+  });
+
+  function isResourceSelected(resourceId: string) {
+    return selectedResources.some((resource) => resource.id === resourceId);
+  }
+
+  function toggleResource(resource: Resource) {
+    selectedResources = isResourceSelected(resource.id)
+      ? selectedResources.filter((item) => item.id !== resource.id)
+      : [...selectedResources, resource];
+  }
+
+  function toggleAvailableTime(index: number) {
+    if (!selectedAvailabilityDate || !availableTimes[index].available) return;
+
+    const nextTimes = availableTimes.map((slot, slotIndex) =>
+      slotIndex === index ? { ...slot, selected: !slot.selected } : slot,
+    );
+    availableTimes = nextTimes;
+    const selectedForDate = nextTimes
+      .filter((slot) => slot.selected)
+      .map((slot) => slot.start);
+    if (selectedForDate.length) {
+      selectedSlotsByDate = {
+        ...selectedSlotsByDate,
+        [selectedAvailabilityDate]: selectedForDate,
+      };
+    } else {
+      const remaining = { ...selectedSlotsByDate };
+      delete remaining[selectedAvailabilityDate];
+      selectedSlotsByDate = remaining;
+    }
+
+    const allSelectedSlots = Object.entries(selectedSlotsByDate).flatMap(
+      ([date, starts]) =>
+        starts.flatMap((start) => {
+          const slot = availabilityTimeSlots.find(
+            (candidate) => candidate.start === start,
+          );
+          return slot
+            ? [
+                {
+                  start: new Date(`${date}T${slot.start}`).getTime(),
+                  end: new Date(slotDateTime(date, slot.end)).getTime(),
+                  startValue: `${date}T${slot.start}`,
+                  endValue: slotDateTime(date, slot.end),
+                },
+              ]
+            : [];
+        }),
+    );
+
+    if (!allSelectedSlots.length) {
+      $form.startDate = "";
+      $form.endDate = "";
+      $form.publicStartDate = "";
+      $form.publicEndDate = "";
+      return;
+    }
+
+    const firstSlot = allSelectedSlots.reduce((first, slot) =>
+      slot.start < first.start ? slot : first,
+    );
+    const lastSlot = allSelectedSlots.reduce((last, slot) =>
+      slot.end > last.end ? slot : last,
+    );
+    $form.startDate = firstSlot.startValue;
+    $form.endDate = lastSlot.endValue;
+
+    if (!$form.publicStartDate || $form.publicStartDate < $form.startDate) {
+      $form.publicStartDate = $form.startDate;
+    }
+    if (!$form.publicEndDate || $form.publicEndDate > $form.endDate) {
+      $form.publicEndDate = $form.endDate;
+    }
+    if ($form.publicEndDate < $form.publicStartDate) {
+      $form.publicStartDate = $form.startDate;
+      $form.publicEndDate = $form.endDate;
+    }
+    recalculateResourceAvailability();
+  }
+
   function recalculateResourceAvailability() {
     if (availableResourceBookings.length === 0) return;
     const eventTimeSpan = {
@@ -132,6 +356,24 @@
       // Additional checks for selectedSpace
       if (!selectedSpace) {
         setError(form, "startDate", "Please select a space first.");
+        return;
+      }
+      if (!form.data.startDate || !form.data.endDate) {
+        setError(form, "startDate", "Please select available times first.");
+        return;
+      }
+      if (
+        !form.data.publicStartDate ||
+        !form.data.publicEndDate ||
+        form.data.publicStartDate < form.data.startDate ||
+        form.data.publicEndDate > form.data.endDate ||
+        form.data.publicStartDate >= form.data.publicEndDate
+      ) {
+        setError(
+          form,
+          "publicStartDate",
+          "Event time must be within the selected booking times.",
+        );
         return;
       }
 
@@ -202,20 +444,28 @@
 
       // TODO: potentially move above validation to schema
       if (form.valid) {
+        if (isSubmitting || publishStatusUnknown) return;
+        isSubmitting = true;
         const { id, ...payload } = form.data;
 
         // Filter out links with empty URLs
         payload.links = payload.links?.filter((link) => link.url !== "");
 
-        if (form.data.id) {
-          console.log("update event");
-          handleUpdateEvent(id!, payload);
-        } else {
-          console.log("create space");
-          handleCreateEvent(payload);
+        try {
+          if (form.data.id) {
+            await handleUpdateEvent(id!, payload);
+          } else {
+            await handleCreateEvent(payload);
+          }
+        } finally {
+          isSubmitting = false;
         }
       }
     },
+  });
+
+  $effect(() => {
+    if (hasFormErrors($errors)) scrollToFirstFormError();
   });
 
   // Remove date proxies as temp fix for date.
@@ -233,45 +483,69 @@
   //   dateProxy(form, "publicEndDate", { format: "datetime-utc" }),
   // );
 
+  // The processor may defer an operation until dependencies arrive. Don't keep
+  // the UI spinning forever or permit a retry that could create a duplicate.
+  async function waitForPublish<T>(operation: Promise<T>): Promise<T> {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      return await Promise.race([
+        operation,
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(() => {
+            publishStatusUnknown = true;
+            reject(
+              new Error(
+                "Publishing timed out. Check your events before trying again.",
+              ),
+            );
+          }, 30000);
+        }),
+      ]);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
   async function handleCreateEvent(payload: EventFields) {
     try {
-      const eventId = await events.create(activeCalendarId, payload);
+      const eventId = await waitForPublish(
+        events.create(activeCalendarId, payload),
+      );
+      const timeSpan = { start: payload.startDate, end: payload.endDate };
 
-      // Request selected space booking
+      // Process dependent requests in order, after the event exists locally.
       if (selectedSpace) {
-        await bookings.request(
-          eventId,
-          selectedSpace.id,
-          "space",
-          "Requesting access to space",
-          {
-            start: payload.startDate,
-            end: payload.endDate,
-          },
+        await waitForPublish(
+          bookings.request(
+            eventId,
+            selectedSpace.id,
+            "space",
+            "Requesting access to space",
+            timeSpan,
+          ),
         );
       }
-
-      // Request selected resources booking
-      if (selectedResources.length > 0) {
-        for (const resource of selectedResources) {
-          await bookings.request(
+      for (const resource of selectedResources) {
+        await waitForPublish(
+          bookings.request(
             eventId,
             resource.id,
             "resource",
             "Requesting resource",
-            {
-              start: payload.startDate,
-              end: payload.endDate,
-            },
-          );
-        }
+            timeSpan,
+          ),
+        );
       }
 
       toast.success("Event created!");
-      goto(`/app/events/view?id=${eventId}`);
+      await goto("/app/events");
     } catch (error) {
-      console.error("Error creating event: ", error);
-      toast.error("Error creating event!");
+      console.error("Error creating event:", error);
+      toast.error(
+        publishStatusUnknown
+          ? "Publishing is taking too long. Check your events before trying again."
+          : "Error creating event! Check your events before retrying.",
+      );
     }
   }
 
@@ -280,7 +554,7 @@
       await events.update(eventId, payload);
 
       toast.success("Event updated!");
-      goto(`/app/events/view?id=${eventId}`);
+      goto("/app/events");
     } catch (error) {
       console.error("Error updating event: ", error);
       toast.error("Error updating event!");
@@ -289,17 +563,16 @@
 </script>
 
 {#if spaces.length == 0}
-  <p>
-    No available spaces have been contributed. Create at least one space before
-    creating an event.
-  </p>
-  <a
-    href="/app/spaces/create"
-    class="bg-green-light-fluro justify-center rounded-xl mt-4 inline-block"
-    >Create space</a
-  >
+  <div class="flex flex-col items-center text-center">
+    <p>
+      No available spaces have been contributed. Create at least one space
+      before creating an event.
+    </p>
+    <a href="/app/spaces/create" class="button button-green mt-4 w-fit"
+      >Create space</a
+    >
+  </div>
 {:else}
-  <SuperDebug data={{ $form, $errors }} />
   <form method="POST" use:enhance>
     <label for="name">Event name*</label>
     <input
@@ -314,6 +587,7 @@
     <textarea
       name="description"
       aria-invalid={$errors.description ? "true" : undefined}
+      placeholder="You can use Markdown to format your text. Make sure you give enough information about the event."
       bind:value={$form.description}
     ></textarea>
     {#if $errors.description}<span class="form-error"
@@ -322,168 +596,286 @@
 
     {#if $form.links}
       {#if $form.links[0]}
-        <p>🎫 Ticket Link</p>
-        <div class="flex flex-row">
-          <div>
-            <label for="ticket-link-text">Link text</label>
-            <input
-              type="text"
-              name="ticket-link-text"
-              aria-invalid={$errors.links?.[0].title ? "true" : undefined}
-              bind:value={$form.links[0].title}
-            />
-            {#if $errors.links?.[0].title}<span class="form-error"
-                >{$errors.links?.[0].title}</span
-              >{/if}
+        <fieldset class="mt-1">
+          <legend class="mb-2 text-[20px]">
+            <span class="relative top-[4px] inline-block"
+              ><TicketIcon size={22} /></span
+            >
+            Ticket Link
+          </legend>
+          <div class="flex flex-row gap-2">
+            <div class="min-w-0 flex-1">
+              <label for="ticket-link-text">Link Title</label>
+              <input
+                id="ticket-link-text"
+                type="text"
+                name="ticket-link-text"
+                placeholder="Link title"
+                aria-invalid={$errors.links?.[0].title ? "true" : undefined}
+                bind:value={$form.links[0].title}
+              />
+              {#if $errors.links?.[0].title}<span class="form-error"
+                  >{$errors.links?.[0].title}</span
+                >{/if}
+            </div>
+            <div class="min-w-0 flex-1">
+              <label for="ticket-link-url">URL</label>
+              <input
+                id="ticket-link-url"
+                type="url"
+                name="ticket-link-url"
+                placeholder="http://www.example.com"
+                aria-invalid={$errors.links?.[0].url ? "true" : undefined}
+                bind:value={$form.links[0].url}
+              />
+              {#if $errors.links?.[0].url}<span class="form-error"
+                  >{$errors.links?.[0].url}</span
+                >{/if}
+            </div>
           </div>
-          <div>
-            <label for="ticket-link-url">URL</label>
-            <input
-              type="url"
-              name="ticket-link-url"
-              aria-invalid={$errors.links?.[0].url ? "true" : undefined}
-              bind:value={$form.links[0].url}
-            />
-            {#if $errors.links?.[0].url}<span class="form-error"
-                >{$errors.links?.[0].url}</span
-              >{/if}
-          </div>
-        </div>
+        </fieldset>
       {/if}
 
       {#if $form.links[1]}
-        <p>🔗 Additional Link</p>
-        <div class="flex flex-row">
-          <div>
-            <label for="additional-link-text">Link text</label>
-            <input
-              type="text"
-              name="additional-link-text"
-              aria-invalid={$errors.links?.[1].title ? "true" : undefined}
-              bind:value={$form.links[1].title}
-            />
-            {#if $errors.links?.[1].title}<span class="form-error"
-                >{$errors.links?.[1].title}</span
-              >{/if}
+        <fieldset class="mt-4">
+          <legend class="mb-2 text-[20px]"
+            >🔗 Other link (website, social media)</legend
+          >
+          <div class="flex flex-row gap-2">
+            <div class="min-w-0 flex-1">
+              <label for="additional-link-text">Link Title</label>
+              <input
+                id="additional-link-text"
+                type="text"
+                name="additional-link-text"
+                placeholder="Link title"
+                aria-invalid={$errors.links?.[1].title ? "true" : undefined}
+                bind:value={$form.links[1].title}
+              />
+              {#if $errors.links?.[1].title}<span class="form-error"
+                  >{$errors.links?.[1].title}</span
+                >{/if}
+            </div>
+            <div class="min-w-0 flex-1">
+              <label for="additional-link-url">URL</label>
+              <input
+                id="additional-link-url"
+                type="url"
+                name="additional-link-url"
+                placeholder="http://www.example.com"
+                aria-invalid={$errors.links?.[1].url ? "true" : undefined}
+                bind:value={$form.links[1].url}
+              />
+              {#if $errors.links?.[1].url}<span class="form-error"
+                  >{$errors.links?.[1].url}</span
+                >{/if}
+            </div>
           </div>
-          <div>
-            <label for="additional-link-url">URL</label>
-            <input
-              type="url"
-              name="additional-link-url"
-              aria-invalid={$errors.links?.[1].url ? "true" : undefined}
-              bind:value={$form.links[1].url}
-            />
-            {#if $errors.links?.[1].url}<span class="form-error"
-                >{$errors.links?.[1].url}</span
-              >{/if}
-          </div>
-        </div>
+        </fieldset>
       {/if}
     {/if}
 
-    <p>Select a space:</p>
-    <ul>
-      {#each spaces as space (space.id)}
-        <li>
-          <input
-            type="radio"
-            id={space.id}
-            name="selected-space"
-            onchange={() => handleSpaceSelection(space)}
-            value={space.id}
-            bind:group={selectedSpaceId}
-          />
-          <label for={space.id}>{space.name}</label>
-        </li>
-      {/each}
-    </ul>
-    {#if selectedSpace}
-      <div class="space-availability">
-        <p>View availability for {selectedSpace.name}</p>
-        {#if selectedSpace.availability === "always"}
-          <p>This space is always available :D</p>
-        {:else}
+    <section class="mt-4 overflow-hidden rounded-sm border border-black">
+      <h2 class="bg-grey-medium px-2 py-2 text-[20px] normal-case">
+        Select a space*
+      </h2>
+      <ul>
+        {#each spaces as space (space.id)}
+          <li
+            class={space.location?.type === "virtual"
+              ? "bg-blue-light"
+              : space.location?.type === "physical"
+                ? "bg-light-yellow"
+                : space.location?.type === "gps"
+                  ? "bg-pink-light"
+                  : ""}
+          >
+            <button
+              type="button"
+              onclick={() => handleSpaceSelection(space)}
+              class={`flex w-full items-center justify-between rounded-none border-0 bg-transparent px-2 py-2 text-left text-[16px] ${selectedSpaceId === space.id ? "font-bold" : ""}`}
+              aria-pressed={selectedSpaceId === space.id}
+            >
+              <span>{space.name}</span>
+              {#if selectedSpaceId === space.id}
+                <span aria-hidden="true">✓</span>
+              {/if}
+            </button>
+          </li>
+        {/each}
+      </ul>
+    </section>
+
+    <div class="mt-4 space-y-0">
+      {#if selectedSpace}
+        {#key selectedSpace.id}
           <AvailabilityViewer
             data={selectedSpace}
-            selected={$form.startDate}
+            selected={selectedAvailabilityDate
+              ? `${selectedAvailabilityDate}T12:00:00Z`
+              : undefined}
             type="space"
+            title="Select from available date*"
+            showSlots={false}
+            onDateChange={handleAvailableDateChange}
           />
-        {/if}
-      </div>
-
-      <p>Request access to selected space</p>
-      <div class="flex flex-row">
-        <input
-          type="datetime-local"
-          name="startDate"
-          required
-          aria-invalid={$errors.startDate ? "true" : undefined}
-          bind:value={$form.startDate}
-          onchange={recalculateResourceAvailability}
-        />
-        {#if $errors.startDate}<span class="form-error"
-            >{$errors.startDate}</span
-          >{/if}
-        <input
-          type="datetime-local"
-          name="endDate"
-          required
-          aria-invalid={$errors.endDate ? "true" : undefined}
-          bind:value={$form.endDate}
-          onchange={recalculateResourceAvailability}
-        />
-
-        {#if $errors.endDate}<span class="form-error">{$errors.endDate}</span
-          >{/if}
-      </div>
-
-      <p>Set public event start and end</p>
-      <div class="flex flex-row">
-        <label for="publicStartDate">Start *</label>
-        <input
-          type="datetime-local"
-          name="startDate"
-          aria-invalid={$errors.publicStartDate ? "true" : undefined}
-          bind:value={$form.publicStartDate}
-        />
-        {#if $errors.publicStartDate}<span class="form-error"
-            >{$form.publicStartDate}</span
-          >{/if}
-
-        <label for="publicEndDate">End *</label>
-        <input
-          type="datetime-local"
-          name="publicEndDate"
-          aria-invalid={$errors.publicEndDate ? "true" : undefined}
-          bind:value={$form.publicEndDate}
-        />
-        {#if $errors.publicEndDate}<span class="form-error"
-            >{$errors.publicEndDate}</span
-          >{/if}
-      </div>
-
-      {#if availableResources.length > 0}
-        <label for="resource-list">Select from available resources</label>
-        <ul id="resource-list">
-          {#each availableResources as resource (resource.id)}
-            <li>
-              <input
-                type="checkbox"
-                id="resource-{resource.id}"
-                value={resource}
-                bind:group={selectedResources}
-              />
-              <label for="resource-{resource.id}">{resource.name}</label>
-            </li>
-          {/each}
-        </ul>
+        {/key}
       {:else}
-        <p>No available resources.</p>
+        <section class="overflow-hidden rounded-sm border border-black">
+          <h2
+            class="bg-grey-medium px-3 py-2 text-center text-[20px] normal-case"
+          >
+            Select from available date*
+          </h2>
+          <p class="m-0 border-t border-black p-3 text-center">
+            Select a space first.
+          </p>
+        </section>
       {/if}
-    {/if}
 
-    <p>Images</p>
+      <div>
+        <section class="overflow-hidden rounded-sm border border-black">
+          <h2
+            class="border-b border-black bg-grey-medium px-2 py-2 text-[20px] normal-case"
+          >
+            Select from available times (including set-up)*
+          </h2>
+          <div class="flex flex-col">
+            {#each availableTimes as timeSlot, i (i)}
+              <button
+                type="button"
+                disabled={!timeSlot.available}
+                aria-pressed={timeSlot.selected}
+                onclick={() => toggleAvailableTime(i)}
+                class={`w-full justify-center rounded-none border-0 border-b border-grey-medium-light px-2 py-2 text-center text-[16px] ${
+                  !timeSlot.available
+                    ? "cursor-not-allowed bg-white text-grey-medium-light"
+                    : timeSlot.selected
+                      ? "bg-green-light-fluro text-black"
+                      : "bg-white hover:bg-green-light-fluro"
+                }`}
+              >
+                {timeSlot.start} - {timeSlot.end}
+              </button>
+            {/each}
+          </div>
+          {#if $errors.startDate}<span class="form-error px-2"
+              >{$errors.startDate}</span
+            >{/if}
+          {#if $errors.endDate}<span class="form-error px-2"
+              >{$errors.endDate}</span
+            >{/if}
+        </section>
+
+        <Accordion.Root type="single" value="resources" class="w-full">
+          <Accordion.Item value="resources">
+            <Accordion.Trigger
+              class="bg-grey-medium rounded-t rounded-b-none w-full"
+            >
+              <label
+                for="aboutText"
+                class="bg-grey-medium w-full flex justify-between cursor-pointer pb-0.75"
+                >Select resources
+              </label>
+              <span
+                class="transition-transform duration-200 data-[state=open]:rotate-180"
+              >
+                <ChevronIcon size={16} />
+              </span>
+            </Accordion.Trigger>
+
+            <Accordion.Content class="border border-black border-t-0 rounded">
+              <!-- {#if availableResources.length > 0}
+              <label for="resource-list">Select from available resources</label>
+              <ul id="resource-list">
+                {#each availableResources as resource (resource.id)}
+                  <li>
+                    <input
+                      type="checkbox"
+                      id="resource-{resource.id}"
+                      value={resource}
+                      bind:group={selectedResources}
+                    />
+                    <label for="resource-{resource.id}">{resource.name}</label>
+                  </li>
+                {/each}
+              </ul>
+            {:else}
+              <p>No available resources.</p>
+            {/if} -->
+
+              {#if availableResources.length > 0}
+                <div class="flex flex-col">
+                  {#each availableResources as resource (resource.id)}
+                    <button
+                      type="button"
+                      role="checkbox"
+                      aria-checked={isResourceSelected(resource.id)}
+                      onclick={() => toggleResource(resource)}
+                      class={`flex w-full items-center justify-between gap-3 rounded-none border-0 bg-transparent px-3 py-2 text-left text-[16px] ${isResourceSelected(resource.id) ? "font-bold" : ""}`}
+                    >
+                      <span>{resource.name}</span>
+                      <span
+                        class={`size-4 shrink-0 rounded-full border-2 border-black ${isResourceSelected(resource.id) ? "bg-red-light" : "bg-white"}`}
+                        aria-hidden="true"
+                      ></span>
+                    </button>
+                  {/each}
+                </div>
+              {:else}
+                <p class="m-0 p-2">No available resources.</p>
+              {/if}
+            </Accordion.Content>
+          </Accordion.Item>
+        </Accordion.Root>
+      </div>
+      <section class="overflow-hidden rounded-sm border border-black">
+        <h2
+          class="border-b border-black bg-grey-medium px-2 py-2 text-center text-[20px] normal-case"
+        >
+          Event time (excluding set-up)*
+        </h2>
+        <div class="divide-y divide-black">
+          <div class="flex items-center justify-between gap-3 px-2 py-2">
+            <label for="publicStartDate" class="shrink-0 text-[16px]"
+              >Event start</label
+            >
+            <input
+              id="publicStartDate"
+              class="mb-0 w-auto min-w-0 py-1 not-italic"
+              type="datetime-local"
+              name="publicStartDate"
+              min={$form.startDate || undefined}
+              max={$form.endDate || undefined}
+              bind:value={$form.publicStartDate}
+              aria-invalid={$errors.publicStartDate ? "true" : undefined}
+            />
+          </div>
+          {#if $errors.publicStartDate}<span class="form-error px-2"
+              >{$errors.publicStartDate}</span
+            >{/if}
+          <div class="flex items-center justify-between gap-3 px-2 py-2">
+            <label for="publicEndDate" class="shrink-0 text-[16px]"
+              >Event end</label
+            >
+            <input
+              id="publicEndDate"
+              class="mb-0 w-auto min-w-0 py-1 not-italic"
+              type="datetime-local"
+              name="publicEndDate"
+              min={$form.publicStartDate || $form.startDate || undefined}
+              max={$form.endDate || undefined}
+              bind:value={$form.publicEndDate}
+              aria-invalid={$errors.publicEndDate ? "true" : undefined}
+            />
+          </div>
+          {#if $errors.publicEndDate}<span class="form-error px-2"
+              >{$errors.publicEndDate}</span
+            >{/if}
+        </div>
+      </section>
+    </div>
+
     <ImageUploader bind:images={$form.images as string[]} />
 
     <br />
@@ -491,11 +883,18 @@
         >{$errors.selectedSpace}</span
       >{/if} -->
 
+    {#if publishStatusUnknown}
+      <p role="alert" class="form-error">
+        Publishing is taking too long. Check your events before trying again to
+        avoid creating a duplicate.
+      </p>
+    {/if}
     <ActionFormButtons
       id={$form.id!}
       name={$form.name}
       {userRole}
       onSaveDraft={() => {}}
+      disabled={isSubmitting || publishStatusUnknown}
     />
   </form>
 {/if}

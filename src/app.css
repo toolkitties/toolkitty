@@ -15,9 +15,14 @@
   --color-purple-very-light: #e6dbf5;
 
   --color-grey-very-light: #f0f0f0;
+  --color-grey-lighter: #ebebeb;
   --color-grey-light: #e1e1e1;
+  --color-grey-medium-light: #aaaaaa;
   --color-grey-dark: #8c8c8c;
   --color-grey-darker: #474747;
+  --color-grey-medium: #c2c2c2;
+
+  --color-blue: #0000ff;
 
   --color-brown-dark: #322113;
 
@@ -68,7 +73,7 @@
     src:
       url("/fonts/Atkinson-Hyperlegible-Regular.woff2") format("woff2"),
       url("/fonts/Atkinson-Hyperlegible-Regular.woff") format("woff");
-    font-weight: bold;
+    font-weight: normal;
     font-style: normal;
   }
 
@@ -87,7 +92,7 @@
       url("/fonts/Atkinson-Hyperlegible-Bold.woff2") format("woff2"),
       url("/fonts/Atkinson-Hyperlegible-Bold.woff") format("woff");
     font-weight: bold;
-    font-style: italic;
+    font-style: normal;
   }
 
   @font-face {
@@ -133,6 +138,10 @@
     @apply font-sans;
   }
 
+  label {
+    font-size: 1.3333rem;
+  }
+
   html,
   body {
     @apply h-screen flex flex-col;
@@ -146,16 +155,40 @@
 
   input,
   textarea {
-    @apply w-full p-2.5 border border-black rounded-sm;
+    @apply w-full p-2.5 border border-black rounded-sm mb-2 italic;
   }
 
   button,
   .button {
-    @apply border border-black bg-black/20 rounded-sm px-2 py-1.5 flex gap-1 items-center cursor-pointer;
+    @apply border border-black bg-black/20 rounded-sm px-3 pt-[9px] pb-[5px] flex gap-1 items-center cursor-pointer text-[1.25rem] leading-[1.15];
   }
 
   .button-small {
-    @apply py-0 rounded-lg;
+    @apply py-1 px-2 rounded-[8px] text-[12px];
+  }
+
+  .button-pink {
+    @apply bg-pink-light;
+  }
+
+  .button-green {
+    @apply bg-green-light-fluro justify-center rounded-xl;
+  }
+
+  .button-green > span {
+    position: relative;
+    padding-left: 22px;
+    background-image: url("/images/crayon.svg");
+    background-size: contain;
+    background-repeat: no-repeat;
+  }
+
+  .button-red {
+    @apply bg-red-light rounded-xl justify-center;
+  }
+
+  .button-grey {
+    @apply bg-grey-light rounded-xl justify-center;
   }
 
   .button-shadow {
@@ -175,10 +208,31 @@
   }
 
   .button-delete > span {
+    display: inline-flex;
+    align-items: center;
     padding-left: 22px;
     background-image: url("/images/bin.svg");
-    background-size: contain;
+    background-size: 16px 20px;
+    background-position: left center;
     background-repeat: no-repeat;
+  }
+
+  .button-light-blue {
+    @apply bg-blue-light rounded-xl justify-center;
+  }
+
+  .button-light-yellow {
+    @apply bg-light-yellow rounded-xl justify-center;
+  }
+
+  .button-light-pink {
+    @apply bg-pink-light rounded-xl justify-center;
+  }
+
+  .button-light-blue.button-small,
+  .button-light-yellow.button-small,
+  .button-green.button-small {
+    @apply rounded-[8px];
   }
 
   .tag {
@@ -188,13 +242,43 @@
   h1,
   h2 {
     font-size: 1.375rem;
-    text-transform: capitalize;
+    text-transform: uppercase;
   }
 
   h3,
   h4,
   h5 {
     font-size: 1.25rem;
+  }
+
+  /* Accordion styles */
+  [data-state="closed"] [data-accordion-trigger] {
+    border-radius: 10px;
+  }
+
+  [data-state="open"] [data-accordion-trigger] {
+    border-radius: 10px 10px 0 0;
+  }
+
+  [data-state="open"] [data-accordion-content] {
+    border-radius: 0 0 10px 10px;
+  }
+
+  /* Checkbox styles */
+  .hidden-checkbox {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    border: 0;
+  }
+
+  .grey-lighter-box {
+    @apply bg-grey-lighter text-center p-2 rounded;
   }
 
   /* colour icons for dark theme */
@@ -224,7 +308,7 @@
 
   /* style json nicely */
   pre {
-    @apply border border-black p-2 rounded-sm overflow-auto bg-green-50;
+    @apply border border-black p-2 rounded-sm overflow-auto bg-grey-darker text-white;
   }
 }
 

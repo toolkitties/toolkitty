@@ -59,11 +59,13 @@
 </svelte:head>
 
 {#if $activeCalendar?.name}
-  <Header title={page.data.title} />
-  <main class="grow overflow-auto">
+  <Header title={page.data.title} userRole={data.userRole} />
+  <main class="min-h-0 grow overflow-auto px-3.5 py-3.5">
     {@render children()}
   </main>
-  <nav class="w-full py-2.5 px-6 border-t border-black bg-grey-very-light">
+  <nav
+    class="w-full shrink-0 border-t border-black bg-grey-very-light px-6 py-2.5"
+  >
     <ul class="flex gap-6 justify-between items-center h-full">
       {#each menu as { name, url, icon: Icon } (name)}
         <li>

@@ -1,215 +1,168 @@
-<!-- 
+<!--
  @component
- Set availability of a space or resource.
- 
+ Set availability of a space or resource with a calendar and 30-minute slots.
+
  Used in space/resource create or edit forms.
-  -->
+-->
 
 <script lang="ts">
-  import { Calendar } from "bits-ui";
-  import type { DateValue } from "@internationalized/date";
+  import { parseDate, type DateValue } from "@internationalized/date";
+  import Calendar from "$lib/components/Calendar.svelte";
+  import ChevronIcon from "$lib/components/icons/ChevronIcon.svelte";
+  import {
+    availabilityTimeSlots as timeSlots,
+    initialAvailabilityDate,
+    slotDateTime,
+  } from "$lib/utils/availabilitySlots";
 
   let {
     availability = $bindable(),
     calendarDates,
+    allSelected = false,
+    currentlySelectedDate = $bindable(
+      initialAvailabilityDate(calendarDates.start, calendarDates.end),
+    ),
   }: {
     availability: TimeSpan[];
     calendarDates: TimeSpan;
+    allSelected?: boolean;
+    currentlySelectedDate?: DateValue;
   } = $props();
 
-  // used to color available dates in the calendar
-  let availableDates: { date: string }[] = $state(
-    availability.length > 0
-      ? availability.map((a) => {
-          return { date: a.start.split("T")[0] };
-        })
-      : [],
+  const toDateKey = (value: string | DateValue) =>
+    value.toString().split("T")[0];
+
+  const toTimeKey = (value: string) =>
+    value.includes("T") ? value.split("T")[1].slice(0, 5) : "";
+
+  const programmeStart = toDateKey(calendarDates.start);
+  const today = new Date();
+  const todayDate = parseDate(
+    `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`,
+  );
+  const minimumDate =
+    todayDate.toString() < programmeStart
+      ? parseDate(programmeStart)
+      : todayDate;
+  let calendarPlaceholder: DateValue = $state(
+    initialAvailabilityDate(calendarDates.start, calendarDates.end),
+  );
+  let slotsOpen = $state(true);
+
+  let availableDateKeys = $derived(
+    new Set(availability.map((entry) => toDateKey(entry.start))),
   );
 
-  // Keep a list of availability as destructured strings to show to user
-  let availabilityList: { date: string; startTime: string; endTime: string }[] =
-    $state(
-      availability.length > 0
-        ? availability.map((a) => ({
-            date: a.start.split("T")[0],
-            startTime: a.start.split(" ")[0],
-            endTime: a.end ? a.end.split(" ")[0] : "",
-          }))
-        : [],
+  function isDateInRange(date: DateValue): boolean {
+    const dateKey = toDateKey(date);
+    const endDate = calendarDates.end
+      ? toDateKey(calendarDates.end)
+      : undefined;
+
+    return (
+      dateKey >= minimumDate.toString() &&
+      dateKey >= programmeStart &&
+      (!endDate || dateKey <= endDate)
+    );
+  }
+
+  function isSlotSelected(date: string, start: string, end: string): boolean {
+    if (allSelected) return true;
+
+    return availability.some(
+      (entry) =>
+        toDateKey(entry.start) === date &&
+        toTimeKey(entry.start) === start &&
+        entry.end.slice(0, 16) === slotDateTime(date, end),
+    );
+  }
+
+  function toggleSlot(start: string, end: string) {
+    if (!currentlySelectedDate || allSelected) return;
+
+    const date = toDateKey(currentlySelectedDate);
+    const existingIndex = availability.findIndex(
+      (entry) =>
+        toDateKey(entry.start) === date &&
+        toTimeKey(entry.start) === start &&
+        entry.end.slice(0, 16) === slotDateTime(date, end),
     );
 
-  // Disable any calendar dates not inside calendar dates
-  const isDateInRange = (date: DateValue, range: TimeSpan) => {
-    const dateStr = date.toString();
-    const startDate = range.start.split("T")[0];
-    const endDate = range.end ? range.end.split("T")[0] : undefined;
-
-    // If there is no end date, allow all dates after the start date
-    return dateStr >= startDate && (endDate ? dateStr <= endDate : true);
-  };
-
-  let currentlySelectedDate: DateValue | undefined = $state(undefined);
-
-  const handleDateSelect = (value: DateValue | undefined) => {
-    currentlySelectedDate = value || undefined;
-  };
-
-  let endTimeError: boolean = $state(false);
-  const handleAddAvailability = (e: Event) => {
-    e.preventDefault();
-    if (!currentlySelectedDate) {
-      alert("Please select a date first.");
+    if (existingIndex >= 0) {
+      availability = availability.filter((_, index) => index !== existingIndex);
       return;
     }
 
-    const selectedDate = currentlySelectedDate.toString();
-    const startTimeInput = document.querySelector<HTMLInputElement>(
-      'input[name="availability-start-time"]',
-    );
-    const endTimeInput = document.querySelector<HTMLInputElement>(
-      'input[name="availability-end-time"]',
-    );
+    availability = [
+      ...availability,
+      {
+        start: `${date}T${start}`,
+        end: slotDateTime(date, end),
+      },
+    ].sort((a, b) => a.start.localeCompare(b.start));
+  }
 
-    if (!startTimeInput || !endTimeInput) return;
-
-    const startTime = startTimeInput.value;
-    const endTime = endTimeInput.value;
-
-    if (startTime >= endTime) {
-      endTimeError = true;
-      return;
-    }
-
-    let newAvailabilityListEntry = {
-      date: selectedDate,
-      startTime: startTime,
-      endTime: endTime,
-    };
-
-    // Convert to TimeSpan for form submission
-    const newTimeSpan: TimeSpan = {
-      start: selectedDate + "T" + startTime,
-      end: selectedDate + "T" + endTime,
-    };
-
-    availability = [...availability, newTimeSpan];
-    availabilityList = [...availabilityList, newAvailabilityListEntry];
-    availableDates = [...availableDates, { date: selectedDate }];
-  };
-
-  const handleRemoveAvailability = (e: Event, index: number) => {
-    e.preventDefault();
-    availability = availability.filter((_: TimeSpan, i: number) => i !== index);
-    availabilityList = availabilityList.filter(
-      (_: { date: string; startTime: string; endTime: string }, i) =>
-        i !== index,
-    );
-    availableDates = availableDates.filter(
-      (_: { date: string }, i) => i !== index,
-    );
-  };
+  const getDayClass = (date: DateValue) =>
+    `${(allSelected && isDateInRange(date)) || availableDateKeys.has(toDateKey(date)) ? "bg-green-light-fluro text-black border-black" : ""}
+     ${!isDateInRange(date) ? "pointer-events-none text-grey-medium-light" : ""}`;
 </script>
 
-<!-- TODO: Refactor Calendar into one component as we are using in a few places now -->
-<Calendar.Root
-  type="single"
-  bind:value={currentlySelectedDate}
-  onValueChange={handleDateSelect}
->
-  {#snippet children({ months, weekdays })}
-    <Calendar.Header class="flex flex-row">
-      <Calendar.PrevButton class="w-8 mr-2">←</Calendar.PrevButton>
-      <Calendar.Heading />
-      <Calendar.NextButton class="w-8 ml-2">→</Calendar.NextButton>
-    </Calendar.Header>
+<div class="bg-grey-light">
+  <Calendar
+    type="single"
+    variant="standard"
+    bind:value={currentlySelectedDate}
+    bind:placeholder={calendarPlaceholder}
+    minValue={minimumDate}
+    maxValue={calendarDates.end
+      ? parseDate(toDateKey(calendarDates.end))
+      : undefined}
+    dayClass={getDayClass}
+    dayAriaDisabled={(date) => !isDateInRange(date) || undefined}
+    dayAriaLabel={(date) =>
+      `Date ${toDateKey(date)}${allSelected || availableDateKeys.has(toDateKey(date)) ? " - availability set" : ""}`}
+    dayTitle={(date) =>
+      allSelected || availableDateKeys.has(toDateKey(date))
+        ? "Availability set"
+        : "No availability"}
+  />
 
-    {#each months as month (month.value)}
-      <Calendar.Grid>
-        <Calendar.GridHead>
-          <Calendar.GridRow>
-            {#each weekdays as day, i ("day" + i)}
-              <Calendar.HeadCell>{day}</Calendar.HeadCell>
-            {/each}
-          </Calendar.GridRow>
-        </Calendar.GridHead>
-        <Calendar.GridBody>
-          {#each month.weeks as weekDates, i ("weekDates" + i)}
-            <Calendar.GridRow>
-              {#each weekDates as date (date)}
-                <Calendar.Cell {date} month={month.value}>
-                  <Calendar.Day
-                    class={"data-outside-month:pointer-events-none data-outside-month:text-gray-300 data-selected:bg-black data-selected:text-white " +
-                      (availableDates.some((d) => d.date === date.toString())
-                        ? "bg-green-500 text-white"
-                        : "") +
-                      (!isDateInRange(date, calendarDates)
-                        ? " pointer-events-none text-gray-400"
-                        : "")}
-                    aria-label={"Date " +
-                      date.toString() +
-                      (availableDates.some((d) => d.date === date.toString())
-                        ? " - Availability set"
-                        : " - No availability")}
-                    title={availableDates.some(
-                      (d) => d.date === date.toString(),
-                    )
-                      ? "Availability set"
-                      : "No availability"}
-                    aria-disabled={!isDateInRange(date, calendarDates)}
-                  />
-                </Calendar.Cell>
-              {/each}
-            </Calendar.GridRow>
-          {/each}
-        </Calendar.GridBody>
-      </Calendar.Grid>
-    {/each}
-  {/snippet}
-</Calendar.Root>
-{#if availabilityList.length > 0}
-  <h3>Current Availability:</h3>
-  <ul>
-    {#each availabilityList as entry, index (entry.date + entry.startTime + entry.endTime)}
-      <li>
-        <span>{entry.date}: {entry.startTime} - {entry.endTime}</span>
-        <button onclick={(e: Event) => handleRemoveAvailability(e, index)}
-          >Remove</button
-        >
-      </li>
-    {/each}
-  </ul>
-{/if}
+  <button
+    type="button"
+    aria-expanded={slotsOpen}
+    class="flex w-full items-center justify-between rounded-none border-x-0 border-b-0 border-t border-black bg-grey-medium px-2 py-2 text-[20px] leading-none"
+    onclick={() => (slotsOpen = !slotsOpen)}
+  >
+    <span>Time slots (select)</span>
+    <span
+      class={`transition-transform duration-200 ${slotsOpen ? "rotate-180" : ""}`}
+    >
+      <ChevronIcon size={16} />
+    </span>
+  </button>
 
-{#if currentlySelectedDate && !availableDates.some((d) => d.date === currentlySelectedDate!.toString())}
-  <p>
-    What time is the space available on {currentlySelectedDate?.toString() ||
-      ""}?
-  </p>
-  <div class="flex flex-row space-x-2">
-    <label for="availability-start-time">Start *</label>
-    <input name="availability-start-time" type="time" required />
-    <label for="availability-end-time">End *</label>
-    <input
-      name="availability-end-time"
-      type="time"
-      required
-      onfocus={() => {
-        const startTimeInput = document.querySelector<HTMLInputElement>(
-          'input[name="availability-start-time"]',
-        );
-        const endTimeInput = document.querySelector<HTMLInputElement>(
-          'input[name="availability-end-time"]',
-        );
-
-        if (startTimeInput && endTimeInput && !endTimeInput.value) {
-          endTimeInput.value = startTimeInput.value;
-        }
-      }}
-    />
-    {#if endTimeError}
-      <!-- temporary way to show availability form errors to user -->
-      <span class="form-error">End time must be later than start time.</span>
+  {#if slotsOpen}
+    {#if currentlySelectedDate}
+      <div class="max-h-[400px] overflow-y-auto bg-white">
+        {#each timeSlots as slot (`${slot.start}-${slot.end}`)}
+          <button
+            type="button"
+            aria-pressed={isSlotSelected(
+              toDateKey(currentlySelectedDate),
+              slot.start,
+              slot.end,
+            )}
+            class={`h-[40px] w-full justify-center rounded-none border-0 border-b border-grey-medium-light px-2 py-1 text-[1.35rem] leading-tight ${isSlotSelected(toDateKey(currentlySelectedDate), slot.start, slot.end) ? "bg-green-light-fluro" : "bg-white"}`}
+            onclick={() => toggleSlot(slot.start, slot.end)}
+          >
+            {slot.start} - {slot.end}
+          </button>
+        {/each}
+      </div>
+    {:else}
+      <p class="m-0 bg-white p-3 text-center text-[1.35rem]">
+        Select a date first.
+      </p>
     {/if}
-  </div>
-  <button onclick={(e: Event) => handleAddAvailability(e)}>Add</button>
-{/if}
+  {/if}
+</div>

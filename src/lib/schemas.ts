@@ -30,6 +30,7 @@ export const resourceSchema = z.object({
   description: z.string().min(1, "Description is required"),
   contact: z.string().min(1, "Contact details are required"),
   link: linkSchema.default({ title: "", type: "custom", url: "" }).optional(),
+  messageForRequesters: z.string().default(""),
   images: z.array(imageSchema),
   availability: availabilitySchema,
   multiBookable: z.boolean(),
@@ -116,6 +117,7 @@ export const calendarSchema = z
     calendarInstructions: z.string().optional(),
     spacePageText: z.string().optional(),
     resourcePageText: z.string().optional(),
+    newsPageText: z.string().optional(),
   })
   .refine((data) => data.id || data.userName, {
     message: "Name is required",
