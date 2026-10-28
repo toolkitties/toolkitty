@@ -42,7 +42,7 @@
     {/each}
   {:else}
     <div class="flex flex-col items-center justify-center m-8">
-      <p>No resources yet, please create one.</p>
+      <p class="mb-4 text-center">No resources yet, please create one.</p>
       <a href="/app/resources/create" class="button button-green inline-block"
         >create resource</a
       >

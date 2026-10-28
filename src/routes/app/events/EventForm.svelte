@@ -876,7 +876,6 @@
       </section>
     </div>
 
-    <p>Images</p>
     <ImageUploader bind:images={$form.images as string[]} />
 
     <br />
